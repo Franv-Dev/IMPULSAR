@@ -1,0 +1,8 @@
+.env
+venv/
+.env/
+.venv/
+__pycache__/
+*.pyc # archivos compilados
+*.pyo
+*.pyd

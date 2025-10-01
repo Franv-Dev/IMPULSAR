@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block header %}
+
+    <h2>{% block title %} Registrar Usuario{% endblock %} </h2>
+
+{% endblock %}
+
+{% block content%}
+<div class="form-container">
+<div class="register">
+    <form method="POST">
+        <label for="username">Nombre de usuario</label>
+        <input type="text" name="username" id="username" required>
+        <label for="password">Contraseña</label>
+        <input type="password" name="password" id="password" required>
+        <label for="rol">ROL</label>
+        <select id="rol" name="rol">
+            <option value="client">cliente</option>
+            <option value="enterprising">Emprendedor</option>
+        </select>
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" required>
+        <input type="submit" value="Registrar">
+    </form>
+</div>
+</div>
+
+{% endblock %}

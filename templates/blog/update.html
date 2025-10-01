@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block header %}
+
+    <h2>{% block title %} actualizar publicacion {% endblock %} </h2>
+
+{% endblock %}
+
+{% block content%}
+<form method="POST"  enctype="multipart/form-data">
+    <label for="title">Titulo</label>
+    <input type="text" name="title" id="title" value="{{ post.title }}" required>
+    <label for="body">Contenido</label>
+    <textarea name="body" id="body" cols="30" rows="10">{{ post.body }}</textarea>
+    {% if post.image %}
+        <p>Imagen actual:</p>
+        <img src="{{ url_for('static', filename='uploads/' + post.image) }}" alt="imagen" width="200">
+    {% endif %}
+    <label for="image">Cambiar imagen</label>
+    <input type="file" name="image" id="image">
+    <input type="submit" value="Guardar">
+    <a href="{{url_for('blog.index')}}">Cancelar</a>
+</form>
+</form>
+{% endblock %}
