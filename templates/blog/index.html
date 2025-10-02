@@ -1,41 +1,36 @@
 {% extends 'base.html' %}
+
 {% block header %}
-
-    <h2>{% block title %} publicaciones {% endblock %} </h2>
-    {% if g.user %}
-        {% if g.user.rol =="enterprising" %}
-        <a href="{{url_for('blog.create')}}">Nueva Publicación</a>
-        {% endif %}
+<h2>{% block title %} Publicaciones {% endblock %}</h2>
+{% if g.user %}
+    {% if g.user.rol == "enterprising" %}
+    <a href="{{ url_for('blog.create') }}" class="btn btn-custom btn-sm">Nueva Publicación</a>
     {% endif %}
-
+{% endif %}
 {% endblock %}
 
 {% block content %}
+<!-- SLIDER DE PUBLICACIONES -->
+<div class="post-slider">
     {% for post in posts %}
-        <article>
-            <header>
-                <div>
-                    <h1> {{ post.title }}</h1>
-                </div>
+    <div class="post-card card">
+        {% if post.image %}
+        <img src="{{ url_for('static', filename='uploads/' + post.image) }}" class="card-img-top" alt="Imagen {{ post.title }}">
+        {% endif %}
+        <div class="card-body">
+            <h5 class="card-title">{{ post.title }}</h5>
+            <p class="card-text">{{ post.body }}</p>
 
-                <div class="about">
-                    Publicado por {{get_user(post.author).username}}
-                    el {{ post.created.strftime('%Y-%m-%d')}}
-                </div>
-                <div>
-                    {% if g.user.id == post.author %}
-                        <a href="{{url_for('blog.update' , id=post.id)}}">Editar</a>
-                        <a href="{{url_for('blog.delete' , id=post.id)}}">Eliminar</a>
-                    {% endif %}
-                </div>
-            </header>
-            <div>
-                {% if post.image %}
-                    <img src="{{ url_for('static', filename='uploads/' + post.image) }}" alt="imagen" width="250">
-                {% endif %}
-                <p>{{ post.body }}</p>
+            <p class="card-text"><small class="text-muted">Publicado por {{ get_user(post.author).username }} el {{ post.created.strftime('%Y-%m-%d') }}</small></p>
+
+            {% if g.user.id == post.author %}
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                <a href="{{ url_for('blog.delete', id=post.id) }}" class="btn btn-sm btn-outline-danger">Eliminar</a>
             </div>
-        </article>
+            {% endif %}
+        </div>
+    </div>
     {% endfor %}
-
+</div>
 {% endblock %}
