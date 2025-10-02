@@ -1,154 +1,184 @@
+/*
+   RESET Y TIPOGRAFÍA
+ */
 *{
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
+    padding: 0;           /* Quita el padding por defecto de todos los elementos */
+    margin: 0;            /* Quita el margin por defecto de todos los elementos */
+    box-sizing: border-box; /* Hace que el padding y border se incluyan en el ancho y alto */
 }
 
 body{
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fuente de todo el body */
+    font-size: 20px;       /* Tamaño de letra base */
+    background-color: #f9f9f9; /* Color de fondo general */
 }
 
+/* 
+HEADER / NAVBAR */
 .header{
-    background-color: #377ba8;
-}
-.nav{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 90%;
-    margin: 0 auto;
-    padding: 10px 0;
-}
-.nav a{
-    text-decoration: none;
-    color: antiquewhite;
+    background-color: #377ba8; /* Fondo azul de la barra superior */
+    padding: 10px 0;           /* Espacio arriba y abajo del header */
 }
 
-.nav nav{
-    display: flex;
-    align-items: center;
-}
-.nav img {
-    width: 30px;   /* ancho */
-    height: 30px;  /* alto */
-    border-radius: 50%; /* si querés que quede redondeada */
-    object-fit: cover;  /* ajusta la imagen dentro del cuadro */
+.navbar-custom {
+    display: flex;                  /* Flexbox para distribuir elementos */
+    justify-content: space-between; /* Espacio entre logo y menú */
+    align-items: center;            /* Centra verticalmente los elementos */
+    max-width: 90%;                 /* Ancho máximo del header */
+    margin: 0 auto;                 /* Centra el header horizontalmente */
 }
 
-.nav nav a{
-    margin: 0 10px;
-}
-.nav nav span{
-    margin: 0 10px 0 0;
-    color: #ccc;
-    text-transform: capitalize;
-    font-weight: 600;
+.navbar-custom h1 {
+    color: #fff;           /* Color blanco del título */
+    font-size: 28px;       /* Tamaño del título */
+    text-decoration: none; /* Quita subrayado si es link */
 }
 
-/*Content*/
-.content{
-    max-width: 85%;
-    margin: 10px auto;
-}
-.content header{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #ccc;
+.navbar-custom nav {
+    display: flex;        /* Pone los links en línea horizontal */
+    align-items: center;  /* Centra verticalmente */
+    gap: 10px;            /* Espacio entre cada link o elemento */
 }
 
-/*MNSJ DE FLASH*/
-.flash{
-    background-color: #707070;
-    color: #fff;
-    padding: 10px;
+/* NAV ITEMS RESPONSIVE */
+@media (max-width: 768px) {
+    .navbar-custom {
+        flex-direction: column;    /* Logo arriba y menú debajo */
+        align-items: flex-start;   /* Alinea a la izquierda */
+    }
+    .navbar-custom nav {
+        flex-direction: column;    /* Menú vertical */
+        align-items: flex-start;   /* Alinea a la izquierda */
+        gap: 5px;                  /* Menor separación vertical */
+        margin-top: 10px;          /* Separación entre logo y menú */
+    }
 }
 
-/*Index - Publicaciones/blog*/
-article{
-    padding: 10px;
-}
-article header{
-    margin: 10px 0;
-    display: flex;
-    align-self: center ;
-    justify-content: space-between;
-}
-article header h1{
-    font-size: 26px;
+/* IMAGEN DE USUARIO */
+.navbar-custom img {
+    width: 30px;        /* Ancho de la imagen */
+    height: 30px;       /* Alto de la imagen */
+    border-radius: 50%; /* Hace la imagen redonda */
+    object-fit: cover;  /* Ajusta la imagen al contenedor sin deformarla */
 }
 
-article header .about{
-    font-style:italic ;
-    color: #707070;
+/* BOTONES PERSONALIZADOS */
+.btn-custom {
+    background-color: #377ba8; /* Fondo azul */
+    color: #fff;               /* Texto blanco */
+    border-radius: 5px;        /* Bordes redondeados */
+    padding: 5px 12px;         /* Espaciado interno */
+    text-decoration: none;     /* Quita subrayado */
+    font-size: 14px;           /* Tamaño del texto */
+    transition: background-color 0.3s ease; /* Suaviza el cambio de color al hover */
+    border: none;              /* Sin borde predeterminado */
+}
+
+.btn-custom:hover {
+    background-color: #2c6c97; /* Cambia color al pasar mouse */
+    color: #fff;                /* Mantiene texto blanco */
+}
+
+/* CONTENT*/
+.content {
+    max-width: 85%;       /* Ancho máximo del contenido */
+    margin: 20px auto;    /* Centra horizontalmente y separa del header */
+    padding: 10px;        /* Espacio interno */
+    background-color: #fff; /* Fondo blanco */
+    border-radius: 8px;   /* Bordes redondeados */
+}
+
+/* HEADER DE SECCIÓN */
+.content header {
+    display: flex;                  /* Flex para separar título de posibles botones */
+    justify-content: space-between; /* Espacio entre elementos */
+    align-items: center;            /* Centra verticalmente */
+    border-bottom: 1px solid #ccc;  /* Línea debajo */
+    padding-bottom: 5px;            /* Separación debajo del header */
+    margin-bottom: 15px;            /* Separación con el contenido siguiente */
+}
+
+/* FLASH MESSAGES */
+.flash, .alert {
+    background-color: #707070; /* Fondo gris */
+    color: #fff;               /* Texto blanco */
+    padding: 10px;             /* Espaciado interno */
+    margin-bottom: 10px;       /* Separación entre mensajes */
+    border-radius: 5px;        /* Bordes redondeados */
+}
+
+/* ARTÍCULOS / BLOG*/
+article {
+    padding: 10px;             /* Espaciado interno */
+    margin-bottom: 15px;       /* Separación entre artículos */
+    border-bottom: 1px solid #ccc; /* Línea divisoria */
+}
+
+article header {
+    display: flex;                  /* Flexbox para título y meta info */
+    justify-content: space-between; /* Separar título y autor/fecha */
+    align-items: center;            /* Centrado vertical */
+    margin-bottom: 8px;             /* Espacio debajo del header */
+}
+
+article header h1 {
+    font-size: 26px; /* Tamaño del título */
+}
+
+article header .about {
+    font-style: italic; /* Cursiva */
+    color: #707070;     /* Gris */
     font-size: 18px;
 }
 
-/*Formularios*/
-form-container {
-    display: flex;
-    justify-content: center; /* centra horizontalmente */
-    align-items: center;     /* centra verticalmente */
-    min-height: 80vh;        /* altura mínima para centrar verticalmente */
+/* FORMULARIOS*/
+.form-container {
+    display: flex;             /* Flexbox para centrar */
+    justify-content: center;   /* Centra horizontal */
+    align-items: center;       /* Centra vertical */
+    min-height: 80vh;          /* Ocupa casi toda la altura de la ventana */
 }
 
-
 .register, .login {
-    width: 60%;          /* ocupa la mayor parte en pantallas pequeñas */
-    max-width: 500px;            /* ancho del formulario */
+    width: 90%;          /* Ocupa 90% del contenedor en móviles */
+    max-width: 400px;    /* Máximo ancho */
     background-color: #f2f2f2; 
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    margin: 20px 0 0 0;
-    padding: 10px;
+    padding: 20px;
 }
 
-.login input[type=submit]:hover {
-    background-color: #2c6c97;
-    cursor: pointer
-}
-form{
-    margin: 10px 0;
+form {
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Los inputs van uno debajo de otro */
 }
 
-*/
 form label,
 form input,
 form textarea {
     font-weight: 500;
     margin: 5px 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 18px;
     padding: 10px;
 }
+
 form input[type=submit]{
-    align-self: start;
-    min-width: 200px;
-}
-
-
-
-/* LOGIN */
-
-.login{
-    max-width: 30%;
-    margin: 0 auto;
-}
-
-.login input[type=submit]{
-    margin: 20px 0;
-    min-width: 100%;
+    margin-top: 15px;
     background-color: #377ba8;
+    color: #fff;
     border: none;
     border-radius: 5px;
-    color: #fff;
+    padding: 10px;
+    cursor: pointer;             /* Cambia cursor al pasar sobre botón */
+    transition: background-color 0.3s ease; /* Suaviza el cambio de color */
 }
 
+form input[type=submit]:hover {
+    background-color: #2c6c97;
+}
 
-
-
-
-
+/* LOGIN FORM ESPECIAL */
+.login {
+    max-width: 350px;   /* Máximo ancho del login */
+    margin: 0 auto;     /* Centra horizontalmente */
+}
