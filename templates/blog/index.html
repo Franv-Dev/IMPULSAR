@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
 {% block header %}
-<h2>{% block title %} Publicaciones {% endblock %}</h2>
-{% if g.user %}
-    {% if g.user.rol == "enterprising" %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <h2 class="fw-bold text-primary">{% block title %}Publicaciones{% endblock %}</h2>
+    {% if g.user and g.user.rol == "enterprising" %}
     <a href="{{ url_for('blog.create') }}" class="btn btn-custom btn-sm">Nueva Publicación</a>
     {% endif %}
-{% endif %}
+</div>
 {% endblock %}
 
 {% block content %}
@@ -15,18 +15,17 @@
     {% for post in posts %}
     <div class="post-card card">
         {% if post.image %}
-        <img src="{{ url_for('static', filename='uploads/' + post.image) }}" class="card-img-top" alt="Imagen {{ post.title }}">
+        <img src="{{ url_for('static', filename='uploads/' + post.image) }}" class="card-img-top img-fluid rounded-top" alt="Imagen {{ post.title }}">
         {% endif %}
         <div class="card-body">
-            <h5 class="card-title">{{ post.title }}</h5>
-            <p class="card-text">{{ post.body }}</p>
-
+            <h5 class="card-title fw-semibold text-primary">{{ post.title }}</h5>
+            <p class="card-text text-muted">{{ post.body[:120] }}{% if post.body|length > 120 %}...{% endif %}</p>
             <p class="card-text"><small class="text-muted">Publicado por {{ get_user(post.author).username }} el {{ post.created.strftime('%Y-%m-%d') }}</small></p>
 
             {% if g.user.id == post.author %}
-            <div class="d-flex gap-2">
-                <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
-                <a href="{{ url_for('blog.delete', id=post.id) }}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+            <div class="d-flex gap-2 mt-2 flex-wrap">
+                <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn-outline-primary btn-sm flex-grow-1 text-center">Editar</a>
+                <a href="{{ url_for('blog.delete', id=post.id) }}" class="btn btn-outline-danger btn-sm flex-grow-1 text-center">Eliminar</a>
             </div>
             {% endif %}
         </div>

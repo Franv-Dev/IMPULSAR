@@ -1,20 +1,31 @@
 {% extends 'base.html' %}
 
 {% block header %}
-
-    <h2>{% block title %} Crear una publicacion {% endblock %} </h2>
-
+<h2 class="fw-bold text-primary">{% block title %}Crear una Publicación{% endblock %}</h2>
 {% endblock %}
 
-{% block content%}
-<form method="POST" enctype="multipart/form-data">
-    <label for="title">Titulo</label>
-    <input type="text" name="title" id="title" required>
-    <label for="body">Contenido</label>
-    <textarea name="body" id="body" cols="30" rows="10"></textarea>
-    <label for="image"> Imagen </label>
-    <input type="file" name="image" id="image">
-    <input type="submit" value="Guardar">
-    <a href="{{url_for('blog.index')}}">Cancelar</a>
-</form>
+{% block content %}
+<div class="form-container">
+    <form method="POST" enctype="multipart/form-data" class="p-4 bg-white rounded shadow-sm w-100" style="max-width: 500px;">
+        <div class="mb-3">
+            <label for="title" class="form-label fw-semibold">Título</label>
+            <input type="text" name="title" id="title" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="body" class="form-label fw-semibold">Contenido</label>
+            <textarea name="body" id="body" class="form-control" rows="6"></textarea>
+        </div>
+
+        <div class="mb-4">
+            <label for="image" class="form-label fw-semibold">Imagen</label>
+            <input type="file" name="image" id="image" class="form-control">
+        </div>
+
+        <div class="d-flex gap-2">
+            <input type="submit" value="Guardar" class="btn btn-custom flex-grow-1">
+            <a href="{{ url_for('blog.index') }}" class="btn btn-outline-secondary flex-grow-1 text-center">Cancelar</a>
+        </div>
+    </form>
+</div>
 {% endblock %}
