@@ -61,20 +61,17 @@ def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        #email = request.form.get("email")
+        
         
         error = None
         
         user = User.query.filter_by(username = username).first()
-        #user_email= User.query.filter_by(email = email).first()
-
+        
 
         if user is None:
             error = "El usuario  es incorrecto"
         elif not check_password_hash(user.password, password):
             error = "La contraseña incorrecta"
-        # elif user_email is None:
-        #     error = "El email es incorrecto"
 
         if error == None:
             session.clear()
