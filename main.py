@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask,redirect,url_for
 from config import DATABASE_DATABASE_URI
 from db import db
 from dotenv import load_dotenv
@@ -18,13 +18,20 @@ app.secret_key = os.getenv("SECRET_KEY")
 db.init_app(app)
 migrate = Migrate(app,db)
 
-with app.app_context():
-    db.drop_all()
-    db.create_all()
 
 #importar vistas
 app.register_blueprint(auth)
 app.register_blueprint(blog)
+
+@app.route("/")
+def index():
+    return redirect(url_for("blog.index"))
+
+with app.app_context():
+    db.drop_all()
+    db.create_all()
+
+
 
 
 if __name__ == "__main__":#para arrancar la app

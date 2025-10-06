@@ -8,7 +8,7 @@ from views.auth import login_required
 from db import db
 from werkzeug.utils import secure_filename
 import os
-blog = Blueprint('blog',__name__)
+blog = Blueprint('blog',__name__,url_prefix='/blog')
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'} #archivos permitidos
 
@@ -30,7 +30,7 @@ def index():
 
 
 #Registrar un Post
-@blog.route("/blog/create", methods=("GET","POST"))
+@blog.route("/create", methods=("GET","POST"))
 
 @login_required
 
@@ -78,7 +78,7 @@ def get_post(id,check_author = True):
     return post
 
 #Update Post /actualizar
-@blog.route("/blog/update/<int:id>", methods=("GET","POST"))
+@blog.route("/update/<int:id>", methods=("GET","POST"))
 
 @login_required
 def update(id):
@@ -110,7 +110,7 @@ def update(id):
     return render_template('blog/update.html', post = post)
 
 #eliminar un post
-@blog.route('/blog/delete/<int:id>')
+@blog.route('/delete/<int:id>')
 @login_required
 
 def delete(id):
