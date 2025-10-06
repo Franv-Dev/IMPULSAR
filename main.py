@@ -27,6 +27,9 @@ app.register_blueprint(blog)
 def index():
     return redirect(url_for("blog.index"))
 
+from main import app
+print(app.url_map)
+
 with app.app_context():
     db.drop_all()
     db.create_all()
