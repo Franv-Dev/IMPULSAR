@@ -1,35 +1,204 @@
 {% extends 'base.html' %}
 
 {% block header %}
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-    <h2 class="fw-bold text-primary">{% block title %}Publicaciones{% endblock %}</h2>
-    {% if g.user and g.user.rol == "enterprising" %}
-    <a href="{{ url_for('blog.create') }}" class="btn btn-custom btn-sm">Nueva Publicación</a>
-    {% endif %}
-</div>
+  <h2 class="visually-hidden">{% block title %}Inicio{% endblock %}</h2>
 {% endblock %}
 
 {% block content %}
-<!-- SLIDER DE PUBLICACIONES -->
-<div class="post-slider">
-    {% for post in posts %}
-    <div class="post-card card">
-        {% if post.image %}
-        <img src="{{ url_for('static', filename='uploads/' + post.image) }}" class="card-img-top img-fluid rounded-top" alt="Imagen {{ post.title }}">
-        {% endif %}
-        <div class="card-body">
-            <h5 class="card-title fw-semibold text-primary">{{ post.title }}</h5>
-            <p class="card-text text-muted">{{ post.body[:120] }}{% if post.body|length > 120 %}...{% endif %}</p>
-            <p class="card-text"><small class="text-muted">Publicado por {{ get_user(post.author).username }} el {{ post.created.strftime('%Y-%m-%d') }}</small></p>
 
-            {% if g.user.id == post.author %}
-            <div class="d-flex gap-2 mt-2 flex-wrap">
-                <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn-outline-primary btn-sm flex-grow-1 text-center">Editar</a>
-                <a href="{{ url_for('blog.delete', id=post.id) }}" class="btn btn-outline-danger btn-sm flex-grow-1 text-center">Eliminar</a>
-            </div>
-            {% endif %}
-        </div>
+<!-- HERO (usa un item destacado opcional) -->
+<section class="hero rounded-4 p-4 p-lg-5 mb-4">
+  <div class="row align-items-center g-4">
+    <div class="col-lg-7">
+      <h1 class="display-5 fw-bold text-white mb-3">
+        {{ featured.title if featured else '' }}
+      </h1>
+      <p class="lead text-white-50 mb-4">
+        {{ featured.subtitle if featured else '' }}
+      </p>
+
+      <div class="d-flex gap-2">
+        {% if featured and featured.visit_url %}
+          <a class="btn btn-hero" href="{{ featured.visit_url }}">Visitar</a>
+        {% endif %}
+        {% if featured and featured.contact_url %}
+          <a class="btn btn-outline-light" href="{{ featured.contact_url }}">Contactar</a>
+        {% endif %}
+      </div>
     </div>
-    {% endfor %}
+
+    <div class="col-lg-5">
+      <div class="hero-media rounded-4 overflow-hidden position-relative">
+        {% if featured and featured.image %}
+          <img src="{{ url_for('static', filename='uploads/' ~ featured.image) }}"
+               class="w-100 d-block" alt="{{ featured.title }}">
+        {% else %}
+          <div class="ratio ratio-16x9 bg-light"></div>
+        {% endif %}
+        <div class="hero-dots position-absolute bottom-0 start-50 translate-middle-x d-flex gap-2 my-3">
+          <span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="row g-4">
+  <!-- CARRUSEL: CERCA DE TI -->
+  <div class="col-12 col-xl-8">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 class="h5 m-0">Cerca de ti</h3>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm slider-prev" data-target="#nearby">‹</button>
+        <button class="btn btn-outline-secondary btn-sm slider-next" data-target="#nearby">›</button>
+      </div>
+    </div>
+
+    <div id="nearby" class="post-slider">
+      {% for biz in nearby %}
+      <article class="post-card card">
+        {% if biz.image %}
+          <img src="{{ url_for('static', filename='uploads/' ~ biz.image) }}" alt="{{ biz.title }}">
+        {% else %}
+          <div class="ratio ratio-16x9 bg-light rounded-top"></div>
+        {% endif %}
+
+        <div class="card-body">
+          <h5 class="card-title">{{ biz.title }}</h5>
+          <p class="card-text text-muted mb-2">{{ biz.short_desc }}</p>
+          {% if biz.location_text %}
+            <p class="small text-muted mb-3">📍 {{ biz.location_text }}</p>
+          {% endif %}
+          {% if biz.visit_url %}
+            <a class="btn btn-custom btn-sm" href="{{ biz.visit_url }}">Visitar</a>
+          {% endif %}
+        </div>
+      </article>
+      {% else %}
+        <div class="text-muted">Sin elementos aún.</div>
+      {% endfor %}
+    </div>
+
+    <!-- CARRUSEL: MEJOR VALORADAS -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+      <h3 class="h5 m-0">Mejor valoradas</h3>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm slider-prev" data-target="#toprated">‹</button>
+        <button class="btn btn-outline-secondary btn-sm slider-next" data-target="#toprated">›</button>
+      </div>
+    </div>
+
+    <div id="toprated" class="post-slider">
+      {% for biz in top_rated %}
+      <article class="post-card card">
+        {% if biz.image %}
+          <img src="{{ url_for('static', filename='uploads/' ~ biz.image) }}" alt="{{ biz.title }}">
+        {% else %}
+          <div class="ratio ratio-16x9 bg-light rounded-top"></div>
+        {% endif %}
+
+        <div class="card-body">
+          <h5 class="card-title">{{ biz.title }}</h5>
+          <p class="card-text text-muted mb-2">{{ biz.short_desc }}</p>
+          {% if biz.location_text %}
+            <p class="small text-muted mb-3">📍 {{ biz.location_text }}</p>
+          {% endif %}
+          {% if biz.visit_url %}
+            <a class="btn btn-custom btn-sm" href="{{ biz.visit_url }}">Visitar</a>
+          {% endif %}
+        </div>
+      </article>
+      {% else %}
+        <div class="text-muted">Sin elementos aún.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- PANEL LATERAL: UBICACIÓN + CALENDARIO + EVENTOS -->
+  <aside class="col-12 col-xl-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title mb-3">📍 Ubicación</h5>
+
+        {# placeholder de mapa o selector de ciudad #}
+        <div class="border rounded-3 p-3 bg-light text-muted text-center">
+          <small>Mapa/selector aparecerá aquí</small>
+        </div>
+
+        <div class="calendar border rounded-3 p-3 mt-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <button class="btn btn-sm btn-outline-secondary">‹</button>
+            <strong>{{ current_month or '' }}</strong>
+            <button class="btn btn-sm btn-outline-secondary">›</button>
+          </div>
+
+          <div class="row row-cols-7 text-center small text-muted mb-2">
+            <div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div>
+          </div>
+
+          <div class="row row-cols-7 text-center g-2">
+            {% for day in calendar_days %}
+              <div class="col">
+                {% if day %}
+                  <div class="cal-day">{{ day }}</div>
+                {% else %}
+                  &nbsp;
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+      <div class="card-body">
+        <h5 class="card-title">🎪 Eventos y ferias</h5>
+
+        <ul class="list-unstyled m-0">
+          {% for ev in events %}
+            <li class="mb-2">
+              <strong>{{ ev.title }}</strong>
+              <div class="small text-muted">{{ ev.date_text }} — {{ ev.place }}</div>
+            </li>
+          {% else %}
+            <li class="text-muted">Sin eventos programados.</li>
+          {% endfor %}
+        </ul>
+
+        {% if events_url %}
+          <a class="btn btn-outline-secondary btn-sm mt-2" href="{{ events_url }}">Ver más</a>
+        {% endif %}
+      </div>
+    </div>
+  </aside>
 </div>
+
+<!-- FAQ -->
+<section class="mt-4">
+  <h3 class="h5 mb-3">Preguntas frecuentes</h3>
+  <div class="row g-3">
+    {% for item in faqs %}
+      <div class="col-md-4">
+        <a class="btn w-100 btn-outline-secondary">{{ item.title }}</a>
+      </div>
+    {% else %}
+      <div class="col-12 text-muted">Sin preguntas todavía.</div>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // flechas para scroll horizontal en los carruseles
+  document.addEventListener('DOMContentLoaded', () => {
+    const move = (el, dir=1) => el && el.scrollBy({ left: dir * 320, behavior: 'smooth' });
+    document.querySelectorAll('.slider-prev').forEach(b =>
+      b.addEventListener('click', () => move(document.querySelector(b.dataset.target), -1)));
+    document.querySelectorAll('.slider-next').forEach(b =>
+      b.addEventListener('click', () => move(document.querySelector(b.dataset.target), 1)));
+  });
+</script>
 {% endblock %}
