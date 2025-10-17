@@ -7,6 +7,9 @@ from views.blog import blog
 from flask_jwt_extended import JWTManager
 import os
 from flask_migrate import Migrate
+from views.posts_api import posts_api
+
+
 
 load_dotenv()
 
@@ -25,6 +28,7 @@ jwt = JWTManager(app)
 #importar vistas
 app.register_blueprint(auth)
 app.register_blueprint(blog)
+app.register_blueprint(posts_api)
 
 @app.route("/")
 def index():
