@@ -42,40 +42,6 @@ Desarrollar un sistema integral que centralice la información de los emprendimi
 
 ---
 
-## ⚙️ Arquitectura del sistema
-
-El proyecto sigue un modelo **MVC simplificado (Modelo – Vista – Controlador)** con **Blueprints de Flask**, asegurando escalabilidad y claridad en la estructura.
-IMPULSAR/
-│
-├── main.py # Punto de entrada principal
-├── db.py # Configuración de conexión con MySQL
-│
-├── models/ # Modelos de base de datos
-│ ├── user.py # Clase User (usuarios del sistema)
-│ └── post.py # Clase Post (publicaciones de emprendedores)
-│
-├── routes/ # Rutas y controladores (Blueprints)
-│ ├── auth.py # Registro, login, JWT y sesiones
-│ └── main.py # Rutas principales y vistas HTML
-│
-├── static/ # Recursos estáticos (CSS, JS, imágenes)
-│ ├── css/
-│ ├── js/
-│ └── img/
-│
-├── templates/ # Plantillas HTML (vistas)
-│ ├── base.html
-│ ├── index.html
-│ ├── login.html
-│ ├── register.html
-│ ├── dashboard.html
-│ └── perfil.html
-│
-├── .env # Variables de entorno
-├── requirements.txt # Dependencias del proyecto
-└── README.md
-
----
 
 ## 🔐 Roles y autenticación
 
