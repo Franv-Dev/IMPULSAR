@@ -17,3 +17,11 @@ class User(db.Model):
     def __repr__(self):#devuelve Informacion:String
         return f"User:{self.username}"
         
+        #  Método para devolver el usuario como JSON
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "rol": self.rol
+        }

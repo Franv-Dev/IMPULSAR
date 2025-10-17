@@ -17,4 +17,13 @@ class Post(db.Model):
     
     def __repr__(self):#devuelve Informacion:String
         return f"Post: {self.title}"
-        
+            # Método para devolver JSON
+    def serialize(self):
+        return {
+            "id": self.id,
+            "author": self.author,  # ID del usuario autor
+            "title": self.title,
+            "body": self.body,
+            "image": self.image,
+            "created": self.created.isoformat() if self.created else None
+        }
