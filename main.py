@@ -4,6 +4,7 @@ from db import db
 from dotenv import load_dotenv
 from views.auth import auth
 from views.blog import blog
+from flask_jwt_extended import JWTManager
 import os
 from flask_migrate import Migrate
 
@@ -17,7 +18,9 @@ app.secret_key = os.getenv("SECRET_KEY")
 
 db.init_app(app)
 migrate = Migrate(app,db)
-
+#Token JWT
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "jwt-secret-change-me")
+jwt = JWTManager(app)
 
 #importar vistas
 app.register_blueprint(auth)
