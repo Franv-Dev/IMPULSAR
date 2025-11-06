@@ -48,6 +48,6 @@ def index():
 
 if __name__ == "__main__":
     # Si querés crear tablas automáticamente en desarrollo, podés descomentar esto:
-    # with app.app_context():
-    #     db.create_all()
-    app.run(debug=True)
+    with app.app_context():
+        db.create_all()
+        app.run(debug=True)
