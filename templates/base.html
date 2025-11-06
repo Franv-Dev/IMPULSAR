@@ -21,10 +21,12 @@
             </div>
 
             <nav class="navbar__links">
-                <a href="{{ url_for('index') }}" class="navbar__link navbar__link--active">Inicio</a>
-                <a href="#emprendimientos" class="navbar__link">Emprendimientos</a>
-                <a href="#" class="navbar__link">Eventos</a>
-                <a href="{{ url_for('about.index') }}" class="navbar__link">Sobre IMPULSAR</a>
+                <nav class="navbar__links">
+                    <a href="{{ url_for('index') }}" class="navbar__link navbar__link--active">Inicio</a>
+                    <a href="{{ url_for('blog.index') }}" class="navbar__link">Emprendimientos</a>
+                    <a href="{{ url_for('about.index') }}" class="navbar__link">Sobre IMPULSAR</a>
+                    <a href="{{ url_for('contact.index') }}" class="navbar__link">Contacto</a>
+                </nav>
             </nav>
 
             <div class="navbar__actions">

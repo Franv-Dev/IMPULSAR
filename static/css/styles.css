@@ -790,3 +790,28 @@ PÁGINAS DE AUTENTICACIÓN
     font-size: 1rem;
     font-weight: 600;
 }
+/* RATING ESTRELLAS */
+
+.rating {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 0.15rem;
+    font-size: 1.4rem;
+}
+
+.rating input {
+    display: none;
+}
+
+.rating label {
+    cursor: pointer;
+    color: #E5E7EB; /* gris clarito */
+    transition: color 0.15s ease;
+}
+
+/* hover y seleccionado */
+.rating input:checked ~ label,
+.rating label:hover,
+.rating label:hover ~ label {
+    color: #FBBF24; /* amarillo tipo estrella */
+}

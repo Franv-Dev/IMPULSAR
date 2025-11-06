@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Emprendimientos – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Emprendimientos</h2>
+                <p class="section__subtitle">
+                    Explorá todos los emprendimientos registrados en IMPULSAR.
+                </p>
+            </div>
+            <a href="{{ url_for('index') }}" class="section__link">Volver al inicio</a>
+        </div>
+
+        {% if posts %}
+            <div class="cards-grid">
+                {% for post in posts %}
+                    <article class="card">
+                        {% if post.image %}
+                            <div class="card__image-wrapper">
+                                <img
+                                    src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                    alt="Imagen de {{ post.title }}"
+                                    class="card__image"
+                                >
+                            </div>
+                        {% endif %}
+                        <div class="card__body">
+                            <div class="card__tags">
+                                <span class="badge badge--category">Emprendimiento</span>
+                                {% set author = get_user(post.author) %}
+                                {% if author %}
+                                    <span class="badge" style="background:#F3F4F6;color:#4B5563;">
+                                        {{ author.username }}
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <h3 class="card__title">
+                                <a href="{{ url_for('blog.detail', id=post.id) }}"
+                                    style="text-decoration:none; color:inherit;">
+                                    {{ post.title }}
+                                </a>
+                            </h3>
+
+                            <p class="card__location">
+                                ID #{{ post.id }}
+                            </p>
+
+                            <p class="card__description">
+                                {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
+                            </p>
+
+                            <div style="margin-top:0.75rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+                                {% if g.user and g.user.id == post.author %}
+                                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                        <a href="{{ url_for('blog.update', id=post.id) }}"
+                                            class="btn btn--secondary"
+                                            style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                            Editar
+                                        </a>
+                                        <a href="{{ url_for('blog.delete', id=post.id) }}"
+                                            class="btn btn--ghost"
+                                            style="font-size:0.8rem; padding:0.3rem 0.8rem;"
+                                            onclick="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                                            Eliminar
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <span style="font-size:0.8rem; color:#9CA3AF;">
+                                        Hacé clic en el título o en el botón para ver más.
+                                    </span>
+                                {% endif %}
+
+                                <a href="{{ url_for('blog.detail', id=post.id) }}"
+                                    class="btn btn--secondary"
+                                    style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                    Ver detalle / Reseñas
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="emprendimientos__empty" style="margin-top:1rem;">
+                <p>No hay emprendimientos registrados todavía.</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

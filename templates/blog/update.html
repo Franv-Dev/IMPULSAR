@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Nuevo emprendimiento – IMPULSAR{% endblock %}
+{% block title %}Editar emprendimiento – IMPULSAR{% endblock %}
 
 {% block content %}
 <section class="auth">
     <div class="container auth__container">
         <div class="auth__card">
-            <h1 class="auth__title">Registrar emprendimiento</h1>
+            <h1 class="auth__title">Editar emprendimiento</h1>
             <p class="auth__subtitle">
-                Completá la información de tu emprendimiento para mostrarlo en IMPULSAR.
+                Actualizá la información de tu emprendimiento.
             </p>
 
             {% with messages = get_flashed_messages() %}
@@ -23,7 +23,7 @@
                 {% endif %}
             {% endwith %}
 
-            <form method="post" class="auth__form">
+            <form method="post" class="auth__form" enctype="multipart/form-data">
                 <div class="auth__field">
                     <label for="title" class="auth__label">Nombre del emprendimiento</label>
                     <input
@@ -31,7 +31,7 @@
                         name="title"
                         type="text"
                         class="auth__input"
-                        placeholder="Ej: Dulces Artesanales Mendoza"
+                        value="{{ post.title }}"
                         required
                     >
                 </div>
@@ -43,24 +43,39 @@
                         name="body"
                         rows="5"
                         class="auth__input"
-                        placeholder="Contanos qué ofrecés, cuál es tu historia, horarios, redes, etc."
                         required
-                    ></textarea>
+                    >{{ post.body }}</textarea>
                 </div>
 
                 <div class="auth__field">
-                    <label for="image" class="auth__label">Imagen (opcional)</label>
+                    <label class="auth__label">Imagen actual</label>
+                    {% if post.image %}
+                        <img
+                            src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                            alt="Imagen actual"
+                            style="max-width: 200px; border-radius: 8px; display:block; margin-bottom:0.5rem;"
+                        >
+                    {% else %}
+                        <p class="auth__hint">Este emprendimiento no tiene imagen cargada.</p>
+                    {% endif %}
+                </div>
+
+                <div class="auth__field">
+                    <label for="image" class="auth__label">Reemplazar imagen (opcional)</label>
                     <input
                         id="image"
                         name="image"
-                        type="text"
+                        type="file"
                         class="auth__input"
-                        placeholder="URL de una imagen representativa (si tenés)"
+                        accept=".png,.jpg,.jpeg,.gif"
                     >
+                    <small class="auth__hint">
+                        Si seleccionás una nueva imagen, se reemplazará la anterior.
+                    </small>
                 </div>
 
                 <button type="submit" class="btn btn--primary auth__submit">
-                    Guardar emprendimiento
+                    Guardar cambios
                 </button>
             </form>
 

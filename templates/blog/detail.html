@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} – Emprendimiento{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 900px;">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="card" style="margin-bottom: 2rem;">
+            {% if post.image %}
+                <div class="card__image-wrapper">
+                    <img
+                        src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                        alt="Imagen de {{ post.title }}"
+                        class="card__image"
+                    >
+                </div>
+            {% endif %}
+            <div class="card__body">
+                <div class="card__tags">
+                    <span class="badge badge--category">Emprendimiento</span>
+                </div>
+                <h1 class="card__title" style="font-size:1.4rem;">{{ post.title }}</h1>
+                <p class="card__location">
+                    Publicado por usuario ID #{{ post.author }}
+                </p>
+
+                {% if avg_rating %}
+                    <p style="margin:0.5rem 0 0; font-size:0.9rem;">
+                        ⭐ {{ avg_rating }} / 5
+                        <span style="color:#6B7280;">(promedio de reseñas)</span>
+                    </p>
+                {% else %}
+                    <p style="margin:0.5rem 0 0; font-size:0.9rem; color:#6B7280;">
+                        Aún no hay reseñas.
+                    </p>
+                {% endif %}
+
+                <hr style="margin:1rem 0; border:none; border-top:1px solid #E5E7EB;">
+
+                <p style="margin:0; white-space:pre-line;">
+                    {{ post.body }}
+                </p>
+
+                {% if g.user and g.user.id == post.author %}
+                    <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--secondary">
+                            Editar
+                        </a>
+                        <a href="{{ url_for('blog.delete', id=post.id) }}"
+                           class="btn btn--ghost"
+                           onclick="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                            Eliminar
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- RESEÑAS -->
+        <section style="margin-bottom: 2rem;">
+            <h2 class="section__title" style="font-size:1.1rem;">Reseñas</h2>
+
+            {% if reviews %}
+                <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:0.75rem;">
+                    {% for r in reviews %}
+                        <div style="background:#FFFFFF; border-radius:12px; padding:0.75rem 1rem; box-shadow:0 4px 12px rgba(15,23,42,0.04);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                                <div>
+                                    <strong>Usuario #{{ r.user_id }}</strong>
+                                </div>
+                                <div style="color:#FBBF24; font-size:1rem;">
+                                    {% for i in range(1, 6) %}
+                                        {% if i <= r.rating %}★{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% if r.comment %}
+                                <p style="margin:0; font-size:0.9rem; color:#4B5563;">
+                                    {{ r.comment }}
+                                </p>
+                            {% else %}
+                                <p style="margin:0; font-size:0.85rem; color:#9CA3AF;">
+                                    Sin comentario escrito.
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="margin-top:0.5rem; color:#6B7280; font-size:0.9rem;">
+                    Todavía no hay reseñas. ¡Sé la primera persona en opinar!
+                </p>
+            {% endif %}
+        </section>
+
+        <!-- FORMULARIO DE NUEVA RESEÑA -->
+        <section>
+            <h2 class="section__title" style="font-size:1.1rem;">Dejar una reseña</h2>
+
+            {% if not g.user %}
+                <p style="font-size:0.9rem; color:#6B7280; margin-top:0.5rem;">
+                    Tenés que <a href="{{ url_for('auth.login') }}">iniciar sesión</a> para dejar una reseña.
+                </p>
+            {% elif g.user.id == post.author %}
+                <p style="font-size:0.9rem; color:#6B7280; margin-top:0.5rem;">
+                    No podés dejar reseñas sobre tu propio emprendimiento.
+                </p>
+            {% else %}
+                <form method="post" action="{{ url_for('blog.add_review', id=post.id) }}" class="auth__form" style="margin-top:0.75rem;">
+                    <div class="auth__field">
+                        <label class="auth__label">Tu calificación</label>
+                        <div class="rating">
+                            {% for i in range(5, 0, -1) %}
+                                <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" required>
+                                <label for="star{{ i }}">★</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="auth__field">
+                        <label for="comment" class="auth__label">Comentario (opcional)</label>
+                        <textarea
+                            id="comment"
+                            name="comment"
+                            rows="4"
+                            class="auth__input"
+                            placeholder="Contá tu experiencia con este emprendimiento..."
+                        ></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn--primary auth__submit">
+                        Enviar reseña
+                    </button>
+                </form>
+            {% endif %}
+        </section>
+
+        <p style="margin-top:1.5rem; font-size:0.9rem;">
+            <a href="{{ url_for('blog.index') }}">← Volver al listado de emprendimientos</a>
+        </p>
+    </div>
+</section>
+{% endblock %}
