@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Mis emprendimientos – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Mis emprendimientos</h2>
+                <p class="section__subtitle">
+                    Acá podés ver y gestionar los emprendimientos asociados a tu cuenta.
+                </p>
+            </div>
+            <a href="{{ url_for('blog.create') }}" class="btn btn--primary">
+                + Crear nuevo emprendimiento
+            </a>
+        </div>
+
+        {% if posts %}
+            <div class="cards-grid">
+                {% for post in posts %}
+                    <article class="card">
+                        <div class="card__body">
+                            <div class="card__tags">
+                                <span class="badge badge--category">Mi emprendimiento</span>
+                            </div>
+                            <h3 class="card__title">{{ post.title }}</h3>
+                            <p class="card__location">ID #{{ post.id }}</p>
+                            <p class="card__description">
+                                {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
+                            </p>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="emprendimientos__empty" style="margin-top:1rem;">
+                <p>
+                    Todavía no registraste ningún emprendimiento.
+                    <a href="{{ url_for('blog.create') }}">Creá el primero acá.</a>
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

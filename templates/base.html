@@ -24,7 +24,7 @@
                 <a href="{{ url_for('index') }}" class="navbar__link navbar__link--active">Inicio</a>
                 <a href="#emprendimientos" class="navbar__link">Emprendimientos</a>
                 <a href="#" class="navbar__link">Eventos</a>
-                <a href="#" class="navbar__link">Sobre IMPULSAR</a>
+                <a href="{{ url_for('about.index') }}" class="navbar__link">Sobre IMPULSAR</a>
             </nav>
 
             <div class="navbar__actions">
@@ -68,15 +68,16 @@
     </main>
 
     <footer class="footer">
-        <div class="container footer__content">
-            <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
-            <div class="footer__links">
-                <a href="#" class="footer__link">Términos</a>
-                <a href="#" class="footer__link">Privacidad</a>
-                <a href="#" class="footer__link">Contacto</a>
-            </div>
+    <div class="container footer__content">
+        <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
+        <div class="footer__links">
+            <a href="{{ url_for('terms.index') }}" class="footer__link">Términos</a>
+            <a href="{{ url_for('privacy.index') }}" class="footer__link">Privacidad</a>
+            <a href="{{ url_for('contact.index') }}" class="footer__link">Contacto</a>
         </div>
-    </footer>
+    </div>
+</footer>
+
 
     <!-- JS principal -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

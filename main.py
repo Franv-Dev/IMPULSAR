@@ -11,6 +11,10 @@ import os
 from views.auth import auth
 from views.blog import blog
 from views.posts_api import posts_api
+from views.about import about
+from views.contact import contact
+from views.terms import terms
+from views.privacy import privacy
 
 
 # Cargar variables de entorno (.env)
@@ -39,7 +43,10 @@ migrate = Migrate(app, db)
 app.register_blueprint(auth)
 app.register_blueprint(blog)
 app.register_blueprint(posts_api)
-
+app.register_blueprint(about)
+app.register_blueprint(contact)
+app.register_blueprint(terms)
+app.register_blueprint(privacy)
 
 @app.route("/")
 def index():

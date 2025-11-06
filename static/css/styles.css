@@ -730,3 +730,63 @@ PÁGINAS DE AUTENTICACIÓN
         padding: 0.35rem 0.5rem;
     }
 }
+.about {
+    max-width: 720px;
+    font-size: 0.95rem;
+    color: var(--color-text);
+}
+
+.about__text {
+    margin: 0 0 0.75rem;
+    line-height: 1.6;
+}
+.contact {
+    max-width: 700px;
+    font-size: 0.95rem;
+    color: var(--color-text);
+}
+
+.contact__text {
+    margin: 0 0 1rem;
+    line-height: 1.6;
+}
+
+.contact__info {
+    margin: 1.5rem 0;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.contact__email {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+    background-color: var(--color-primary-soft);
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
+}
+
+.contact__email:hover {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    transform: translateY(-2px);
+}
+.legal {
+    max-width: 720px;
+    font-size: 0.95rem;
+    color: var(--color-text);
+}
+
+.legal__text {
+    margin: 0 0 0.9rem;
+    line-height: 1.7;
+}
+
+.legal__subtitle {
+    margin: 1.2rem 0 0.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+}

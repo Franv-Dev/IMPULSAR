@@ -14,7 +14,15 @@
                 </p>
 
                 <div class="hero__actions">
-                    <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Registrar mi emprendimiento</a>
+                    {% if g.user %}
+                        <a href="{{ url_for('blog.my_posts') }}" class="btn btn--primary">
+                            Registrar mi emprendimiento
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn--primary">
+                            Registrar mi emprendimiento
+                        </a>
+                    {% endif %}
                     <a href="#emprendimientos" class="btn btn--secondary">Ver emprendimientos</a>
                 </div>
             </div>
@@ -77,4 +85,5 @@
             </div>
         </div>
     </section>
+    
 {% endblock %}
