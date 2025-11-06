@@ -1,39 +1,85 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block header %}
-<h2 class="fw-bold text-primary">{% block title %}Registrar Usuario{% endblock %}</h2>
-{% endblock %}
+{% block title %}Registrarse – IMPULSAR{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <form method="POST" class="p-4 bg-white rounded shadow-sm w-100" style="max-width: 450px;">
-        <div class="mb-3">
-            <label for="username" class="form-label fw-semibold">Nombre de usuario</label>
-            <input type="text" name="username" id="username" class="form-control" required>
-        </div>
+<section class="auth">
+    <div class="container auth__container">
+        <div class="auth__card">
+            <h1 class="auth__title">Crear cuenta</h1>
+            <p class="auth__subtitle">
+                Registrá tu usuario para empezar a impulsar tu emprendimiento.
+            </p>
 
-        <div class="mb-3">
-            <label for="password" class="form-label fw-semibold">Contraseña</label>
-            <input type="password" name="password" id="password" class="form-control" required>
-        </div>
+            {# Mensajes flash (errores, avisos) #}
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
 
-        <div class="mb-3">
-            <label for="rol" class="form-label fw-semibold">Rol</label>
-            <select id="rol" name="rol" class="form-select">
-                <option value="client">Cliente</option>
-                <option value="enterprising">Emprendedor</option>
-            </select>
-        </div>
+            <form method="post" class="auth__form">
+                <div class="auth__field">
+                    <label for="username" class="auth__label">Usuario</label>
+                    <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        class="auth__input"
+                        placeholder="Elegí un nombre de usuario"
+                        required
+                    >
+                </div>
 
-        <div class="mb-4">
-            <label for="email" class="form-label fw-semibold">Email</label>
-            <input type="email" name="email" id="email" class="form-control" required>
-        </div>
+                <div class="auth__field">
+                    <label for="email" class="auth__label">Email</label>
+                    <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        class="auth__input"
+                        placeholder="tucorreo@ejemplo.com"
+                        required
+                    >
+                </div>
 
-        <div class="d-flex gap-2">
-            <input type="submit" value="Registrar" class="btn btn-custom flex-grow-1">
-            <a href="{{ url_for('blog.index') }}" class="btn btn-outline-secondary flex-grow-1 text-center">Cancelar</a>
+                <div class="auth__field">
+                    <label for="password" class="auth__label">Contraseña</label>
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        class="auth__input"
+                        placeholder="Mínimo 6 caracteres"
+                        required
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="rol" class="auth__label">Rol</label>
+                    <select id="rol" name="rol" class="auth__input">
+                        <option value="usuario">Usuario</option>
+                        <option value="emprendedor">Emprendedor</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    Crear cuenta
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                ¿Ya tenés una cuenta?
+                <a href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+            </p>
         </div>
-    </form>
-</div>
+    </div>
+</section>
 {% endblock %}

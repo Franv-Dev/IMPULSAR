@@ -1,26 +1,64 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block header %}
-<h2 class="fw-bold text-primary">{% block title %}Iniciar Sesión{% endblock %}</h2>
-{% endblock %}
+{% block title %}Iniciar sesión – IMPULSAR{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <form method="POST" class="p-4 bg-white rounded shadow-sm w-100" style="max-width: 400px;">
-        <div class="mb-3">
-            <label for="username" class="form-label fw-semibold">Nombre de usuario</label>
-            <input type="text" name="username" id="username" class="form-control" required>
-        </div>
+<section class="auth">
+    <div class="container auth__container">
+        <div class="auth__card">
+            <h1 class="auth__title">Iniciar sesión</h1>
+            <p class="auth__subtitle">
+                Accedé a tu cuenta de IMPULSAR para gestionar tus emprendimientos.
+            </p>
 
-        <div class="mb-4">
-            <label for="password" class="form-label fw-semibold">Contraseña</label>
-            <input type="password" name="password" id="password" class="form-control" required>
-        </div>
+            {# Mensajes flash (errores, avisos) #}
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
 
-        <div class="d-flex gap-2">
-            <input type="submit" value="Iniciar Sesión" class="btn btn-custom flex-grow-1">
-            <a href="{{ url_for('blog.index') }}" class="btn btn-outline-secondary flex-grow-1 text-center">Cancelar</a>
+            <form method="post" class="auth__form">
+                <div class="auth__field">
+                    <label for="username" class="auth__label">Usuario</label>
+                    <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        class="auth__input"
+                        placeholder="Tu nombre de usuario"
+                        required
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="password" class="auth__label">Contraseña</label>
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        class="auth__input"
+                        placeholder="••••••••"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    Iniciar sesión
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                ¿Todavía no tenés cuenta?
+                <a href="{{ url_for('auth.register') }}">Registrate</a>
+            </p>
         </div>
-    </form>
-</div>
+    </div>
+</section>
 {% endblock %}

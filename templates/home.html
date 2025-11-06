@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}IMPULSAR – Impulsá tu emprendimiento local{% endblock %}
+
+{% block content %}
+    <!-- HERO -->
+    <section class="hero">
+        <div class="container hero__content">
+            <div class="hero__text">
+                <h1 class="hero__title">Impulsá tu emprendimiento local</h1>
+                <p class="hero__subtitle">
+                    Centralizá la información de tu proyecto, mostrate a nuevos clientes
+                    y conectate con el ecosistema emprendedor de tu ciudad.
+                </p>
+
+                <div class="hero__actions">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Registrar mi emprendimiento</a>
+                    <a href="#emprendimientos" class="btn btn--secondary">Ver emprendimientos</a>
+                </div>
+            </div>
+
+            <div class="hero__image">
+                <div class="hero-illustration">
+                    <div class="hero-illustration__card hero-illustration__card--main"></div>
+                    <div class="hero-illustration__card hero-illustration__card--secondary"></div>
+                    <div class="hero-illustration__pin"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BUSCADOR -->
+    <section class="search">
+        <div class="container">
+            <form id="search-form" class="search__form">
+                <div class="search__group search__group--full">
+                    <span class="search__icon">🔍</span>
+                    <input
+                        id="search-text"
+                        type="text"
+                        class="search__input"
+                        placeholder="Buscar emprendimientos por nombre o descripción..."
+                    />
+                </div>
+                <button type="submit" class="btn btn--primary search__button">
+                    Buscar
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- SECCIÓN EMPRENDIMIENTOS -->
+    <section id="emprendimientos" class="section">
+        <div class="container">
+            <div class="section__header">
+                <div>
+                    <h2 class="section__title">Emprendimientos destacados</h2>
+                    <p class="section__subtitle">
+                        Esta lista se carga automáticamente desde la API de IMPULSAR.
+                    </p>
+                </div>
+                <a href="#emprendimientos" class="section__link">Ver todos</a>
+            </div>
+
+            <!-- GRID donde se insertan las cards con JS -->
+            <div id="posts-grid" class="cards-grid">
+                <!-- JS inyecta acá las tarjetas -->
+            </div>
+
+            <!-- Estados -->
+            <div id="posts-empty" class="emprendimientos__empty" style="display:none; margin-top:1rem;">
+                <p>No se encontraron emprendimientos.</p>
+            </div>
+
+            <div id="posts-error" class="emprendimientos__error" style="display:none; margin-top:1rem;">
+                <p>Ocurrió un error al cargar los emprendimientos. Intentá nuevamente más tarde.</p>
+            </div>
+        </div>
+    </section>
+{% endblock %}

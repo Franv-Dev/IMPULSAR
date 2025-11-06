@@ -1,46 +1,53 @@
-from flask import Flask,redirect,url_for
+from flask import Flask, redirect, url_for, render_template
 from config import DATABASE_DATABASE_URI
 from db import db
 from dotenv import load_dotenv
+from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
+import os
+
+
+# Blueprints
 from views.auth import auth
 from views.blog import blog
-from flask_jwt_extended import JWTManager
-import os
-from flask_migrate import Migrate
 from views.posts_api import posts_api
 
 
-
+# Cargar variables de entorno (.env)
 load_dotenv()
 
-app= Flask(__name__)#inicializar flask
+# Inicializar Flask
+app = Flask(__name__)
 
+# Configuración de base de datos
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_DATABASE_URI
-app.config["SQLALCHEMY_TRACK_MODIFICATION"] = False
-app.secret_key = os.getenv("SECRET_KEY")
+# OJO: es TRACK_MODIFICATIONS (plural)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-db.init_app(app)
-migrate = Migrate(app,db)
-#Token JWT
+# Secret key para sesiones
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
+
+# JWT
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "jwt-secret-change-me")
 jwt = JWTManager(app)
 
-#importar vistas
+# Inicializar extensiones
+db.init_app(app)
+migrate = Migrate(app, db)
+
+# Registrar blueprints
 app.register_blueprint(auth)
 app.register_blueprint(blog)
 app.register_blueprint(posts_api)
 
+
 @app.route("/")
 def index():
-    return redirect(url_for("blog.index"))
+    return render_template("home.html")
 
 
-with app.app_context():
-    db.drop_all()
-    db.create_all()
-
-
-
-
-if __name__ == "__main__":#para arrancar la app
-    app.run(debug=True) #-- arrancar la app(debug = para que se vaya actualizando)
+if __name__ == "__main__":
+    # Si querés crear tablas automáticamente en desarrollo, podés descomentar esto:
+    # with app.app_context():
+    #     db.create_all()
+    app.run(debug=True)
