@@ -398,16 +398,22 @@ main {
     box-shadow: var(--shadow-soft);
 }
 
+/* CARD EMPRENDIMIENTO */
+
 .card__image-wrapper {
     width: 100%;
     height: 160px;
     overflow: hidden;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
 }
 
 .card__image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    background-color: #f8f8f8;
 }
 
 .card__body {
@@ -910,8 +916,8 @@ textarea.auth__input {
 }
 
 /* =========================
-   PÁGINA DE DETALLE (BLOG/DETAIL)
-   ========================= */
+    PÁGINA DE DETALLE (BLOG/DETAIL)
+    ========================= */
 
 .post-detail-card {
     margin-bottom: 2.5rem;
@@ -1251,7 +1257,17 @@ textarea.auth__input {
     font-family: "Poppins", system-ui, sans-serif;
     font-size: 1.3rem;
     color: var(--color-text);
-    margin: 0 0 1.5rem 0;
+    /* CORRECCIÓN: Margen inferior más pequeño para que la dirección no esté tan separada */
+    margin: 0 0 0.5rem 0; 
+    text-align: left;
+}
+
+/* CLASE NUEVA para el texto de la dirección */
+.map-address-text {
+    font-size: 0.95rem;
+    color: var(--color-muted);
+    /* CORRECCIÓN: Aseguramos que el texto tenga espacio debajo para el mapa */
+    margin: 0 0 1.5rem 0; 
     text-align: left;
 }
 

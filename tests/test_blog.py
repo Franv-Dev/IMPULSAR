@@ -6,9 +6,9 @@ from models.post import Post
 from db import db
 
 
-# ============================
+
 # FIXTURES
-# ============================
+
 
 @pytest.fixture
 def app():
@@ -48,9 +48,9 @@ def login_as(client, user_id: int):
         sess["user_id"] = user_id
 
 
-# ============================
+
 # TESTS UNITARIOS
-# ============================
+
 
 def test_allowed_file_valid_extensions():
     """
@@ -119,9 +119,9 @@ def test_get_post_check_author_blocked_redirects(app):
             assert "/blog/mis-emprendimientos" in resp.location
 
 
-# ============================
+
 # TEST DE INTEGRACIÓN
-# ============================
+
 
 def test_flow_create_update_delete_post(client, app):
     """

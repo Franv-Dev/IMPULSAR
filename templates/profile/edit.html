@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Editar perfil – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="auth">
+    <div class="container auth__container">
+        <div class="auth__card">
+            <h1 class="auth__title">Editar mi perfil</h1>
+            <p class="auth__subtitle">
+                Actualizá tu biografía y tu ubicación.
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="auth__form">
+                
+                <div class="auth__field">
+                    <label for="biography" class="auth__label">Biografía</label>
+                    <textarea
+                        id="biography"
+                        name="biography"
+                        class="auth__input"
+                        placeholder="Aquí es donde tu historia brilla..."
+                        rows="6"
+                    >{{ user.biography or '' }}</textarea>
+                </div>
+
+                <div class="auth__field">
+                    <label for="address_street" class="auth__label">Tu Ubicación (opcional)</label>
+                    <input
+                        type="text"
+                        id="address_street"
+                        name="address_street"
+                        class="auth__input"
+                        placeholder="Ej: Calle, Nº, Distrito, Provincia (Ej: Av. San Martín 123, Maipú, Mendoza)"
+                        value="{{ user.address_street or '' }}"
+                    >
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Ingresá la dirección completa para el mapa: Calle, Nº, Distrito y Provincia.
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    Guardar cambios
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                Volver a
+                <a href="{{ url_for('profile.view_profile', user_id=user.id) }}">mi perfil</a>.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

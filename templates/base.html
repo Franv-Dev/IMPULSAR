@@ -5,14 +5,12 @@
     <title>{% block title %}IMPULSAR – Impulsá tu emprendimiento local{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Tipografías -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <!-- CSS principal -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
 </head>
 <body>
-    <!-- NAVBAR -->
     <header class="navbar">
         <div class="container navbar__content">
             <div class="navbar__logo">
@@ -71,7 +69,6 @@
             </div>
 
 
-            <!-- Botón mobile (queda para hacer funcional más adelante) -->
             <button class="navbar__toggle" aria-label="Abrir menú">
                 ☰
             </button>
@@ -94,7 +91,9 @@
 </footer>
 
 
-    <!-- JS principal -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+
 </body>
 </html>

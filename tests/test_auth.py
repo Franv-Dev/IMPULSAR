@@ -8,9 +8,9 @@ from db import db
 from main import app
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# ========================================
+
 # FIXTURE de aplicación Flask de prueba
-# ========================================
+
 @pytest.fixture
 def app():
     app = Flask(__name__)
@@ -71,10 +71,8 @@ def test_role_required_unauthorized(client):
     response = client.get("/admin-test")
     assert response.status_code in (401,403)
 
-# ========================================
-# TEST DE INTEGRACIÓN COMPLETO
-# ========================================
 
+# TEST DE INTEGRACIÓN COMPLETO
 def test_register_login_crud_flow(client):
     #  Registro
     resp = client.post("/auth/api/register", json={

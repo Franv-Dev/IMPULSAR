@@ -15,24 +15,30 @@ import requests
 blog = Blueprint("blog", __name__, url_prefix="/blog")
 
 def get_coordinates_from_address(address, api_key):
-    """Convierte una dirección en texto a (lat, lon) usando MapTiler."""
+    """Convierte una dirección en texto a (lat, lon) usando MapTiler, con alta precisión local."""
     if not address:
         return None, None
 
     try:
-        # Codificamos la dirección para la URL
-        encoded_address = requests.utils.quote(address)
+        # 1. AÑADIMOS CONTEXTO LOCAL y BBOX para mejorar la precisión
+        full_address = f"{address}, Mendoza, Argentina" 
+        encoded_address = requests.utils.quote(full_address)
         
-        # Limitamos la búsqueda a Argentina (country=AR) para mejores resultados
-        url = f"https://api.maptiler.com/geocoding/{encoded_address}.json?key={api_key}&country=AR&limit=1"
+        # Coordenadas aproximadas de la provincia de Mendoza
+        bbox_mendoza = "-70.9,-36.5,-66.5,-31.5"
+        
+        url = (
+            f"https://api.maptiler.com/geocoding/{encoded_address}.json?"
+            f"key={api_key}&country=AR&bbox={bbox_mendoza}&limit=1" # <--- Uso de BBOX y Country
+        )
         
         response = requests.get(url)
-        response.raise_for_status() # Lanza un error si la petición falla
+        response.raise_for_status() 
         
         data = response.json()
         
         if data and data.get("features"):
-            coords = data["features"][0].get("center") #obtenemos las coordenadas 
+            coords = data["features"][0].get("center") 
             if coords and len(coords) == 2:
                 longitude = coords[0]
                 latitude = coords[1]
@@ -97,12 +103,12 @@ def detail(id):
     avg_rating = round(avg_rating, 1) if avg_rating else None
 
     return render_template(
-        "blog/detail.html",
-        post=post,
-        author=author,
-        reviews=reviews,
-        avg_rating=avg_rating,
-        MAPTILER_KEY=current_app.config["MAPTILER_KEY"] # <--- 2. KEY DEL MAPA AÑADIDA
+            "blog/detail.html",
+            post=post,
+            author=author,
+            reviews=reviews,
+            avg_rating=avg_rating,
+            MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
 
 # Rutas privadas (usuario logueado)
@@ -128,11 +134,10 @@ def create():
         body = request.form.get("body", "").strip()
         file = request.files.get("image")
         
-        # --- 3. LÓGICA DE DIRECCIÓN AÑADIDA ---
         address_street = request.form.get("address_street", "").strip()
         latitude = None
         longitude = None
-        # --- FIN CAMBIOS ---
+        
 
         error = None
         filename = None
@@ -156,12 +161,12 @@ def create():
         if error:
             flash(error)
         else:
-            # --- 3. LÓGICA DE GEOCODIFICACIÓN AÑADIDA ---
+            # --- LÓGICA DE GEOCODIFICACIÓN (CREATE) ---
             if address_street:
                 api_key = current_app.config["MAPTILER_KEY"]
                 latitude, longitude = get_coordinates_from_address(address_street, api_key)
                 if not latitude:
-                    flash("No se pudo encontrar la dirección en el mapa, pero el post se guardó sin ubicación.")
+                    flash("No se pudo encontrar la dirección en el mapa, pero el post se guardó sin ubicación. Revisá el formato de la dirección.")
 
             post = Post(
                 author=g.user.id, 
@@ -196,11 +201,10 @@ def update(id):
         body = request.form.get("body", "").strip()
         file = request.files.get("image")
         
-        # --- 4. LÓGICA DE DIRECCIÓN AÑADIDA ---
         address_street = request.form.get("address_street", "").strip()
         latitude = post.latitude
         longitude = post.longitude
-        # --- FIN CAMBIOS ---
+        
 
         error = None
         if not title:
@@ -221,7 +225,7 @@ def update(id):
         if error:
             flash(error)
         else:
-            # --- 4. LÓGICA DE GEOCODIFICACIÓN AÑADIDA ---
+            # --- LÓGICA DE GEOCODIFICACIÓN (UPDATE) ---
             # Solo geocodificamos SI la dirección cambió
             if address_street != post.address_street:
                 if address_street:

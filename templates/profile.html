@@ -24,7 +24,7 @@
             {% endif %}
             
             {% if g.user and g.user.id == user.id %}
-            <a href="{{ url_for('profile.create') }}" class="enlace-biografia">
+            <a href="{{ url_for('profile.edit') }}" class="enlace-biografia">
                 {% if user.biography %}
                     Editar biografía
                 {% else %}
@@ -80,19 +80,17 @@
     <section class="profile-map-section">
         <h2>Ubicación</h2>
         {% if user.address_street %}
-            <p class="card__location" style="margin-top: -1rem; margin-bottom: 1rem;">{{ user.address_street }}</p>
+            <p class="card__location">{{ user.address_street }}</p>
         {% endif %}
         <div id="map"></div>
     </section>
 </div>
 
-<link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
-<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
-
 {% endblock %}
 
 
 {% block scripts %}
+<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const mapContainer = document.getElementById("map");
@@ -106,7 +104,7 @@
                 const map = new maplibregl.Map({
                     container: 'map',
                     style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
-                    center: [userLon, userLat], // <-- Usamos las coords del USUARIO
+                    center: [userLon, userLat],
                     zoom: 14,
                     interactive: true
                 });
@@ -115,7 +113,7 @@
 
                 new maplibregl.Marker({ color: "var(--color-primary, #6C63FF)" })
                     .setLngLat([userLon, userLat])
-                    .setPopup(new maplibregl.Popup().setText("{{ user.address_street or 'Ubicación' }}")) // <-- Mostramos la dirección
+                    .setPopup(new maplibregl.Popup().setText("{{ user.address_street or 'Ubicación' }}"))
                     .addTo(map);
             }
         {% else %}
