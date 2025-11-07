@@ -815,67 +815,265 @@ PÁGINAS DE AUTENTICACIÓN
 .rating label:hover ~ label {
     color: #FBBF24; /* amarillo tipo estrella */
 }
-
-/* Profile */
-.profile {
+/* === Perfil === */
+.profile-container {
     font-family: "Inter", sans-serif;
     color: #222;
-    max-width: 800px;
+    max-width: 850px;
     margin: 2rem auto;
     background: #fff;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    box-shadow: 0 0 12px rgba(0,0,0,0.1);
 }
 
-.profile__cover img {
+/* === Cabecera === */
+.profile-header {
+    position: relative;
+    text-align: center;
+}
+
+.cover-photo {
     width: 100%;
-    height: 200px;
+    height: 220px;
+    object-fit: cover;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.profile-avatar {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    border: 4px solid #fff;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.profile-avatar img {
+    width: 120px;
+    height: 120px;
     object-fit: cover;
 }
 
-.profile__info {
+/* === Cuerpo === */
+.profile-body {
+    padding: 4rem 2rem 2rem;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    padding: 1.5rem;
+    text-align: center;
     gap: 1.5rem;
 }
 
-.profile__avatar img {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid #fff;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-
-.profile__details {
+.profile-main {
     flex: 1;
+    max-width: 600px;
 }
 
-.profile__name {
-    font-size: 1.8rem;
+.username {
+    font-size: 2rem;
     font-weight: 700;
-    color: var(--color-primary, #007bff);
+    color: #6C63FF;
 }
 
-.profile__role,
-.profile__email {
+.role {
+    font-size: 1.1rem;
+    color: #666;
     margin-top: 0.3rem;
-    font-size: 1rem;
-    color: #555;
 }
 
-.profile__bio,
-.profile__posts {
-    padding: 1.5rem;
+.bio {
+    margin-top: 1rem;
+    color: #444;
+    font-size: 1rem;
+}
+
+/* === Estadísticas === */
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    margin-top: 1.5rem;
+    color: #333;
+}
+
+.profile-stats div {
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+.profile-stats span {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #000;
+}
+
+/* === Botones === */
+.profile-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-outline {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid #6C63FF;
+    background: #fff;
+    color: #6C63FF;
+    transition: background 0.3s;
+}
+
+.btn-outline:hover {
+    background: #e7f1ff;
+}
+
+.btn-primary {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: #6C63FF;
+    color: #fff;
+    transition: background 0.3s;
+}
+
+.btn-primary:hover {
+    background: #005fd1;
+}
+
+/* === Redes sociales uniformes === */
+.profile-social {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.2rem;
+    margin-top: 1.5rem;
+}
+
+.social-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: #f9f9fb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.social-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Tamaño base */
+.social-icon img {
+    display: block;
+    object-fit: contain;
+}
+
+/* Ajustes individuales */
+.social-icon.twitter img {
+    width: 75%;
+    height: 75%;
+}
+
+.social-icon.instagram img {
+    width: 60%;
+    height: 60%;
+}
+
+.social-icon.facebook img {
+    width: 75%;
+    height: 75%;
+}
+
+/* Hover personalizados */
+.social-icon.twitter:hover {
+    background: #1DA1F2;
+}
+
+.social-icon.instagram:hover {
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+}
+
+.social-icon.facebook:hover {
+    background: #1877F2;
+}
+
+/* === Publicaciones === */
+.profile-posts {
+    padding: 2rem;
     border-top: 1px solid #eee;
 }
 
-.profile__bio h2,
-.profile__posts h2 {
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
+.profile-posts h2 {
+    font-size: 1.4rem;
     color: #111;
+    margin-bottom: 1rem;
+}
+
+.post-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #fafafa;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.post-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.post-info h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.3rem;
+}
+
+.post-info p {
+    font-size: 0.95rem;
+    color: #555;
+}
+
+/* === Responsivo === */
+@media (max-width: 600px) {
+    .cover-photo {
+        height: 160px;
+    }
+
+    .profile-avatar img {
+        width: 90px;
+        height: 90px;
+    }
+
+    .profile-body {
+        padding: 3rem 1rem 1.5rem;
+    }
+
+    .post-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .post-img {
+        width: 100%;
+        height: 180px;
+    }
 }

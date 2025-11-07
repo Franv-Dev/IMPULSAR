@@ -4,31 +4,57 @@
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
 
-<div class="profile">
-    <div class="profile__cover">
-        <img src="{{ url_for('static', filename='img/default_cover.jpg') }}" alt="Portada">
-    </div>
-
-    <div class="profile__info">
-        <div class="profile__avatar">
-            <img src="{{ url_for('static', filename='uploads/usuario.ico') }}" alt="Avatar">
-        </div>
-
-        <div class="profile__details">
-            <h1 class="profile__name">{{ user.username }}</h1>
-            <p class="profile__role">Rol: {{ user.rol }}</p>
-            <p class="profile__email">Email: {{ user.email }}</p>
+<div class="profile-container">
+    <!-- Cabecera con portada -->
+    <div class="profile-header">
+        <img src="{{ url_for('static', filename='icons/portada.jpg') }}" alt="Portada" class="cover-photo">
+        <div class="profile-avatar">
+            <img src="{{ url_for('static', filename='icons/logo_perfil.png') }}" alt="Avatar">
         </div>
     </div>
 
-    <div class="profile__bio">
-        <h2>Acerca de {{ user.username }}</h2>
-        <p>Este es el perfil de {{ user.username }}. Podés agregar más información o publicaciones aquí.</p>
-    </div>
+    <!-- Cuerpo del perfil -->
+    <div class="profile-body">
+        <div class="profile-main">
+            <h1 class="username">{{ user.username }}</h1>
+            <p class="role">{{ user.rol }}</p>
+            <p class="bio">Apasionado por el desarrollo y la creación de proyectos innovadores.</p>
 
-    <div class="profile__posts">
+            <div class="profile-stats">
+                <div><span>1M</span><br>Seguidores</div>
+                <div><span>2</span><br>Proyectos</div>
+                <div><span>1</span><br>Siguiendo</div>
+            </div>
+
+            <div class="profile-actions">
+                <button class="btn-outline">Editar perfil</button>
+                <button class="btn-primary">Contactar</button>
+            </div>
+        </div>
+
+        <!-- Redes sociales -->
+        <div class="profile-social">
+            <a href="#" class="social-icon twitter">
+                <img src="{{ url_for('static', filename='icons/twitter.png') }}" alt="Twitter">
+            </a>
+            <a href="#" class="social-icon instagram">
+                <img src="{{ url_for('static', filename='icons/instagram.png') }}" alt="Instagram">
+            </a>
+            <a href="#" class="social-icon facebook">
+                <img src="{{ url_for('static', filename='icons/facebook.png') }}" alt="Facebook">
+            </a>
+        </div>
+
+    <!-- Publicaciones -->
+    <div class="profile-posts">
         <h2>Publicaciones</h2>
-        <p>No hay publicaciones por ahora.</p>
+        <div class="post-card">
+            <img src="{{ url_for('static', filename='icons/post_image.jpg') }}" alt="Post" class="post-img">
+            <div class="post-info">
+                <h3>My Project</h3>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce et justo vel arcu elementum volutpat.</p>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
