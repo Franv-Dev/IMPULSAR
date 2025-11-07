@@ -1,4 +1,5 @@
 from flask import Flask, redirect, url_for, render_template
+from views.profile import profile 
 from config import DATABASE_DATABASE_URI
 from db import db
 from dotenv import load_dotenv
@@ -8,6 +9,7 @@ import os
 
 
 # Blueprints
+from views import profile
 from views.auth import auth
 from views.blog import blog
 from views.posts_api import posts_api
@@ -47,7 +49,7 @@ app.register_blueprint(about)
 app.register_blueprint(contact)
 app.register_blueprint(terms)
 app.register_blueprint(privacy)
-
+app.register_blueprint(profile)
 @app.route("/")
 def index():
     return render_template("home.html")

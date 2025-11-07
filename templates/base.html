@@ -43,7 +43,7 @@
                         </button>
 
                         <div class="user-menu" id="user-menu">
-                            <a href="#" class="user-menu__item">
+                            <a href="{{ url_for('profile.view_profile', user_id=g.user.id) }}" class="user-menu__item">
                                 Ver perfil
                             </a>
                             <a href="{{ url_for('auth.logout') }}" class="user-menu__item user-menu__item--danger">
