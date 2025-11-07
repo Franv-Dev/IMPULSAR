@@ -11,12 +11,19 @@ class User(db.Model):
     email = db.Column(db.String(50))
     biography= db.Column(db.Text,default="biography")
 
-    def __init__(self, username, password, rol, email,biography="Biografía"):
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    address_street = db.Column(db.String(255), nullable=True)
+
+    def __init__(self, username, password, rol, email,biography="Biografía",latitude=None, longitude=None, address_street=None):
         self.username = username
         self.password = password
         self.rol = rol
         self.email = email
         self.biography = biography
+        self.latitude = latitude
+        self.longitude = longitude
+        self.address_street = address_street
 
     def __repr__(self):
         # Para debugging/logs
@@ -29,7 +36,10 @@ class User(db.Model):
             "username": self.username,
             "email": self.email,
             "rol": self.rol,
-            "biography" : self.biography
+            "biography" : self.biography,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "address_street": self.address_street
         }
 
     # Alias más estándar para usar en la API

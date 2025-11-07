@@ -57,6 +57,15 @@
                     {{ post.body }}
                 </div>
 
+                {% if post.latitude and post.longitude %}
+                <section class="post-map-section">
+                    <h3 class="section__title" style="font-size: 1.1rem; margin-top: 2rem;">Ubicación</h3>
+                    <p class="card__location" style="margin-top: -1rem; margin-bottom: 1rem;">
+                        {{ post.address_street }}
+                    </p>
+                    <div id="map" style="width: 100%; height: 300px; border-radius: var(--radius-md);"></div>
+                </section>
+                {% endif %}
                 {% if g.user and g.user.id == post.author %}
                     <div class="post-actions">
                         <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--secondary">
@@ -144,4 +153,36 @@
         <a href="{{ url_for('blog.index') }}" class="back-link">← Volver al listado</a>
     </div>
 </section>
+{% endblock %}
+
+
+{% block scripts %}
+<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const mapContainer = document.getElementById("map");
+    
+    // Solo si el post tiene coordenadas Y existe el div del mapa
+    {% if post.latitude and post.longitude %}
+    if (mapContainer) {
+        const postLat = {{ post.latitude }};
+        const postLon = {{ post.longitude }};
+
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
+            center: [postLon, postLat],
+            zoom: 14,
+            interactive: true
+        });
+
+        map.addControl(new maplibregl.NavigationControl());
+
+        new maplibregl.Marker({ color: "var(--color-primary, #6C63FF)" })
+            .setLngLat([postLon, postLat])
+            .addTo(map);
+    }
+    {% endif %}
+});
+</script>
 {% endblock %}

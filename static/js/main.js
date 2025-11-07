@@ -189,8 +189,9 @@ document.addEventListener("DOMContentLoaded", () => {
 // =============================
 // MENÚ DE USUARIO EN LA NAVBAR
 // =============================
-
 document.addEventListener("DOMContentLoaded", () => {
+    
+    // --- LÓGICA MENÚ DE USUARIO (la que ya tenías) ---
     const userToggle = document.querySelector(".navbar__user-toggle");
     const userMenu = document.getElementById("user-menu");
 
@@ -206,6 +207,27 @@ document.addEventListener("DOMContentLoaded", () => {
             userMenu.classList.remove("user-menu--open");
         });
     }
+
+    // --- LÓGICA MENÚ MÓVIL (NUEVO) ---
+    const mobileToggle = document.querySelector(".navbar__toggle");
+    const navbar = document.querySelector(".navbar"); // El contenedor principal
+
+    if (mobileToggle && navbar) {
+        mobileToggle.addEventListener("click", (event) => {
+            event.stopPropagation();
+            // Añade/quita la clase .navbar--mobile-open al <header class="navbar">
+            navbar.classList.toggle("navbar--mobile-open");
+        });
+    }
+
+    // Opcional: Cerrar menú móvil si se hace clic fuera de él (en 'main' o 'footer')
+    const mainContent = document.querySelector("main");
+    if (mainContent && navbar) {
+        mainContent.addEventListener("click", () => {
+            navbar.classList.remove("navbar--mobile-open");
+        });
+    }
+
 });
 // Mapa 
 document.addEventListener("DOMContentLoaded", () => {

@@ -150,6 +150,8 @@ main {
     border: none;
     background: transparent;
     font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--color-text);
 }
 
 /* BOTONES GENERALES */
@@ -499,14 +501,76 @@ main {
     }
 }
 
+/* === INICIO DE CAMBIOS RESPONSIVE === */
 @media (max-width: 768px) {
+    .navbar__content {
+        flex-wrap: wrap; /* Permite que los items bajen */
+    }
+
     .navbar__links,
     .navbar__actions {
+        /* Ocultos por defecto */
+        visibility: hidden;
+        max-height: 0;
+        overflow: hidden;
+        
+        /* Estilos de layout */
+        display: flex;
+        flex-direction: column;
+        width: 100%; /* Ocupan todo el ancho */
+        order: 3; /* Se van al final */
+        align-items: flex-start; /* Alineamos a la izquierda */
+        padding: 0;
+        gap: 0; /* Reseteamos gaps */
+
+        /* Transición */
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* Estilos para los links y botones dentro del menú */
+    .navbar__links .navbar__link,
+    .navbar__actions .btn {
+        width: 100%;
+        text-align: left;
+        padding: 0.75rem 0.5rem; /* Ajustamos padding para que quede alineado */
+        border-radius: 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .navbar__actions .btn {
+        padding: 0.75rem 0.5rem;
+        justify-content: flex-start;
+    }
+    .navbar__actions .btn--ghost {
+         border-bottom: none;
+    }
+
+    /* Ocultamos el '::after' del link activo en mobile */
+    .navbar__link--active::after {
         display: none;
+    }
+    /* Estilo del link activo en mobile */
+    .navbar__link--active {
+        background-color: var(--color-primary-soft);
+        color: var(--color-primary);
     }
 
     .navbar__toggle {
         display: block;
+        order: 2; /* Botón de hamburguesa va segundo */
+    }
+    
+    /* El logo va primero */
+    .navbar__logo {
+        order: 1;
+    }
+
+    /* --- ESTADO ABIERTO (Togglenado por JS) --- */
+    .navbar--mobile-open .navbar__links,
+    .navbar--mobile-open .navbar__actions {
+        visibility: visible;
+        max-height: 100vh; /* Alto máximo para que se vea */
+        padding: 0.5rem 0;
+        gap: 0;
     }
 
     .hero {
@@ -537,6 +601,9 @@ main {
         align-items: flex-start;
     }
 }
+/* === FIN DE CAMBIOS RESPONSIVE === */
+
+
 /* =========================
 PÁGINAS DE AUTENTICACIÓN
 ========================= */
@@ -841,6 +908,11 @@ textarea.auth__input {
 .rating label:hover ~ label {
     color: #FBBF24; /* amarillo tipo estrella */
 }
+
+/* =========================
+   PÁGINA DE DETALLE (BLOG/DETAIL)
+   ========================= */
+
 .post-detail-card {
     margin-bottom: 2.5rem;
     /* La clase .card ya aplica fondo, shadow y radius */

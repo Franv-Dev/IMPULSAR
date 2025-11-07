@@ -1,4 +1,6 @@
-from flask import (render_template, Blueprint, redirect, flash, g, request, url_for, current_app)
+from flask import (
+    render_template, Blueprint, redirect, flash, g, request, url_for, current_app
+)
 from werkzeug.exceptions import abort
 from models.post import Post
 from models.user import User
@@ -8,9 +10,39 @@ from werkzeug.utils import secure_filename
 import os, uuid
 from models.review import Review
 from sqlalchemy import func
-
+import requests
 
 blog = Blueprint("blog", __name__, url_prefix="/blog")
+
+def get_coordinates_from_address(address, api_key):
+    """Convierte una dirección en texto a (lat, lon) usando MapTiler."""
+    if not address:
+        return None, None
+
+    try:
+        # Codificamos la dirección para la URL
+        encoded_address = requests.utils.quote(address)
+        
+        # Limitamos la búsqueda a Argentina (country=AR) para mejores resultados
+        url = f"https://api.maptiler.com/geocoding/{encoded_address}.json?key={api_key}&country=AR&limit=1"
+        
+        response = requests.get(url)
+        response.raise_for_status() # Lanza un error si la petición falla
+        
+        data = response.json()
+        
+        if data and data.get("features"):
+            coords = data["features"][0].get("center") #obtenemos las coordenadas 
+            if coords and len(coords) == 2:
+                longitude = coords[0]
+                latitude = coords[1]
+                return latitude, longitude
+        
+        return None, None
+
+    except Exception as e:
+        print(f"Error de Geocoding: {e}")
+        return None, None
 
 # Configuración
 
@@ -43,6 +75,7 @@ def index():
     """Lista pública de emprendimientos."""
     posts = Post.query.order_by(Post.created.desc()).all()
     return render_template("blog/index.html", posts=posts, get_user=get_user)
+
 @blog.route("/<int:id>")
 def detail(id):
     """Detalle de un emprendimiento + reseñas."""
@@ -68,7 +101,8 @@ def detail(id):
         post=post,
         author=author,
         reviews=reviews,
-        avg_rating=avg_rating
+        avg_rating=avg_rating,
+        MAPTILER_KEY=current_app.config["MAPTILER_KEY"] # <--- 2. KEY DEL MAPA AÑADIDA
     )
 
 # Rutas privadas (usuario logueado)
@@ -93,6 +127,12 @@ def create():
         title = request.form.get("title", "").strip()
         body = request.form.get("body", "").strip()
         file = request.files.get("image")
+        
+        # --- 3. LÓGICA DE DIRECCIÓN AÑADIDA ---
+        address_street = request.form.get("address_street", "").strip()
+        latitude = None
+        longitude = None
+        # --- FIN CAMBIOS ---
 
         error = None
         filename = None
@@ -102,14 +142,11 @@ def create():
         elif not body:
             error = "Se requiere una descripción."
 
-        # Guardar imagen si hay
+        # ... (lógica de guardado de imagen) ...
         if file and file.filename != "":
             if allowed_file(file.filename):
-                # Crear carpeta si no existe
                 upload_dir = os.path.join(current_app.root_path, "static/uploads")
                 os.makedirs(upload_dir, exist_ok=True)
-
-                # Generar nombre único
                 filename = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
                 upload_path = os.path.join(upload_dir, filename)
                 file.save(upload_path)
@@ -119,7 +156,24 @@ def create():
         if error:
             flash(error)
         else:
-            post = Post(author=g.user.id, title=title, body=body, image=filename)
+            # --- 3. LÓGICA DE GEOCODIFICACIÓN AÑADIDA ---
+            if address_street:
+                api_key = current_app.config["MAPTILER_KEY"]
+                latitude, longitude = get_coordinates_from_address(address_street, api_key)
+                if not latitude:
+                    flash("No se pudo encontrar la dirección en el mapa, pero el post se guardó sin ubicación.")
+
+            post = Post(
+                author=g.user.id, 
+                title=title, 
+                body=body, 
+                image=filename,
+                latitude=latitude,
+                longitude=longitude,
+                address_street=address_street if address_street else None
+            )
+            # --- FIN CAMBIOS ---
+            
             db.session.add(post)
             db.session.commit()
             flash("Emprendimiento registrado correctamente.")
@@ -141,6 +195,12 @@ def update(id):
         title = request.form.get("title", "").strip()
         body = request.form.get("body", "").strip()
         file = request.files.get("image")
+        
+        # --- 4. LÓGICA DE DIRECCIÓN AÑADIDA ---
+        address_street = request.form.get("address_street", "").strip()
+        latitude = post.latitude
+        longitude = post.longitude
+        # --- FIN CAMBIOS ---
 
         error = None
         if not title:
@@ -161,8 +221,28 @@ def update(id):
         if error:
             flash(error)
         else:
+            # --- 4. LÓGICA DE GEOCODIFICACIÓN AÑADIDA ---
+            # Solo geocodificamos SI la dirección cambió
+            if address_street != post.address_street:
+                if address_street:
+                    api_key = current_app.config["MAPTILER_KEY"]
+                    latitude, longitude = get_coordinates_from_address(address_street, api_key)
+                    if not latitude:
+                        flash("No se pudo encontrar la nueva dirección, se mantuvo la anterior.")
+                        latitude = post.latitude # Revertimos si falla
+                        longitude = post.longitude
+                else:
+                    # El usuario borró la dirección
+                    latitude = None
+                    longitude = None
+
             post.title = title
             post.body = body
+            post.latitude = latitude
+            post.longitude = longitude
+            post.address_street = address_street if address_street else None
+            # --- FIN CAMBIOS ---
+
             db.session.commit()
             flash("Emprendimiento actualizado correctamente.")
             return redirect(url_for("blog.my_posts"))

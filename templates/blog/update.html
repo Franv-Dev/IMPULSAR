@@ -74,6 +74,20 @@
                     </small>
                 </div>
 
+                <div class="auth__field">
+                    <label for="address_street" class="auth__label">Dirección (opcional)</label>
+                    <input
+                        type="text"
+                        id="address_street"
+                        name="address_street"
+                        class="auth__input"
+                        placeholder="Ej: Av. San Martín 123, Mendoza"
+                        value="{{ post.address_street or '' }}"
+                    >
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Esto pondrá un marcador en el mapa de tu perfil.
+                    </small>
+                </div>
                 <button type="submit" class="btn btn--primary auth__submit">
                     Guardar cambios
                 </button>

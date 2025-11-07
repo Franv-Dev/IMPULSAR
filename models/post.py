@@ -12,11 +12,20 @@ class Post(db.Model):
     created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     image = db.Column(db.String(100), nullable=True)
 
-    def __init__(self, author, title, body, image=None):
+    #coordenadas 
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+
+    address_street = db.Column(db.String(255), nullable=True)
+
+    def __init__(self, author, title, body, image=None,latitude=None,longitude=None,address_street=None):
         self.author = author
         self.title = title
         self.body = body
         self.image = image
+        self.latitude = latitude
+        self.longitude = longitude
+        self.address_street = address_street
 
     def __repr__(self):
         return f"Post: {self.title}"
@@ -30,6 +39,9 @@ class Post(db.Model):
             "body": self.body,
             "image": self.image,
             "created": self.created.isoformat() if self.created else None,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "address_street": self.address_street
         }
 
     # Alias estándar para usar en las rutas JSON

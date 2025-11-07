@@ -23,6 +23,7 @@
                 <p class="biography biography--empty">Aún no tienes biografía. ¡Contanos tu historia!</p>
             {% endif %}
             
+            {% if g.user and g.user.id == user.id %}
             <a href="{{ url_for('profile.create') }}" class="enlace-biografia">
                 {% if user.biography %}
                     Editar biografía
@@ -30,6 +31,7 @@
                     Crear biografía
                 {% endif %}
             </a>
+            {% endif %}
 
             <div class="profile-stats">
                 <div><span>{{ user.followers_count or 0 }}</span>Seguidores</div>
@@ -38,8 +40,11 @@
             </div>
 
             <div class="profile-actions">
-                <a href="#" class="btn btn--secondary">Editar perfil</a>
-                <a href="#" class="btn btn--primary">Contactar</a>
+                {% if g.user and g.user.id == user.id %}
+                    <a href="{{ url_for('profile.edit') }}" class="btn btn--secondary">Editar perfil</a>
+                {% else %}
+                    <a href="#" class="btn btn--primary">Contactar</a>
+                {% endif %}
             </div>
         </div>
 
@@ -56,6 +61,7 @@
         </div>
     </div>
 
+    {% if g.user and g.user.id == user.id %}
     <div class="section__header">
         <div>
             <h2 class="section__title">Mis emprendimientos</h2>
@@ -64,41 +70,61 @@
             </p>
         </div>
         <div class="hero__actions">
-            <a href="/blog/mis-emprendimientos" class="btn btn--primary">
+            <a href="{{ url_for('blog.my_posts') }}" class="btn btn--primary">
                 Ver mis emprendimientos
             </a>
         </div>
     </div>
-
+    {% endif %}
 
     <section class="profile-map-section">
         <h2>Ubicación</h2>
+        {% if user.address_street %}
+            <p class="card__location" style="margin-top: -1rem; margin-bottom: 1rem;">{{ user.address_street }}</p>
+        {% endif %}
         <div id="map"></div>
     </section>
 </div>
 
 <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
-
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 
+{% endblock %}
+
+
+{% block scripts %}
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const mapContainer = document.getElementById("map");
-        if (!mapContainer) return;
+        
+        // Verificamos si el USUARIO tiene coordenadas
+        {% if user.latitude and user.longitude %}
+            if (mapContainer) {
+                const userLat = {{ user.latitude }};
+                const userLon = {{ user.longitude }};
 
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
-            center: [-68.8458, -32.8895], // Mendoza
-            zoom: 12
-        });
+                const map = new maplibregl.Map({
+                    container: 'map',
+                    style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
+                    center: [userLon, userLat], // <-- Usamos las coords del USUARIO
+                    zoom: 14,
+                    interactive: true
+                });
 
-        map.addControl(new maplibregl.NavigationControl());
+                map.addControl(new maplibregl.NavigationControl());
 
-        new maplibregl.Marker({ color: "var(--color-primary, #6C63FF)" }) // Usamos tu color primario
-            .setLngLat([-68.8458, -32.8895])
-            .setPopup(new maplibregl.Popup().setText("Mendoza, Argentina"))
-            .addTo(map);
+                new maplibregl.Marker({ color: "var(--color-primary, #6C63FF)" })
+                    .setLngLat([userLon, userLat])
+                    .setPopup(new maplibregl.Popup().setText("{{ user.address_street or 'Ubicación' }}")) // <-- Mostramos la dirección
+                    .addTo(map);
+            }
+        {% else %}
+            // Si el usuario no tiene ubicación, ocultamos toda la sección del mapa
+            const mapSection = document.querySelector(".profile-map-section");
+            if (mapSection) {
+                mapSection.style.display = "none";
+            }
+        {% endif %}
     });
 </script>
 {% endblock %}
