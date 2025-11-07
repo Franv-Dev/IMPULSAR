@@ -6,18 +6,12 @@ posts_api = Blueprint("posts_api", __name__, url_prefix="/api/posts")
 
 @posts_api.get("/")
 def list_posts():
-    """
-    Devuelve el listado de posts/emprendimientos en JSON.
-    """
+
     posts = Post.query.order_by(Post.created.desc()).all()
     return jsonify([p.to_dict() for p in posts]), 200
 
 
 @posts_api.get("/<int:post_id>")
 def get_post(post_id):
-    """
-    Devuelve un solo post por ID en JSON.
-    Si no existe, Flask devuelve 404.
-    """
     post = Post.query.get_or_404(post_id)
     return jsonify(post.to_dict()), 200

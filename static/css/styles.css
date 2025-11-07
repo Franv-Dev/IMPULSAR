@@ -915,9 +915,8 @@ textarea.auth__input {
     color: #FBBF24; /* amarillo tipo estrella */
 }
 
-/* =========================
-    PÁGINA DE DETALLE (BLOG/DETAIL)
-    ========================= */
+/* 
+    PÁGINA DE DETALLE (BLOG/DETAIL) */
 
 .post-detail-card {
     margin-bottom: 2.5rem;
@@ -1108,7 +1107,7 @@ textarea.auth__input {
     object-fit: cover;
 }
 
-/* === Cuerpo Principal (Info, Stats, Acciones) === */
+/*  Cuerpo Principal (Info, Stats, Acciones) */
 .profile-body {
     padding: 5rem 2rem 3rem; /* 4rem de padding-top + 1rem extra para el avatar */
     display: flex;
@@ -1122,7 +1121,7 @@ textarea.auth__input {
     width: 100%;
 }
 
-/* --- Info de Usuario --- */
+/*  Info de Usuario  */
 .username {
     font-family: "Poppins", system-ui, sans-serif;
     font-size: 2.25rem;
@@ -1191,10 +1190,10 @@ textarea.auth__input {
     justify-content: center;
     margin: 1.5rem 0;
 }
-/* No necesitamos .btn-outline o .btn-primary porque usamos las clases globales */
+/* No .btn-outline o .btn-primary porque usamos las clases globales */
 
 
-/* --- Redes Sociales --- */
+/*  Redes Sociales  */
 .profile-social {
     display: flex;
     justify-content: center;

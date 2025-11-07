@@ -95,7 +95,7 @@
     document.addEventListener("DOMContentLoaded", () => {
         const mapContainer = document.getElementById("map");
         
-        // Verificamos si el USUARIO tiene coordenadas
+        // Verifica si el USUARIO tiene coordenadas
         {% if user.latitude and user.longitude %}
             if (mapContainer) {
                 const userLat = {{ user.latitude }};
@@ -117,7 +117,7 @@
                     .addTo(map);
             }
         {% else %}
-            // Si el usuario no tiene ubicación, ocultamos toda la sección del mapa
+            // Si el usuario no tiene ubicación, oculta toda la sección del mapa
             const mapSection = document.querySelector(".profile-map-section");
             if (mapSection) {
                 mapSection.style.display = "none";

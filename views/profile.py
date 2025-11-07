@@ -11,7 +11,7 @@ import requests
 profile = Blueprint("profile", __name__, url_prefix="/perfil")
 
 
-# --- 1. FUNCIÓN HELPER DE GEOCODING (MANTENIDA) ---
+# --- 1. FUNCIÓN HELPER DE GEOCODING  ---
 def get_coordinates_from_address(address, api_key):
     """Convierte una dirección en texto a (lat, lon) usando MapTiler."""
     if not address:
@@ -99,7 +99,7 @@ def edit():
                 latitude = None
                 longitude = None
         
-        # 3. Guardamos todos los cambios en el usuario logueado
+        # 3. Guarda todos los cambios en el usuario logueado
         g.user.latitude = latitude
         g.user.longitude = longitude
         g.user.address_street = address_street if address_street else None
