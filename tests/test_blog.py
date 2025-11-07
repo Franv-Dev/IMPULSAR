@@ -53,10 +53,7 @@ def login_as(client, user_id: int):
 
 
 def test_allowed_file_valid_extensions():
-    """
-    Unitario 1 – Utilidad:
-    Verifica que allowed_file acepte solo extensiones válidas.
-    """
+
     assert allowed_file("foto.jpg")
     assert allowed_file("imagen.PNG")      
     assert allowed_file("algo.JPEG")
@@ -65,10 +62,7 @@ def test_allowed_file_valid_extensions():
 
 
 def test_user_model_creation(app):
-    """
-    Unitario 2 – Modelo:
-    Crea un usuario y verifica que se guarde correctamente en la BD.
-    """
+
     with app.app_context():
         u = User(
             username="testuser",
@@ -86,10 +80,7 @@ def test_user_model_creation(app):
 
 
 def test_get_post_check_author_blocked_redirects(app):
-    """
-    Unitario 3 – Lógica simple:
-    get_post debe redirigir si el usuario logueado NO es el autor.
-    """
+
     with app.app_context():
         autor = User(
             username="autor",
@@ -124,14 +115,7 @@ def test_get_post_check_author_blocked_redirects(app):
 
 
 def test_flow_create_update_delete_post(client, app):
-    """
-    Integración:
-    Flujo completo de publicación:
-    1) Usuario logueado crea una publicación
-    2) Actualiza la publicación
-    3) Elimina la publicación
-    4) Se verifica en la BD en cada paso
-    """
+    
     # 1) Crear usuario autor en la BD
     with app.app_context():
         autor = User(

@@ -103,9 +103,9 @@ def login_required(view):
     return wrapped_view
 
 
-# ============
-#  API JWT (JSON)  → /auth/api/...
-# ============
+
+#  API JWT (JSON)
+
 
 @auth.post("/api/register")
 def api_register():

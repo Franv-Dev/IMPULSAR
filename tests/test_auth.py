@@ -38,14 +38,13 @@ def client(app):
 
 
 def test_password_hashing():
-    """Verifica que el hash de la contraseña se genera y valida correctamente."""
+    
     plain = "mypassword"
     hashed = generate_password_hash(plain)
     assert check_password_hash(hashed, plain)
     assert not check_password_hash(hashed, "otra")
 
 def test_user_model_serialization(app):
-    """Valida que el modelo User se serializa correctamente."""
     usertest = User(username="test", email="test100@gmail.com", password="test123", rol="admin")
     db.session.add(usertest)
     db.session.commit()
@@ -54,7 +53,6 @@ def test_user_model_serialization(app):
     assert data["email"] == "test100@gmail.com"
 
 def test_role_required_unauthorized(client):
-    """Test simple de lógica: rol no autorizado devuelve 403."""
     from views.auth import role_required
     from flask import jsonify
 
