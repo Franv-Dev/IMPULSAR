@@ -44,9 +44,8 @@ def view_profile(user_id):
         MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
 
-# --- 2. RUTA DE BIOGRAFÍA: RENOMBRADA y CORREGIDA ---
-# Si la bio es lo único que se maneja, es mejor que apunte a EDIT.
-# Pero si necesitas mantenerla separada, la corregimos para que funcione.
+# --- 2. RUTA DE BIOGRAFÍA
+
 @profile.route("/create_bio", methods=("GET", "POST"))
 @login_required
 def create():
@@ -61,12 +60,12 @@ def create():
             flash("Biografía actualizada con éxito.")
             return redirect(url_for("profile.view_profile", user_id=g.user.id))
 
-    # CORRECCIÓN DE TEMPLATE: Si el template no existe, hay que cambiar la ruta:
-    # Asumiendo que has movido el template a profile/create_bio.html (la mejor práctica)
+    
+    
     return render_template("profile/create_bio.html")
 
 
-# --- 3. RUTA EDITAR PERFIL (FUNCIÓN CORRECTA) ---
+#  3. RUTA PERFIL 
 @profile.route("/edit", methods=("GET", "POST"))
 @login_required
 def edit():
