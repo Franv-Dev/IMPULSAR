@@ -1,6 +1,4 @@
-from flask import (
-    render_template, Blueprint, redirect, flash, g, request, url_for, current_app
-)
+from flask import (render_template, Blueprint, redirect, flash, g, request, url_for, current_app)
 from werkzeug.exceptions import abort
 from models.post import Post
 from models.user import User
@@ -14,9 +12,7 @@ from sqlalchemy import func
 
 blog = Blueprint("blog", __name__, url_prefix="/blog")
 
-# ---------------------------
 # Configuración
-# ---------------------------
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
@@ -24,10 +20,7 @@ def allowed_file(filename):
     """Verifica si el archivo tiene una extensión permitida."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
-# ---------------------------
 # Utilidades
-# ---------------------------
 
 def get_user(id):
     """Obtener usuario por ID o devolver 404."""
@@ -43,10 +36,7 @@ def get_post(id, check_author=True):
         return redirect(url_for("blog.my_posts"))
     return post
 
-
-# ---------------------------
 # Rutas públicas
-# ---------------------------
 
 @blog.route("/")
 def index():
@@ -57,7 +47,7 @@ def index():
 def detail(id):
     """Detalle de un emprendimiento + reseñas."""
     post = Post.query.get_or_404(id)
-
+    author = User.query.get(post.author)
     reviews = (
         Review.query
         .filter_by(post_id=id)
@@ -76,13 +66,12 @@ def detail(id):
     return render_template(
         "blog/detail.html",
         post=post,
+        author=author,
         reviews=reviews,
         avg_rating=avg_rating
     )
 
-# ---------------------------
 # Rutas privadas (usuario logueado)
-# ---------------------------
 
 @blog.route("/mis-emprendimientos")
 @login_required

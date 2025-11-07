@@ -5,19 +5,18 @@
 {% block content %}
 <section class="section">
     <div class="container" style="max-width: 900px;">
+        
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <div class="auth__messages" style="margin-bottom:1rem;">
                     {% for message in messages %}
-                        <div class="auth__alert">
-                            {{ message }}
-                        </div>
+                        <div class="auth__alert">{{ message }}</div>
                     {% endfor %}
                 </div>
             {% endif %}
         {% endwith %}
 
-        <div class="card" style="margin-bottom: 2rem;">
+        <div class="card post-detail-card">
             {% if post.image %}
                 <div class="card__image-wrapper">
                     <img
@@ -27,34 +26,39 @@
                     >
                 </div>
             {% endif %}
+            
             <div class="card__body">
                 <div class="card__tags">
                     <span class="badge badge--category">Emprendimiento</span>
                 </div>
-                <h1 class="card__title" style="font-size:1.4rem;">{{ post.title }}</h1>
+                
+                <h1 class="card__title" style="font-size:1.6rem;">{{ post.title }}</h1>
+                
                 <p class="card__location">
-                    Publicado por usuario #{{ g.user.username }}
+                    Publicado por 
+                    <a href="{{ url_for('profile.view_profile', user_id=author.id) }}" class="post-author-link">
+                        {{ author.username }}
+                    </a>
                 </p>
 
-                {% if avg_rating %}
-                    <p style="margin:0.5rem 0 0; font-size:0.9rem;">
-                        ⭐ {{ avg_rating }} / 5
-                        <span style="color:#6B7280;">(promedio de reseñas)</span>
-                    </p>
-                {% else %}
-                    <p style="margin:0.5rem 0 0; font-size:0.9rem; color:#6B7280;">
-                        Aún no hay reseñas.
-                    </p>
-                {% endif %}
+                <div class="post-rating">
+                    {% if avg_rating %}
+                        <span class="post-rating__stars">⭐</span> 
+                        <span class="post-rating__score">{{ avg_rating }} / 5</span>
+                        <span class="post-rating__count">(promedio de {{ reviews|length }} reseña{% if reviews|length != 1 %}s{% endif %})</span>
+                    {% else %}
+                        <span class="post-rating__count">Aún no hay reseñas.</span>
+                    {% endif %}
+                </div>
 
-                <hr style="margin:1rem 0; border:none; border-top:1px solid #E5E7EB;">
+                <hr class="card-divider">
 
-                <p style="margin:0; white-space:pre-line;">
+                <div class="post-body-content">
                     {{ post.body }}
-                </p>
+                </div>
 
                 {% if g.user and g.user.id == post.author %}
-                    <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <div class="post-actions">
                         <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--secondary">
                             Editar
                         </a>
@@ -68,57 +72,47 @@
             </div>
         </div>
 
-        <!-- RESEÑAS -->
-        <section style="margin-bottom: 2rem;">
-            <h2 class="section__title" style="font-size:1.1rem;">Reseñas</h2>
+        <section class="reviews-section">
+            <h2 class="section__title">Reseñas</h2>
 
             {% if reviews %}
-                <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:0.75rem;">
+                <div class="reviews-list">
                     {% for r in reviews %}
-                        <div style="background:#FFFFFF; border-radius:12px; padding:0.75rem 1rem; box-shadow:0 4px 12px rgba(15,23,42,0.04);">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
-                                <div>
-                                    <strong>Usuario #{{ r.user_id }}</strong>
-                                </div>
-                                <div style="color:#FBBF24; font-size:1rem;">
+                        <div class="review-card">
+                            <div class="review-card__header">
+                                <strong class="review-card__author">Usuario #{{ r.user_id }}</strong>
+                                <div class="review-card__stars">
                                     {% for i in range(1, 6) %}
                                         {% if i <= r.rating %}★{% else %}☆{% endif %}
                                     {% endfor %}
                                 </div>
                             </div>
-                            {% if r.comment %}
-                                <p style="margin:0; font-size:0.9rem; color:#4B5563;">
-                                    {{ r.comment }}
-                                </p>
-                            {% else %}
-                                <p style="margin:0; font-size:0.85rem; color:#9CA3AF;">
-                                    Sin comentario escrito.
-                                </p>
-                            {% endif %}
+                            <p class="review-card__comment {% if not r.comment %}review-card__comment--empty{% endif %}">
+                                {{ r.comment or 'Sin comentario escrito.' }}
+                            </p>
                         </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <p style="margin-top:0.5rem; color:#6B7280; font-size:0.9rem;">
+                <p class="reviews-empty">
                     Todavía no hay reseñas. ¡Sé la primera persona en opinar!
                 </p>
             {% endif %}
         </section>
 
-        <!-- FORMULARIO DE NUEVA RESEÑA -->
-        <section>
-            <h2 class="section__title" style="font-size:1.1rem;">Dejar una reseña</h2>
+        <section class="review-form-section">
+            <h2 class="section__title">Dejar una reseña</h2>
 
             {% if not g.user %}
-                <p style="font-size:0.9rem; color:#6B7280; margin-top:0.5rem;">
+                <p class="review-form-info">
                     Tenés que <a href="{{ url_for('auth.login') }}">iniciar sesión</a> para dejar una reseña.
                 </p>
             {% elif g.user.id == post.author %}
-                <p style="font-size:0.9rem; color:#6B7280; margin-top:0.5rem;">
+                <p class="review-form-info">
                     No podés dejar reseñas sobre tu propio emprendimiento.
                 </p>
             {% else %}
-                <form method="post" action="{{ url_for('blog.add_review', id=post.id) }}" class="auth__form" style="margin-top:0.75rem;">
+                <form method="post" action="{{ url_for('blog.add_review', id=post.id) }}" class="auth__form">
                     <div class="auth__field">
                         <label class="auth__label">Tu calificación</label>
                         <div class="rating">
@@ -147,9 +141,7 @@
             {% endif %}
         </section>
 
-        <p style="margin-top:1.5rem; font-size:0.9rem;">
-            <a href="{{ url_for('blog.index') }}">← Volver al listado de emprendimientos</a>
-        </p>
+        <a href="{{ url_for('blog.index') }}" class="back-link">← Volver al listado</a>
     </div>
 </section>
 {% endblock %}

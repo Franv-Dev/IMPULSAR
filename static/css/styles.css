@@ -92,6 +92,12 @@ main {
     font-size: 1rem;
 }
 
+.navbar__logo-image {
+    max-height: 50px; 
+    width: auto;
+    vertical-align: middle;
+}
+
 /* Links */
 
 .navbar__links {
@@ -834,6 +840,154 @@ textarea.auth__input {
 .rating label:hover,
 .rating label:hover ~ label {
     color: #FBBF24; /* amarillo tipo estrella */
+}
+.post-detail-card {
+    margin-bottom: 2.5rem;
+    /* La clase .card ya aplica fondo, shadow y radius */
+}
+
+.post-author-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.post-author-link:hover {
+    text-decoration: underline;
+}
+
+.post-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+}
+.post-rating__stars {
+    font-size: 1.1rem;
+    color: #FBBF24;
+}
+.post-rating__score {
+    font-weight: 600;
+    color: var(--color-text);
+}
+.post-rating__count {
+    color: var(--color-muted);
+}
+
+.card-divider {
+    margin: 1.25rem 0;
+    border: none;
+    border-top: 1px solid var(--color-border);
+}
+
+.post-body-content {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text);
+    white-space: pre-wrap; /* Respeta saltos de línea y ajusta al contenedor */
+}
+
+.post-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* --- Sección de Reseñas --- */
+.reviews-section,
+.review-form-section {
+    margin-bottom: 2.5rem;
+}
+
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.review-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-light);
+    border: 1px solid var(--color-border);
+}
+
+.review-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    gap: 1rem;
+}
+
+.review-card__author {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.review-card__stars {
+    color: #FBBF24; /* Amarillo estrella */
+    font-size: 1.1rem;
+    flex-shrink: 0; /* Evita que las estrellas se rompan */
+}
+
+.review-card__comment {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #4B5563; /* Un gris un poco más oscuro */
+    line-height: 1.5;
+}
+
+.review-card__comment--empty {
+    color: var(--color-muted);
+    font-style: italic;
+}
+
+.reviews-empty {
+    margin-top: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+/* --- Formulario de Reseña --- */
+.review-form-section .auth__form {
+    margin-top: 1rem;
+    /* Usamos la .auth__card pero sin el fondo/sombra */
+    max-width: 100%;
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+}
+
+.review-form-section .auth__field .rating {
+    /* Alinea las estrellas del formulario */
+    justify-content: flex-start; 
+}
+
+.review-form-info {
+    font-size: 0.9rem;
+    color: var(--color-muted);
+    margin-top: 0.5rem;
+}
+.review-form-info a {
+    color: var(--color-primary);
+}
+
+/* --- Link de Volver --- */
+.back-link {
+    display: inline-block;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+.back-link:hover {
+    text-decoration: underline;
 }
 /* === Perfil === */
 .profile-container {

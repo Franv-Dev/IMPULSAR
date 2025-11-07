@@ -54,7 +54,79 @@ function renderPosts(posts) {
         grid.appendChild(card);
     });
 }
+function renderPosts(posts) {
+    const grid = document.getElementById("posts-grid");
+    const emptyEl = document.getElementById("posts-empty");
 
+    if (!grid) return;
+
+    grid.innerHTML = "";
+
+    if (!posts || posts.length === 0) {
+        emptyEl.style.display = "block";
+        return;
+    } else {
+        emptyEl.style.display = "none";
+    }
+
+    posts.forEach((post) => {
+        const card = document.createElement("article");
+        card.className = "card";
+
+        const title = escapeHtml(post.title || "Emprendimiento sin título");
+        const body = escapeHtml(post.body || "");
+        const shortBody =
+            body.length > 150 ? body.slice(0, 150) + "..." : body;
+
+        // --- INICIO DE CAMBIOS ---
+        
+        // 1. Construimos las URLs que necesitamos
+        const postDetailUrl = `/blog/${post.id}`; // URL a la vista de detalle
+        const postImageUrl = post.image ? `/static/uploads/${escapeHtml(post.image)}` : null;
+
+        // 2. Variable para el HTML de la imagen (si existe)
+        let imageHtml = "";
+        if (postImageUrl) {
+            imageHtml = `
+            <a href="${postDetailUrl}" class="card__image-link">
+                <div class="card__image-wrapper">
+                    <img src="${postImageUrl}" alt="Imagen de ${title}" class="card__image">
+                </div>
+            </a>
+            `;
+        }
+
+        // 3. Textos genéricos (como ya tenías)
+        const categoryText = "Emprendimiento local";
+        const locationText = "Ubicación no especificada";
+
+        // 4. Actualizamos el innerHTML para incluir la imagen
+        //    y los links en el título y el botón.
+        card.innerHTML = `
+            ${imageHtml} 
+            <div class="card__body">
+                <div class="card__tags">
+                    <span class="badge badge--category">${categoryText}</span>
+                </div>
+                <h3 class="card__title">
+                    <a href="${postDetailUrl}" style="text-decoration:none; color:inherit;">
+                        ${title}
+                    </a>
+                </h3>
+                <p class="card__location">${locationText}</p>
+                <p class="card__description">${shortBody}</p>
+                <div style="margin-top:0.75rem; text-align:right;">
+                    <a href="${postDetailUrl}" class="btn btn--secondary" style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                        Ver detalle / Reseñas
+                    </a>
+                </div>
+            </div>
+        `;
+        // --- FIN DE CAMBIOS ---
+
+        grid.appendChild(card);
+    });
+}
 function applySearchFilter() {
     const input = document.getElementById("search-text");
     if (!input) return ALL_POSTS;

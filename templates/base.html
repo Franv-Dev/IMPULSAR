@@ -16,18 +16,31 @@
     <header class="navbar">
         <div class="container navbar__content">
             <div class="navbar__logo">
-                <span class="navbar__logo-mark">IMP</span>
-                <span class="navbar__logo-text">IMPULSAR</span>
+                <a href="{{ url_for('index') }}">
+                    <img src="{{ url_for('static', filename='icons/logo_impulsar.png') }}" alt="IMPULSAR" class="navbar__logo-image">
+                </a>
             </div>
+<nav class="navbar__links">
+    <nav class="navbar__links">
 
-            <nav class="navbar__links">
-                <nav class="navbar__links">
-                    <a href="{{ url_for('index') }}" class="navbar__link navbar__link--active">Inicio</a>
-                    <a href="{{ url_for('blog.index') }}" class="navbar__link">Emprendimientos</a>
-                    <a href="{{ url_for('about.index') }}" class="navbar__link">Sobre IMPULSAR</a>
-                    <a href="{{ url_for('contact.index') }}" class="navbar__link">Contacto</a>
-                </nav>
-            </nav>
+        <a href="{{ url_for('index') }}" class="navbar__link {% if request.endpoint == 'index' %}navbar__link--active{% endif %}">
+            Inicio
+        </a>
+        
+        <a href="{{ url_for('blog.index') }}" class="navbar__link {% if request.endpoint.startswith('blog.') %}navbar__link--active{% endif %}">
+            Emprendimientos
+        </a>
+        
+        <a href="{{ url_for('about.index') }}" class="navbar__link {% if request.endpoint == 'about.index' %}navbar__link--active{% endif %}">
+            Sobre IMPULSAR
+        </a>
+        
+        <a href="{{ url_for('contact.index') }}" class="navbar__link {% if request.endpoint == 'contact.index' %}navbar__link--active{% endif %}">
+            Contacto
+        </a>
+        
+    </nav>
+</nav>
 
             <div class="navbar__actions">
                 {% if g.user %}
