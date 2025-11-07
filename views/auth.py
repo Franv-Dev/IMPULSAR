@@ -151,7 +151,8 @@ def api_login():
         return jsonify({"error": "credenciales inválidas"}), 401
 
     token = create_access_token(
-        identity={"id": user.id, "rol": user.rol},
+        identity=str(user.id), 
+        additional_claims={"rol": user.rol},
         expires_delta=timedelta(hours=1)
     )
     return jsonify({"access_token": token, "user": user.serialize()}), 200
@@ -160,9 +161,16 @@ def api_login():
 @auth.get("/me")
 @jwt_required()
 def me():
-    """Ver identidad extraída del token."""
-    return jsonify({"current_user": get_jwt_identity()}), 200
+    ident = get_jwt_identity()
+    
+    # Si el token solo tiene un id (int), lo usamos directo.
+    user_id = ident["id"] if isinstance(ident, dict) else ident
+    
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "Usuario no encontrado"}), 404
 
+    return jsonify({"current_user": user.serialize()}), 200
 
 # ============
 #  Helpers de autorización por roles para usar en tus APIs
