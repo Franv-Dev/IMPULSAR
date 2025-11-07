@@ -46,10 +46,6 @@
                                 </a>
                             </h3>
 
-                            <p class="card__location">
-                                ID #{{ post.id }}
-                            </p>
-
                             <p class="card__description">
                                 {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
                             </p>

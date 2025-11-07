@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Biografía{% endblock %}
+
+{% block content %}
+    <section class="auth">
+    <div class="container auth__container">
+        <div class="auth__card">
+        <h1 class="auth__title">Crear Biografía</h1>
+        <p class="auth__subtitle">Contanos más sobre vos o tu emprendimiento.</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="auth__messages">
+                {% for message in messages %}
+                <div class="auth__alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('profile.create') }}">
+            <div class="auth__field">
+            <label for="body" class="auth__label">Biografía</label>
+            <textarea
+                id="body"
+                name="body"
+                class="auth__input"
+                placeholder="Contá brevemente sobre vos o tu emprendimiento"
+                required
+            ></textarea>
+            </div>
+
+            <button type="submit" class="btn btn--primary auth__submit">
+            Subir Biografía
+            </button>
+        </form>
+        </div>
+    </div>
+    </section>
+{% endblock %}

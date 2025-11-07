@@ -25,7 +25,7 @@ load_dotenv()
 # Inicializar Flask
 app = Flask(__name__)
 # Configuración de MapTiler
-app.config["MAPTILER_KEY"] = os.getenv("MAPTILER_KEY")
+app.config["MAPTILER_KEY"] = os.getenv("MAPTILER_KEY", MAPTILER_KEY)
 # Configuración de base de datos
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_DATABASE_URI
 # OJO: es TRACK_MODIFICATIONS (plural)

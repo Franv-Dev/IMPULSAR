@@ -18,7 +18,10 @@
         <div class="profile-main">
             <h1 class="username">{{ user.username }}</h1>
             <p class="role">{{ user.rol }}</p>
-            <p class="bio">Apasionado por el desarrollo y la creación de proyectos innovadores.</p>
+            <p class="biography">
+                {{ user.biography }}
+            </p>
+            <a href="{{ url_for('profile.create') }}">editar biografia</a>
 
             <div class="profile-stats">
                 <div><span>1M</span><br>Seguidores</div>
@@ -46,17 +49,20 @@
         </div>
     </div>
 
-    <!-- Publicaciones -->
-    <div class="profile-posts">
-        <h2>Publicaciones</h2>
-        <div class="post-card">
-            <img src="{{ url_for('static', filename='icons/post_image.jpg') }}" alt="Post" class="post-img">
-            <div class="post-info">
-                <h3>My Project</h3>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce et justo vel arcu elementum volutpat.</p>
-            </div>
-        </div>
+    <div class="section__header">
+                <div>
+                    <h2 class="section__title">Mis emprendimientos</h2>
+                    <p class="section__subtitle">
+                        Acá podés ver y gestionar los emprendimientos asociados a tu cuenta.
+                    </p>
+                </div>
+                <div class="hero__actions">
+                    <a href="/blog/mis-emprendimientos" class="btn btn--primary">
+                                Ver mis emprendimientos
+                    </a>
+                </div>
     </div>
+
 
 <!-- Sección de mapa -->
 <section class="profile-map-section">

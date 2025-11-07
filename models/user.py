@@ -9,12 +9,14 @@ class User(db.Model):
     password = db.Column(db.Text)
     rol = db.Column(db.String(50))
     email = db.Column(db.String(50))
+    biography= db.Column(db.Text,default="biography")
 
-    def __init__(self, username, password, rol, email):
+    def __init__(self, username, password, rol, email,biography="Biografía"):
         self.username = username
         self.password = password
         self.rol = rol
         self.email = email
+        self.biography = biography
 
     def __repr__(self):
         # Para debugging/logs
@@ -27,6 +29,7 @@ class User(db.Model):
             "username": self.username,
             "email": self.email,
             "rol": self.rol,
+            "biography" : self.biography
         }
 
     # Alias más estándar para usar en la API
