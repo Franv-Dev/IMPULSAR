@@ -135,3 +135,22 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+// Mapa 
+document.addEventListener("DOMContentLoaded", () => {
+    const mapContainer = document.getElementById("map");
+    if (!mapContainer) return; // si no hay mapa en esta página, salir
+
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
+        center: [-68.8458, -32.8895], // Mendoza, Argentina
+        zoom: 12
+    });
+
+    map.addControl(new maplibregl.NavigationControl());
+
+    new maplibregl.Marker({ color: "#007bff" })
+        .setLngLat([-68.8458, -32.8895])
+        .setPopup(new maplibregl.Popup().setText("Mendoza, Argentina"))
+        .addTo(map);
+});

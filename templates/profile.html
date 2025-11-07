@@ -44,6 +44,7 @@
                 <img src="{{ url_for('static', filename='icons/facebook.png') }}" alt="Facebook">
             </a>
         </div>
+    </div>
 
     <!-- Publicaciones -->
     <div class="profile-posts">
@@ -56,5 +57,38 @@
             </div>
         </div>
     </div>
-</div>
+
+<!-- Sección de mapa -->
+<section class="profile-map-section">
+    <h2>Ubicación</h2>
+    <div id="map"></div>
+</section>
+
+<!-- MapLibre CSS -->
+<link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+
+<!-- MapLibre JS -->
+<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+
+<!-- Script del mapa -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const mapContainer = document.getElementById("map");
+        if (!mapContainer) return;
+
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
+            center: [-68.8458, -32.8895], // Mendoza
+            zoom: 12
+        });
+
+        map.addControl(new maplibregl.NavigationControl());
+
+        new maplibregl.Marker({ color: "#007bff" })
+            .setLngLat([-68.8458, -32.8895])
+            .setPopup(new maplibregl.Popup().setText("Mendoza, Argentina"))
+            .addTo(map);
+    });
+</script>
 {% endblock %}

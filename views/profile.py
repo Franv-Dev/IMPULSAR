@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, current_app
 from models.user import User
 
 profile = Blueprint("profile", __name__, url_prefix="/perfil")
@@ -6,4 +6,8 @@ profile = Blueprint("profile", __name__, url_prefix="/perfil")
 @profile.route("/<int:user_id>")
 def view_profile(user_id):
     user = User.query.get_or_404(user_id)
-    return render_template("profile.html", user=user)
+    return render_template(
+        "profile.html",
+        user=user,
+        MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
+    )

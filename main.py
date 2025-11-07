@@ -1,6 +1,6 @@
 from flask import Flask, redirect, url_for, render_template
 from views.profile import profile 
-from config import DATABASE_DATABASE_URI
+from config import DATABASE_DATABASE_URI, MAPTILER_KEY
 from db import db
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
@@ -24,12 +24,12 @@ load_dotenv()
 
 # Inicializar Flask
 app = Flask(__name__)
-
+# Configuración de MapTiler
+app.config["MAPTILER_KEY"] = os.getenv("MAPTILER_KEY")
 # Configuración de base de datos
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_DATABASE_URI
 # OJO: es TRACK_MODIFICATIONS (plural)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
 # Secret key para sesiones
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
 
