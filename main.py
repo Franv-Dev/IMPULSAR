@@ -7,7 +7,6 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 import os
 
-
 # Blueprints
 from views import profile
 from views.auth import auth

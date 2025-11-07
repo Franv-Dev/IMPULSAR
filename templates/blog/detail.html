@@ -33,7 +33,7 @@
                 </div>
                 <h1 class="card__title" style="font-size:1.4rem;">{{ post.title }}</h1>
                 <p class="card__location">
-                    Publicado por usuario ID #{{ post.author }}
+                    Publicado por usuario #{{ g.user.username }}
                 </p>
 
                 {% if avg_rating %}

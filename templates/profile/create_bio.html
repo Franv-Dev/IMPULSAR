@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Crear Biografía{% endblock %}
+{% block title %}Tu Historia{% endblock %}
 
 {% block content %}
     <section class="auth">
     <div class="container auth__container">
         <div class="auth__card">
-        <h1 class="auth__title">Crear Biografía</h1>
-        <p class="auth__subtitle">Contanos más sobre vos o tu emprendimiento.</p>
+        <h1 class="auth__title">Tu historia, tu emprendimiento</h1>
+        <p class="auth__subtitle">Dejá que tu perfil cobre vida. Contanos sobre vos o el viaje de tu emprendimiento.</p>
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -19,20 +19,21 @@
             {% endif %}
         {% endwith %}
 
-        <form method="POST" action="{{ url_for('profile.create') }}">
+        <form method="POST" action="{{ url_for('profile.create') }}" class="auth__form">
             <div class="auth__field">
             <label for="body" class="auth__label">Biografía</label>
             <textarea
                 id="body"
                 name="body"
                 class="auth__input"
-                placeholder="Contá brevemente sobre vos o tu emprendimiento"
+                placeholder="Aquí es donde tu historia brilla. Describí brevemente quién sos y qué hace tu emprendimiento."
                 required
+                rows="6"
             ></textarea>
             </div>
 
             <button type="submit" class="btn btn--primary auth__submit">
-            Subir Biografía
+            Guardar Biografía
             </button>
         </form>
         </div>

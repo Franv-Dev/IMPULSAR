@@ -5,7 +5,6 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
 
 <div class="profile-container">
-    <!-- Cabecera con portada -->
     <div class="profile-header">
         <img src="{{ url_for('static', filename='icons/portada.jpg') }}" alt="Portada" class="cover-photo">
         <div class="profile-avatar">
@@ -13,70 +12,75 @@
         </div>
     </div>
 
-    <!-- Cuerpo del perfil -->
     <div class="profile-body">
         <div class="profile-main">
             <h1 class="username">{{ user.username }}</h1>
-            <p class="role">{{ user.rol }}</p>
-            <p class="biography">
-                {{ user.biography }}
-            </p>
-            <a href="{{ url_for('profile.create') }}">editar biografia</a>
+            <p class="role">{{ user.rol or 'Miembro de IMPULSAR' }}</p>
+            
+            {% if user.biography %}
+                <p class="biography">{{ user.biography }}</p>
+            {% else %}
+                <p class="biography biography--empty">Aún no tienes biografía. ¡Contanos tu historia!</p>
+            {% endif %}
+            
+            <a href="{{ url_for('profile.create') }}" class="enlace-biografia">
+                {% if user.biography %}
+                    Editar biografía
+                {% else %}
+                    Crear biografía
+                {% endif %}
+            </a>
 
             <div class="profile-stats">
-                <div><span>1M</span><br>Seguidores</div>
-                <div><span>2</span><br>Proyectos</div>
-                <div><span>1</span><br>Siguiendo</div>
+                <div><span>{{ user.followers_count or 0 }}</span>Seguidores</div>
+                <div><span>{{ user.projects_count or 0 }}</span>Proyectos</div>
+                <div><span>{{ user.following_count or 0 }}</span>Siguiendo</div>
             </div>
 
             <div class="profile-actions">
-                <button class="btn-outline">Editar perfil</button>
-                <button class="btn-primary">Contactar</button>
+                <a href="#" class="btn btn--secondary">Editar perfil</a>
+                <a href="#" class="btn btn--primary">Contactar</a>
             </div>
         </div>
 
-        <!-- Redes sociales -->
         <div class="profile-social">
-            <a href="#" class="social-icon twitter">
+            <a href="#" class="social-icon twitter" target="_blank" rel="noopener noreferrer">
                 <img src="{{ url_for('static', filename='icons/twitter.png') }}" alt="Twitter">
             </a>
-            <a href="#" class="social-icon instagram">
+            <a href="#" class="social-icon instagram" target="_blank" rel="noopener noreferrer">
                 <img src="{{ url_for('static', filename='icons/instagram.png') }}" alt="Instagram">
             </a>
-            <a href="#" class="social-icon facebook">
+            <a href="#" class="social-icon facebook" target="_blank" rel="noopener noreferrer">
                 <img src="{{ url_for('static', filename='icons/facebook.png') }}" alt="Facebook">
             </a>
         </div>
     </div>
 
     <div class="section__header">
-                <div>
-                    <h2 class="section__title">Mis emprendimientos</h2>
-                    <p class="section__subtitle">
-                        Acá podés ver y gestionar los emprendimientos asociados a tu cuenta.
-                    </p>
-                </div>
-                <div class="hero__actions">
-                    <a href="/blog/mis-emprendimientos" class="btn btn--primary">
-                                Ver mis emprendimientos
-                    </a>
-                </div>
+        <div>
+            <h2 class="section__title">Mis emprendimientos</h2>
+            <p class="section__subtitle">
+                Acá podés ver y gestionar los emprendimientos asociados a tu cuenta.
+            </p>
+        </div>
+        <div class="hero__actions">
+            <a href="/blog/mis-emprendimientos" class="btn btn--primary">
+                Ver mis emprendimientos
+            </a>
+        </div>
     </div>
 
 
-<!-- Sección de mapa -->
-<section class="profile-map-section">
-    <h2>Ubicación</h2>
-    <div id="map"></div>
-</section>
+    <section class="profile-map-section">
+        <h2>Ubicación</h2>
+        <div id="map"></div>
+    </section>
+</div>
 
-<!-- MapLibre CSS -->
 <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
 
-<!-- MapLibre JS -->
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 
-<!-- Script del mapa -->
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const mapContainer = document.getElementById("map");
@@ -91,7 +95,7 @@
 
         map.addControl(new maplibregl.NavigationControl());
 
-        new maplibregl.Marker({ color: "#007bff" })
+        new maplibregl.Marker({ color: "var(--color-primary, #6C63FF)" }) // Usamos tu color primario
             .setLngLat([-68.8458, -32.8895])
             .setPopup(new maplibregl.Popup().setText("Mendoza, Argentina"))
             .addTo(map);

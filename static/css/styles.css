@@ -28,6 +28,14 @@ body {
     font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: var(--color-text);
     background-color: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 /* UTILIDADES GENERALES */
@@ -528,7 +536,12 @@ PÁGINAS DE AUTENTICACIÓN
 ========================= */
 
 .auth {
-    padding: 3rem 0 3.5rem;
+    padding: 3rem 1.5rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
 }
 
 .auth__container {
@@ -603,6 +616,13 @@ PÁGINAS DE AUTENTICACIÓN
     box-shadow: 0 0 0 1px var(--color-primary-soft);
 }
 
+textarea.auth__input {
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 120px;
+}
+
+
 .auth__submit {
     width: 100%;
     margin-top: 0.5rem;
@@ -629,8 +649,8 @@ PÁGINAS DE AUTENTICACIÓN
     }
 }
 /* =========================
-   MENÚ DE USUARIO EN NAVBAR
-   ========================= */
+    MENÚ DE USUARIO EN NAVBAR
+    ========================= */
 
 .navbar__user {
     position: relative;
@@ -817,192 +837,165 @@ PÁGINAS DE AUTENTICACIÓN
 }
 /* === Perfil === */
 .profile-container {
-    font-family: "Inter", sans-serif;
-    color: #222;
-    max-width: 850px;
-    margin: 2rem auto;
-    background: #fff;
-    border-radius: 12px;
+    max-width: 900px;
+    margin: 2rem auto 3rem auto;
+    background-color: var(--color-white);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow: 0 0 12px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-soft);
 }
 
-/* === Cabecera === */
+/* === Cabecera (Portada y Avatar) === */
 .profile-header {
     position: relative;
-    text-align: center;
+    background-color: var(--color-bg); /* Color de fondo mientras carga la imagen */
 }
 
 .cover-photo {
     width: 100%;
-    height: 220px;
+    height: 240px;
     object-fit: cover;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
 }
 
 .profile-avatar {
     position: absolute;
-    bottom: -60px;
+    bottom: -60px; /* Mitad del avatar (120px) */
     left: 50%;
     transform: translateX(-50%);
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
-    border: 4px solid #fff;
+    border: 4px solid var(--color-white);
     overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-light);
 }
 
 .profile-avatar img {
-    width: 120px;
-    height: 120px;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
 }
 
-/* === Cuerpo === */
+/* === Cuerpo Principal (Info, Stats, Acciones) === */
 .profile-body {
-    padding: 4rem 2rem 2rem;
+    padding: 5rem 2rem 3rem; /* 4rem de padding-top + 1rem extra para el avatar */
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 1.5rem;
 }
 
 .profile-main {
-    flex: 1;
     max-width: 600px;
+    width: 100%;
 }
 
+/* --- Info de Usuario --- */
 .username {
-    font-size: 2rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 2.25rem;
     font-weight: 700;
-    color: #6C63FF;
+    color: var(--color-text);
+    margin: 0 0 0.25rem 0;
+    line-height: 1.2;
 }
 
 .role {
     font-size: 1.1rem;
-    color: #666;
-    margin-top: 0.3rem;
+    color: var(--color-muted);
+    margin: 0 0 1rem 0;
 }
 
-.bio {
-    margin-top: 1rem;
-    color: #444;
+.biography {
     font-size: 1rem;
+    color: var(--color-text);
+    line-height: 1.6;
+    margin: 0 0 1rem 0;
 }
 
-/* === Estadísticas === */
+.biography--empty {
+    color: var(--color-muted);
+    font-style: italic;
+}
+
+.enlace-biografia {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95em;
+    transition: all 0.2s ease;
+}
+
+.enlace-biografia:hover {
+    color: #5c55e6; /* Tono más oscuro de --color-primary */
+    text-decoration: underline;
+}
+
+/* --- Estadísticas --- */
 .profile-stats {
     display: flex;
     justify-content: center;
-    gap: 2.5rem;
-    margin-top: 1.5rem;
-    color: #333;
+    gap: 3rem;
+    margin: 2rem 0;
+    font-size: 0.95rem;
 }
 
 .profile-stats div {
-    text-align: center;
-    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--color-muted);
 }
 
 .profile-stats span {
     display: block;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #000;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
 }
 
-/* === Botones === */
+/* --- Botones de Acción --- */
 .profile-actions {
-    margin-top: 1.5rem;
     display: flex;
     gap: 1rem;
     justify-content: center;
+    margin: 1.5rem 0;
 }
+/* No necesitamos .btn-outline o .btn-primary porque usamos las clases globales */
 
-.btn-outline {
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid #6C63FF;
-    background: #fff;
-    color: #6C63FF;
-    transition: background 0.3s;
-}
 
-.btn-outline:hover {
-    background: #e7f1ff;
-}
-
-.btn-primary {
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    background: #6C63FF;
-    color: #fff;
-    transition: background 0.3s;
-}
-
-.btn-primary:hover {
-    background: #005fd1;
-}
-
-/* === Redes sociales uniformes === */
+/* --- Redes Sociales --- */
 .profile-social {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 1.2rem;
-    margin-top: 1.5rem;
+    gap: 1.25rem;
+    margin-top: 2.5rem; /* Más separación de las acciones */
 }
 
 .social-icon {
-    width: 45px;
-    height: 45px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    background: #f9f9fb;
+    background: var(--color-bg);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: var(--shadow-light);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .social-icon:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft);
 }
 
-/* Tamaño base */
 .social-icon img {
-    display: block;
+    width: 55%; /* 24px aprox */
+    height: 55%;
     object-fit: contain;
 }
 
-/* Ajustes individuales */
-.social-icon.twitter img {
-    width: 75%;
-    height: 75%;
-}
-
-.social-icon.instagram img {
-    width: 60%;
-    height: 60%;
-}
-
-.social-icon.facebook img {
-    width: 75%;
-    height: 75%;
-}
-
-/* Hover personalizados */
 .social-icon.twitter:hover {
-    background: #1DA1F2;
+    background-color: #1DA1F2;
 }
 
 .social-icon.instagram:hover {
@@ -1010,97 +1003,35 @@ PÁGINAS DE AUTENTICACIÓN
 }
 
 .social-icon.facebook:hover {
-    background: #1877F2;
+    background-color: #1877F2;
 }
 
-/* === Publicaciones === */
-.profile-posts {
-    padding: 2rem;
-    border-top: 1px solid #eee;
+/* === Sección Emprendimientos === */
+/* Esta sección usa .section__header de tu styles.css, pero la separamos del cuerpo */
+.section__header {
+    padding: 2rem 2rem 1.5rem;
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-bg);
 }
 
-.profile-posts h2 {
-    font-size: 1.4rem;
-    color: #111;
-    margin-bottom: 1rem;
-}
-
-.post-card {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    background: #fafafa;
-    padding: 1rem;
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.post-img {
-    width: 100px;
-    height: 100px;
-    border-radius: 10px;
-    object-fit: cover;
-}
-
-.post-info h3 {
-    font-size: 1.1rem;
-    margin-bottom: 0.3rem;
-}
-
-.post-info p {
-    font-size: 0.95rem;
-    color: #555;
-}
-
-/* === Responsivo === */
-@media (max-width: 600px) {
-    .cover-photo {
-        height: 160px;
-    }
-
-    .profile-avatar img {
-        width: 90px;
-        height: 90px;
-    }
-
-    .profile-body {
-        padding: 3rem 1rem 1.5rem;
-    }
-
-    .post-card {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .post-img {
-        width: 100%;
-        height: 180px;
-    }
-}
-/* --- Mapa del perfil --- */
+/* === Sección Mapa === */
 .profile-map-section {
-    padding: 1.5rem;
-    border-top: 1px solid #eee;
-    text-align: center;
-    background: #fafafa;
+    padding: 2rem;
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-white);
 }
 
 .profile-map-section h2 {
+    font-family: "Poppins", system-ui, sans-serif;
     font-size: 1.3rem;
-    color: #111;
-    margin-bottom: 1rem;
-    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 1.5rem 0;
+    text-align: left;
 }
 
 #map {
     width: 100%;
-    height: 350px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-
-#map:hover {
-    transform: scale(1.01);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    height: 300px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-light);
 }

@@ -34,7 +34,7 @@
                                 {% set author = get_user(post.author) %}
                                 {% if author %}
                                     <span class="badge" style="background:#F3F4F6;color:#4B5563;">
-                                        {{ author.username }}
+                                        {{ g.user.username }}
                                     </span>
                                 {% endif %}
                             </div>
