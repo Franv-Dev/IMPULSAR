@@ -53,6 +53,7 @@ def index():
     """Lista pública de emprendimientos."""
     posts = Post.query.order_by(Post.created.desc()).all()
     return render_template("blog/index.html", posts=posts, get_user=get_user)
+
 @blog.route("/<int:id>")
 def detail(id):
     """Detalle de un emprendimiento + reseñas."""
@@ -198,6 +199,7 @@ def delete(id):
         db.session.rollback()
         flash("Error al eliminar el emprendimiento.")
     return redirect(url_for("blog.my_posts"))
+
 
 @blog.route("/<int:id>/review", methods=["POST"])
 @login_required
