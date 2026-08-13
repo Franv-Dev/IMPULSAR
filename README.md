@@ -113,18 +113,21 @@ pip install -r requirements.txt
 > ```
 
 ### 4️⃣ Configurar las variables de entorno
-Crea un archivo `.env` basado en el siguiente ejemplo:
+Copiá el archivo de ejemplo y completá los valores:
 
-```ini
-FLASK_APP=main.py
-FLASK_ENV=development
-SECRET_KEY=tu_clave_secreta
-JWT_SECRET_KEY=jwt_clave_secreta
-DB_USER=root
-DB_PASSWORD=tu_contraseña
-DB_NAME=impulsar_db
-DB_HOST=localhost
+```bash
+copy .env.example .env    # Windows
+cp .env.example .env      # Linux/Mac
 ```
+
+Para generar las claves de seguridad:
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+> En **desarrollo** podés dejar `SECRET_KEY` y `JWT_SECRET_KEY` vacías: hay valores
+> por defecto. En **producción** son obligatorias y la app no arranca sin ellas,
+> a propósito: arrancar con una clave conocida permitiría falsificar sesiones y tokens.
 
 ### 5️⃣ Crear la base de datos
 ```sql
@@ -133,14 +136,15 @@ CREATE DATABASE impulsar_db;
 
 ### 6️⃣ Aplicar migraciones
 ```bash
-flask db init
-flask db migrate -m "Initial migration"
-flask db upgrade
+flask --app main db upgrade
 ```
+
+> No hace falta `flask db init`: la carpeta `migrations/` ya está en el repo.
+> Usá `flask --app main db migrate -m "descripción"` solo cuando cambies los modelos.
 
 ### 7️⃣ Ejecutar la aplicación
 ```bash
-flask run
+flask --app main run
 ```
 
 Abrí tu navegador en:  
@@ -196,23 +200,50 @@ Body:
 ```
 
 ### 4️⃣ Obtener emprendimientos
-**GET** `/api/posts`
+**GET** `/api/posts/`
+
+Parámetros opcionales:
+
+| Parámetro | Descripción | Por defecto |
+|-----------|-------------|-------------|
+| `page` | Número de página | `1` |
+| `per_page` | Resultados por página (máximo 50) | `9` |
+| `q` | Texto a buscar en título y descripción | — |
+
+**Respuesta:**
+```json
+{
+  "items": [ { "id": 1, "title": "Panificados San Luis", "...": "..." } ],
+  "page": 1,
+  "per_page": 9,
+  "pages": 3,
+  "total": 25,
+  "has_next": true,
+  "has_prev": false
+}
+```
 
 ---
 
 ## 🧪 Cómo ejecutar las pruebas
 
-El proyecto incluye pruebas unitarias para la API y autenticación:
+La suite cubre autenticación, roles, CRUD de emprendimientos, permisos, reseñas,
+geocoding, subida de imágenes, paginación y configuración de la app.
 
 ```bash
 pytest -v
 ```
 
-**Ejemplo de salida:**
+Los tests usan **SQLite en memoria**, así que no necesitás tener MySQL corriendo
+ni configurar nada: la base se crea y se destruye en cada test.
+
+```bash
+pytest tests/test_blog.py            # solo un archivo
+pytest -k resenia                    # solo los tests que coincidan con un nombre
 ```
-tests/test_auth.py::test_register_login_crud_flow PASSED
-tests/test_blog.py::test_flow_create_update_delete_post PASSED
-```
+
+Se ejecutan también automáticamente en cada push y Pull Request
+(ver `.github/workflows/tests.yml`).
 
 ---
 
@@ -239,18 +270,31 @@ Incluye ejemplos de:
 
 ---
 
-## 🧩 .env.example
+## 🧩 Variables de entorno
 
-```ini
-FLASK_APP=main.py
-FLASK_ENV=development
-SECRET_KEY=clave-secreta-impulsar
-JWT_SECRET_KEY=jwt-secreto-impulsar
-DB_USER=root
-DB_PASSWORD=123456
-DB_NAME=impulsar_db
-DB_HOST=localhost
+Están documentadas en [`.env.example`](.env.example), que se copia como `.env`
+(ver paso 4️⃣ de la instalación). Ese archivo nunca se sube al repositorio.
+
+---
+
+## 🏗️ Estructura del proyecto
+
 ```
+main.py               create_app(): arma y configura la aplicación
+config.py             Configuración por entorno (development/testing/production)
+db.py                 Instancia de SQLAlchemy y utilidades comunes
+models/               Modelos de datos (User, Post, Review)
+views/                Blueprints: auth, blog, profile, api y páginas estáticas
+services/             Lógica reutilizable: geocoding y subida de imágenes
+templates/            Plantillas Jinja2
+static/               CSS, JS, íconos e imágenes subidas
+migrations/           Historial de migraciones de Alembic
+tests/                Suite de pytest (conftest.py tiene las fixtures)
+```
+
+El proyecto usa el patrón **application factory**: la app no se crea al importar
+el módulo sino dentro de `create_app()`, lo que permite levantarla con distintas
+configuraciones (por ejemplo, SQLite en memoria para los tests).
 
 ---
 
