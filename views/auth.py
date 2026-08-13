@@ -8,7 +8,7 @@ import functools
 
 # --- JWT ---
 from flask_jwt_extended import (
-    JWTManager, create_access_token, jwt_required, get_jwt_identity
+    JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 )
 from datetime import timedelta
 
@@ -162,11 +162,9 @@ def api_login():
 @auth.get("/me")
 @jwt_required()
 def me():
-    ident = get_jwt_identity()
-    
-   
-    user_id = ident["id"] if isinstance(ident, dict) else ident # Si el token solo tiene un id (int), lo usamos directo.
-    
+    # La identity siempre es el id del usuario como string (ver api_login).
+    user_id = get_jwt_identity()
+
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "Usuario no encontrado"}), 404
@@ -180,12 +178,17 @@ def me():
 
 
 def role_required(*allowed_roles):
-    """Usalo junto con @jwt_required() en endpoints JSON."""
+    """Usalo junto con @jwt_required() en endpoints JSON.
+
+    El rol viaja en los *claims adicionales* del token (ver api_login), no en
+    la identity. Por eso se lee con get_jwt(), que devuelve el payload completo
+    del JWT; get_jwt_identity() devuelve solo el id del usuario (un string).
+    """
     def decorator(fn):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
-            ident = get_jwt_identity() or {}
-            rol = ident.get("rol")
+            claims = get_jwt() or {}
+            rol = claims.get("rol")
             if rol not in allowed_roles:
                 return jsonify({"error": "No autorizado"}), 403
             return fn(*args, **kwargs)

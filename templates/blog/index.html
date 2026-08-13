@@ -35,8 +35,8 @@
                                 <span class="badge badge--category">Emprendimiento</span>
                                 {% set author = get_user(post.author) %}
                                 {% if author %}
-                                    <span class="badge" style="background:#F3F4F6;color:#4B5563;">
-                                        {{ g.user.username }}
+                                    <span class="badge badge--author">
+                                        {{ author.username }}
                                     </span>
                                 {% endif %}
                             </div>

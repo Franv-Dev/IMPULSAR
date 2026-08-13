@@ -19,25 +19,23 @@
                 </a>
             </div>
 <nav class="navbar__links">
-    <nav class="navbar__links">
 
-        <a href="{{ url_for('index') }}" class="navbar__link {% if request.endpoint == 'index' %}navbar__link--active{% endif %}">
-            Inicio
-        </a>
-        
-        <a href="{{ url_for('blog.index') }}" class="navbar__link {% if request.endpoint.startswith('blog.') %}navbar__link--active{% endif %}">
-            Emprendimientos
-        </a>
-        
-        <a href="{{ url_for('about.index') }}" class="navbar__link {% if request.endpoint == 'about.index' %}navbar__link--active{% endif %}">
-            Sobre IMPULSAR
-        </a>
-        
-        <a href="{{ url_for('contact.index') }}" class="navbar__link {% if request.endpoint == 'contact.index' %}navbar__link--active{% endif %}">
-            Contacto
-        </a>
-        
-    </nav>
+    <a href="{{ url_for('index') }}" class="navbar__link {% if request.endpoint == 'index' %}navbar__link--active{% endif %}">
+        Inicio
+    </a>
+
+    <a href="{{ url_for('blog.index') }}" class="navbar__link {% if request.endpoint and request.endpoint.startswith('blog.') %}navbar__link--active{% endif %}">
+        Emprendimientos
+    </a>
+
+    <a href="{{ url_for('about.index') }}" class="navbar__link {% if request.endpoint == 'about.index' %}navbar__link--active{% endif %}">
+        Sobre IMPULSAR
+    </a>
+
+    <a href="{{ url_for('contact.index') }}" class="navbar__link {% if request.endpoint == 'contact.index' %}navbar__link--active{% endif %}">
+        Contacto
+    </a>
+
 </nav>
 
             <div class="navbar__actions">

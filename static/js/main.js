@@ -34,50 +34,6 @@ function renderPosts(posts) {
         const shortBody =
             body.length > 150 ? body.slice(0, 150) + "..." : body;
 
-        // Por ahora no tenés categoría ni ubicación en el modelo,
-        // así que usamos textos genéricos. Cuando agregues campos,
-        // simplemente los reemplazamos acá.
-        const categoryText = "Emprendimiento local";
-        const locationText = "Ubicación no especificada";
-
-        card.innerHTML = `
-            <div class="card__body">
-                <div class="card__tags">
-                    <span class="badge badge--category">${categoryText}</span>
-                </div>
-                <h3 class="card__title">${title}</h3>
-                <p class="card__location">${locationText}</p>
-                <p class="card__description">${shortBody}</p>
-            </div>
-        `;
-
-        grid.appendChild(card);
-    });
-}
-function renderPosts(posts) {
-    const grid = document.getElementById("posts-grid");
-    const emptyEl = document.getElementById("posts-empty");
-
-    if (!grid) return;
-
-    grid.innerHTML = "";
-
-    if (!posts || posts.length === 0) {
-        emptyEl.style.display = "block";
-        return;
-    } else {
-        emptyEl.style.display = "none";
-    }
-
-    posts.forEach((post) => {
-        const card = document.createElement("article");
-        card.className = "card";
-
-        const title = escapeHtml(post.title || "Emprendimiento sin título");
-        const body = escapeHtml(post.body || "");
-        const shortBody =
-            body.length > 150 ? body.slice(0, 150) + "..." : body;
-
         // --- INICIO DE CAMBIOS ---
         
         // 1. Construimos las URLs que necesitamos
