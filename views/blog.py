@@ -10,45 +10,9 @@ from werkzeug.utils import secure_filename
 import os, uuid
 from models.review import Review
 from sqlalchemy import func
-import requests
+from services.geocoding import get_coordinates_from_address
 
 blog = Blueprint("blog", __name__, url_prefix="/blog")
-
-def get_coordinates_from_address(address, api_key):
-    """Convierte una dirección en texto a (lat, lon) usando MapTiler, con alta precisión local."""
-    if not address:
-        return None, None
-
-    try:
-        # 1. AÑADIMOS CONTEXTO LOCAL y BBOX para mejorar la precisión
-        full_address = f"{address}, Mendoza, Argentina" 
-        encoded_address = requests.utils.quote(full_address)
-        
-        # Coordenadas aproximadas de la provincia de Mendoza
-        bbox_mendoza = "-70.9,-36.5,-66.5,-31.5"
-        
-        url = (
-            f"https://api.maptiler.com/geocoding/{encoded_address}.json?"
-            f"key={api_key}&country=AR&bbox={bbox_mendoza}&limit=1" # <--- Uso de BBOX y Country
-        )
-        
-        response = requests.get(url)
-        response.raise_for_status() 
-        
-        data = response.json()
-        
-        if data and data.get("features"):
-            coords = data["features"][0].get("center") 
-            if coords and len(coords) == 2:
-                longitude = coords[0]
-                latitude = coords[1]
-                return latitude, longitude
-        
-        return None, None
-
-    except Exception as e:
-        print(f"Error de Geocoding: {e}")
-        return None, None
 
 # Configuración
 

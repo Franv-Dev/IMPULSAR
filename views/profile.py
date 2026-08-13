@@ -1,38 +1,12 @@
 from flask import (
     render_template, Blueprint, redirect, flash, g, request, url_for, current_app
 )
-from werkzeug.exceptions import abort
 from models.user import User
 from views.auth import login_required
 from db import db
-import os
-import requests 
+from services.geocoding import get_coordinates_from_address
 
 profile = Blueprint("profile", __name__, url_prefix="/perfil")
-
-
-# --- 1. FUNCIÓN HELPER DE GEOCODING  ---
-def get_coordinates_from_address(address, api_key):
-    """Convierte una dirección en texto a (lat, lon) usando MapTiler."""
-    if not address:
-        return None, None
-    try:
-        encoded_address = requests.utils.quote(address)
-        url = f"https://api.maptiler.com/geocoding/{encoded_address}.json?key={api_key}&country=AR&limit=1"
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        
-        if data and data.get("features"):
-            coords = data["features"][0].get("center")
-            if coords and len(coords) == 2:
-                longitude = coords[0]
-                latitude = coords[1]
-                return latitude, longitude
-        return None, None
-    except Exception as e:
-        print(f"Error de Geocoding: {e}")
-        return None, None
 
 
 @profile.route("/<int:user_id>")
