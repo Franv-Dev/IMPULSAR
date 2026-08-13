@@ -9,9 +9,8 @@ import functools
 
 # --- JWT ---
 from flask_jwt_extended import (
-    JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
+    create_access_token, jwt_required, get_jwt_identity, get_jwt
 )
-from datetime import timedelta
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -165,10 +164,11 @@ def api_login():
     if not user or not check_password_hash(user.password, password):
         return jsonify({"error": "credenciales inválidas"}), 401
 
+    # La duracion sale de JWT_ACCESS_TOKEN_EXPIRES en config.py, asi se puede
+    # ajustar por entorno sin tocar el codigo.
     token = create_access_token(
-        identity=str(user.id), 
+        identity=str(user.id),
         additional_claims={"rol": user.rol},
-        expires_delta=timedelta(hours=1)
     )
     return jsonify({"access_token": token, "user": user.serialize()}), 200
 

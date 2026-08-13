@@ -1,174 +1,226 @@
+"""Tests de emprendimientos: CRUD, permisos y resenas."""
+
+import re
+
 import pytest
-from flask import Flask, g, session
-from views.blog import blog, allowed_file, get_user, get_post
-from models.user import User
+
 from models.post import Post
-from db import db
+from models.review import Review
+from views.blog import get_post
 
 
+# ------------------------------------------------------------------ unitarios
 
-# FIXTURES
+def test_el_post_guarda_al_autor_correcto(db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería")
 
-
-@pytest.fixture
-def app():
-    """Aplicación de prueba con BD aislada en memoria."""
-    app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-    app.config["TESTING"] = True
-    app.config["SECRET_KEY"] = "testing-secret"
-
-    db.init_app(app)
-    app.register_blueprint(blog)
-
-    # Simula el load_logged_in_user de auth (usa session["user_id"])
-    @app.before_request
-    def load_logged_in_user():
-        user_id = session.get("user_id")
-        if user_id is None:
-            g.user = None
-        else:
-            g.user = User.query.get(user_id)
-
-    with app.app_context():
-        db.create_all()
-        yield app
-        db.session.remove()
-        db.drop_all()
+    assert post.author == autor.id
+    # La relacion evita tener que hacer User.query.get(post.author) a mano.
+    assert post.author_user.username == "autor"
 
 
-@pytest.fixture
-def client(app):
-    return app.test_client()
+def test_get_post_bloquea_a_quien_no_es_el_autor(app, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    otro = crear_usuario(username="otro")
+    post = crear_post(autor.id)
+
+    with app.test_request_context():
+        from flask import g
+
+        g.user = otro
+        resultado = get_post(post.id, check_author=True)
+
+    # No devuelve el post: devuelve una redireccion.
+    assert not isinstance(resultado, Post)
 
 
-def login_as(client, user_id: int):
-    """Helper para loguear un usuario en los tests."""
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_id
+# ------------------------------------------------------------------- listados
+
+def test_el_listado_publico_no_requiere_login(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería visible")
+
+    resp = client.get("/blog/")
+
+    assert resp.status_code == 200
+    assert "Panadería visible" in resp.get_data(as_text=True)
 
 
+def test_el_listado_muestra_el_autor_real_y_no_al_usuario_logueado(
+    client, crear_usuario, crear_post, login
+):
+    """Antes el listado mostraba tu propio nombre como autor de todos los posts."""
+    autor = crear_usuario(username="autorreal")
+    visitante = crear_usuario(username="visitante")
+    crear_post(autor.id, title="Panadería")
 
-# TESTS UNITARIOS
+    login(visitante.id)
+    html = client.get("/blog/").get_data(as_text=True)
 
-
-def test_allowed_file_valid_extensions():
-
-    assert allowed_file("foto.jpg")
-    assert allowed_file("imagen.PNG")      
-    assert allowed_file("algo.JPEG")
-    assert not allowed_file("documento.pdf")
-    assert not allowed_file("foto")        
-
-
-def test_user_model_creation(app):
-
-    with app.app_context():
-        u = User(
-            username="testuser",
-            email="t@t.com",
-            password="1234",
-            rol="usuario",          
-        )
-        db.session.add(u)
-        db.session.commit()
-
-        found = User.query.filter_by(username="testuser").first()
-        assert found is not None
-        assert found.email == "t@t.com"
-        assert found.rol == "usuario"
-
-
-def test_get_post_check_author_blocked_redirects(app):
-
-    with app.app_context():
-        autor = User(
-            username="autor",
-            email="a@a.com",
-            password="123",
-            rol="usuario",   
-        )      
-        otro = User(
-            username="otro",
-            email="b@b.com",
-            password="123",
-            rol="usuario",          
-        )
-        db.session.add_all([autor, otro])
-        db.session.commit()
-
-        post = Post(title="titulo", body="contenido", author=autor.id)
-        db.session.add(post)
-        db.session.commit()
-
-        # simulamos request con g.user = otro
-        with app.test_request_context():
-            g.user = otro
-            resp = get_post(post.id, check_author=True)
-
-            assert resp.status_code == 302
-            assert "/blog/mis-emprendimientos" in resp.location
-
-
-
-# TEST DE INTEGRACIÓN
-
-
-def test_flow_create_update_delete_post(client, app):
-    
-    # 1) Crear usuario autor en la BD
-    with app.app_context():
-        autor = User(
-            username="autor",
-            email="autor@test.com",
-            password="123",
-            rol="usuario",
-        )
-        db.session.add(autor)
-        db.session.commit()
-        autor_id = autor.id
-
-    # Loguear al autor para que pase el @login_required
-    login_as(client, autor_id)
-
-    # 2) CREATE – crear post (NO seguimos el redirect)
-    resp = client.post(
-        "/blog/create",
-        data={"title": "Titulo original", "body": "Contenido inicial"},
-        follow_redirects=False,
+    # Se mira solo el badge de autor: el nombre del usuario logueado aparece
+    # legitimamente en la barra de navegacion, asi que no sirve buscarlo en
+    # todo el HTML.
+    autores_mostrados = re.findall(
+        r'badge--author"[^>]*>\s*([^<\s]+)\s*<', html
     )
-    # debe redirigir a mis-emprendimientos
+
+    assert autores_mostrados == ["autorreal"]
+
+
+def test_la_api_de_posts_devuelve_json(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería")
+
+    resp = client.get("/api/posts/")
+
+    assert resp.status_code == 200
+    datos = resp.get_json()
+    assert datos[0]["title"] == "Panadería"
+
+
+# ----------------------------------------------------------------------- CRUD
+
+def test_crear_requiere_login(client):
+    resp = client.get("/blog/create", follow_redirects=False)
+
     assert resp.status_code == 302
-    assert "/blog/mis-emprendimientos" in resp.headers.get("Location", "")
+    assert "/auth/login" in resp.headers["Location"]
 
-    with app.app_context():
-        post = Post.query.filter_by(title="Titulo original").first()
-        assert post is not None
-        post_id = post.id
 
-    # 3) UPDATE – modificar título y cuerpo
-    resp = client.post(
-        f"/blog/update/{post_id}",
-        data={"title": "Titulo modificado", "body": "Contenido editado"},
-        follow_redirects=False,
-    )
+def test_flujo_completo_crear_editar_eliminar(client, db, crear_usuario, login):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    # Crear
+    resp = client.post("/blog/create", data={
+        "title": "Mi emprendimiento",
+        "body": "Una descripción",
+    }, follow_redirects=False)
     assert resp.status_code == 302
-    assert "/blog/mis-emprendimientos" in resp.headers.get("Location", "")
 
-    with app.app_context():
-        post = Post.query.get(post_id)
-        assert post is not None
-        assert post.title == "Titulo modificado"
-        assert post.body == "Contenido editado"
+    post = Post.query.filter_by(title="Mi emprendimiento").first()
+    assert post is not None
 
-    # 4) DELETE – eliminar publicación (solo por POST, un GET no debe borrar)
-    resp = client.get(f"/blog/delete/{post_id}", follow_redirects=False)
-    assert resp.status_code == 405, "Borrar por GET debe estar prohibido"
-
-    resp = client.post(f"/blog/delete/{post_id}", follow_redirects=False)
+    # Editar
+    resp = client.post(f"/blog/update/{post.id}", data={
+        "title": "Título editado",
+        "body": "Contenido editado",
+    }, follow_redirects=False)
     assert resp.status_code == 302
-    assert "/blog/mis-emprendimientos" in resp.headers.get("Location", "")
 
-    with app.app_context():
-        deleted = Post.query.get(post_id)
-        assert deleted is None
+    db.session.refresh(post)
+    assert post.title == "Título editado"
+
+    # Eliminar: por GET no se debe poder
+    assert client.get(f"/blog/delete/{post.id}").status_code == 405
+
+    resp = client.post(f"/blog/delete/{post.id}", follow_redirects=False)
+    assert resp.status_code == 302
+    assert Post.query.get(post.id) is None
+
+
+def test_no_se_puede_editar_el_emprendimiento_de_otro(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    intruso = crear_usuario(username="intruso")
+    post = crear_post(autor.id, title="Original")
+
+    login(intruso.id)
+    client.post(f"/blog/update/{post.id}", data={"title": "Hackeado", "body": "x"})
+
+    db.session.refresh(post)
+    assert post.title == "Original"
+
+
+def test_no_se_puede_eliminar_el_emprendimiento_de_otro(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    intruso = crear_usuario(username="intruso")
+    post = crear_post(autor.id)
+
+    login(intruso.id)
+    client.post(f"/blog/delete/{post.id}")
+
+    assert Post.query.get(post.id) is not None
+
+
+def test_crear_sin_titulo_no_guarda_nada(client, crear_usuario, login):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    client.post("/blog/create", data={"title": "", "body": "Una descripción"})
+
+    assert Post.query.count() == 0
+
+
+# --------------------------------------------------------------------- resenas
+
+def test_dejar_una_resenia(client, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "5", "comment": "Excelente"})
+
+    review = Review.query.filter_by(post_id=post.id, user_id=cliente.id).first()
+    assert review.rating == 5
+    assert review.comment == "Excelente"
+
+
+def test_el_autor_no_puede_reseniar_su_propio_emprendimiento(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    login(autor.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "5", "comment": "Soy genial"})
+
+    assert Review.query.count() == 0
+
+
+@pytest.mark.parametrize("rating", ["0", "6", "-1", "no-es-un-numero"])
+def test_se_rechazan_ratings_invalidos(client, crear_usuario, crear_post, login, rating):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": rating, "comment": "x"})
+
+    assert Review.query.count() == 0
+
+
+def test_una_segunda_resenia_actualiza_la_primera(client, crear_usuario, crear_post, login):
+    """Sin esto un usuario podria inflar el promedio dejando varias resenas."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "1", "comment": "Malo"})
+    client.post(f"/blog/{post.id}/review", data={"rating": "5", "comment": "Me arrepentí"})
+
+    reviews = Review.query.filter_by(post_id=post.id, user_id=cliente.id).all()
+    assert len(reviews) == 1
+    assert reviews[0].rating == 5
+
+
+def test_el_detalle_muestra_el_promedio_de_estrellas(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    for indice, puntaje in enumerate([4, 5]):
+        cliente = crear_usuario(username=f"cliente{indice}")
+        db.session.add(Review(post_id=post.id, user_id=cliente.id, rating=puntaje))
+    db.session.commit()
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "4.5" in html

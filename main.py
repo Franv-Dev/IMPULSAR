@@ -1,94 +1,117 @@
-from flask import Flask, redirect, url_for, render_template, flash, request
-from views.profile import profile 
-from config import DATABASE_DATABASE_URI, MAPTILER_KEY
-from db import db
-from dotenv import load_dotenv
-from flask_jwt_extended import JWTManager
-from flask_migrate import Migrate
-from werkzeug.exceptions import RequestEntityTooLarge
-from flask_wtf.csrf import CSRFProtect, CSRFError
-from services.uploads import MAX_IMAGE_BYTES
+"""Punto de entrada de IMPULSAR.
+
+Usa el patron "application factory": en vez de crear la app cuando se importa
+el modulo, la crea una funcion. Esto permite levantar varias apps con distinta
+configuracion (por ejemplo una con MySQL para uso real y otra con SQLite en
+memoria para los tests) sin duplicar el armado ni depender de variables
+globales.
+
+Como correrlo:
+    flask --app main run          (Flask detecta create_app automaticamente)
+    python main.py                (equivalente, para desarrollo)
+"""
+
 import os
 
+from flask import Flask, flash, redirect, render_template, request, url_for
+from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFError, CSRFProtect
+from werkzeug.exceptions import RequestEntityTooLarge
+
+from config import get_config
+from db import db
+from services.uploads import MAX_IMAGE_BYTES
+
 # Blueprints
-from views import profile
-from views.auth import auth, api_register, api_login
-from views.blog import blog
-from views.posts_api import posts_api
 from views.about import about
+from views.auth import api_login, api_register, auth
+from views.blog import blog
 from views.contact import contact
-from views.terms import terms
+from views.posts_api import posts_api
 from views.privacy import privacy
+from views.profile import profile
+from views.terms import terms
+
+# Extensiones. Se crean vacias aca y se enlazan a la app dentro de create_app,
+# que es lo que permite tener mas de una app conviviendo.
+migrate = Migrate()
+jwt = JWTManager()
+csrf = CSRFProtect()
 
 
-# Cargar variables de entorno (.env)
-load_dotenv()
+def create_app(config_name=None):
+    """Crea y configura una instancia de la aplicacion."""
+    app = Flask(__name__)
 
-# Inicializar Flask
-app = Flask(__name__)
-# Configuración de MapTiler
-app.config["MAPTILER_KEY"] = os.getenv("MAPTILER_KEY", MAPTILER_KEY)
-# Configuración de base de datos
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_DATABASE_URI
-# OJO: es TRACK_MODIFICATIONS (plural)
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# Tamanio maximo de subida. Sin esto, alguien puede mandar un archivo enorme
-# y agotar la memoria o el disco del servidor.
-app.config["MAX_CONTENT_LENGTH"] = MAX_IMAGE_BYTES
-# Secret key para sesiones
-app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
+    config_class = get_config(config_name)
+    app.config.from_object(config_class)
+    config_class.init_app(app)
 
-# JWT
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "jwt-secret-change-me")
-jwt = JWTManager(app)
+    _registrar_extensiones(app)
+    _registrar_blueprints(app)
+    _registrar_rutas(app)
+    _registrar_manejadores_de_error(app)
 
-# Proteccion CSRF para los formularios HTML (los que usan sesion + cookie).
-# La API JSON queda exenta: se autentica con un header Authorization: Bearer,
-# que el navegador no manda solo, asi que no es vulnerable a CSRF.
-csrf = CSRFProtect(app)
-csrf.exempt(posts_api)
-csrf.exempt(api_register)
-csrf.exempt(api_login)
-
-# Inicializar extensiones
-db.init_app(app)
-migrate = Migrate(app, db)
-
-# Registrar blueprints
-app.register_blueprint(auth)
-app.register_blueprint(blog)
-app.register_blueprint(posts_api)
-app.register_blueprint(about)
-app.register_blueprint(contact)
-app.register_blueprint(terms)
-app.register_blueprint(privacy)
-app.register_blueprint(profile)
-@app.route("/")
-def index():
-    return render_template("home.html")
+    return app
 
 
-@app.errorhandler(RequestEntityTooLarge)
-def handle_file_too_large(e):
-    """La imagen supera MAX_CONTENT_LENGTH."""
-    limite_mb = MAX_IMAGE_BYTES // (1024 * 1024)
-    flash(f"La imagen es demasiado grande. El maximo permitido es {limite_mb} MB.")
-    return redirect(request.referrer or url_for("index")), 303
+def _registrar_extensiones(app):
+    db.init_app(app)
+    migrate.init_app(app, db)
+    jwt.init_app(app)
+    csrf.init_app(app)
+
+    # La API JSON queda exenta de CSRF: se autentica con el header
+    # Authorization, que el navegador no manda solo, asi que no es vulnerable
+    # a CSRF. Exigirle token romperia a cualquier cliente de la API.
+    csrf.exempt(posts_api)
+    csrf.exempt(api_register)
+    csrf.exempt(api_login)
 
 
-@app.errorhandler(CSRFError)
-def handle_csrf_error(e):
-    """El token CSRF vence junto con la sesion.
+def _registrar_blueprints(app):
+    app.register_blueprint(auth)
+    app.register_blueprint(blog)
+    app.register_blueprint(posts_api)
+    app.register_blueprint(about)
+    app.register_blueprint(contact)
+    app.register_blueprint(terms)
+    app.register_blueprint(privacy)
+    app.register_blueprint(profile)
 
-    Sin esto el usuario ve un 400 crudo de Flask; tipicamente pasa cuando deja
-    el formulario abierto mucho tiempo y despues lo envia.
-    """
-    flash("Tu sesion expiro por seguridad. Volve a intentarlo.")
-    return redirect(request.referrer or url_for("index")), 303
+
+def _registrar_rutas(app):
+    @app.route("/")
+    def index():
+        return render_template("home.html")
+
+
+def _registrar_manejadores_de_error(app):
+    @app.errorhandler(RequestEntityTooLarge)
+    def manejar_archivo_muy_grande(e):
+        limite_mb = MAX_IMAGE_BYTES // (1024 * 1024)
+        flash(f"La imagen es demasiado grande. El máximo permitido es {limite_mb} MB.")
+        return redirect(request.referrer or url_for("index")), 303
+
+    @app.errorhandler(CSRFError)
+    def manejar_error_csrf(e):
+        # El token vence junto con la sesion: pasa cuando el usuario deja el
+        # formulario abierto mucho tiempo. Sin esto veria un 400 crudo.
+        flash("Tu sesión expiró por seguridad. Volvé a intentarlo.")
+        return redirect(request.referrer or url_for("index")), 303
+
+    @app.errorhandler(404)
+    def manejar_no_encontrado(e):
+        return render_template("errors/404.html"), 404
+
+    @app.errorhandler(500)
+    def manejar_error_interno(e):
+        db.session.rollback()
+        app.logger.exception("Error interno no controlado")
+        return render_template("errors/500.html"), 500
 
 
 if __name__ == "__main__":
-    # Si querés crear tablas automáticamente en desarrollo, podés descomentar esto:
-    with app.app_context():
-        db.create_all()
-        app.run(debug=True)
+    app = create_app()
+    app.run(debug=app.config.get("DEBUG", False))

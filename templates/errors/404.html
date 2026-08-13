@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Página no encontrada – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="error-page">
+            <p class="error-page__code">404</p>
+            <h2 class="error-page__title">No encontramos esta página</h2>
+            <p class="error-page__text">
+                Puede que el emprendimiento que buscabas se haya dado de baja,
+                o que el enlace esté mal escrito.
+            </p>
+            <div class="error-page__actions">
+                <a href="{{ url_for('index') }}" class="btn btn--primary">Volver al inicio</a>
+                <a href="{{ url_for('blog.index') }}" class="btn btn--secondary">Ver emprendimientos</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

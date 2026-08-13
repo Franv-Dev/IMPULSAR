@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Error del servidor – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="error-page">
+            <p class="error-page__code">500</p>
+            <h2 class="error-page__title">Algo salió mal de nuestro lado</h2>
+            <p class="error-page__text">
+                Ya quedó registrado el error. Probá de nuevo en unos minutos;
+                si sigue pasando, escribinos desde la sección de contacto.
+            </p>
+            <div class="error-page__actions">
+                <a href="{{ url_for('index') }}" class="btn btn--primary">Volver al inicio</a>
+                <a href="{{ url_for('contact.index') }}" class="btn btn--secondary">Contacto</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

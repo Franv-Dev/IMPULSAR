@@ -1288,3 +1288,41 @@ textarea.auth__input {
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-light);
 }
+/* =============================
+   PAGINAS DE ERROR (404 / 500)
+   ============================= */
+
+.error-page {
+    max-width: 480px;
+    margin: 3rem auto;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    background-color: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-light);
+}
+
+.error-page__code {
+    margin: 0;
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-primary);
+}
+
+.error-page__title {
+    margin: 0.75rem 0 0.5rem;
+    font-size: 1.35rem;
+}
+
+.error-page__text {
+    margin: 0 0 1.5rem;
+    color: var(--color-muted);
+}
+
+.error-page__actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
