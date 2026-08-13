@@ -107,6 +107,11 @@ source venv/bin/activate  # En Linux/Mac
 pip install -r requirements.txt
 ```
 
+> Para desarrollo (incluye las herramientas de testing):
+> ```bash
+> pip install -r requirements-dev.txt
+> ```
+
 ### 4️⃣ Configurar las variables de entorno
 Crea un archivo `.env` basado en el siguiente ejemplo:
 
