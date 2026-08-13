@@ -38,16 +38,40 @@ def index():
     """Lista pública de emprendimientos, paginada."""
     # La relacion author_user usa lazy="joined", asi que el autor viene en la
     # misma consulta y no se dispara un SELECT por cada post (problema N+1).
+    # El promedio de reseñas se trae igual, con un outerjoin a una subquery
+    # agrupada por post: pedirlo post por post en el bucle del template
+    # dispararia una consulta extra por cada tarjeta.
+    ratings = (
+        db.session.query(
+            Review.post_id.label("post_id"),
+            func.avg(Review.rating).label("avg_rating"),
+            func.count(Review.id).label("review_count"),
+        )
+        .group_by(Review.post_id)
+        .subquery()
+    )
+
     paginacion = (
-        Post.query.order_by(Post.created.desc())
+        Post.query
+        .outerjoin(ratings, ratings.c.post_id == Post.id)
+        .add_columns(ratings.c.avg_rating, ratings.c.review_count)
+        .order_by(Post.created.desc())
         .paginate(
             page=request.args.get("page", 1, type=int),
             per_page=current_app.config["POSTS_POR_PAGINA"],
             error_out=False,
         )
     )
+    posts = [
+        {
+            "post": post,
+            "avg_rating": round(avg_rating, 1) if avg_rating else None,
+            "review_count": review_count or 0,
+        }
+        for post, avg_rating, review_count in paginacion.items
+    ]
     return render_template(
-        "blog/index.html", posts=paginacion.items, paginacion=paginacion
+        "blog/index.html", posts=posts, paginacion=paginacion
     )
 
 @blog.route("/<int:id>")

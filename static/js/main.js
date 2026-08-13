@@ -109,13 +109,18 @@ function debounce(fn, ms) {
 document.addEventListener("DOMContentLoaded", () => {
     const grid = document.getElementById("posts-grid");
     const errorEl = document.getElementById("posts-error");
+    const loadingEl = document.getElementById("posts-loading");
     const searchForm = document.getElementById("search-form");
     const input = document.getElementById("search-text");
 
     if (!grid) return; // no estamos en la home
 
     function cargar(query) {
+        // En conexiones lentas la grilla queda vacia varios segundos sin este
+        // aviso, y parece que la pagina no respondio.
         if (errorEl) errorEl.style.display = "none";
+        if (loadingEl) loadingEl.style.display = "block";
+        grid.innerHTML = "";
 
         fetchPosts(query)
             .then((data) => {
@@ -125,6 +130,9 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch((err) => {
                 console.error(err);
                 if (errorEl) errorEl.style.display = "block";
+            })
+            .finally(() => {
+                if (loadingEl) loadingEl.style.display = "none";
             });
     }
 
@@ -157,12 +165,14 @@ document.addEventListener("DOMContentLoaded", () => {
         // Abrir/cerrar menú al hacer click en el usuario
         userToggle.addEventListener("click", (event) => {
             event.stopPropagation();
-            userMenu.classList.toggle("user-menu--open");
+            const abierto = userMenu.classList.toggle("user-menu--open");
+            userToggle.setAttribute("aria-expanded", abierto ? "true" : "false");
         });
 
         // Cerrar menú al hacer click fuera
         document.addEventListener("click", () => {
             userMenu.classList.remove("user-menu--open");
+            userToggle.setAttribute("aria-expanded", "false");
         });
     }
 
@@ -174,7 +184,8 @@ document.addEventListener("DOMContentLoaded", () => {
         mobileToggle.addEventListener("click", (event) => {
             event.stopPropagation();
             // Añade/quita la clase .navbar--mobile-open al <header class="navbar">
-            navbar.classList.toggle("navbar--mobile-open");
+            const abierto = navbar.classList.toggle("navbar--mobile-open");
+            mobileToggle.setAttribute("aria-expanded", abierto ? "true" : "false");
         });
     }
 
@@ -183,6 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (mainContent && navbar) {
         mainContent.addEventListener("click", () => {
             navbar.classList.remove("navbar--mobile-open");
+            if (mobileToggle) mobileToggle.setAttribute("aria-expanded", "false");
         });
     }
 

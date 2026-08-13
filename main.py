@@ -24,14 +24,11 @@ from db import db
 from services.uploads import MAX_IMAGE_BYTES
 
 # Blueprints
-from views.about import about
 from views.auth import api_login, api_register, auth
 from views.blog import blog
-from views.contact import contact
+from views.pages import pages
 from views.posts_api import posts_api
-from views.privacy import privacy
 from views.profile import profile
-from views.terms import terms
 
 # Extensiones. Se crean vacias aca y se enlazan a la app dentro de create_app,
 # que es lo que permite tener mas de una app conviviendo.
@@ -74,10 +71,7 @@ def _registrar_blueprints(app):
     app.register_blueprint(auth)
     app.register_blueprint(blog)
     app.register_blueprint(posts_api)
-    app.register_blueprint(about)
-    app.register_blueprint(contact)
-    app.register_blueprint(terms)
-    app.register_blueprint(privacy)
+    app.register_blueprint(pages)
     app.register_blueprint(profile)
 
 

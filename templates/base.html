@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <title>{% block title %}IMPULSAR – Impulsá tu emprendimiento local{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Centralizá la información de tu emprendimiento local, mostrate a nuevos clientes y conectate con el ecosistema emprendedor de tu ciudad.{% endblock %}">
+
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/logo_impulsar.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/logo_impulsar.png') }}">
+
+    {# Open Graph / Twitter Card: sin esto, compartir un link de IMPULSAR no muestra ni icono ni preview. #}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="IMPULSAR">
+    <meta property="og:title" content="{% block og_title %}IMPULSAR – Impulsá tu emprendimiento local{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Centralizá la información de tu emprendimiento local, mostrate a nuevos clientes y conectate con el ecosistema emprendedor de tu ciudad.{% endblock %}">
+    <meta property="og:image" content="{{ url_for('static', filename='icons/logo_impulsar.png', _external=True) }}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta name="twitter:card" content="summary_large_image">
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
@@ -18,7 +31,7 @@
                     <img src="{{ url_for('static', filename='icons/logo_impulsar.png') }}" alt="IMPULSAR" class="navbar__logo-image">
                 </a>
             </div>
-<nav class="navbar__links">
+<nav class="navbar__links" id="navbar-links">
 
     <a href="{{ url_for('index') }}" class="navbar__link {% if request.endpoint == 'index' %}navbar__link--active{% endif %}">
         Inicio
@@ -28,11 +41,11 @@
         Emprendimientos
     </a>
 
-    <a href="{{ url_for('about.index') }}" class="navbar__link {% if request.endpoint == 'about.index' %}navbar__link--active{% endif %}">
+    <a href="{{ url_for('pages.about') }}" class="navbar__link {% if request.endpoint == 'pages.about' %}navbar__link--active{% endif %}">
         Sobre IMPULSAR
     </a>
 
-    <a href="{{ url_for('contact.index') }}" class="navbar__link {% if request.endpoint == 'contact.index' %}navbar__link--active{% endif %}">
+    <a href="{{ url_for('pages.contact') }}" class="navbar__link {% if request.endpoint == 'pages.contact' %}navbar__link--active{% endif %}">
         Contacto
     </a>
 
@@ -41,7 +54,7 @@
             <div class="navbar__actions">
                 {% if g.user %}
                     <div class="navbar__user">
-                        <button type="button" class="navbar__user-toggle">
+                        <button type="button" class="navbar__user-toggle" aria-label="Menú de usuario" aria-haspopup="true" aria-expanded="false" aria-controls="user-menu">
                             <div class="navbar__avatar">
                                 {{ g.user.username[0]|upper }}
                             </div>
@@ -67,7 +80,7 @@
             </div>
 
 
-            <button class="navbar__toggle" aria-label="Abrir menú">
+            <button type="button" class="navbar__toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navbar-links">
                 ☰
             </button>
         </div>
@@ -81,9 +94,9 @@
     <div class="container footer__content">
         <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
         <div class="footer__links">
-            <a href="{{ url_for('terms.index') }}" class="footer__link">Términos</a>
-            <a href="{{ url_for('privacy.index') }}" class="footer__link">Privacidad</a>
-            <a href="{{ url_for('contact.index') }}" class="footer__link">Contacto</a>
+            <a href="{{ url_for('pages.terms') }}" class="footer__link">Términos</a>
+            <a href="{{ url_for('pages.privacy') }}" class="footer__link">Privacidad</a>
+            <a href="{{ url_for('pages.contact') }}" class="footer__link">Contacto</a>
         </div>
     </div>
 </footer>

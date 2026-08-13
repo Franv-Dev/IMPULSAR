@@ -9,7 +9,7 @@ import logging
 import os
 import uuid
 
-from PIL import Image
+from PIL import Image, ImageOps
 from werkzeug.utils import secure_filename
 
 logger = logging.getLogger(__name__)
@@ -19,6 +19,11 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 # Tamanio maximo por imagen. Flask corta antes con MAX_CONTENT_LENGTH, pero
 # dejamos el valor aca tambien para que el servicio sea autocontenido.
 MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
+
+# Un emprendedor sube fotos de 8 MB desde el celular sin darse cuenta: se
+# redimensionan y comprimen antes de guardar para no llenar el disco.
+MAX_IMAGE_WIDTH = 1200
+JPEG_QUALITY = 85
 
 
 def allowed_file(filename):
@@ -49,12 +54,39 @@ def save_post_image(file, upload_dir):
         logger.warning("Se rechazo un archivo que no es una imagen valida: %s", file.filename)
         return None, "El archivo no parece ser una imagen valida."
 
-    # verify() consume el stream, hay que volver al principio antes de guardar.
+    # verify() consume el stream, hay que volver al principio antes de leerlo
+    # de nuevo para procesar la imagen.
     file.stream.seek(0)
 
     os.makedirs(upload_dir, exist_ok=True)
     # El uuid evita que dos usuarios que suben "foto.jpg" se pisen el archivo.
     filename = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-    file.save(os.path.join(upload_dir, filename))
+    destino = os.path.join(upload_dir, filename)
+
+    _guardar_comprimida(file.stream, destino)
 
     return filename, None
+
+
+def _guardar_comprimida(stream, destino):
+    """Redimensiona y comprime la imagen antes de guardarla en disco.
+
+    Sin esto una foto de celular de varios MB se guarda tal cual, y si viene
+    con orientacion EXIF (tipico en fotos verticales) se ve rotada en el
+    navegador, que ignora ese metadato.
+    """
+    imagen = Image.open(stream)
+    formato = (imagen.format or "JPEG").upper()
+    imagen = ImageOps.exif_transpose(imagen)
+
+    if imagen.width > MAX_IMAGE_WIDTH:
+        nueva_altura = round(imagen.height * MAX_IMAGE_WIDTH / imagen.width)
+        imagen = imagen.resize((MAX_IMAGE_WIDTH, nueva_altura), Image.LANCZOS)
+
+    # JPEG no soporta canal alfa: sin esta conversion el guardado falla para
+    # imagenes que vienen en modo RGBA o paleta (P).
+    extension = os.path.splitext(destino)[1].lower()
+    if extension in (".jpg", ".jpeg") and imagen.mode in ("RGBA", "P"):
+        imagen = imagen.convert("RGB")
+
+    imagen.save(destino, format=formato, quality=JPEG_QUALITY, optimize=True)
