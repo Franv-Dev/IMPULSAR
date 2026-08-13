@@ -1,0 +1,27 @@
+{# Controles de paginacion reutilizables.
+   Uso: {% include "partials/_paginacion.html" %} con una variable "paginacion"
+   en el contexto (el objeto que devuelve .paginate() de Flask-SQLAlchemy). #}
+
+{% if paginacion and paginacion.pages > 1 %}
+<nav class="pagination" aria-label="Paginación de emprendimientos">
+    {% if paginacion.has_prev %}
+        <a class="pagination__link"
+           href="{{ url_for(request.endpoint, page=paginacion.prev_num, **request.view_args) }}"
+           rel="prev">← Anterior</a>
+    {% else %}
+        <span class="pagination__link pagination__link--disabled">← Anterior</span>
+    {% endif %}
+
+    <span class="pagination__status">
+        Página {{ paginacion.page }} de {{ paginacion.pages }}
+    </span>
+
+    {% if paginacion.has_next %}
+        <a class="pagination__link"
+           href="{{ url_for(request.endpoint, page=paginacion.next_num, **request.view_args) }}"
+           rel="next">Siguiente →</a>
+    {% else %}
+        <span class="pagination__link pagination__link--disabled">Siguiente →</span>
+    {% endif %}
+</nav>
+{% endif %}

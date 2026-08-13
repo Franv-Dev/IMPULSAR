@@ -1326,3 +1326,43 @@ textarea.auth__input {
     justify-content: center;
     flex-wrap: wrap;
 }
+
+/* =============================
+   PAGINACION
+   ============================= */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.pagination__link {
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-white);
+    color: var(--color-text);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.pagination__link:hover {
+    background-color: var(--color-primary-soft);
+    border-color: var(--color-primary-soft);
+}
+
+.pagination__link--disabled {
+    color: var(--color-muted);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.pagination__status {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}

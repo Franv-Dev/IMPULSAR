@@ -1,0 +1,69 @@
+name: Tests
+
+# Corre la suite de tests en cada push y en cada Pull Request, para que no se
+# mergee codigo que rompe algo. Los tests usan SQLite en memoria, asi que no
+# hace falta levantar un MySQL en el CI.
+
+on:
+  push:
+    branches: [main, develop, dev_tomy, Dev_front, dev_test]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Si falla una version de Python, igual queremos ver el resultado de la otra.
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Correr los tests
+        env:
+          FLASK_ENV: testing
+        run: pytest -v
+
+  verificar-migraciones:
+    # Comprueba que el historial de migraciones se pueda aplicar desde cero.
+    # Es lo que estaba roto antes: la primera migracion hacia ALTER TABLE
+    # sobre una tabla que ninguna migracion creaba.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Aplicar todas las migraciones sobre una base vacia
+        env:
+          DATABASE_URL: sqlite:///ci_check.db
+          SECRET_KEY: clave-de-ci
+          JWT_SECRET_KEY: jwt-de-ci
+        run: flask --app main db upgrade

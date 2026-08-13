@@ -83,62 +83,64 @@ function renderPosts(posts) {
         grid.appendChild(card);
     });
 }
-function applySearchFilter() {
-    const input = document.getElementById("search-text");
-    if (!input) return ALL_POSTS;
+// Pide los emprendimientos al servidor. La busqueda se resuelve en la base de
+// datos y no en el navegador: antes se descargaban TODOS los posts y se
+// filtraban aca, lo que deja de funcionar apenas la plataforma crezca.
+function fetchPosts(query) {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    params.set("per_page", "12");
 
-    const query = input.value.trim().toLowerCase();
-
-    if (!query) {
-        return ALL_POSTS;
-    }
-
-    return ALL_POSTS.filter((post) => {
-        const title = (post.title || "").toLowerCase();
-        const body = (post.body || "").toLowerCase();
-        return title.includes(query) || body.includes(query);
+    return fetch(`/api/posts/?${params.toString()}`).then((res) => {
+        if (!res.ok) throw new Error("Error al obtener los posts");
+        return res.json();
     });
+}
+
+// Evita disparar una consulta por cada tecla que se aprieta.
+function debounce(fn, ms) {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), ms);
+    };
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     const grid = document.getElementById("posts-grid");
     const errorEl = document.getElementById("posts-error");
     const searchForm = document.getElementById("search-form");
+    const input = document.getElementById("search-text");
 
     if (!grid) return; // no estamos en la home
 
-    // Cargar posts desde la API
-    fetch("/api/posts/")
-        .then((res) => {
-            if (!res.ok) {
-                throw new Error("Error al obtener los posts");
-            }
-            return res.json();
-        })
-        .then((data) => {
-            ALL_POSTS = Array.isArray(data) ? data : [];
-            renderPosts(ALL_POSTS);
-        })
-        .catch((err) => {
-            console.error(err);
-            if (errorEl) errorEl.style.display = "block";
-        });
+    function cargar(query) {
+        if (errorEl) errorEl.style.display = "none";
 
-    // Manejar búsqueda
+        fetchPosts(query)
+            .then((data) => {
+                ALL_POSTS = Array.isArray(data.items) ? data.items : [];
+                renderPosts(ALL_POSTS);
+            })
+            .catch((err) => {
+                console.error(err);
+                if (errorEl) errorEl.style.display = "block";
+            });
+    }
+
+    cargar("");
+
     if (searchForm) {
         searchForm.addEventListener("submit", (e) => {
             e.preventDefault();
-            const filtered = applySearchFilter();
-            renderPosts(filtered);
+            cargar(input ? input.value.trim() : "");
         });
 
-        // Opcional: filtro en tiempo real
-        const input = document.getElementById("search-text");
         if (input) {
-            input.addEventListener("input", () => {
-                const filtered = applySearchFilter();
-                renderPosts(filtered);
-            });
+            input.addEventListener(
+                "input",
+                debounce(() => cargar(input.value.trim()), 300)
+            );
         }
     }
 });

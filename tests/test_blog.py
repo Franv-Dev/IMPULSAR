@@ -76,7 +76,8 @@ def test_la_api_de_posts_devuelve_json(client, crear_usuario, crear_post):
 
     assert resp.status_code == 200
     datos = resp.get_json()
-    assert datos[0]["title"] == "Panadería"
+    assert datos["items"][0]["title"] == "Panadería"
+    assert datos["total"] == 1
 
 
 # ----------------------------------------------------------------------- CRUD
@@ -224,3 +225,60 @@ def test_el_detalle_muestra_el_promedio_de_estrellas(
     html = client.get(f"/blog/{post.id}").get_data(as_text=True)
 
     assert "4.5" in html
+
+
+# ---------------------------------------------------------- paginacion y busqueda
+
+def test_el_listado_se_pagina(client, app, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    por_pagina = app.config["POSTS_POR_PAGINA"]
+    for numero in range(por_pagina + 3):
+        crear_post(autor.id, title=f"Emprendimiento {numero}")
+
+    primera = client.get("/blog/").get_data(as_text=True)
+    segunda = client.get("/blog/?page=2").get_data(as_text=True)
+
+    assert primera.count('class="card"') == por_pagina
+    assert segunda.count('class="card"') == 3
+    assert "Página 2 de 2" in segunda
+
+
+def test_la_api_pagina_los_resultados(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    for numero in range(5):
+        crear_post(autor.id, title=f"Emprendimiento {numero}")
+
+    datos = client.get("/api/posts/?per_page=2&page=2").get_json()
+
+    assert len(datos["items"]) == 2
+    assert datos["page"] == 2
+    assert datos["pages"] == 3
+    assert datos["total"] == 5
+    assert datos["has_next"] is True
+    assert datos["has_prev"] is True
+
+
+def test_la_api_no_permite_pedir_paginas_gigantes(client, crear_usuario, crear_post):
+    """Sin tope, un ?per_page=999999 se lleva la base entera en una consulta."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id)
+
+    datos = client.get("/api/posts/?per_page=999999").get_json()
+
+    assert datos["per_page"] == 50
+
+
+def test_la_api_busca_por_titulo_y_descripcion(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    crear_post(autor.id, title="Taller mecánico", body="Arreglamos autos")
+
+    por_titulo = client.get("/api/posts/?q=panader").get_json()
+    por_cuerpo = client.get("/api/posts/?q=autos").get_json()
+    sin_resultados = client.get("/api/posts/?q=zzzzz").get_json()
+
+    assert por_titulo["total"] == 1
+    assert por_titulo["items"][0]["title"] == "Panadería del barrio"
+    assert por_cuerpo["total"] == 1
+    assert por_cuerpo["items"][0]["title"] == "Taller mecánico"
+    assert sin_resultados["total"] == 0

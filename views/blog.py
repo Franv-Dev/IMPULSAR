@@ -35,11 +35,20 @@ def get_post(id, check_author=True):
 
 @blog.route("/")
 def index():
-    """Lista pública de emprendimientos."""
+    """Lista pública de emprendimientos, paginada."""
     # La relacion author_user usa lazy="joined", asi que el autor viene en la
     # misma consulta y no se dispara un SELECT por cada post (problema N+1).
-    posts = Post.query.order_by(Post.created.desc()).all()
-    return render_template("blog/index.html", posts=posts)
+    paginacion = (
+        Post.query.order_by(Post.created.desc())
+        .paginate(
+            page=request.args.get("page", 1, type=int),
+            per_page=current_app.config["POSTS_POR_PAGINA"],
+            error_out=False,
+        )
+    )
+    return render_template(
+        "blog/index.html", posts=paginacion.items, paginacion=paginacion
+    )
 
 @blog.route("/<int:id>")
 def detail(id):
@@ -75,13 +84,19 @@ def detail(id):
 @blog.route("/mis-emprendimientos")
 @login_required
 def my_posts():
-    """Listado de emprendimientos del usuario actual."""
-    posts = (
+    """Listado de emprendimientos del usuario actual, paginado."""
+    paginacion = (
         Post.query.filter_by(author=g.user.id)
         .order_by(Post.created.desc())
-        .all()
+        .paginate(
+            page=request.args.get("page", 1, type=int),
+            per_page=current_app.config["POSTS_POR_PAGINA"],
+            error_out=False,
+        )
     )
-    return render_template("blog/my_posts.html", posts=posts)
+    return render_template(
+        "blog/my_posts.html", posts=paginacion.items, paginacion=paginacion
+    )
 
 
 @blog.route("/create", methods=("GET", "POST"))
