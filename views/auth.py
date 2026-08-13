@@ -3,6 +3,7 @@ from flask import (
 )
 from models.user import User
 from werkzeug.security import check_password_hash, generate_password_hash
+from sqlalchemy.exc import IntegrityError
 from db import db
 import functools
 
@@ -24,7 +25,9 @@ def register():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         rol = request.form.get("rol", "usuario").strip() or "usuario"
-        email = request.form.get("email", "").strip()
+        # Se normaliza a minusculas para que Tomy@x.com y tomy@x.com sean el
+        # mismo usuario, tanto al registrar como al consultar unicidad.
+        email = request.form.get("email", "").strip().lower()
 
         error = None
 
@@ -49,9 +52,17 @@ def register():
                 rol=rol
             )
             db.session.add(user)
-            db.session.commit()
-            flash("Registro exitoso. Iniciá sesión.")
-            return redirect(url_for('auth.login'))
+            try:
+                db.session.commit()
+            except IntegrityError:
+                # Los chequeos de unicidad de arriba tienen una ventana de
+                # carrera: entre el SELECT y el INSERT puede entrar otro
+                # registro igual. La base de datos es la que decide.
+                db.session.rollback()
+                error = "Ese usuario o email ya está registrado."
+            else:
+                flash("Registro exitoso. Iniciá sesión.")
+                return redirect(url_for('auth.login'))
 
         flash(error)
 
@@ -112,7 +123,7 @@ def api_register():
     """Registro via JSON (devuelve usuario, sin token)."""
     data = request.get_json(silent=True) or {}
     username = (data.get("username") or "").strip()
-    email = (data.get("email") or "").strip()
+    email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     rol = (data.get("rol") or "usuario").strip() or "usuario"
 
@@ -132,7 +143,11 @@ def api_register():
         rol=rol
     )
     db.session.add(user)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"errors": ["username o email ya existe"]}), 409
     return jsonify(user.serialize()), 201
 
 
@@ -140,7 +155,7 @@ def api_register():
 def api_login():
     """Login via JSON → devuelve JWT."""
     data = request.get_json(silent=True) or {}
-    email = (data.get("email") or "").strip()
+    email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
 
     if not email or not password:

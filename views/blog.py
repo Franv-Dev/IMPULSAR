@@ -9,6 +9,7 @@ from db import db
 import os
 from models.review import Review
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from services.geocoding import get_coordinates_from_address
 from services.uploads import ALLOWED_EXTENSIONS, allowed_file, save_post_image
 
@@ -35,14 +36,16 @@ def get_post(id, check_author=True):
 @blog.route("/")
 def index():
     """Lista pública de emprendimientos."""
+    # La relacion author_user usa lazy="joined", asi que el autor viene en la
+    # misma consulta y no se dispara un SELECT por cada post (problema N+1).
     posts = Post.query.order_by(Post.created.desc()).all()
-    return render_template("blog/index.html", posts=posts, get_user=get_user)
+    return render_template("blog/index.html", posts=posts)
 
 @blog.route("/<int:id>")
 def detail(id):
     """Detalle de un emprendimiento + reseñas."""
     post = Post.query.get_or_404(id)
-    author = User.query.get(post.author)
+    author = post.author_user
     reviews = (
         Review.query
         .filter_by(post_id=id)
@@ -249,15 +252,32 @@ def add_review(id):
 
     if error:
         flash(error)
-    else:
-        review = Review(
-            post_id=id,
-            user_id=g.user.id,
-            rating=rating,
-            comment=comment
-        )
-        db.session.add(review)
+        return redirect(url_for("blog.detail", id=id))
+
+    # Un usuario tiene una sola resena por emprendimiento (lo garantiza un
+    # UniqueConstraint). Si ya dejo una, esta la actualiza en vez de fallar.
+    review = Review.query.filter_by(post_id=id, user_id=g.user.id).first()
+
+    try:
+        if review is None:
+            review = Review(
+                post_id=id,
+                user_id=g.user.id,
+                rating=rating,
+                comment=comment
+            )
+            db.session.add(review)
+            mensaje = "¡Gracias por tu reseña!"
+        else:
+            review.rating = rating
+            review.comment = comment
+            mensaje = "Actualizamos tu reseña."
+
         db.session.commit()
-        flash("¡Gracias por tu reseña!")
+        flash(mensaje)
+    except IntegrityError:
+        db.session.rollback()
+        current_app.logger.exception("Error al guardar la resena del post %s", id)
+        flash("No pudimos guardar tu reseña. Intentá de nuevo.")
 
     return redirect(url_for("blog.detail", id=id))

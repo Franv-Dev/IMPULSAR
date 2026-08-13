@@ -1,16 +1,21 @@
-from db import db
-from datetime import datetime
+from db import db, utcnow
 
 
 class Post(db.Model):
     __tablename__ = "posts"
 
     id = db.Column(db.Integer, primary_key=True)
-    author = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    # OJO: la columna se llama "author" pero guarda un id, no un objeto User.
+    # Para acceder al usuario usar la relacion author_user de mas abajo.
+    author = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     title = db.Column(db.String(100))
     body = db.Column(db.Text)
-    created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created = db.Column(db.DateTime, nullable=False, default=utcnow)
     image = db.Column(db.String(100), nullable=True)
+
+    # Evita tener que hacer User.query.get(post.author) a mano en cada vista
+    # y template: con esto se escribe directamente post.author_user.username.
+    author_user = db.relationship("User", backref="posts", lazy="joined")
 
     #coordenadas 
     latitude = db.Column(db.Float, nullable=True)

@@ -33,10 +33,9 @@
                         <div class="card__body">
                             <div class="card__tags">
                                 <span class="badge badge--category">Emprendimiento</span>
-                                {% set author = get_user(post.author) %}
-                                {% if author %}
+                                {% if post.author_user %}
                                     <span class="badge badge--author">
-                                        {{ author.username }}
+                                        {{ post.author_user.username }}
                                     </span>
                                 {% endif %}
                             </div>

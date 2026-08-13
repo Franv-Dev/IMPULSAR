@@ -1,25 +1,50 @@
-from db import db
+from db import db, utcnow
+
+
+class Roles:
+    """Roles validos del sistema.
+
+    Estan aca para no repetir los strings sueltos por el codigo: si se escribe
+    "Usuario" en un lado y "usuario" en otro, cualquier chequeo de permisos
+    falla en silencio.
+    """
+
+    USUARIO = "usuario"
+    EMPRENDEDOR = "emprendedor"
+    ADMIN = "admin"
+
+    TODOS = (USUARIO, EMPRENDEDOR, ADMIN)
 
 
 class User(db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50))
-    password = db.Column(db.Text)
-    rol = db.Column(db.String(50))
-    email = db.Column(db.String(50))
-    biography= db.Column(db.Text,default="biography")
+    # unique a nivel de base de datos: validarlo solo en Python tiene una
+    # condicion de carrera (dos registros simultaneos pasan los dos el chequeo).
+    # index ademas acelera los filter_by(username=...) del login.
+    username = db.Column(db.String(50), unique=True, index=True, nullable=False)
+    password = db.Column(db.Text, nullable=False)
+    rol = db.Column(db.String(50), nullable=False, default=Roles.USUARIO)
+    email = db.Column(db.String(120), unique=True, index=True, nullable=False)
+    biography = db.Column(db.Text, default="Biografía")
 
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
     address_street = db.Column(db.String(255), nullable=True)
 
-    def __init__(self, username, password, rol, email,biography="Biografía",latitude=None, longitude=None, address_street=None):
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+
+    def __init__(self, username, password, email, rol=Roles.USUARIO,
+                 biography="Biografía", latitude=None, longitude=None,
+                 address_street=None):
         self.username = username
         self.password = password
-        self.rol = rol
-        self.email = email
+        # Se normaliza al guardar para que "Admin", "ADMIN" y "admin" sean lo
+        # mismo y los chequeos de permisos no dependan de como se escribio.
+        self.rol = (rol or Roles.USUARIO).strip().lower()
+        self.email = (email or "").strip().lower()
         self.biography = biography
         self.latitude = latitude
         self.longitude = longitude
@@ -36,10 +61,10 @@ class User(db.Model):
             "username": self.username,
             "email": self.email,
             "rol": self.rol,
-            "biography" : self.biography,
+            "biography": self.biography,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "address_street": self.address_street
+            "address_street": self.address_street,
         }
 
     # Alias más estándar para usar en la API
