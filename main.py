@@ -5,7 +5,9 @@ from db import db
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
+from werkzeug.exceptions import RequestEntityTooLarge
 from flask_wtf.csrf import CSRFProtect, CSRFError
+from services.uploads import MAX_IMAGE_BYTES
 import os
 
 # Blueprints
@@ -30,6 +32,9 @@ app.config["MAPTILER_KEY"] = os.getenv("MAPTILER_KEY", MAPTILER_KEY)
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_DATABASE_URI
 # OJO: es TRACK_MODIFICATIONS (plural)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# Tamanio maximo de subida. Sin esto, alguien puede mandar un archivo enorme
+# y agotar la memoria o el disco del servidor.
+app.config["MAX_CONTENT_LENGTH"] = MAX_IMAGE_BYTES
 # Secret key para sesiones
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
 
@@ -61,6 +66,14 @@ app.register_blueprint(profile)
 @app.route("/")
 def index():
     return render_template("home.html")
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(e):
+    """La imagen supera MAX_CONTENT_LENGTH."""
+    limite_mb = MAX_IMAGE_BYTES // (1024 * 1024)
+    flash(f"La imagen es demasiado grande. El maximo permitido es {limite_mb} MB.")
+    return redirect(request.referrer or url_for("index")), 303
 
 
 @app.errorhandler(CSRFError)

@@ -6,21 +6,13 @@ from models.post import Post
 from models.user import User
 from views.auth import login_required
 from db import db
-from werkzeug.utils import secure_filename
-import os, uuid
+import os
 from models.review import Review
 from sqlalchemy import func
 from services.geocoding import get_coordinates_from_address
+from services.uploads import ALLOWED_EXTENSIONS, allowed_file, save_post_image
 
 blog = Blueprint("blog", __name__, url_prefix="/blog")
-
-# Configuración
-
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
-
-def allowed_file(filename):
-    """Verifica si el archivo tiene una extensión permitida."""
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Utilidades
 
@@ -111,16 +103,11 @@ def create():
         elif not body:
             error = "Se requiere una descripción."
 
-        # ... (lógica de guardado de imagen) ...
-        if file and file.filename != "":
-            if allowed_file(file.filename):
-                upload_dir = os.path.join(current_app.root_path, "static/uploads")
-                os.makedirs(upload_dir, exist_ok=True)
-                filename = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-                upload_path = os.path.join(upload_dir, filename)
-                file.save(upload_path)
-            else:
-                error = "Formato de imagen no permitido (usa png, jpg, jpeg o gif)."
+        if error is None:
+            upload_dir = os.path.join(current_app.root_path, "static", "uploads")
+            filename, image_error = save_post_image(file, upload_dir)
+            if image_error:
+                error = image_error
 
         if error:
             flash(error)
@@ -174,17 +161,14 @@ def update(id):
         if not title:
             error = "Se requiere un título."
 
-        # Imagen nueva
-        if file and file.filename != "":
-            if allowed_file(file.filename):
-                upload_dir = os.path.join(current_app.root_path, "static/uploads")
-                os.makedirs(upload_dir, exist_ok=True)
-                filename = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-                upload_path = os.path.join(upload_dir, filename)
-                file.save(upload_path)
+        # Imagen nueva (si no se sube ninguna, se conserva la que ya tenia)
+        if error is None:
+            upload_dir = os.path.join(current_app.root_path, "static", "uploads")
+            filename, image_error = save_post_image(file, upload_dir)
+            if image_error:
+                error = image_error
+            elif filename:
                 post.image = filename
-            else:
-                error = "Formato de imagen no permitido (usa png, jpg, jpeg o gif)."
 
         if error:
             flash(error)
