@@ -443,6 +443,13 @@ main {
     color: #4B5563;
 }
 
+/* Formularios que deben comportarse como un boton dentro de una fila
+   (por ejemplo el de eliminar, que es un form POST y no un link). */
+.form-inline {
+    display: inline;
+    margin: 0;
+}
+
 .card__title {
     margin: 0 0 0.25rem;
     font-size: 1rem;

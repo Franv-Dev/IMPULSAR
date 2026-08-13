@@ -60,12 +60,17 @@
                                             style="font-size:0.8rem; padding:0.3rem 0.8rem;">
                                             Editar
                                         </a>
-                                        <a href="{{ url_for('blog.delete', id=post.id) }}"
-                                            class="btn btn--ghost"
-                                            style="font-size:0.8rem; padding:0.3rem 0.8rem;"
-                                            onclick="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
-                                            Eliminar
-                                        </a>
+                                        <form method="post"
+                                            action="{{ url_for('blog.delete', id=post.id) }}"
+                                            class="form-inline"
+                                            onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit"
+                                                class="btn btn--ghost"
+                                                style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                                Eliminar
+                                            </button>
+                                        </form>
                                     </div>
                                 {% else %}
                                     <span style="font-size:0.8rem; color:#9CA3AF;">

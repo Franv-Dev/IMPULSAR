@@ -73,11 +73,15 @@
                         <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--secondary">
                             Editar
                         </a>
-                        <a href="{{ url_for('blog.delete', id=post.id) }}"
-                            class="btn btn--ghost"
-                            onclick="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
-                            Eliminar
-                        </a>
+                        <form method="post"
+                            action="{{ url_for('blog.delete', id=post.id) }}"
+                            class="form-inline"
+                            onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn--ghost">
+                                Eliminar
+                            </button>
+                        </form>
                     </div>
                 {% endif %}
             </div>
@@ -124,6 +128,7 @@
                 </p>
             {% else %}
                 <form method="post" action="{{ url_for('blog.add_review', id=post.id) }}" class="auth__form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="auth__field">
                         <label class="auth__label">Tu calificación</label>
                         <div class="rating">

@@ -254,10 +254,14 @@ def update(id):
     return render_template("blog/update.html", post=post)
 
 
-@blog.route("/delete/<int:id>")
+@blog.route("/delete/<int:id>", methods=("POST",))
 @login_required
 def delete(id):
-    """Eliminar emprendimiento."""
+    """Eliminar emprendimiento.
+
+    Solo acepta POST: un GET no debe tener efectos secundarios (podria
+    dispararse desde un <img src>, un prefetch del navegador o un crawler).
+    """
     post = Post.query.get_or_404(id)
     if post.author != g.user.id:
         flash("No tenés permiso para eliminar este emprendimiento.")
@@ -267,8 +271,9 @@ def delete(id):
         db.session.delete(post)
         db.session.commit()
         flash("Emprendimiento eliminado correctamente.")
-    except Exception as e:
+    except Exception:
         db.session.rollback()
+        current_app.logger.exception("Error al eliminar el post %s", id)
         flash("Error al eliminar el emprendimiento.")
     return redirect(url_for("blog.my_posts"))
 

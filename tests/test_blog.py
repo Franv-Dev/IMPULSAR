@@ -161,8 +161,11 @@ def test_flow_create_update_delete_post(client, app):
         assert post.title == "Titulo modificado"
         assert post.body == "Contenido editado"
 
-    # 4) DELETE – eliminar publicación
+    # 4) DELETE – eliminar publicación (solo por POST, un GET no debe borrar)
     resp = client.get(f"/blog/delete/{post_id}", follow_redirects=False)
+    assert resp.status_code == 405, "Borrar por GET debe estar prohibido"
+
+    resp = client.post(f"/blog/delete/{post_id}", follow_redirects=False)
     assert resp.status_code == 302
     assert "/blog/mis-emprendimientos" in resp.headers.get("Location", "")
 

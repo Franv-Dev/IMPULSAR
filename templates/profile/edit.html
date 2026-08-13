@@ -24,6 +24,7 @@
             {% endwith %}
 
             <form method="post" class="auth__form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <div class="auth__field">
                     <label for="biography" class="auth__label">Biografía</label>

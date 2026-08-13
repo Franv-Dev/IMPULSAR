@@ -20,6 +20,7 @@
         {% endwith %}
 
         <form method="POST" action="{{ url_for('profile.create') }}" class="auth__form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="auth__field">
             <label for="body" class="auth__label">Biografía</label>
             <textarea
