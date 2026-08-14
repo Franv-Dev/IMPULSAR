@@ -5,7 +5,11 @@
 
 <div class="profile-container">
     <div class="profile-header">
-        <img src="{{ url_for('static', filename='icons/portada.jpg') }}" alt="Portada" class="cover-photo">
+        {% if user.cover_image %}
+            <img src="{{ url_for('static', filename='uploads/covers/' ~ user.cover_image) }}" alt="Portada de {{ user.username }}" class="cover-photo">
+        {% else %}
+            <img src="{{ url_for('static', filename='icons/portada.jpg') }}" alt="Portada" class="cover-photo">
+        {% endif %}
         <div class="profile-avatar">
             {% if user.avatar %}
                 <img src="{{ url_for('static', filename='uploads/avatars/' ~ user.avatar) }}" alt="Avatar de {{ user.username }}">

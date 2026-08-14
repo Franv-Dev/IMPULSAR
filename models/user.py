@@ -29,6 +29,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, index=True, nullable=False)
     biography = db.Column(db.Text, default="Biografía")
     avatar = db.Column(db.String(100), nullable=True)
+    cover_image = db.Column(db.String(100), nullable=True)
 
     # Un admin banea cuentas desde el panel; un usuario baneado no puede
     # iniciar sesion (ver views/auth.py login() y api_login()).
@@ -51,8 +52,8 @@ class User(db.Model):
 
     def __init__(self, username, password, email, rol=Roles.USUARIO,
                  biography="Biografía", latitude=None, longitude=None,
-                 address_street=None, avatar=None, phone=None, whatsapp=None,
-                 instagram_url=None, facebook_url=None, twitter_url=None):
+                 address_street=None, avatar=None, cover_image=None, phone=None,
+                 whatsapp=None, instagram_url=None, facebook_url=None, twitter_url=None):
         self.username = username
         self.password = password
         # Se normaliza al guardar para que "Admin", "ADMIN" y "admin" sean lo
@@ -61,6 +62,7 @@ class User(db.Model):
         self.email = (email or "").strip().lower()
         self.biography = biography
         self.avatar = avatar
+        self.cover_image = cover_image
         self.phone = phone
         self.whatsapp = whatsapp
         self.instagram_url = instagram_url
@@ -84,6 +86,7 @@ class User(db.Model):
             "is_banned": self.is_banned,
             "biography": self.biography,
             "avatar": self.avatar,
+            "cover_image": self.cover_image,
             "phone": self.phone,
             "whatsapp": self.whatsapp,
             "instagram_url": self.instagram_url,

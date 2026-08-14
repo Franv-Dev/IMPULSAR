@@ -41,6 +41,20 @@
                 </div>
 
                 <div class="auth__field">
+                    <label for="cover_image" class="auth__label">Imagen de portada</label>
+                    <input
+                        type="file"
+                        id="cover_image"
+                        name="cover_image"
+                        class="auth__input"
+                        accept="image/png, image/jpeg, image/gif"
+                    >
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Se muestra ancha arriba de tu perfil. Si no subís una nueva, se conserva la actual.
+                    </small>
+                </div>
+
+                <div class="auth__field">
                     <label for="biography" class="auth__label">Biografía</label>
                     <textarea
                         id="biography"

@@ -58,6 +58,35 @@ def test_editar_perfil_sube_un_avatar_valido(client, db, crear_usuario, login):
     assert usuario.avatar is not None
 
 
+def test_editar_perfil_sube_una_portada_valida(client, db, crear_usuario, login):
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (1400, 400), "green").save(buffer, format="PNG")
+    buffer.seek(0)
+    portada = FileStorage(stream=buffer, filename="portada.png", content_type="image/png")
+
+    client.post(
+        "/perfil/edit",
+        data={"biography": "Bio", "cover_image": portada},
+        content_type="multipart/form-data",
+    )
+
+    db.session.refresh(usuario)
+    assert usuario.cover_image is not None
+
+
+def test_el_perfil_muestra_la_portada_propia(client, db, crear_usuario):
+    usuario = crear_usuario(username="tomy")
+    usuario.cover_image = "portada_de_prueba.png"
+    db.session.commit()
+
+    html = client.get(f"/perfil/{usuario.id}").get_data(as_text=True)
+
+    assert "uploads/covers/portada_de_prueba.png" in html
+
+
 def test_el_perfil_muestra_sus_emprendimientos_con_calificacion(
     client, db, crear_usuario, crear_post
 ):

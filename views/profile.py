@@ -83,6 +83,15 @@ def edit():
         elif avatar_filename:
             g.user.avatar = avatar_filename
 
+        # 1.b.2 Imagen de portada (misma validacion/compresion que el avatar)
+        cover_file = request.files.get("cover_image")
+        cover_dir = os.path.join(current_app.root_path, "static", "uploads", "covers")
+        cover_filename, cover_error = save_post_image(cover_file, cover_dir)
+        if cover_error:
+            flash(cover_error)
+        elif cover_filename:
+            g.user.cover_image = cover_filename
+
         # 1.c Datos de contacto
         g.user.phone = phone or None
         g.user.whatsapp = whatsapp or None
