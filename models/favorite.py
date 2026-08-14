@@ -14,7 +14,10 @@ class Favorite(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable=False, index=True)
+    # ondelete="CASCADE": sin esto, MySQL usa RESTRICT por default y borrar un
+    # post con al menos un favorito falla con IntegrityError (mismo bug que
+    # se arreglo en Report, ver migracion d09128dd029c).
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True)
     created = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     user = db.relationship("User")

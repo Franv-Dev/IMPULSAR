@@ -13,7 +13,12 @@ class Message(db.Model):
     __tablename__ = "messages"
 
     id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable=False, index=True)
+    # ondelete="CASCADE": sin esto, MySQL usa RESTRICT por default y borrar un
+    # post con al menos un mensaje falla con IntegrityError (mismo bug que se
+    # arreglo en Report, ver migracion d09128dd029c). client_id/sender_id
+    # quedan sin cascada: no hay borrado de usuarios implementado hoy, asi que
+    # ese caso no puede darse todavia.
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True)
     client_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 

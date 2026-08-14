@@ -1,6 +1,7 @@
 """Tests de favoritos: marcar/desmarcar emprendimientos y "Mis favoritos"."""
 
 from models.favorite import Favorite
+from models.post import Post
 
 
 def test_marcar_como_favorito(client, db, crear_usuario, crear_post, login):
@@ -70,3 +71,24 @@ def test_dos_usuarios_pueden_marcar_el_mismo_post_sin_chocar(
     client.post(f"/blog/{post.id}/favorito")
 
     assert Favorite.query.filter_by(post_id=post.id).count() == 2
+
+
+# --------------------------------------------- ON DELETE CASCADE (FK 1451)
+
+def test_se_puede_eliminar_un_post_con_favoritos(client, db, crear_usuario, crear_post, login):
+    """Antes del fix, esto fallaba con IntegrityError 1451 en MySQL: el FK
+    de favorites.post_id era RESTRICT por default."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/favorito")
+    assert Favorite.query.filter_by(post_id=post.id).count() == 1
+
+    login(autor.id)
+    resp = client.post(f"/blog/delete/{post.id}", follow_redirects=False)
+
+    assert resp.status_code == 302
+    assert Post.query.get(post.id) is None
+    assert Favorite.query.filter_by(post_id=post.id).count() == 0

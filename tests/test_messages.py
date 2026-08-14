@@ -1,6 +1,7 @@
 """Tests del chat simple entre cliente y emprendedor."""
 
 from models.message import Message
+from models.post import Post
 from models.review import Review
 
 
@@ -172,3 +173,24 @@ def test_una_resenia_respondida_no_cuenta_en_el_badge(
     datos = client.get("/mensajes/notificaciones").get_json()
 
     assert datos["unanswered_reviews"] == 0
+
+
+# --------------------------------------------- ON DELETE CASCADE (FK 1451)
+
+def test_se_puede_eliminar_un_post_con_mensajes(client, db, crear_usuario, crear_post, login):
+    """Antes del fix, esto fallaba con IntegrityError 1451 en MySQL: el FK
+    de messages.post_id era RESTRICT por default."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/mensajes/{post.id}/{cliente.id}", data={"body": "Hola"})
+    assert Message.query.filter_by(post_id=post.id).count() == 1
+
+    login(autor.id)
+    resp = client.post(f"/blog/delete/{post.id}", follow_redirects=False)
+
+    assert resp.status_code == 302
+    assert Post.query.get(post.id) is None
+    assert Message.query.filter_by(post_id=post.id).count() == 0
