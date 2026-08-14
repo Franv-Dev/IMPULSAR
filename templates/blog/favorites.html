@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Mis favoritos – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Mis favoritos</h2>
+                <p class="section__subtitle">
+                    Los emprendimientos que marcaste para encontrar rápido después.
+                </p>
+            </div>
+            <a href="{{ url_for('blog.index') }}" class="section__link">Ver todos los emprendimientos</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if posts %}
+            <div class="cards-grid">
+                {% for item in posts %}
+                    {% set post = item.post %}
+                    {% set is_favorite = item.is_favorite %}
+                    <article class="card">
+                        {% if post.image %}
+                            <a href="{{ url_for('blog.detail', id=post.id) }}" class="card__image-link">
+                                <div class="card__image-wrapper">
+                                    <img
+                                        src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                        alt="Imagen de {{ post.title }}"
+                                        class="card__image"
+                                    >
+                                </div>
+                            </a>
+                        {% endif %}
+                        <div class="card__body">
+                            <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <span class="badge badge--category">{{ post.category_label }}</span>
+                                {% include "partials/_favorito_boton.html" %}
+                            </div>
+
+                            <h3 class="card__title">
+                                <a href="{{ url_for('blog.detail', id=post.id) }}" style="text-decoration:none; color:inherit;">
+                                    {{ post.title }}
+                                </a>
+                            </h3>
+
+                            {% if item.avg_rating %}
+                                <p class="card__rating">
+                                    ⭐ {{ item.avg_rating }} <span style="color:#9CA3AF;">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
+                                </p>
+                            {% else %}
+                                <p class="card__rating" style="color:#9CA3AF;">Sin reseñas todavía</p>
+                            {% endif %}
+
+                            <p class="card__description">
+                                {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
+                            </p>
+
+                            <div style="margin-top:0.75rem; text-align:right;">
+                                <a href="{{ url_for('blog.detail', id=post.id) }}"
+                                    class="btn btn--secondary"
+                                    style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                    Ver detalle / Reseñas
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            {% include "partials/_paginacion.html" %}
+        {% else %}
+            <div class="emprendimientos__empty" style="margin-top:1rem;">
+                <p>
+                    Todavía no marcaste ningún emprendimiento como favorito.
+                    <a href="{{ url_for('blog.index') }}">Explorá los emprendimientos</a> y tocá el corazón del que te interese.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

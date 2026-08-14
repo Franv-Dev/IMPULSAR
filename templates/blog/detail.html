@@ -28,10 +28,13 @@
             {% endif %}
             
             <div class="card__body">
-                <div class="card__tags">
-                    <span class="badge badge--category">Emprendimiento</span>
+                <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <span class="badge badge--category">{{ post.category_label }}</span>
+                    {% if g.user %}
+                        {% include "partials/_favorito_boton.html" %}
+                    {% endif %}
                 </div>
-                
+
                 <h1 class="card__title" style="font-size:1.6rem;">{{ post.title }}</h1>
                 
                 <p class="card__location">

@@ -2,6 +2,7 @@ from flask import (
     render_template, Blueprint, redirect, flash, g, request, url_for, current_app
 )
 from werkzeug.exceptions import abort
+from models.favorite import Favorite
 from models.post import Categorias, Post
 from models.user import User
 from views.auth import login_required
@@ -11,6 +12,7 @@ from models.review import Review
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from services.geocoding import get_coordinates_from_address
+from services.ratings import query_posts_con_rating, serializar_con_rating
 from services.uploads import ALLOWED_EXTENSIONS, allowed_file, save_post_image
 
 blog = Blueprint("blog", __name__, url_prefix="/blog")
@@ -31,6 +33,11 @@ def get_post(id, check_author=True):
         return redirect(url_for("blog.my_posts"))
     return post
 
+def _ids_favoritos(user_id):
+    """IDs de los posts que el usuario marco como favoritos, en una sola consulta."""
+    filas = db.session.query(Favorite.post_id).filter_by(user_id=user_id).all()
+    return {post_id for (post_id,) in filas}
+
 # Rutas públicas
 
 @blog.route("/")
@@ -38,24 +45,8 @@ def index():
     """Lista pública de emprendimientos, paginada, con busqueda y filtro por categoria."""
     # La relacion author_user usa lazy="joined", asi que el autor viene en la
     # misma consulta y no se dispara un SELECT por cada post (problema N+1).
-    # El promedio de reseñas se trae igual, con un outerjoin a una subquery
-    # agrupada por post: pedirlo post por post en el bucle del template
-    # dispararia una consulta extra por cada tarjeta.
-    ratings = (
-        db.session.query(
-            Review.post_id.label("post_id"),
-            func.avg(Review.rating).label("avg_rating"),
-            func.count(Review.id).label("review_count"),
-        )
-        .group_by(Review.post_id)
-        .subquery()
-    )
-
-    query = (
-        Post.query
-        .outerjoin(ratings, ratings.c.post_id == Post.id)
-        .add_columns(ratings.c.avg_rating, ratings.c.review_count)
-    )
+    # El promedio de reseñas se trae con el mismo criterio (ver services/ratings.py).
+    query = query_posts_con_rating()
 
     busqueda = (request.args.get("q") or "").strip()
     if busqueda:
@@ -75,14 +66,8 @@ def index():
             error_out=False,
         )
     )
-    posts = [
-        {
-            "post": post,
-            "avg_rating": round(avg_rating, 1) if avg_rating else None,
-            "review_count": review_count or 0,
-        }
-        for post, avg_rating, review_count in paginacion.items
-    ]
+    favoritos = _ids_favoritos(g.user.id) if g.user else frozenset()
+    posts = serializar_con_rating(paginacion.items, favoritos)
     return render_template(
         "blog/index.html",
         posts=posts,
@@ -120,6 +105,11 @@ def detail(id):
         if g.user else None
     )
 
+    is_favorite = (
+        g.user is not None
+        and Favorite.query.filter_by(user_id=g.user.id, post_id=id).first() is not None
+    )
+
     return render_template(
             "blog/detail.html",
             post=post,
@@ -127,6 +117,7 @@ def detail(id):
             reviews=reviews,
             avg_rating=avg_rating,
             mi_review=mi_review,
+            is_favorite=is_favorite,
             MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
 
@@ -393,3 +384,45 @@ def delete_review(review_id):
     flash("Tu reseña se eliminó correctamente.")
 
     return redirect(url_for("blog.detail", id=post_id))
+
+
+@blog.route("/<int:id>/favorito", methods=["POST"])
+@login_required
+def toggle_favorite(id):
+    """Marca o desmarca un emprendimiento como favorito (toggle)."""
+    post = Post.query.get_or_404(id)
+
+    favorito = Favorite.query.filter_by(user_id=g.user.id, post_id=post.id).first()
+    if favorito:
+        db.session.delete(favorito)
+        db.session.commit()
+        flash("Se quitó de tus favoritos.")
+    else:
+        try:
+            db.session.add(Favorite(user_id=g.user.id, post_id=post.id))
+            db.session.commit()
+            flash("Se agregó a tus favoritos.")
+        except IntegrityError:
+            # Ventana de carrera: dos clicks casi simultaneos en "favorito".
+            db.session.rollback()
+
+    destino = request.referrer or url_for("blog.detail", id=post.id)
+    return redirect(destino)
+
+
+@blog.route("/favoritos")
+@login_required
+def my_favorites():
+    """Emprendimientos que el usuario marco como favoritos."""
+    paginacion = (
+        query_posts_con_rating(Post.query.join(Favorite, Favorite.post_id == Post.id))
+        .filter(Favorite.user_id == g.user.id)
+        .order_by(Post.created.desc())
+        .paginate(
+            page=request.args.get("page", 1, type=int),
+            per_page=current_app.config["POSTS_POR_PAGINA"],
+            error_out=False,
+        )
+    )
+    posts = serializar_con_rating(paginacion.items, favoritos=_ids_favoritos(g.user.id))
+    return render_template("blog/favorites.html", posts=posts, paginacion=paginacion)

@@ -43,6 +43,7 @@
             <div class="cards-grid">
                 {% for item in posts %}
                     {% set post = item.post %}
+                    {% set is_favorite = item.is_favorite %}
                     <article class="card">
                         {% if post.image %}
                             <a href="{{ url_for('blog.detail', id=post.id) }}" class="card__image-link">
@@ -56,12 +57,17 @@
                             </a>
                         {% endif %}
                         <div class="card__body">
-                            <div class="card__tags">
-                                <span class="badge badge--category">{{ post.category_label }}</span>
-                                {% if post.author_user %}
-                                    <span class="badge badge--author">
-                                        {{ post.author_user.username }}
-                                    </span>
+                            <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                                    <span class="badge badge--category">{{ post.category_label }}</span>
+                                    {% if post.author_user %}
+                                        <span class="badge badge--author">
+                                            {{ post.author_user.username }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% if g.user %}
+                                    {% include "partials/_favorito_boton.html" %}
                                 {% endif %}
                             </div>
 

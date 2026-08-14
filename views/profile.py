@@ -3,59 +3,30 @@ import os
 from flask import (
     render_template, Blueprint, redirect, flash, g, request, url_for, current_app
 )
-from sqlalchemy import func
 
 from models.post import Post
-from models.review import Review
 from models.user import User
 from views.auth import login_required
 from db import db
 from services.geocoding import get_coordinates_from_address
+from services.ratings import query_posts_con_rating, serializar_con_rating
 from services.uploads import save_post_image
 
 profile = Blueprint("profile", __name__, url_prefix="/perfil")
 
 
-def _posts_del_usuario_con_rating(user_id):
-    """Emprendimientos del usuario con su promedio de reseñas.
-
-    Misma estrategia que blog.index(): un solo outerjoin + AVG + COUNT en vez
-    de una consulta de reseñas por cada emprendimiento del listado.
-    """
-    ratings = (
-        db.session.query(
-            Review.post_id.label("post_id"),
-            func.avg(Review.rating).label("avg_rating"),
-            func.count(Review.id).label("review_count"),
-        )
-        .group_by(Review.post_id)
-        .subquery()
-    )
-    filas = (
-        Post.query
-        .filter_by(author=user_id)
-        .outerjoin(ratings, ratings.c.post_id == Post.id)
-        .add_columns(ratings.c.avg_rating, ratings.c.review_count)
-        .order_by(Post.created.desc())
-        .all()
-    )
-    return [
-        {
-            "post": post,
-            "avg_rating": round(avg_rating, 1) if avg_rating else None,
-            "review_count": review_count or 0,
-        }
-        for post, avg_rating, review_count in filas
-    ]
-
-
 @profile.route("/<int:user_id>")
 def view_profile(user_id):
     user = User.query.get_or_404(user_id)
+    filas = (
+        query_posts_con_rating(Post.query.filter_by(author=user_id))
+        .order_by(Post.created.desc())
+        .all()
+    )
     return render_template(
         "profile.html",
         user=user,
-        posts=_posts_del_usuario_con_rating(user_id),
+        posts=serializar_con_rating(filas),
         MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
 
