@@ -70,6 +70,7 @@
                             </a>
                             <a href="{{ url_for('messages.inbox') }}" class="user-menu__item">
                                 Mensajes
+                                <span id="notif-badge" class="badge--notif" style="display:none;" aria-live="polite"></span>
                             </a>
                             <a href="{{ url_for('auth.logout') }}" class="user-menu__item user-menu__item--danger">
                                 Salir

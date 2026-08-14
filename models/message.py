@@ -19,6 +19,9 @@ class Message(db.Model):
 
     body = db.Column(db.Text, nullable=False)
     created = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
+    # Null mientras el destinatario no abrio la conversacion. Sirve para el
+    # contador de "mensajes sin leer" del navbar.
+    read_at = db.Column(db.DateTime, nullable=True)
 
     post = db.relationship("Post")
     client = db.relationship("User", foreign_keys=[client_id])
@@ -36,4 +39,5 @@ class Message(db.Model):
             "sender_username": self.sender.username if self.sender else None,
             "body": self.body,
             "created": self.created.isoformat() if self.created else None,
+            "read_at": self.read_at.isoformat() if self.read_at else None,
         }

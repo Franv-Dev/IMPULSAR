@@ -9,9 +9,10 @@ from flask import Blueprint, abort, flash, g, jsonify, redirect, render_template
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
 
-from db import db
+from db import db, utcnow
 from models.message import Message
 from models.post import Post
+from models.review import Review
 from models.user import User
 from views.auth import login_required
 
@@ -77,6 +78,21 @@ def conversation(post_id, client_id):
         .order_by(Message.created.asc())
         .all()
     )
+
+    # Al abrir la conversacion se marcan como leidos los mensajes que mando
+    # la otra parte: es lo que hace bajar el contador de "sin leer" del navbar.
+    (
+        Message.query
+        .filter(
+            Message.post_id == post_id,
+            Message.client_id == client_id,
+            Message.sender_id != g.user.id,
+            Message.read_at.is_(None),
+        )
+        .update({"read_at": utcnow()}, synchronize_session=False)
+    )
+    db.session.commit()
+
     # El otro lado de la conversacion: el dueño si soy el cliente, o el
     # cliente si soy el dueño.
     otra_parte = post.author_user if g.user.id == client_id else User.query.get_or_404(client_id)
@@ -107,3 +123,37 @@ def poll(post_id, client_id):
         .all()
     )
     return jsonify({"items": [m.serialize() for m in nuevos]}), 200
+
+
+@messages.route("/notificaciones")
+@login_required
+def notifications():
+    """Contador para el badge del navbar: mensajes sin leer + reseñas sin responder.
+
+    Reutiliza el mismo mecanismo de polling que ya usa el chat (ver
+    static/js/chat.js), solo que este endpoint lo consulta static/js/main.js
+    en todas las paginas, no solo dentro de una conversacion.
+    """
+    mensajes_sin_leer = (
+        db.session.query(func.count(Message.id))
+        .join(Post, Post.id == Message.post_id)
+        .filter(
+            Message.read_at.is_(None),
+            Message.sender_id != g.user.id,
+            or_(Message.client_id == g.user.id, Post.author == g.user.id),
+        )
+        .scalar()
+    ) or 0
+
+    resenias_sin_responder = (
+        db.session.query(func.count(Review.id))
+        .join(Post, Post.id == Review.post_id)
+        .filter(Review.reply.is_(None), Post.author == g.user.id)
+        .scalar()
+    ) or 0
+
+    return jsonify({
+        "unread_messages": mensajes_sin_leer,
+        "unanswered_reviews": resenias_sin_responder,
+        "total": mensajes_sin_leer + resenias_sin_responder,
+    }), 200

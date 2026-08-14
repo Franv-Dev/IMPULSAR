@@ -841,6 +841,20 @@ textarea.auth__input {
     color: #991b1b;
 }
 
+.badge--notif {
+    display: inline-block;
+    min-width: 1.1rem;
+    padding: 0.05rem 0.35rem;
+    margin-left: 0.35rem;
+    border-radius: 999px;
+    background-color: #DC2626;
+    color: var(--color-white);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.3;
+}
+
 /* Responsive: en mobile, que no rompa el layout */
 @media (max-width: 768px) {
     .navbar__user-toggle {

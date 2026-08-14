@@ -1,6 +1,7 @@
 """Tests del chat simple entre cliente y emprendedor."""
 
 from models.message import Message
+from models.review import Review
 
 
 def test_el_cliente_puede_iniciar_una_conversacion(client, db, crear_usuario, crear_post, login):
@@ -96,3 +97,78 @@ def test_el_polling_solo_devuelve_mensajes_posteriores(
 
     assert len(datos["items"]) == 1
     assert datos["items"][0]["body"] == "Dos"
+
+
+# --------------------------------------------------------------- notificaciones
+
+def test_el_badge_cuenta_mensajes_sin_leer_del_dueño(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    db.session.add(Message(post_id=post.id, client_id=cliente.id, sender_id=cliente.id, body="Hola"))
+    db.session.commit()
+
+    login(autor.id)
+    datos = client.get("/mensajes/notificaciones").get_json()
+
+    assert datos["unread_messages"] == 1
+    assert datos["total"] == 1
+
+
+def test_abrir_la_conversacion_marca_los_mensajes_como_leidos(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    db.session.add(Message(post_id=post.id, client_id=cliente.id, sender_id=cliente.id, body="Hola"))
+    db.session.commit()
+
+    login(autor.id)
+    client.get(f"/mensajes/{post.id}/{cliente.id}")  # abre la conversacion
+
+    datos = client.get("/mensajes/notificaciones").get_json()
+    assert datos["unread_messages"] == 0
+
+
+def test_no_se_cuentan_los_mensajes_propios_como_sin_leer(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/mensajes/{post.id}/{cliente.id}", data={"body": "Hola"})
+
+    datos = client.get("/mensajes/notificaciones").get_json()
+    assert datos["unread_messages"] == 0
+
+
+def test_el_badge_cuenta_resenias_sin_responder(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    db.session.add(Review(post_id=post.id, user_id=cliente.id, rating=4))
+    db.session.commit()
+
+    login(autor.id)
+    datos = client.get("/mensajes/notificaciones").get_json()
+
+    assert datos["unanswered_reviews"] == 1
+    assert datos["total"] == 1
+
+
+def test_una_resenia_respondida_no_cuenta_en_el_badge(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    db.session.add(Review(post_id=post.id, user_id=cliente.id, rating=4, reply="Gracias"))
+    db.session.commit()
+
+    login(autor.id)
+    datos = client.get("/mensajes/notificaciones").get_json()
+
+    assert datos["unanswered_reviews"] == 0

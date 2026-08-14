@@ -199,3 +199,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 });
+
+// =============================
+// BADGE DE NOTIFICACIONES (mensajes sin leer + reseñas sin responder)
+// =============================
+document.addEventListener("DOMContentLoaded", () => {
+    const badge = document.getElementById("notif-badge");
+    if (!badge) return; // no esta logueado, no existe el link de Mensajes
+
+    function actualizarBadge() {
+        fetch("/mensajes/notificaciones")
+            .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+            .then((data) => {
+                const total = data.total || 0;
+                if (total > 0) {
+                    badge.textContent = total > 9 ? "9+" : String(total);
+                    badge.style.display = "inline-block";
+                } else {
+                    badge.style.display = "none";
+                }
+            })
+            .catch(() => {
+                // Un polling fallido no debe romper la navegacion normal.
+            });
+    }
+
+    actualizarBadge();
+    setInterval(actualizarBadge, 20000);
+});
