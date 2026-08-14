@@ -5,7 +5,7 @@ from datetime import date, time, timedelta
 import pytest
 
 from models.event import Event
-from services.eventos import hoy_en_argentina, parsear_fecha
+from services.eventos import hoy_en_argentina, parsear_fecha, pasados, proximos
 
 
 @pytest.fixture
@@ -395,6 +395,83 @@ def test_la_cartelera_esta_paginada(client, app, crear_usuario, crear_post, crea
     assert f"Feria numero {por_pagina}" not in primera
     assert f"Feria numero {por_pagina}" in segunda
     assert "Página 1 de 2" in primera
+
+
+def test_la_paginacion_no_repite_ni_saltea_eventos_del_mismo_dia(
+    client, app, crear_usuario, crear_post, crear_evento
+):
+    """Todos el mismo dia y sin hora: comparten la clave de orden entera.
+
+    Sin un desempate estable el orden entre ellos lo decide la base, que no
+    garantiza ninguno, y con LIMIT/OFFSET eso alcanza para que un evento salga
+    en las dos paginas o en ninguna.
+    """
+    por_pagina = app.config["POSTS_POR_PAGINA"]
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    # Titulos de ancho fijo para que ninguno sea subcadena de otro ("Feria 1"
+    # matchearia dentro de "Feria 10" y el conteo daria cualquier cosa).
+    titulos = [f"Feria {numero:02d} de prueba" for numero in range(por_pagina + 3)]
+    for titulo in titulos:
+        crear_evento(post.id, titulo=titulo, dias=5, hora=None)
+
+    paginas = [
+        client.get("/eventos/").get_data(as_text=True),
+        client.get("/eventos/?page=2").get_data(as_text=True),
+    ]
+
+    for titulo in titulos:
+        apariciones = sum(pagina.count(titulo) for pagina in paginas)
+        assert apariciones == 1, f"{titulo} aparece {apariciones} veces entre las dos páginas"
+
+
+def test_los_eventos_del_mismo_dia_sin_hora_salen_siempre_en_el_mismo_orden(
+    db, crear_usuario, crear_post, crear_evento
+):
+    """El orden tiene que ser total, no "el que devuelva la base esta vez"."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    for numero in range(5):
+        crear_evento(post.id, titulo=f"Feria {numero}", dias=5, hora=None)
+
+    primera_vez = [evento.id for evento in proximos(Event.query).all()]
+    segunda_vez = [evento.id for evento in proximos(Event.query).all()]
+
+    assert primera_vez == segunda_vez
+    assert primera_vez == sorted(primera_vez)
+
+
+@pytest.mark.parametrize("consulta, sentido", [(proximos, "ASC"), (pasados, "DESC")])
+def test_el_orden_incluye_el_id_como_desempate(app, consulta, sentido):
+    """Se mira el ORDER BY y no solo el resultado a proposito.
+
+    Con SQLite las filas suelen volver en orden de insercion aunque la consulta
+    no lo pida, asi que un test que solo compare listas puede pasar en verde con
+    el bug puesto y romperse recien en MySQL, en produccion y paginando.
+    """
+    # Solo el ORDER BY: "events.id" tambien aparece en el SELECT y en el JOIN,
+    # asi que buscarlo en la consulta entera no probaria nada.
+    orden = str(consulta(Event.query).statement.compile()).split("ORDER BY")[1]
+
+    assert f"events.fecha {sentido}" in orden
+    assert f"events.hora {sentido}" in orden
+    assert f"events.id {sentido}" in orden
+    # Y ultimo: si desempatara antes, mandaria el id por sobre la fecha.
+    assert orden.index("events.id") > orden.index("events.hora")
+
+
+def test_los_pasados_del_mismo_dia_tambien_desempatan(
+    db, crear_usuario, crear_post, crear_evento
+):
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    for numero in range(5):
+        crear_evento(post.id, titulo=f"Feria vieja {numero}", dias=-5, hora=None)
+
+    ids = [evento.id for evento in pasados(Event.query).all()]
+
+    # Al reves que los proximos: los pasados van del mas reciente al mas viejo.
+    assert ids == sorted(ids, reverse=True)
 
 
 def test_eventos_esta_en_los_slugs_reservados():

@@ -65,15 +65,31 @@ def proximos(query, hoy=None):
     el dia aunque su hora ya haya pasado. Para una feria eso es lo correcto (a
     las 11 todavia se puede ir a una que abrio a las 10), y ademas la hora es
     opcional, asi que no siempre hay con que hacer un corte mas fino.
+
+    El id desempata al final y no es decorativo: como la hora es opcional,
+    varios eventos del mismo dia sin hora comparten la clave de orden entera, y
+    ahi el orden entre ellos lo decide la base, que no garantiza ninguno. Con
+    LIMIT/OFFSET (la cartelera esta paginada) eso alcanza para que un evento
+    aparezca en dos paginas o en ninguna.
     """
     hoy = hoy or hoy_en_argentina()
-    return query.filter(Event.fecha >= hoy).order_by(Event.fecha.asc(), Event.hora.asc())
+    return (
+        query.filter(Event.fecha >= hoy)
+        .order_by(Event.fecha.asc(), Event.hora.asc(), Event.id.asc())
+    )
 
 
 def pasados(query, hoy=None):
-    """Eventos ya vencidos, del mas reciente al mas viejo."""
+    """Eventos ya vencidos, del mas reciente al mas viejo.
+
+    Desempata por id por lo mismo que proximos(), y en el mismo sentido que el
+    resto del orden para que la lista quede coherente.
+    """
     hoy = hoy or hoy_en_argentina()
-    return query.filter(Event.fecha < hoy).order_by(Event.fecha.desc(), Event.hora.desc())
+    return (
+        query.filter(Event.fecha < hoy)
+        .order_by(Event.fecha.desc(), Event.hora.desc(), Event.id.desc())
+    )
 
 
 def eventos_de_usuario(user_id):
