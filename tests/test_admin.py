@@ -49,6 +49,42 @@ def test_el_admin_puede_banear_y_desbanear_a_un_usuario(
     assert usuario.is_banned is False
 
 
+def test_banear_a_un_usuario_corta_su_sesion_activa(client, db, crear_usuario, login):
+    """No alcanza con chequear is_banned en el login: si banean a alguien que
+    ya esta navegando, tiene que perder el acceso en el proximo request."""
+    usuario = crear_usuario(username="molesto")
+
+    login(usuario.id)
+    assert client.get("/blog/mis-emprendimientos").status_code == 200
+
+    usuario.is_banned = True
+    db.session.commit()
+
+    resp = client.get("/blog/mis-emprendimientos", follow_redirects=False)
+
+    assert resp.status_code == 302
+    assert "/auth/login" in resp.headers["Location"]
+    with client.session_transaction() as sesion:
+        assert sesion.get("user_id") is None
+
+
+def test_un_usuario_desbaneado_recupera_el_acceso_iniciando_sesion_de_nuevo(
+    client, db, crear_usuario, login
+):
+    usuario = crear_usuario(username="tomy")
+    usuario.is_banned = True
+    db.session.commit()
+
+    login(usuario.id)
+    assert client.get("/blog/mis-emprendimientos", follow_redirects=False).status_code == 302
+
+    usuario.is_banned = False
+    db.session.commit()
+
+    login(usuario.id)
+    assert client.get("/blog/mis-emprendimientos").status_code == 200
+
+
 def test_no_se_puede_banear_a_otro_admin(client, db, crear_usuario, login):
     admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
     otro_admin = crear_usuario(username="jefe2", rol=Roles.ADMIN)

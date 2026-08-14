@@ -100,7 +100,16 @@ def login():
 @auth.before_app_request
 def load_logged_in_user():
     user_id = session.get('user_id')
-    g.user = User.query.get(user_id) if user_id else None
+    user = User.query.get(user_id) if user_id else None
+
+    # is_banned solo se chequeaba en el login: si banean a alguien mientras
+    # navega, seguia con acceso hasta que la sesion expirara sola. Se corta
+    # ahora, en cada request.
+    if user is not None and user.is_banned:
+        session.clear()
+        user = None
+
+    g.user = user
 
 
 @auth.route('/logout')
