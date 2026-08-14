@@ -28,9 +28,14 @@ def upgrade():
     sa.Column('resolved', sa.Boolean(), server_default='0', nullable=False),
     sa.Column('resolved_at', sa.DateTime(), nullable=True),
     sa.CheckConstraint('(post_id IS NOT NULL) != (review_id IS NOT NULL)', name='ck_report_target_xor'),
-    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ),
-    sa.ForeignKeyConstraint(['reporter_id'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['review_id'], ['reviews.id'], ),
+    # Las FK van con nombre explicito. Sin nombre, cada motor les pone el suyo
+    # (MySQL las llama reports_ibfk_1/2/3, SQLite no les pone ninguno), asi que
+    # una migracion posterior que necesite dropearlas no tiene un nombre que
+    # sirva en los dos: es lo que rompio d09128dd029c, que quedo con los
+    # nombres de MySQL hardcodeados y no podia correr sobre SQLite.
+    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], name='fk_reports_post_id_posts'),
+    sa.ForeignKeyConstraint(['reporter_id'], ['users.id'], name='fk_reports_reporter_id_users'),
+    sa.ForeignKeyConstraint(['review_id'], ['reviews.id'], name='fk_reports_review_id_reviews'),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('reports', schema=None) as batch_op:

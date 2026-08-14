@@ -25,9 +25,12 @@ def upgrade():
     sa.Column('sender_id', sa.Integer(), nullable=False),
     sa.Column('body', sa.Text(), nullable=False),
     sa.Column('created', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['client_id'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ),
-    sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ),
+    # Con nombre explicito: sin el, MySQL la llama messages_ibfk_2 y SQLite no
+    # le pone nombre, y b30b4ba8d199 (que la dropea para agregarle el CASCADE)
+    # se queda sin un nombre que sirva en los dos motores.
+    sa.ForeignKeyConstraint(['client_id'], ['users.id'], name='fk_messages_client_id_users'),
+    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], name='fk_messages_post_id_posts'),
+    sa.ForeignKeyConstraint(['sender_id'], ['users.id'], name='fk_messages_sender_id_users'),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('messages', schema=None) as batch_op:

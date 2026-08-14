@@ -23,8 +23,11 @@ def upgrade():
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('post_id', sa.Integer(), nullable=False),
     sa.Column('created', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    # Con nombre explicito: sin el, MySQL la llama favorites_ibfk_1 y SQLite no
+    # le pone nombre, y b30b4ba8d199 (que la dropea para agregarle el CASCADE)
+    # se queda sin un nombre que sirva en los dos motores.
+    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], name='fk_favorites_post_id_posts'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], name='fk_favorites_user_id_users'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', 'post_id', name='uq_favorite_user_post')
     )
