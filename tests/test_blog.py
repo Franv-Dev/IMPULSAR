@@ -643,3 +643,65 @@ def test_el_detalle_incluye_el_link_para_compartir(client, crear_usuario, crear_
     html = client.get(f"/blog/{post.id}").get_data(as_text=True)
 
     assert f'data-share-url="http://localhost/blog/{post.id}"' in html
+
+
+# ------------------------------------------------------------- metricas de vistas
+
+def test_ver_el_detalle_suma_una_vista(client, db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    client.get(f"/blog/{post.id}")
+
+    db.session.refresh(post)
+    assert post.views_count == 1
+
+
+def test_varias_vistas_se_acumulan(client, db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    client.get(f"/blog/{post.id}")
+    client.get(f"/blog/{post.id}")
+    client.get(f"/blog/{post.id}")
+
+    db.session.refresh(post)
+    assert post.views_count == 3
+
+
+def test_el_dueño_no_suma_vistas_al_ver_su_propio_post(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    login(autor.id)
+    client.get(f"/blog/{post.id}")
+    client.get(f"/blog/{post.id}")
+
+    db.session.refresh(post)
+    assert post.views_count == 0
+
+
+def test_las_vistas_de_otro_usuario_si_se_cuentan(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    visitante = crear_usuario(username="visitante")
+    post = crear_post(autor.id)
+
+    login(visitante.id)
+    client.get(f"/blog/{post.id}")
+
+    db.session.refresh(post)
+    assert post.views_count == 1
+
+
+def test_las_vistas_se_muestran_en_mis_emprendimientos(client, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    visitante = crear_usuario(username="visitante")
+    post = crear_post(autor.id)
+
+    login(visitante.id)
+    client.get(f"/blog/{post.id}")
+
+    login(autor.id)
+    html = client.get("/blog/mis-emprendimientos").get_data(as_text=True)
+
+    assert "1 vista" in html

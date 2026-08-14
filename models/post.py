@@ -45,6 +45,11 @@ class Post(db.Model):
         default=Categorias.OTROS, server_default=Categorias.OTROS, index=True,
     )
 
+    # Cuantas veces se vio el detalle. No cuenta las vistas del propio dueño
+    # (ver blog.detail()): sin eso, el emprendedor inflaria su propia
+    # metrica cada vez que revisa su publicacion.
+    views_count = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+
     # Evita tener que hacer User.query.get(post.author) a mano en cada vista
     # y template: con esto se escribe directamente post.author_user.username.
     author_user = db.relationship("User", backref="posts", lazy="joined")
@@ -83,6 +88,7 @@ class Post(db.Model):
             "image": self.image,
             "category": self.category,
             "category_label": self.category_label,
+            "views_count": self.views_count,
             "created": self.created.isoformat() if self.created else None,
             "latitude": self.latitude,
             "longitude": self.longitude,

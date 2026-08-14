@@ -71,3 +71,31 @@ def test_el_perfil_muestra_sus_emprendimientos_con_calificacion(
 
     assert "Panadería del barrio" in html
     assert "5.0" in html
+
+
+def test_el_dueño_ve_las_vistas_de_sus_posts_en_su_perfil(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    visitante = crear_usuario(username="visitante")
+    post = crear_post(autor.id)
+
+    login(visitante.id)
+    client.get(f"/blog/{post.id}")
+
+    login(autor.id)
+    html = client.get(f"/perfil/{autor.id}").get_data(as_text=True)
+
+    assert "1 vista" in html
+
+
+def test_un_visitante_no_ve_las_vistas_en_el_perfil_ajeno(
+    client, db, crear_usuario, crear_post
+):
+    """La metrica es para el dueño, no un dato publico."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id)
+
+    html = client.get(f"/perfil/{autor.id}").get_data(as_text=True)
+
+    assert "vista" not in html

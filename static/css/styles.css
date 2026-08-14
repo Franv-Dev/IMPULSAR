@@ -475,6 +475,12 @@ main {
     font-weight: 600;
 }
 
+.card__views {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
 .card__description {
     margin: 0;
     font-size: 0.9rem;

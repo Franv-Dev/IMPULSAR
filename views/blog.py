@@ -146,6 +146,12 @@ def detail(id):
     """Detalle de un emprendimiento + reseñas."""
     post = Post.query.get_or_404(id)
     author = post.author_user
+
+    # No cuenta las vistas del propio dueño revisando su publicacion.
+    if not (g.user and g.user.id == post.author):
+        post.views_count += 1
+        db.session.commit()
+
     reviews = (
         Review.query
         .filter_by(post_id=id)

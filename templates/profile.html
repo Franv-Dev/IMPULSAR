@@ -124,6 +124,11 @@
                         {% else %}
                             <p class="card__rating" style="color:#9CA3AF;">Sin reseñas todavía</p>
                         {% endif %}
+                        {% if g.user and g.user.id == user.id %}
+                            <p class="card__views">
+                                👁 {{ post.views_count }} vista{{ "s" if post.views_count != 1 else "" }}
+                            </p>
+                        {% endif %}
                         <p class="card__description">
                             {{ post.body[:120] }}{% if post.body|length > 120 %}...{% endif %}
                         </p>

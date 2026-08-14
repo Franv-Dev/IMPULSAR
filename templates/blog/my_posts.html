@@ -56,6 +56,9 @@
                             <p class="card__location">
                                 {{ g.user.username}}
                             </p>
+                            <p class="card__views">
+                                👁 {{ post.views_count }} vista{{ "s" if post.views_count != 1 else "" }}
+                            </p>
                             <p class="card__description">
                                 {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
                             </p>
