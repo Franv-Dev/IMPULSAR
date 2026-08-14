@@ -487,6 +487,50 @@ main {
     color: var(--color-muted);
 }
 
+/* ESTADISTICAS DEL PERFIL (solo las ve el dueño) */
+
+.profile-stats {
+    padding: 0 2rem 1rem;
+}
+
+.profile-stats__title {
+    margin: 0 0 0.25rem;
+    font-size: 1.15rem;
+}
+
+.profile-stats__hint {
+    margin: 0 0 1rem;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.profile-stats__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+}
+
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background-color: var(--color-white);
+}
+
+.stat-card__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.stat-card__label {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
 /* FOOTER */
 
 .footer {

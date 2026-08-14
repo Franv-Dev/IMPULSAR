@@ -12,6 +12,7 @@ from views.auth import login_required
 from db import db
 from services.geocoding import get_coordinates_from_address
 from services.ratings import query_posts_con_rating, serializar_con_rating
+from services.stats import estadisticas_de_usuario
 from services.uploads import save_post_image
 
 profile = Blueprint("profile", __name__, url_prefix="/perfil")
@@ -25,10 +26,15 @@ def view_profile(user_id):
         .order_by(Post.created.desc())
         .all()
     )
+    # Mismo criterio de privacidad que views_count: las metricas son del dueño,
+    # asi que ni siquiera se calculan cuando mira otro (una consulta menos y
+    # ningun dato que se pueda filtrar por error en el template).
+    es_dueño = bool(g.user and g.user.id == user.id)
     return render_template(
         "profile.html",
         user=user,
         posts=serializar_con_rating(filas),
+        estadisticas=estadisticas_de_usuario(user.id) if es_dueño else None,
         MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
 

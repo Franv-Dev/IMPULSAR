@@ -5,6 +5,7 @@ import io
 from PIL import Image
 from werkzeug.datastructures import FileStorage
 
+from models.favorite import Favorite
 from models.review import Review
 from models.user import User
 
@@ -150,6 +151,80 @@ def test_un_visitante_no_ve_las_vistas_en_el_perfil_ajeno(
     html = client.get(f"/perfil/{autor.id}").get_data(as_text=True)
 
     assert "vista" not in html
+
+
+# --------------------------------------------------- estadisticas propias
+
+def test_el_dueño_ve_sus_estadisticas_acumuladas(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post1 = crear_post(autor.id, title="Panadería")
+    post2 = crear_post(autor.id, title="Verdulería")
+    post1.views_count = 7
+    post2.views_count = 3
+    db.session.add(Favorite(user_id=cliente.id, post_id=post1.id))
+    db.session.add(Review(post_id=post1.id, user_id=cliente.id, rating=5))
+    db.session.add(Review(post_id=post2.id, user_id=cliente.id, rating=4))
+    db.session.commit()
+
+    login(autor.id)
+    html = client.get(f"/perfil/{autor.id}").get_data(as_text=True)
+
+    assert "Tus estadísticas" in html
+    assert "10" in html  # 7 + 3 vistas
+    assert "4.5" in html  # promedio general
+
+
+def test_las_estadisticas_solo_cuentan_los_emprendimientos_propios(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    otro_autor = crear_usuario(username="otro_autor")
+    cliente = crear_usuario(username="cliente")
+    propio = crear_post(autor.id, title="Mi negocio")
+    ajeno = crear_post(otro_autor.id, title="Negocio ajeno")
+    propio.views_count = 2
+    ajeno.views_count = 100
+    db.session.add(Favorite(user_id=cliente.id, post_id=ajeno.id))
+    db.session.add(Review(post_id=ajeno.id, user_id=cliente.id, rating=1))
+    db.session.commit()
+
+    login(autor.id)
+    html = client.get(f"/perfil/{autor.id}").get_data(as_text=True)
+
+    assert "100" not in html
+    assert "Sin reseñas todavía" in html
+
+
+def test_un_visitante_no_ve_las_estadisticas_del_perfil_ajeno(
+    client, db, crear_usuario, crear_post, login
+):
+    """Mismo criterio de privacidad que views_count: son datos del dueño."""
+    autor = crear_usuario(username="autor")
+    visitante = crear_usuario(username="visitante")
+    post = crear_post(autor.id)
+    post.views_count = 42
+    db.session.commit()
+
+    login(visitante.id)
+    html = client.get(f"/perfil/{autor.id}").get_data(as_text=True)
+
+    assert "estadísticas" not in html
+    assert "42" not in html
+
+
+def test_las_estadisticas_no_rompen_sin_emprendimientos(
+    client, crear_usuario, login
+):
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    respuesta = client.get(f"/perfil/{usuario.id}")
+
+    assert respuesta.status_code == 200
+    assert "Sin reseñas todavía" in respuesta.get_data(as_text=True)
 
 
 # --------------------------------------------------- historial de reseñas

@@ -87,6 +87,39 @@
         {% endif %}
     </div>
 
+    {% if estadisticas %}
+        <section class="profile-stats">
+            <h2 class="profile-stats__title">Tus estadísticas</h2>
+            <p class="profile-stats__hint">Solo vos podés ver estos datos.</p>
+            <div class="profile-stats__grid">
+                <div class="stat-card">
+                    <span class="stat-card__value">{{ estadisticas.vistas }}</span>
+                    <span class="stat-card__label">
+                        Vista{{ "s" if estadisticas.vistas != 1 else "" }} en total
+                    </span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-card__value">{{ estadisticas.favoritos }}</span>
+                    <span class="stat-card__label">
+                        Favorito{{ "s" if estadisticas.favoritos != 1 else "" }} recibido{{ "s" if estadisticas.favoritos != 1 else "" }}
+                    </span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-card__value">
+                        {% if estadisticas.promedio %}⭐ {{ estadisticas.promedio }}{% else %}—{% endif %}
+                    </span>
+                    <span class="stat-card__label">
+                        {% if estadisticas.promedio %}
+                            Promedio general ({{ estadisticas.resenias }} reseña{{ "s" if estadisticas.resenias != 1 else "" }})
+                        {% else %}
+                            Sin reseñas todavía
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
     <div class="section__header">
         <div>
             <h2 class="section__title">
