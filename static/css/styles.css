@@ -1676,3 +1676,17 @@ textarea.auth__input {
     background-color: #FEE2E2;
     color: #991B1B;
 }
+
+/* === Reportar contenido === */
+.report-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    text-decoration: none;
+}
+
+.report-link:hover {
+    color: #991B1B;
+    text-decoration: underline;
+}

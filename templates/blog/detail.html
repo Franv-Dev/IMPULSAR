@@ -94,6 +94,9 @@
                         <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id) }}" class="btn btn--primary">
                             Escribirle al emprendedor
                         </a>
+                        <a href="{{ url_for('blog.report', tipo='post', target_id=post.id) }}" class="report-link">
+                            Reportar
+                        </a>
                     </div>
                 {% endif %}
             </div>
@@ -144,6 +147,12 @@
                                         Responder
                                     </button>
                                 </form>
+                            {% endif %}
+
+                            {% if g.user and g.user.id != r.user_id %}
+                                <a href="{{ url_for('blog.report', tipo='review', target_id=r.id) }}" class="report-link">
+                                    Reportar
+                                </a>
                             {% endif %}
                         </div>
                     {% endfor %}

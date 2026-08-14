@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Reportar – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="auth">
+    <div class="container auth__container">
+        <div class="auth__card">
+            <h1 class="auth__title">Reportar {{ 'emprendimiento' if tipo == 'post' else 'reseña' }}</h1>
+            <p class="auth__subtitle">
+                {% if tipo == 'post' %}
+                    Vas a reportar «{{ objetivo.title }}».
+                {% else %}
+                    Vas a reportar la reseña de {{ objetivo.user.username if objetivo.user else 'un usuario' }}.
+                {% endif %}
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="auth__form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="auth__field">
+                    <label for="reason" class="auth__label">Motivo</label>
+                    <textarea
+                        id="reason"
+                        name="reason"
+                        rows="4"
+                        class="auth__input"
+                        placeholder="Contanos por qué te parece inapropiado..."
+                        required
+                    ></textarea>
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    Enviar reporte
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                <a href="{{ volver }}">Volver</a>
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

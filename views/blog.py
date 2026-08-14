@@ -4,6 +4,7 @@ from flask import (
 from werkzeug.exceptions import abort
 from models.favorite import Favorite
 from models.post import Categorias, Post
+from models.report import Report
 from models.user import User
 from views.auth import login_required
 from db import db, utcnow
@@ -496,3 +497,44 @@ def my_favorites():
     )
     posts = serializar_con_rating(paginacion.items, favoritos=_ids_favoritos(g.user.id))
     return render_template("blog/favorites.html", posts=posts, paginacion=paginacion)
+
+
+@blog.route("/reportar/<string:tipo>/<int:target_id>", methods=("GET", "POST"))
+@login_required
+def report(tipo, target_id):
+    """Reportar un emprendimiento o una reseña por contenido inapropiado.
+
+    Alimenta al panel de admin (ver views/admin.py reportes()).
+    """
+    if tipo not in ("post", "review"):
+        abort(404)
+
+    if tipo == "post":
+        objetivo = Post.query.get_or_404(target_id)
+        if objetivo.author == g.user.id:
+            flash("No podés reportar tu propio emprendimiento.")
+            return redirect(url_for("blog.detail", id=target_id))
+        volver = url_for("blog.detail", id=target_id)
+    else:
+        objetivo = Review.query.get_or_404(target_id)
+        if objetivo.user_id == g.user.id:
+            flash("No podés reportar tu propia reseña.")
+            return redirect(url_for("blog.detail", id=objetivo.post_id))
+        volver = url_for("blog.detail", id=objetivo.post_id)
+
+    if request.method == "POST":
+        motivo = (request.form.get("reason") or "").strip()
+        if not motivo:
+            flash("Contanos el motivo del reporte.")
+        else:
+            db.session.add(Report(
+                reporter_id=g.user.id,
+                post_id=target_id if tipo == "post" else None,
+                review_id=target_id if tipo == "review" else None,
+                reason=motivo,
+            ))
+            db.session.commit()
+            flash("Gracias, revisaremos tu reporte.")
+            return redirect(volver)
+
+    return render_template("blog/report.html", tipo=tipo, objetivo=objetivo, volver=volver)

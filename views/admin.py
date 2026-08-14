@@ -7,8 +7,9 @@ solo paginas HTML protegidas con @admin_required (ver views/auth.py).
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from sqlalchemy import func
 
-from db import db
+from db import db, utcnow
 from models.post import Post
+from models.report import Report
 from models.review import Review
 from models.user import Roles, User
 from views.auth import admin_required
@@ -24,6 +25,9 @@ def dashboard():
         "usuarios": db.session.query(func.count(User.id)).scalar() or 0,
         "posts": db.session.query(func.count(Post.id)).scalar() or 0,
         "resenias": db.session.query(func.count(Review.id)).scalar() or 0,
+        "reportes_pendientes": (
+            db.session.query(func.count(Report.id)).filter(Report.resolved.is_(False)).scalar() or 0
+        ),
     }
     return render_template("admin/dashboard.html", metricas=metricas)
 
@@ -85,3 +89,29 @@ def delete_post(post_id):
         flash("Error al eliminar el emprendimiento.")
 
     return redirect(url_for("admin.emprendimientos"))
+
+
+@admin.route("/reportes")
+@admin_required
+def reportes():
+    """Reportes pendientes de emprendimientos y reseñas, mas nuevos primero."""
+    pendientes = (
+        Report.query
+        .filter_by(resolved=False)
+        .order_by(Report.created.desc())
+        .all()
+    )
+    return render_template("admin/reportes.html", reportes=pendientes)
+
+
+@admin.route("/reportes/<int:report_id>/resolver", methods=["POST"])
+@admin_required
+def resolve_report(report_id):
+    """Marca un reporte como resuelto. No borra el contenido reportado: para
+    eso esta la eliminacion en admin.emprendimientos()."""
+    reporte = Report.query.get_or_404(report_id)
+    reporte.resolved = True
+    reporte.resolved_at = utcnow()
+    db.session.commit()
+    flash("Reporte marcado como resuelto.")
+    return redirect(url_for("admin.reportes"))

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes – Admin – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Reportes pendientes</h2>
+                <p class="section__subtitle">{{ reportes|length }} reportes sin resolver.</p>
+            </div>
+            <a href="{{ url_for('admin.dashboard') }}" class="section__link">← Volver al panel</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if reportes %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Contenido reportado</th>
+                            <th>Reportado por</th>
+                            <th>Motivo</th>
+                            <th>Fecha</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in reportes %}
+                            <tr>
+                                <td>{{ 'Emprendimiento' if r.post_id else 'Reseña' }}</td>
+                                <td>
+                                    {% if r.post %}
+                                        <a href="{{ url_for('blog.detail', id=r.post.id) }}">{{ r.post.title }}</a>
+                                    {% elif r.review %}
+                                        <a href="{{ url_for('blog.detail', id=r.review.post_id) }}">
+                                            Reseña de {{ r.review.user.username if r.review.user else 'usuario borrado' }}
+                                        </a>
+                                    {% else %}
+                                        <span style="color:#9CA3AF;">Contenido eliminado</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ r.reporter.username if r.reporter else '—' }}</td>
+                                <td style="white-space:normal; max-width:280px;">{{ r.reason }}</td>
+                                <td>{{ r.created.strftime("%d/%m/%Y") if r.created else "" }}</td>
+                                <td>
+                                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                        <form method="post" action="{{ url_for('admin.resolve_report', report_id=r.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn--secondary" style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                                Marcar resuelto
+                                            </button>
+                                        </form>
+                                        {% if r.post %}
+                                            <form method="post" action="{{ url_for('admin.delete_post', post_id=r.post.id) }}"
+                                                onsubmit="return confirm('¿Seguro que querés eliminar «{{ r.post.title }}»?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn--ghost" style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                                    Eliminar emprendimiento
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="reviews-empty">No hay reportes pendientes.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
