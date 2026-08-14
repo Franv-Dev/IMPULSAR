@@ -342,7 +342,9 @@ def test_el_perfil_por_id_redirige_301_al_slug(client, crear_usuario):
     respuesta = client.get(f"/perfil/{usuario.id}")
 
     assert respuesta.status_code == 301
-    assert respuesta.headers["Location"].endswith("/perfil/tomy")
+    # URL completa y no endswith(): con endswith, un destino incorrecto que
+    # igual termine en "/perfil/tomy" pasaria el test sin que nadie se entere.
+    assert respuesta.headers["Location"] == "/perfil/tomy"
 
 
 def test_el_historial_por_id_redirige_301_al_slug(client, crear_usuario):
@@ -351,7 +353,26 @@ def test_el_historial_por_id_redirige_301_al_slug(client, crear_usuario):
     respuesta = client.get(f"/perfil/{usuario.id}/resenias")
 
     assert respuesta.status_code == 301
-    assert respuesta.headers["Location"].endswith("/perfil/tomy/resenias")
+    assert respuesta.headers["Location"] == "/perfil/tomy/resenias"
+
+
+def test_el_redirect_al_slug_conserva_el_query_string(client, crear_usuario):
+    """Sin esto, /perfil/5/resenias?page=2 caia siempre en la pagina 1."""
+    usuario = crear_usuario(username="Tomy")
+
+    respuesta = client.get(f"/perfil/{usuario.id}/resenias?page=2")
+
+    assert respuesta.status_code == 301
+    assert respuesta.headers["Location"] == "/perfil/tomy/resenias?page=2"
+
+
+def test_el_redirect_del_perfil_tambien_conserva_el_query_string(client, crear_usuario):
+    usuario = crear_usuario(username="Tomy")
+
+    respuesta = client.get(f"/perfil/{usuario.id}?utm_source=whatsapp")
+
+    assert respuesta.status_code == 301
+    assert respuesta.headers["Location"] == "/perfil/tomy?utm_source=whatsapp"
 
 
 # --------------------------------------------------- ubicacion textual

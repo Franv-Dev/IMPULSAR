@@ -69,18 +69,30 @@ def reviews(slug):
 
 # --- 1.b RUTAS VIEJAS POR ID (redirect permanente al slug)
 
+def _redirect_301_al_slug(endpoint, slug):
+    """Redirige a la URL por slug conservando el query string.
+
+    Sin esto, /perfil/5/resenias?page=2 caia en la pagina 1: el redirect
+    reconstruye la URL desde cero con url_for y los parametros se pierden.
+    """
+    destino = url_for(endpoint, slug=slug)
+    if request.query_string:
+        destino = f"{destino}?{request.query_string.decode()}"
+    return redirect(destino, code=301)
+
+
 @profile.route("/<int:user_id>")
 def view_profile_por_id(user_id):
     """301 y no 302: la URL por id dejo de ser la canonica para siempre, y el
     301 hace que buscadores y clientes se queden con la version por slug."""
     user = User.query.get_or_404(user_id)
-    return redirect(url_for("profile.view_profile", slug=user.slug), code=301)
+    return _redirect_301_al_slug("profile.view_profile", user.slug)
 
 
 @profile.route("/<int:user_id>/resenias")
 def reviews_por_id(user_id):
     user = User.query.get_or_404(user_id)
-    return redirect(url_for("profile.reviews", slug=user.slug), code=301)
+    return _redirect_301_al_slug("profile.reviews", user.slug)
 
 
 # --- 2. RUTA DE BIOGRAFÍA
