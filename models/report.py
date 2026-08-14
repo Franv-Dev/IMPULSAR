@@ -16,8 +16,12 @@ class Report(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     reporter_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable=True, index=True)
-    review_id = db.Column(db.Integer, db.ForeignKey("reviews.id"), nullable=True, index=True)
+    # ondelete="CASCADE": sin esto, MySQL usa RESTRICT por default y borrar un
+    # post o resenia que alguna vez se reporto (aunque el reporte ya este
+    # resuelto) falla con IntegrityError. El reporte no tiene sentido sin su
+    # objetivo, asi que lo correcto es que se borre junto con el.
+    post_id = db.Column(db.Integer, db.ForeignKey("posts.id", ondelete="CASCADE"), nullable=True, index=True)
+    review_id = db.Column(db.Integer, db.ForeignKey("reviews.id", ondelete="CASCADE"), nullable=True, index=True)
 
     reason = db.Column(db.Text, nullable=False)
     created = db.Column(db.DateTime, nullable=False, default=utcnow)
