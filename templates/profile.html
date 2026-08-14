@@ -63,6 +63,11 @@
                 <a href="{{ url_for('profile.reviews', slug=user.slug) }}" class="btn btn--secondary">
                     Ver reseñas recibidas
                 </a>
+                {# Fuera del chequeo de dueño: cualquiera puede compartir un perfil ajeno. #}
+                {% with share_url=url_for('profile.view_profile', slug=user.slug, _external=True),
+                        share_title="Perfil de " ~ user.username %}
+                    {% include "partials/_compartir_boton.html" %}
+                {% endwith %}
             </div>
         </div>
 

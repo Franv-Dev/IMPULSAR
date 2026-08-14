@@ -354,6 +354,32 @@ def test_el_historial_por_id_redirige_301_al_slug(client, crear_usuario):
     assert respuesta.headers["Location"].endswith("/perfil/tomy/resenias")
 
 
+# --------------------------------------------------- compartir perfil
+
+def test_el_perfil_trae_el_boton_de_compartir_apuntando_al_perfil(
+    client, crear_usuario
+):
+    usuario = crear_usuario(username="Tomy")
+
+    html = client.get("/perfil/tomy").get_data(as_text=True)
+
+    assert "share-btn" in html
+    assert 'data-share-url="http://localhost/perfil/tomy"' in html
+    assert "Perfil de Tomy" in html
+
+
+def test_compartir_un_emprendimiento_sigue_apuntando_al_post(
+    client, crear_usuario, crear_post
+):
+    """El partial quedo parametrizado, pero su default no tiene que cambiar."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería")
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert f'data-share-url="http://localhost/blog/{post.id}"' in html
+
+
 def test_un_slug_inexistente_da_404(client):
     assert client.get("/perfil/no-existe").status_code == 404
 
