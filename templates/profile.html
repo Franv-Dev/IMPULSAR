@@ -4,6 +4,19 @@
 {% block content %}
 
 <div class="profile-container">
+    {# Sin esto los avisos se pierden: varias acciones (guardar horarios, y
+       ahora publicar/editar/borrar un evento) terminan redirigiendo al perfil,
+       y este era de los pocos templates que no mostraba los flashes. #}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="auth__messages">
+                {% for message in messages %}
+                    <div class="auth__alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <div class="profile-header">
         {% if user.cover_image %}
             <img src="{{ url_for('static', filename='uploads/covers/' ~ user.cover_image) }}" alt="Portada de {{ user.username }}" class="cover-photo">
@@ -170,6 +183,92 @@
                 </ul>
             {% else %}
                 <p class="reviews-empty">Todavía no cargaste tus horarios de atención.</p>
+            {% endif %}
+        </section>
+    {% endif %}
+
+    {# Los eventos son publicos: los ve cualquier visitante, a diferencia de las
+       estadisticas de mas abajo. La seccion aparece si hay algo que mostrar, o
+       si el dueño esta mirando (para que tenga desde donde publicar el primero). #}
+    {% if eventos_proximos or eventos_pasados or (g.user and g.user.id == user.id) %}
+        <section class="profile-eventos">
+            <div class="section__header" style="padding:0;">
+                <h2 class="section__title">Próximos eventos</h2>
+                {% if g.user and g.user.id == user.id %}
+                    <a href="{{ url_for('eventos.nuevo') }}" class="btn btn--secondary">Publicar evento</a>
+                {% endif %}
+            </div>
+
+            {% if eventos_proximos %}
+                <ul class="eventos-lista">
+                    {% for evento in eventos_proximos %}
+                        <li class="eventos-lista__item">
+                            <div class="eventos-lista__fecha">
+                                <span class="eventos-lista__dia">{{ evento.fecha.day }}</span>
+                                <span class="eventos-lista__mes">{{ evento.fecha | mes_corto }}</span>
+                            </div>
+                            <div class="eventos-lista__cuerpo">
+                                <h3 class="eventos-lista__titulo">{{ evento.titulo }}</h3>
+                                <p class="eventos-lista__cuando">
+                                    {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora.strftime("%H:%M") }}{% endif %}
+                                </p>
+                                {% if evento.descripcion %}
+                                    <p class="eventos-lista__descripcion">{{ evento.descripcion }}</p>
+                                {% endif %}
+                                <p class="eventos-lista__post">
+                                    <a href="{{ url_for('blog.detail', id=evento.post.id) }}">{{ evento.post.title }}</a>
+                                </p>
+                            </div>
+                            {% if g.user and g.user.id == user.id %}
+                                <div class="eventos-lista__acciones">
+                                    <a href="{{ url_for('eventos.editar', id=evento.id) }}" class="btn btn--secondary">Editar</a>
+                                    {# POST y no un link: borrar no puede pasar por un GET. #}
+                                    <form method="post" action="{{ url_for('eventos.eliminar', id=evento.id) }}"
+                                          class="form-inline"
+                                          onsubmit="return confirm('¿Seguro que querés eliminar este evento?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn--ghost">Eliminar</button>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% elif g.user and g.user.id == user.id %}
+                <p class="reviews-empty">Todavía no publicaste ningún evento.</p>
+            {% else %}
+                <p class="reviews-empty">No hay eventos anunciados por ahora.</p>
+            {% endif %}
+
+            {# Los que ya pasaron van aparte y cerrados, para que no se confundan
+               con los que todavia se pueden ir a ver. #}
+            {% if eventos_pasados %}
+                <details class="eventos-pasados">
+                    <summary class="eventos-pasados__resumen">Eventos que ya pasaron</summary>
+                    <ul class="eventos-lista eventos-lista--pasados">
+                        {% for evento in eventos_pasados %}
+                            <li class="eventos-lista__item">
+                                <div class="eventos-lista__cuerpo">
+                                    <h3 class="eventos-lista__titulo">{{ evento.titulo }}</h3>
+                                    <p class="eventos-lista__cuando">
+                                        {{ evento.fecha | fecha_evento }} · {{ evento.post.title }}
+                                    </p>
+                                </div>
+                                {% if g.user and g.user.id == user.id %}
+                                    <div class="eventos-lista__acciones">
+                                        <a href="{{ url_for('eventos.editar', id=evento.id) }}" class="btn btn--secondary">Editar</a>
+                                        <form method="post" action="{{ url_for('eventos.eliminar', id=evento.id) }}"
+                                              class="form-inline"
+                                              onsubmit="return confirm('¿Seguro que querés eliminar este evento?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn--ghost">Eliminar</button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </details>
             {% endif %}
         </section>
     {% endif %}

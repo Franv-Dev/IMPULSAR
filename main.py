@@ -21,6 +21,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from config import get_config
 from db import db
+from services.eventos import formatear_fecha, mes_corto
 from services.formatting import render_biography
 from services.uploads import MAX_IMAGE_BYTES
 
@@ -94,6 +95,11 @@ def _registrar_filtros_jinja(app):
     # seguro (ver services/formatting.py). Se registra como filtro para no
     # tener que importarlo en cada vista que renderiza una biografia.
     app.jinja_env.filters["render_bio"] = render_biography
+    # "13 de septiembre de 2026". Se registra como filtro por lo mismo que
+    # render_bio: lo usan el perfil y la cartelera, y asi no hay que pasarlo
+    # como variable de contexto desde cada vista.
+    app.jinja_env.filters["fecha_evento"] = formatear_fecha
+    app.jinja_env.filters["mes_corto"] = mes_corto
 
 
 def _registrar_manejadores_de_error(app):

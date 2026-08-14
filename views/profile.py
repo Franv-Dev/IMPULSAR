@@ -7,6 +7,7 @@ from sqlalchemy.orm import joinedload
 
 from sqlalchemy.exc import IntegrityError
 
+from models.event import Event
 from models.follow import Follow
 from models.horario import Horario
 from models.post import Post
@@ -14,6 +15,7 @@ from models.review import Review
 from models.user import User
 from views.auth import login_required
 from db import db
+from services.eventos import eventos_de_usuario, pasados, proximos
 from services.geocoding import get_coordinates_from_address
 from services.horarios import DIAS, esta_abierto, formatear as formatear_hora, parsear_hora
 from services.ratings import query_posts_con_rating, serializar_con_rating
@@ -21,6 +23,9 @@ from services.stats import estadisticas_de_usuario
 from services.uploads import save_post_image
 
 profile = Blueprint("profile", __name__, url_prefix="/perfil")
+
+# Cuantos eventos ya vencidos se muestran en el desplegable del perfil.
+MAX_EVENTOS_PASADOS = 5
 
 
 # Las rutas por <slug> son las canonicas; las /<int:user_id> de mas abajo
@@ -58,10 +63,22 @@ def view_profile(slug):
         if es_dueño else []
     )
 
+    # Los eventos son publicos, a diferencia de estadisticas y "Sigo a": un
+    # evento es un anuncio, no una metrica del dueño. Se calculan siempre, mire
+    # quien mire. joinedload trae el emprendimiento en la misma consulta, para
+    # no disparar un SELECT por evento al mostrar de cual es (problema N+1).
+    consulta_eventos = eventos_de_usuario(user.id).options(joinedload(Event.post))
+    eventos_proximos = proximos(consulta_eventos).all()
+    # Los pasados van aparte y colapsados, no mezclados con los proximos. Se
+    # acotan a los ultimos: un historial completo no aporta y alarga el perfil.
+    eventos_pasados = pasados(consulta_eventos).limit(MAX_EVENTOS_PASADOS).all()
+
     return render_template(
         "profile.html",
         user=user,
         posts=serializar_con_rating(filas),
+        eventos_proximos=eventos_proximos,
+        eventos_pasados=eventos_pasados,
         estadisticas=estadisticas_de_usuario(user.id) if es_dueño else None,
         lo_sigo=lo_sigo,
         siguiendo=siguiendo,

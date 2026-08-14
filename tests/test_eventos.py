@@ -213,3 +213,108 @@ def test_borrar_un_emprendimiento_se_lleva_sus_eventos(
 
     assert respuesta.status_code == 200
     assert Event.query.count() == 0
+
+
+# --- seccion del perfil
+
+def test_el_perfil_muestra_los_proximos_eventos(
+    client, crear_usuario, crear_post, crear_evento
+):
+    usuario = crear_usuario(username="Panaderia")
+    post = crear_post(usuario.id)
+    crear_evento(post.id, titulo="Feria de septiembre", dias=10)
+
+    html = client.get(f"/perfil/{usuario.slug}").get_data(as_text=True)
+
+    assert "Próximos eventos" in html
+    assert "Feria de septiembre" in html
+
+
+def test_un_evento_pasado_no_se_mezcla_con_los_proximos(
+    client, crear_usuario, crear_post, crear_evento
+):
+    """Lo que ya paso va en el desplegable de abajo, no arriba con los que
+    todavia se pueden ir a ver."""
+    usuario = crear_usuario(username="Panaderia")
+    post = crear_post(usuario.id)
+    crear_evento(post.id, titulo="Feria vieja", dias=-10)
+
+    html = client.get(f"/perfil/{usuario.slug}").get_data(as_text=True)
+
+    # Aparece, pero adentro del bloque de pasados.
+    assert "Eventos que ya pasaron" in html
+    seccion_pasados = html.split("Eventos que ya pasaron", 1)[1]
+    assert "Feria vieja" in seccion_pasados
+    assert "Feria vieja" not in html.split("Eventos que ya pasaron", 1)[0]
+
+
+def test_un_evento_de_hoy_sigue_contando_como_proximo(
+    client, crear_usuario, crear_post, crear_evento
+):
+    """El corte es por dia y no por hora: a las 11 todavia se puede ir a una
+    feria que abrio a las 10."""
+    usuario = crear_usuario(username="Panaderia")
+    post = crear_post(usuario.id)
+    crear_evento(post.id, titulo="Feria de hoy", dias=0, hora=time(1, 0))
+
+    html = client.get(f"/perfil/{usuario.slug}").get_data(as_text=True)
+
+    assert "Feria de hoy" in html.split("Eventos que ya pasaron")[0]
+
+
+def test_los_eventos_del_perfil_los_ve_cualquier_visitante(
+    client, crear_usuario, crear_post, crear_evento
+):
+    """A diferencia de las estadisticas, un evento es un anuncio, no un dato
+    privado del dueño."""
+    usuario = crear_usuario(username="Panaderia")
+    post = crear_post(usuario.id)
+    crear_evento(post.id, titulo="Feria abierta")
+
+    html = client.get(f"/perfil/{usuario.slug}").get_data(as_text=True)
+
+    assert "Feria abierta" in html
+    assert "Tus estadísticas" not in html
+
+
+def test_los_controles_de_edicion_son_solo_del_dueño(
+    client, crear_usuario, crear_post, crear_evento, login
+):
+    dueño = crear_usuario(username="dueño")
+    post = crear_post(dueño.id)
+    evento = crear_evento(post.id)
+
+    anonimo = client.get(f"/perfil/{dueño.slug}").get_data(as_text=True)
+    assert f"/eventos/{evento.id}/eliminar" not in anonimo
+    assert "/eventos/nuevo" not in anonimo
+
+    login(dueño.id)
+    propio = client.get(f"/perfil/{dueño.slug}").get_data(as_text=True)
+    assert f"/eventos/{evento.id}/eliminar" in propio
+    assert "/eventos/nuevo" in propio
+
+
+def test_un_extraño_no_ve_los_controles_de_edicion(
+    client, crear_usuario, crear_post, crear_evento, login
+):
+    dueño = crear_usuario(username="dueño")
+    post = crear_post(dueño.id)
+    evento = crear_evento(post.id)
+    curioso = crear_usuario(username="curioso")
+    login(curioso.id)
+
+    html = client.get(f"/perfil/{dueño.slug}").get_data(as_text=True)
+
+    assert f"/eventos/{evento.id}/editar" not in html
+
+
+def test_el_perfil_muestra_los_avisos(client, emprendedor_con_post):
+    """profile.html no renderizaba los flashes, asi que el aviso de "Evento
+    publicado" se perdia al redirigir al perfil."""
+    _usuario, post = emprendedor_con_post()
+
+    respuesta = client.post("/eventos/nuevo", data={
+        "post_id": post.id, "titulo": "Feria", "fecha": "2026-09-13",
+    }, follow_redirects=True)
+
+    assert "Evento publicado correctamente." in respuesta.get_data(as_text=True)

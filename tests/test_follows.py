@@ -4,8 +4,12 @@ from models.follow import Follow
 from models.user import User
 
 
-def _seguir(client, slug):
-    return client.post(f"/perfil/{slug}/seguir")
+def _seguir(client, slug, seguir_redirect=False):
+    """seguir_redirect=True imita al navegador, que sigue el redirect y con eso
+    consume el flash ("Ahora seguís a X"). Sin eso el aviso queda encolado en la
+    sesion y lo termina mostrando la proxima pagina que renderice flashes, que
+    no es donde corresponde."""
+    return client.post(f"/perfil/{slug}/seguir", follow_redirects=seguir_redirect)
 
 
 # ------------------------------------------------------------------- toggle
@@ -132,7 +136,10 @@ def test_un_visitante_no_ve_la_lista_sigo_a_de_otro(client, db, crear_usuario, l
     emprendedor = crear_usuario(username="panaderia")
     curioso = crear_usuario(username="curioso")
     login(seguidor.id)
-    _seguir(client, emprendedor.slug)
+    # Sigue el redirect para que el flash se consuma en el perfil del seguido,
+    # que es a donde lo mandaria el navegador: si no, el aviso viaja encolado
+    # hasta el proximo render y este test lo confundiria con una filtracion.
+    _seguir(client, emprendedor.slug, seguir_redirect=True)
 
     login(curioso.id)
     html = client.get(f"/perfil/{seguidor.slug}").get_data(as_text=True)

@@ -17,6 +17,15 @@ from models.post import Post
 from services.horarios import ZONA_ARGENTINA
 
 
+# Los nombres de los meses van escritos y no salen de strftime("%B"): eso
+# depende del locale del sistema operativo, que en el servidor puede estar en
+# ingles y dejar "13 de September" en pantalla.
+MESES = (
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+)
+
+
 def hoy_en_argentina():
     """La fecha de hoy segun el reloj de Argentina."""
     return datetime.now(ZONA_ARGENTINA).date()
@@ -35,6 +44,18 @@ def parsear_fecha(texto):
         return datetime.strptime(texto, "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+def formatear_fecha(fecha):
+    """Un date como "13 de septiembre de 2026". Cadena vacia si no hay fecha."""
+    if fecha is None:
+        return ""
+    return f"{fecha.day} de {MESES[fecha.month - 1]} de {fecha.year}"
+
+
+def mes_corto(fecha):
+    """"sep", para el recuadro de fecha de las tarjetas."""
+    return MESES[fecha.month - 1][:3] if fecha else ""
 
 
 def proximos(query, hoy=None):
