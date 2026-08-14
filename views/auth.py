@@ -1,7 +1,7 @@
 from flask import (
-    render_template, Blueprint, flash, request, session, url_for, redirect, g, jsonify
+    render_template, Blueprint, flash, request, session, url_for, redirect, g, jsonify, abort
 )
-from models.user import User
+from models.user import Roles, User
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.exc import IntegrityError
 from db import db
@@ -84,6 +84,8 @@ def login():
             error = "El usuario es incorrecto"
         elif not check_password_hash(user.password, password):
             error = "La contraseña es incorrecta"
+        elif user.is_banned:
+            error = "Esta cuenta fue suspendida. Contactate con soporte."
 
         if error is None:
             session.clear()
@@ -112,6 +114,18 @@ def login_required(view):
     def wrapped_view(**kwargs):
         if g.user is None:
             return redirect(url_for('auth.login'))
+        return view(**kwargs)
+    return wrapped_view
+
+
+def admin_required(view):
+    """Para vistas HTML (sesion), analogo a role_required(Roles.ADMIN) de la API."""
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return redirect(url_for('auth.login'))
+        if g.user.rol != Roles.ADMIN:
+            abort(403)
         return view(**kwargs)
     return wrapped_view
 
@@ -171,6 +185,8 @@ def api_login():
     user = User.query.filter_by(email=email).first()
     if not user or not check_password_hash(user.password, password):
         return jsonify({"error": "credenciales inválidas"}), 401
+    if user.is_banned:
+        return jsonify({"error": "Esta cuenta fue suspendida."}), 403
 
     # La duracion sale de JWT_ACCESS_TOKEN_EXPIRES en config.py, asi se puede
     # ajustar por entorno sin tocar el codigo.

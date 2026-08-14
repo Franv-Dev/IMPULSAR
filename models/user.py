@@ -30,6 +30,10 @@ class User(db.Model):
     biography = db.Column(db.Text, default="Biografía")
     avatar = db.Column(db.String(100), nullable=True)
 
+    # Un admin banea cuentas desde el panel; un usuario baneado no puede
+    # iniciar sesion (ver views/auth.py login() y api_login()).
+    is_banned = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
+
     # Datos de contacto publico del emprendedor. Todos opcionales: no todos
     # los usuarios son emprendedores ni quieren publicar su telefono.
     phone = db.Column(db.String(30), nullable=True)
@@ -77,6 +81,7 @@ class User(db.Model):
             "username": self.username,
             "email": self.email,
             "rol": self.rol,
+            "is_banned": self.is_banned,
             "biography": self.biography,
             "avatar": self.avatar,
             "phone": self.phone,

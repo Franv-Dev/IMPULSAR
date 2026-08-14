@@ -75,6 +75,11 @@
                                 Mensajes
                                 <span id="notif-badge" class="badge--notif" style="display:none;" aria-live="polite"></span>
                             </a>
+                            {% if g.user.rol == 'admin' %}
+                                <a href="{{ url_for('admin.dashboard') }}" class="user-menu__item">
+                                    Panel de administración
+                                </a>
+                            {% endif %}
                             <a href="{{ url_for('auth.logout') }}" class="user-menu__item user-menu__item--danger">
                                 Salir
                             </a>

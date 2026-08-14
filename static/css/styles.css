@@ -1583,3 +1583,96 @@ textarea.auth__input {
     font-size: 0.75rem;
     font-weight: 600;
 }
+
+/* === Panel de administrador === */
+.admin-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-metric {
+    flex: 1 1 160px;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    text-align: center;
+    box-shadow: var(--shadow-light);
+}
+
+.admin-metric--alert {
+    border-color: #FCA5A5;
+    background-color: #FEF2F2;
+}
+
+.admin-metric__value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.admin-metric__label {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.admin-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.admin-table-wrapper {
+    overflow-x: auto;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-light);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.admin-table th {
+    color: var(--color-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.admin-badge--ok {
+    background-color: #DCFCE7;
+    color: #15803D;
+}
+
+.admin-badge--danger {
+    background-color: #FEE2E2;
+    color: #991B1B;
+}
