@@ -10,7 +10,7 @@
                 <h2 class="section__title">{{ post.title }}</h2>
                 <p class="section__subtitle">
                     Conversación con
-                    <a href="{{ url_for('profile.view_profile', user_id=otra_parte.id) }}">{{ otra_parte.username }}</a>
+                    <a href="{{ url_for('profile.view_profile', slug=otra_parte.slug) }}">{{ otra_parte.username }}</a>
                 </p>
             </div>
             <a href="{{ url_for('blog.detail', id=post.id) }}" class="section__link">Ver emprendimiento</a>

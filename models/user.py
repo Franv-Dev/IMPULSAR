@@ -1,4 +1,5 @@
 from db import db, utcnow
+from services.slugs import generar_slug, slug_disponible
 
 
 class Roles:
@@ -24,6 +25,11 @@ class User(db.Model):
     # condicion de carrera (dos registros simultaneos pasan los dos el chequeo).
     # index ademas acelera los filter_by(username=...) del login.
     username = db.Column(db.String(50), unique=True, index=True, nullable=False)
+    # Version URL-safe del username: es lo que viaja en /perfil/<slug>. Va
+    # separada del username para que este pueda tener mayusculas, tildes o
+    # espacios sin romper la URL. unique+index por lo mismo que username: la
+    # ruta lo usa en cada filter_by y dos slugs iguales harian ambigua la URL.
+    slug = db.Column(db.String(60), unique=True, index=True, nullable=False)
     password = db.Column(db.Text, nullable=False)
     rol = db.Column(db.String(50), nullable=False, default=Roles.USUARIO)
     email = db.Column(db.String(120), unique=True, index=True, nullable=False)
@@ -53,8 +59,13 @@ class User(db.Model):
     def __init__(self, username, password, email, rol=Roles.USUARIO,
                  biography="Biografía", latitude=None, longitude=None,
                  address_street=None, avatar=None, cover_image=None, phone=None,
-                 whatsapp=None, instagram_url=None, facebook_url=None, twitter_url=None):
+                 whatsapp=None, instagram_url=None, facebook_url=None, twitter_url=None,
+                 slug=None):
         self.username = username
+        # Se calcula solo al crear el usuario y no se recalcula despues: el
+        # slug es parte de una URL publica, y regenerarlo dejaria muertos los
+        # links que ya circulan.
+        self.slug = slug or self.generar_slug_unico(username)
         self.password = password
         # Se normaliza al guardar para que "Admin", "ADMIN" y "admin" sean lo
         # mismo y los chequeos de permisos no dependan de como se escribio.
@@ -72,6 +83,19 @@ class User(db.Model):
         self.longitude = longitude
         self.address_street = address_street
 
+    @staticmethod
+    def generar_slug_unico(username):
+        """Slug libre para ese username, resolviendo colisiones con -2, -3, etc.
+
+        Dos usuarios distintos pueden dar el mismo slug base ("Pan Casero" y
+        "pan-casero"), asi que no alcanza con normalizar: hay que chequear
+        contra los que ya existen.
+        """
+        return slug_disponible(
+            generar_slug(username),
+            lambda candidato: User.query.filter_by(slug=candidato).first() is not None,
+        )
+
     def __repr__(self):
         # Para debugging/logs
         return f"User:{self.username}"
@@ -81,6 +105,7 @@ class User(db.Model):
         return {
             "id": self.id,
             "username": self.username,
+            "slug": self.slug,
             "email": self.email,
             "rol": self.rol,
             "is_banned": self.is_banned,

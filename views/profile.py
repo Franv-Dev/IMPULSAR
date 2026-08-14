@@ -18,11 +18,15 @@ from services.uploads import save_post_image
 profile = Blueprint("profile", __name__, url_prefix="/perfil")
 
 
-@profile.route("/<int:user_id>")
-def view_profile(user_id):
-    user = User.query.get_or_404(user_id)
+# Las rutas por <slug> son las canonicas; las /<int:user_id> de mas abajo
+# quedan solo como redirect 301 para no romper los links viejos. Werkzeug
+# prueba primero la regla con el converter int, asi que /perfil/123 cae en el
+# redirect y /perfil/panaderia en el perfil, sin ambiguedad.
+@profile.route("/<slug>")
+def view_profile(slug):
+    user = User.query.filter_by(slug=slug).first_or_404()
     filas = (
-        query_posts_con_rating(Post.query.filter_by(author=user_id))
+        query_posts_con_rating(Post.query.filter_by(author=user.id))
         .order_by(Post.created.desc())
         .all()
     )
@@ -39,20 +43,20 @@ def view_profile(user_id):
     )
 
 
-@profile.route("/<int:user_id>/resenias")
-def reviews(user_id):
+@profile.route("/<slug>/resenias")
+def reviews(slug):
     """Todas las reseñas recibidas en los emprendimientos del usuario, paginadas.
 
     A diferencia del detalle de un post (que solo muestra las reseñas de ESE
     emprendimiento), esto junta las de todos los emprendimientos del usuario
     en un solo listado.
     """
-    user = User.query.get_or_404(user_id)
+    user = User.query.filter_by(slug=slug).first_or_404()
     paginacion = (
         Review.query
         .join(Post, Post.id == Review.post_id)
         .options(joinedload(Review.post), joinedload(Review.user))
-        .filter(Post.author == user_id)
+        .filter(Post.author == user.id)
         .order_by(Review.created.desc())
         .paginate(
             page=request.args.get("page", 1, type=int),
@@ -61,6 +65,23 @@ def reviews(user_id):
         )
     )
     return render_template("profile/reviews.html", user=user, paginacion=paginacion)
+
+
+# --- 1.b RUTAS VIEJAS POR ID (redirect permanente al slug)
+
+@profile.route("/<int:user_id>")
+def view_profile_por_id(user_id):
+    """301 y no 302: la URL por id dejo de ser la canonica para siempre, y el
+    301 hace que buscadores y clientes se queden con la version por slug."""
+    user = User.query.get_or_404(user_id)
+    return redirect(url_for("profile.view_profile", slug=user.slug), code=301)
+
+
+@profile.route("/<int:user_id>/resenias")
+def reviews_por_id(user_id):
+    user = User.query.get_or_404(user_id)
+    return redirect(url_for("profile.reviews", slug=user.slug), code=301)
+
 
 # --- 2. RUTA DE BIOGRAFÍA
 
@@ -76,7 +97,7 @@ def create():
             g.user.biography = biography
             db.session.commit()
             flash("Biografía actualizada con éxito.")
-            return redirect(url_for("profile.view_profile", user_id=g.user.id))
+            return redirect(url_for("profile.view_profile", slug=g.user.slug))
 
     
     
@@ -154,6 +175,6 @@ def edit():
         
         db.session.commit()
         flash("Perfil actualizado correctamente.")
-        return redirect(url_for("profile.view_profile", user_id=g.user.id))
+        return redirect(url_for("profile.view_profile", slug=g.user.slug))
 
     return render_template("profile/edit.html", user=g.user)

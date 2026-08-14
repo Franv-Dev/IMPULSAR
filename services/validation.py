@@ -18,6 +18,19 @@ CONTRASENIAS_OBVIAS = {
 }
 
 
+def validate_username(username):
+    """Devuelve un mensaje de error si el username no es valido, o None."""
+    username = (username or "").strip()
+    if not username:
+        return "Se requiere nombre de usuario"
+    # Un username 100% numerico generaria un slug numerico, y /perfil/123 ya
+    # significa "el usuario con id 123": no habria forma de saber a cual de
+    # los dos apunta la URL.
+    if username.isdigit():
+        return "El nombre de usuario no puede ser solo números."
+    return None
+
+
 def validate_password(password):
     """Devuelve un mensaje de error si la contraseña no es valida, o None."""
     if not password or len(password) < MIN_PASSWORD_LENGTH:

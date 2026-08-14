@@ -5,7 +5,7 @@ from models.user import Roles, User
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.exc import IntegrityError
 from db import db
-from services.validation import validate_password
+from services.validation import validate_password, validate_username
 import functools
 
 # --- JWT ---
@@ -31,8 +31,9 @@ def register():
 
         error = None
 
-        if not username:
-            error = "Se requiere nombre de usuario"
+        username_error = validate_username(username)
+        if username_error:
+            error = username_error
         elif not password:
             error = "Se requiere una contraseña"
         elif not email:
@@ -153,7 +154,8 @@ def api_register():
     rol = (data.get("rol") or "usuario").strip() or "usuario"
 
     errors = []
-    if not username: errors.append("username requerido")
+    username_error = validate_username(username)
+    if username_error: errors.append(username_error)
     if not email: errors.append("email requerido")
     if not password:
         errors.append("password requerido")

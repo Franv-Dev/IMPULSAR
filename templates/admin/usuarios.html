@@ -37,7 +37,7 @@
                 <tbody>
                     {% for u in usuarios %}
                         <tr>
-                            <td><a href="{{ url_for('profile.view_profile', user_id=u.id) }}">{{ u.username }}</a></td>
+                            <td><a href="{{ url_for('profile.view_profile', slug=u.slug) }}">{{ u.username }}</a></td>
                             <td>{{ u.email }}</td>
                             <td>{{ u.rol }}</td>
                             <td>

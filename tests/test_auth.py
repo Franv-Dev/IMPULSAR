@@ -87,6 +87,25 @@ def test_no_se_pueden_repetir_emails_ni_cambiando_mayusculas(client):
     assert resp.status_code == 400
 
 
+def test_no_se_puede_registrar_un_username_solo_numerico(client):
+    """Daria un slug numerico, indistinguible de /perfil/<id>."""
+    resp = client.post("/auth/api/register", json={
+        "username": "12345", "email": "a@test.com", "password": "secreta123",
+    })
+
+    assert resp.status_code == 400
+
+
+def test_el_registro_por_formulario_rechaza_un_username_numerico(client, db):
+    from models.user import User
+
+    client.post("/auth/register", data={
+        "username": "999", "email": "a@test.com", "password": "secreta123",
+    })
+
+    assert User.query.filter_by(username="999").first() is None
+
+
 # --------------------------------------------------------------------- roles
 
 def test_role_required_rechaza_sin_token(client):

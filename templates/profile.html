@@ -60,7 +60,7 @@
                 {% if g.user and g.user.id == user.id %}
                     <a href="{{ url_for('profile.edit') }}" class="btn btn--secondary">Editar perfil</a>
                 {% endif %}
-                <a href="{{ url_for('profile.reviews', user_id=user.id) }}" class="btn btn--secondary">
+                <a href="{{ url_for('profile.reviews', slug=user.slug) }}" class="btn btn--secondary">
                     Ver reseñas recibidas
                 </a>
             </div>

@@ -42,7 +42,7 @@
                 
                 <p class="card__location">
                     Publicado por 
-                    <a href="{{ url_for('profile.view_profile', user_id=author.id) }}" class="post-author-link">
+                    <a href="{{ url_for('profile.view_profile', slug=author.slug) }}" class="post-author-link">
                         {{ author.username }}
                     </a>
                 </p>

@@ -13,7 +13,7 @@
                     en los emprendimientos de {{ user.username }}.
                 </p>
             </div>
-            <a href="{{ url_for('profile.view_profile', user_id=user.id) }}" class="section__link">← Volver al perfil</a>
+            <a href="{{ url_for('profile.view_profile', slug=user.slug) }}" class="section__link">← Volver al perfil</a>
         </div>
 
         {% if paginacion.items %}
