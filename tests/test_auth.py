@@ -106,6 +106,46 @@ def test_el_registro_por_formulario_rechaza_un_username_numerico(client, db):
     assert User.query.filter_by(username="999").first() is None
 
 
+def test_no_se_puede_registrar_un_username_mas_largo_que_la_columna(client):
+    """Sin validar el largo, el nombre llegaba al INSERT y MySQL tiraba un
+    DataError sin manejar: 500 en vez de un error de formulario."""
+    from services.validation import MAX_USERNAME_LENGTH
+
+    resp = client.post("/auth/api/register", json={
+        "username": "a" * (MAX_USERNAME_LENGTH + 1),
+        "email": "largo@test.com",
+        "password": "secreta123",
+    })
+
+    assert resp.status_code == 400
+    assert any("50" in e for e in resp.get_json()["errors"])
+
+
+def test_un_username_del_largo_maximo_si_se_puede_registrar(client):
+    from services.validation import MAX_USERNAME_LENGTH
+
+    resp = client.post("/auth/api/register", json={
+        "username": "a" * MAX_USERNAME_LENGTH,
+        "email": "justo@test.com",
+        "password": "secreta123",
+    })
+
+    assert resp.status_code == 201
+
+
+def test_el_registro_por_formulario_rechaza_un_username_largo(client, db):
+    from models.user import User
+    from services.validation import MAX_USERNAME_LENGTH
+
+    demasiado_largo = "a" * (MAX_USERNAME_LENGTH + 10)
+    respuesta = client.post("/auth/register", data={
+        "username": demasiado_largo, "email": "largo@test.com", "password": "secreta123",
+    })
+
+    assert respuesta.status_code == 200  # vuelve al formulario, no revienta
+    assert User.query.filter_by(username=demasiado_largo).first() is None
+
+
 # --------------------------------------------------------------------- roles
 
 def test_role_required_rechaza_sin_token(client):

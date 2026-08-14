@@ -8,6 +8,11 @@ lugares.
 
 MIN_PASSWORD_LENGTH = 8
 
+# Tiene que coincidir con el largo de User.username (models/user.py). Sin este
+# chequeo el nombre largo llegaba al INSERT y MySQL cortaba con un DataError
+# que nadie atrapaba: el usuario veia un 500 en vez de un error del formulario.
+MAX_USERNAME_LENGTH = 50
+
 # Contraseñas comunes que pasan el chequeo de largo pero siguen siendo
 # triviales de adivinar.
 CONTRASENIAS_OBVIAS = {
@@ -28,6 +33,11 @@ def validate_username(username):
     # los dos apunta la URL.
     if username.isdigit():
         return "El nombre de usuario no puede ser solo números."
+    if len(username) > MAX_USERNAME_LENGTH:
+        return (
+            f"El nombre de usuario no puede tener más de {MAX_USERNAME_LENGTH} "
+            "caracteres."
+        )
     return None
 
 
