@@ -224,6 +224,17 @@ def me():
 
 #  Helpers de autorización por roles para usar en tus APIs
 
+# GAP CONOCIDO Y ACEPTADO POR AHORA: is_banned solo se chequea al emitir el
+# token (api_login), no en cada request. A diferencia de la sesion HTML
+# (ver load_logged_in_user, que si revalida en cada request), un usuario
+# baneado con un JWT ya emitido conserva acceso hasta que expire
+# (JWT_ACCESS_TOKEN_EXPIRES, 1h por default). /auth/me y cualquier endpoint
+# con role_required() tienen este mismo gap. No se soluciona aca porque hoy
+# no hay endpoints JWT sensibles (la app real es HTML+sesion); si en algun
+# momento se agrega uno que si lo sea, ahi conviene revisar en serio (por
+# ejemplo, chequeando is_banned en cada request via un callback de
+# flask-jwt-extended, o acortando el tiempo de expiracion).
+
 
 def role_required(*allowed_roles):
     """Usalo junto con @jwt_required() en endpoints JSON.
