@@ -80,6 +80,17 @@ def test_la_api_de_posts_devuelve_json(client, crear_usuario, crear_post):
     assert datos["total"] == 1
 
 
+def test_la_api_de_posts_incluye_la_etiqueta_de_categoria(client, crear_usuario, crear_post):
+    """El buscador AJAX del home usa este campo en vez de un texto fijo."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Dulces Mendoza", category=Categorias.ALIMENTOS)
+
+    datos = client.get("/api/posts/").get_json()
+
+    assert datos["items"][0]["category"] == Categorias.ALIMENTOS
+    assert datos["items"][0]["category_label"] == "Alimentos"
+
+
 # ----------------------------------------------------------------------- CRUD
 
 def test_crear_requiere_login(client):

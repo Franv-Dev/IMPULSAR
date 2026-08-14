@@ -53,8 +53,8 @@ function renderPosts(posts) {
             `;
         }
 
-        // 3. Textos genéricos (como ya tenías)
-        const categoryText = "Emprendimiento local";
+        // 3. Categoria real (la API ya la devuelve) y texto generico de ubicacion
+        const categoryText = escapeHtml(post.category_label || "Sin categoría");
         const locationText = "Ubicación no especificada";
 
         // 4. Actualizamos el innerHTML para incluir la imagen

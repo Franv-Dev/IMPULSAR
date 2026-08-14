@@ -82,6 +82,7 @@ class Post(db.Model):
             "body": self.body,
             "image": self.image,
             "category": self.category,
+            "category_label": self.category_label,
             "created": self.created.isoformat() if self.created else None,
             "latitude": self.latitude,
             "longitude": self.longitude,
