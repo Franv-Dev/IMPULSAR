@@ -96,6 +96,18 @@ def test_no_se_puede_banear_a_otro_admin(client, db, crear_usuario, login):
     assert otro_admin.is_banned is False
 
 
+def test_un_admin_no_puede_banearse_a_si_mismo(client, db, crear_usuario, login):
+    """Se cae en el mismo chequeo que bloquea banear a otro admin (todo admin
+    esta exento), pero lo fijamos como comportamiento intencional aparte."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+
+    login(admin.id)
+    client.post(f"/admin/usuarios/{admin.id}/ban")
+
+    db.session.refresh(admin)
+    assert admin.is_banned is False
+
+
 def test_un_usuario_baneado_no_puede_iniciar_sesion(client, db, crear_usuario):
     usuario = crear_usuario(username="tomy")
     usuario.is_banned = True
