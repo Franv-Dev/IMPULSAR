@@ -23,9 +23,23 @@
                 {% endif %}
             {% endwith %}
 
-            <form method="post" class="auth__form">
+            <form method="post" class="auth__form" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                
+
+                <div class="auth__field">
+                    <label for="avatar" class="auth__label">Foto de perfil</label>
+                    <input
+                        type="file"
+                        id="avatar"
+                        name="avatar"
+                        class="auth__input"
+                        accept="image/png, image/jpeg, image/gif"
+                    >
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Si no subís una nueva, se conserva la actual.
+                    </small>
+                </div>
+
                 <div class="auth__field">
                     <label for="biography" class="auth__label">Biografía</label>
                     <textarea
@@ -35,6 +49,66 @@
                         placeholder="Aquí es donde tu historia brilla..."
                         rows="6"
                     >{{ user.biography or '' }}</textarea>
+                </div>
+
+                <div class="auth__field">
+                    <label for="phone" class="auth__label">Teléfono (opcional)</label>
+                    <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        class="auth__input"
+                        placeholder="Ej: 261 555-1234"
+                        value="{{ user.phone or '' }}"
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="whatsapp" class="auth__label">WhatsApp (opcional)</label>
+                    <input
+                        type="tel"
+                        id="whatsapp"
+                        name="whatsapp"
+                        class="auth__input"
+                        placeholder="Ej: 5492615551234 (con código de país, sin espacios)"
+                        value="{{ user.whatsapp or '' }}"
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="instagram_url" class="auth__label">Instagram (opcional)</label>
+                    <input
+                        type="url"
+                        id="instagram_url"
+                        name="instagram_url"
+                        class="auth__input"
+                        placeholder="https://instagram.com/tu-usuario"
+                        value="{{ user.instagram_url or '' }}"
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="facebook_url" class="auth__label">Facebook (opcional)</label>
+                    <input
+                        type="url"
+                        id="facebook_url"
+                        name="facebook_url"
+                        class="auth__input"
+                        placeholder="https://facebook.com/tu-pagina"
+                        value="{{ user.facebook_url or '' }}"
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="twitter_url" class="auth__label">Twitter / X (opcional)</label>
+                    <input
+                        type="url"
+                        id="twitter_url"
+                        name="twitter_url"
+                        class="auth__input"
+                        placeholder="https://twitter.com/tu-usuario"
+                        value="{{ user.twitter_url or '' }}"
+                    >
                 </div>
 
                 <div class="auth__field">

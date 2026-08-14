@@ -28,6 +28,15 @@ class User(db.Model):
     rol = db.Column(db.String(50), nullable=False, default=Roles.USUARIO)
     email = db.Column(db.String(120), unique=True, index=True, nullable=False)
     biography = db.Column(db.Text, default="Biografía")
+    avatar = db.Column(db.String(100), nullable=True)
+
+    # Datos de contacto publico del emprendedor. Todos opcionales: no todos
+    # los usuarios son emprendedores ni quieren publicar su telefono.
+    phone = db.Column(db.String(30), nullable=True)
+    whatsapp = db.Column(db.String(30), nullable=True)
+    instagram_url = db.Column(db.String(255), nullable=True)
+    facebook_url = db.Column(db.String(255), nullable=True)
+    twitter_url = db.Column(db.String(255), nullable=True)
 
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
@@ -38,7 +47,8 @@ class User(db.Model):
 
     def __init__(self, username, password, email, rol=Roles.USUARIO,
                  biography="Biografía", latitude=None, longitude=None,
-                 address_street=None):
+                 address_street=None, avatar=None, phone=None, whatsapp=None,
+                 instagram_url=None, facebook_url=None, twitter_url=None):
         self.username = username
         self.password = password
         # Se normaliza al guardar para que "Admin", "ADMIN" y "admin" sean lo
@@ -46,6 +56,12 @@ class User(db.Model):
         self.rol = (rol or Roles.USUARIO).strip().lower()
         self.email = (email or "").strip().lower()
         self.biography = biography
+        self.avatar = avatar
+        self.phone = phone
+        self.whatsapp = whatsapp
+        self.instagram_url = instagram_url
+        self.facebook_url = facebook_url
+        self.twitter_url = twitter_url
         self.latitude = latitude
         self.longitude = longitude
         self.address_street = address_street
@@ -62,6 +78,12 @@ class User(db.Model):
             "email": self.email,
             "rol": self.rol,
             "biography": self.biography,
+            "avatar": self.avatar,
+            "phone": self.phone,
+            "whatsapp": self.whatsapp,
+            "instagram_url": self.instagram_url,
+            "facebook_url": self.facebook_url,
+            "twitter_url": self.twitter_url,
             "latitude": self.latitude,
             "longitude": self.longitude,
             "address_street": self.address_street,

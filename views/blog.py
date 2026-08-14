@@ -5,7 +5,7 @@ from werkzeug.exceptions import abort
 from models.post import Post
 from models.user import User
 from views.auth import login_required
-from db import db
+from db import db, utcnow
 import os
 from models.review import Review
 from sqlalchemy import func
@@ -320,3 +320,26 @@ def add_review(id):
         flash("No pudimos guardar tu reseña. Intentá de nuevo.")
 
     return redirect(url_for("blog.detail", id=id))
+
+
+@blog.route("/review/<int:review_id>/reply", methods=["POST"])
+@login_required
+def reply_review(review_id):
+    """El dueño del emprendimiento responde publicamente a una reseña."""
+    review = Review.query.get_or_404(review_id)
+
+    if review.post.author != g.user.id:
+        flash("No tenés permiso para responder esta reseña.")
+        return redirect(url_for("blog.detail", id=review.post_id))
+
+    texto = (request.form.get("reply") or "").strip()
+    if not texto:
+        flash("Escribí una respuesta antes de enviarla.")
+        return redirect(url_for("blog.detail", id=review.post_id))
+
+    review.reply = texto
+    review.replied_at = utcnow()
+    db.session.commit()
+    flash("Tu respuesta se publicó correctamente.")
+
+    return redirect(url_for("blog.detail", id=review.post_id))

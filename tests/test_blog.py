@@ -268,6 +268,73 @@ def test_la_api_no_permite_pedir_paginas_gigantes(client, crear_usuario, crear_p
     assert datos["per_page"] == 50
 
 
+# -------------------------------------------------------- respuesta a resenas
+
+def test_el_dueño_puede_responder_una_resenia(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    review = Review(post_id=post.id, user_id=cliente.id, rating=4, comment="Bien")
+    db.session.add(review)
+    db.session.commit()
+
+    login(autor.id)
+    client.post(f"/blog/review/{review.id}/reply", data={"reply": "¡Gracias por tu visita!"})
+
+    db.session.refresh(review)
+    assert review.reply == "¡Gracias por tu visita!"
+    assert review.replied_at is not None
+
+
+def test_un_extranio_no_puede_responder_una_resenia(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    intruso = crear_usuario(username="intruso")
+    post = crear_post(autor.id)
+    review = Review(post_id=post.id, user_id=cliente.id, rating=4, comment="Bien")
+    db.session.add(review)
+    db.session.commit()
+
+    login(intruso.id)
+    client.post(f"/blog/review/{review.id}/reply", data={"reply": "Intento ajeno"})
+
+    db.session.refresh(review)
+    assert review.reply is None
+
+
+def test_no_se_puede_responder_con_texto_vacio(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    review = Review(post_id=post.id, user_id=cliente.id, rating=4, comment="Bien")
+    db.session.add(review)
+    db.session.commit()
+
+    login(autor.id)
+    client.post(f"/blog/review/{review.id}/reply", data={"reply": "   "})
+
+    db.session.refresh(review)
+    assert review.reply is None
+
+
+def test_el_detalle_muestra_la_respuesta_publica(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    review = Review(
+        post_id=post.id, user_id=cliente.id, rating=5, comment="Genial",
+        reply="Gracias, vení cuando quieras",
+    )
+    db.session.add(review)
+    db.session.commit()
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Gracias, vení cuando quieras" in html
+
+
+# ---------------------------------------------------------------- busqueda API
+
 def test_la_api_busca_por_titulo_y_descripcion(client, crear_usuario, crear_post):
     autor = crear_usuario(username="autor")
     crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")

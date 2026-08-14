@@ -20,6 +20,12 @@ class Review(db.Model):
     comment = db.Column(db.Text, nullable=True)
     created = db.Column(db.DateTime, nullable=False, default=utcnow)
 
+    # Respuesta publica del dueño del emprendimiento a esta reseña. Vive en la
+    # misma fila en vez de una tabla aparte porque una reseña tiene a lo sumo
+    # una respuesta.
+    reply = db.Column(db.Text, nullable=True)
+    replied_at = db.Column(db.DateTime, nullable=True)
+
     # Relaciones (útil para acceder desde el post y el usuario)
     post = db.relationship(
         "Post",
@@ -38,6 +44,8 @@ class Review(db.Model):
             "rating": self.rating,
             "comment": self.comment,
             "created": self.created.isoformat() if self.created else None,
+            "reply": self.reply,
+            "replied_at": self.replied_at.isoformat() if self.replied_at else None,
         }
 
     def to_dict(self):

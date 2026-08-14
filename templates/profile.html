@@ -2,13 +2,16 @@
 {% block title %}Perfil de {{ user.username }}{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
 
 <div class="profile-container">
     <div class="profile-header">
         <img src="{{ url_for('static', filename='icons/portada.jpg') }}" alt="Portada" class="cover-photo">
         <div class="profile-avatar">
-            <img src="{{ url_for('static', filename='icons/logo_perfil.png') }}" alt="Avatar">
+            {% if user.avatar %}
+                <img src="{{ url_for('static', filename='uploads/avatars/' ~ user.avatar) }}" alt="Avatar de {{ user.username }}">
+            {% else %}
+                <img src="{{ url_for('static', filename='icons/logo_perfil.png') }}" alt="Avatar">
+            {% endif %}
         </div>
     </div>
 
@@ -33,48 +36,110 @@
             </a>
             {% endif %}
 
-            <div class="profile-stats">
-                <div><span>{{ user.followers_count or 0 }}</span>Seguidores</div>
-                <div><span>{{ user.projects_count or 0 }}</span>Proyectos</div>
-                <div><span>{{ user.following_count or 0 }}</span>Siguiendo</div>
-            </div>
+            {% if user.phone or user.whatsapp %}
+                <div class="profile-contact">
+                    {% if user.whatsapp %}
+                        <a href="https://wa.me/{{ user.whatsapp|replace(' ', '')|replace('+', '')|replace('-', '') }}"
+                            class="btn btn--primary" target="_blank" rel="noopener noreferrer">
+                            WhatsApp
+                        </a>
+                    {% endif %}
+                    {% if user.phone %}
+                        <a href="tel:{{ user.phone }}" class="btn btn--secondary">
+                            {{ user.phone }}
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
 
             <div class="profile-actions">
                 {% if g.user and g.user.id == user.id %}
                     <a href="{{ url_for('profile.edit') }}" class="btn btn--secondary">Editar perfil</a>
-                {% else %}
-                    <a href="#" class="btn btn--primary">Contactar</a>
                 {% endif %}
             </div>
         </div>
 
+        {% if user.twitter_url or user.instagram_url or user.facebook_url %}
         <div class="profile-social">
-            <a href="#" class="social-icon twitter" target="_blank" rel="noopener noreferrer">
-                <img src="{{ url_for('static', filename='icons/twitter.png') }}" alt="Twitter">
-            </a>
-            <a href="#" class="social-icon instagram" target="_blank" rel="noopener noreferrer">
-                <img src="{{ url_for('static', filename='icons/instagram.png') }}" alt="Instagram">
-            </a>
-            <a href="#" class="social-icon facebook" target="_blank" rel="noopener noreferrer">
-                <img src="{{ url_for('static', filename='icons/facebook.png') }}" alt="Facebook">
-            </a>
+            {% if user.twitter_url %}
+                <a href="{{ user.twitter_url }}" class="social-icon twitter" target="_blank" rel="noopener noreferrer">
+                    <img src="{{ url_for('static', filename='icons/Twitter.png') }}" alt="Twitter">
+                </a>
+            {% endif %}
+            {% if user.instagram_url %}
+                <a href="{{ user.instagram_url }}" class="social-icon instagram" target="_blank" rel="noopener noreferrer">
+                    <img src="{{ url_for('static', filename='icons/Instagram.png') }}" alt="Instagram">
+                </a>
+            {% endif %}
+            {% if user.facebook_url %}
+                <a href="{{ user.facebook_url }}" class="social-icon facebook" target="_blank" rel="noopener noreferrer">
+                    <img src="{{ url_for('static', filename='icons/Facebook.png') }}" alt="Facebook">
+                </a>
+            {% endif %}
         </div>
+        {% endif %}
     </div>
 
-    {% if g.user and g.user.id == user.id %}
     <div class="section__header">
         <div>
-            <h2 class="section__title">Mis emprendimientos</h2>
-            <p class="section__subtitle">
-                Acá podés ver y gestionar los emprendimientos asociados a tu cuenta.
-            </p>
+            <h2 class="section__title">
+                {% if g.user and g.user.id == user.id %}Mis emprendimientos{% else %}Emprendimientos de {{ user.username }}{% endif %}
+            </h2>
         </div>
-        <div class="hero__actions">
-            <a href="{{ url_for('blog.my_posts') }}" class="btn btn--primary">
-                Ver mis emprendimientos
-            </a>
-        </div>
+        {% if g.user and g.user.id == user.id %}
+            <div class="hero__actions">
+                <a href="{{ url_for('blog.my_posts') }}" class="btn btn--primary">
+                    Gestionar mis emprendimientos
+                </a>
+            </div>
+        {% endif %}
     </div>
+
+    {% if posts %}
+        <div class="cards-grid" style="padding: 0 2rem 2rem;">
+            {% for item in posts %}
+                {% set post = item.post %}
+                <article class="card">
+                    {% if post.image %}
+                        <a href="{{ url_for('blog.detail', id=post.id) }}" class="card__image-link">
+                            <div class="card__image-wrapper">
+                                <img
+                                    src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                    alt="Imagen de {{ post.title }}"
+                                    class="card__image"
+                                >
+                            </div>
+                        </a>
+                    {% endif %}
+                    <div class="card__body">
+                        <h3 class="card__title">
+                            <a href="{{ url_for('blog.detail', id=post.id) }}" style="text-decoration:none; color:inherit;">
+                                {{ post.title }}
+                            </a>
+                        </h3>
+                        {% if item.avg_rating %}
+                            <p class="card__rating">
+                                ⭐ {{ item.avg_rating }} <span style="color:#9CA3AF;">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
+                            </p>
+                        {% else %}
+                            <p class="card__rating" style="color:#9CA3AF;">Sin reseñas todavía</p>
+                        {% endif %}
+                        <p class="card__description">
+                            {{ post.body[:120] }}{% if post.body|length > 120 %}...{% endif %}
+                        </p>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="reviews-empty" style="padding: 0 2rem 2rem;">
+            {% if g.user and g.user.id == user.id %}
+                Todavía no registraste ningún emprendimiento.
+                <a href="{{ url_for('blog.create') }}">Creá el primero acá.</a>
+            {% else %}
+                Este usuario todavía no registró ningún emprendimiento.
+            {% endif %}
+        </p>
     {% endif %}
 
     <section class="profile-map-section">

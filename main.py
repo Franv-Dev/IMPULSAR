@@ -26,6 +26,7 @@ from services.uploads import MAX_IMAGE_BYTES
 # Blueprints
 from views.auth import api_login, api_register, auth
 from views.blog import blog
+from views.messages import messages
 from views.pages import pages
 from views.posts_api import posts_api
 from views.profile import profile
@@ -73,6 +74,7 @@ def _registrar_blueprints(app):
     app.register_blueprint(posts_api)
     app.register_blueprint(pages)
     app.register_blueprint(profile)
+    app.register_blueprint(messages)
 
 
 def _registrar_rutas(app):

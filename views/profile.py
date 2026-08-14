@@ -1,12 +1,52 @@
+import os
+
 from flask import (
     render_template, Blueprint, redirect, flash, g, request, url_for, current_app
 )
+from sqlalchemy import func
+
+from models.post import Post
+from models.review import Review
 from models.user import User
 from views.auth import login_required
 from db import db
 from services.geocoding import get_coordinates_from_address
+from services.uploads import save_post_image
 
 profile = Blueprint("profile", __name__, url_prefix="/perfil")
+
+
+def _posts_del_usuario_con_rating(user_id):
+    """Emprendimientos del usuario con su promedio de reseñas.
+
+    Misma estrategia que blog.index(): un solo outerjoin + AVG + COUNT en vez
+    de una consulta de reseñas por cada emprendimiento del listado.
+    """
+    ratings = (
+        db.session.query(
+            Review.post_id.label("post_id"),
+            func.avg(Review.rating).label("avg_rating"),
+            func.count(Review.id).label("review_count"),
+        )
+        .group_by(Review.post_id)
+        .subquery()
+    )
+    filas = (
+        Post.query
+        .filter_by(author=user_id)
+        .outerjoin(ratings, ratings.c.post_id == Post.id)
+        .add_columns(ratings.c.avg_rating, ratings.c.review_count)
+        .order_by(Post.created.desc())
+        .all()
+    )
+    return [
+        {
+            "post": post,
+            "avg_rating": round(avg_rating, 1) if avg_rating else None,
+            "review_count": review_count or 0,
+        }
+        for post, avg_rating, review_count in filas
+    ]
 
 
 @profile.route("/<int:user_id>")
@@ -15,6 +55,7 @@ def view_profile(user_id):
     return render_template(
         "profile.html",
         user=user,
+        posts=_posts_del_usuario_con_rating(user_id),
         MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
 
@@ -43,20 +84,41 @@ def create():
 @profile.route("/edit", methods=("GET", "POST"))
 @login_required
 def edit():
-    """Permite al usuario logueado editar Biografía y Dirección."""
-    
+    """Permite al usuario logueado editar su perfil: foto, bio, contacto y dirección."""
+
     if request.method == "POST":
         # Obtenemos los datos del formulario
         biography = request.form.get("biography", "").strip()
         address_street = request.form.get("address_street", "").strip()
+        phone = request.form.get("phone", "").strip()
+        whatsapp = request.form.get("whatsapp", "").strip()
+        instagram_url = request.form.get("instagram_url", "").strip()
+        facebook_url = request.form.get("facebook_url", "").strip()
+        twitter_url = request.form.get("twitter_url", "").strip()
 
         # Usamos los datos existentes como fallback
         latitude = g.user.latitude
         longitude = g.user.longitude
-        
+
         # 1. Actualizamos la biografía
         g.user.biography = biography if biography else g.user.biography
-        
+
+        # 1.b Foto de perfil (opcional, se conserva la anterior si no se sube otra)
+        avatar_file = request.files.get("avatar")
+        upload_dir = os.path.join(current_app.root_path, "static", "uploads", "avatars")
+        avatar_filename, avatar_error = save_post_image(avatar_file, upload_dir)
+        if avatar_error:
+            flash(avatar_error)
+        elif avatar_filename:
+            g.user.avatar = avatar_filename
+
+        # 1.c Datos de contacto
+        g.user.phone = phone or None
+        g.user.whatsapp = whatsapp or None
+        g.user.instagram_url = instagram_url or None
+        g.user.facebook_url = facebook_url or None
+        g.user.twitter_url = twitter_url or None
+
         # 2. Geocodificación y ubicación
         # Solo geocodificamos SI la dirección cambió o se eliminó
         if address_street != g.user.address_street:

@@ -83,6 +83,12 @@
                             </button>
                         </form>
                     </div>
+                {% elif g.user %}
+                    <div class="post-actions">
+                        <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id) }}" class="btn btn--primary">
+                            Escribirle al emprendedor
+                        </a>
+                    </div>
                 {% endif %}
             </div>
         </div>
@@ -105,6 +111,29 @@
                             <p class="review-card__comment {% if not r.comment %}review-card__comment--empty{% endif %}">
                                 {{ r.comment or 'Sin comentario escrito.' }}
                             </p>
+
+                            {% if r.reply %}
+                                <div class="review-card__reply">
+                                    <strong>Respuesta de {{ author.username }}:</strong>
+                                    <p>{{ r.reply }}</p>
+                                </div>
+                            {% elif g.user and g.user.id == post.author %}
+                                <form method="post"
+                                    action="{{ url_for('blog.reply_review', review_id=r.id) }}"
+                                    class="review-card__reply-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <textarea
+                                        name="reply"
+                                        rows="2"
+                                        class="auth__input"
+                                        placeholder="Responder públicamente a esta reseña..."
+                                        required
+                                    ></textarea>
+                                    <button type="submit" class="btn btn--secondary" style="font-size:0.8rem; padding:0.3rem 0.8rem; margin-top:0.5rem;">
+                                        Responder
+                                    </button>
+                                </form>
+                            {% endif %}
                         </div>
                     {% endfor %}
                 </div>
