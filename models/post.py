@@ -79,8 +79,10 @@ class Post(db.Model):
         return Categorias.ETIQUETAS.get(self.category, self.category)
 
     # Método para devolver JSON
-    def serialize(self):
-        return {
+    def serialize(self, include_views=False):
+        """include_views=True solo cuando quien pregunta es el dueño del post:
+        /api/posts/ es publica y sin auth, así que por default no viaja."""
+        data = {
             "id": self.id,
             "author_id": self.author,  # ID del usuario autor
             "title": self.title,
@@ -88,13 +90,15 @@ class Post(db.Model):
             "image": self.image,
             "category": self.category,
             "category_label": self.category_label,
-            "views_count": self.views_count,
             "created": self.created.isoformat() if self.created else None,
             "latitude": self.latitude,
             "longitude": self.longitude,
             "address_street": self.address_street
         }
+        if include_views:
+            data["views_count"] = self.views_count
+        return data
 
     # Alias estándar para usar en las rutas JSON
-    def to_dict(self):
-        return self.serialize()
+    def to_dict(self, include_views=False):
+        return self.serialize(include_views=include_views)

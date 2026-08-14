@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
 
 from models.post import Categorias, Post
 
@@ -42,7 +42,10 @@ def list_posts():
     )
 
     return jsonify({
-        "items": [p.to_dict() for p in paginacion.items],
+        "items": [
+            p.to_dict(include_views=bool(g.user and g.user.id == p.author))
+            for p in paginacion.items
+        ],
         "page": paginacion.page,
         "per_page": paginacion.per_page,
         "pages": paginacion.pages,
@@ -55,4 +58,5 @@ def list_posts():
 @posts_api.get("/<int:post_id>")
 def get_post(post_id):
     post = Post.query.get_or_404(post_id)
-    return jsonify(post.to_dict()), 200
+    include_views = bool(g.user and g.user.id == post.author)
+    return jsonify(post.to_dict(include_views=include_views)), 200

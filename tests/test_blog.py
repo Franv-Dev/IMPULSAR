@@ -91,6 +91,36 @@ def test_la_api_de_posts_incluye_la_etiqueta_de_categoria(client, crear_usuario,
     assert datos["items"][0]["category_label"] == "Alimentos"
 
 
+def test_la_api_no_expone_views_count_a_terceros(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    otro = crear_usuario(username="otro")
+    post = crear_post(autor.id)
+
+    # Anonimo
+    datos_anonimo = client.get("/api/posts/").get_json()
+    assert "views_count" not in datos_anonimo["items"][0]
+
+    # Logueado, pero no es el dueño
+    login_resp = client.post("/auth/login", data={"username": "otro", "password": "secreta123"})
+    datos_otro = client.get("/api/posts/").get_json()
+    assert "views_count" not in datos_otro["items"][0]
+
+    datos_detalle = client.get(f"/api/posts/{post.id}").get_json()
+    assert "views_count" not in datos_detalle
+
+
+def test_la_api_expone_views_count_al_dueño(client, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    login(autor.id)
+    datos_listado = client.get("/api/posts/").get_json()
+    assert datos_listado["items"][0]["views_count"] == 0
+
+    datos_detalle = client.get(f"/api/posts/{post.id}").get_json()
+    assert datos_detalle["views_count"] == 0
+
+
 # ----------------------------------------------------------------------- CRUD
 
 def test_crear_requiere_login(client):
