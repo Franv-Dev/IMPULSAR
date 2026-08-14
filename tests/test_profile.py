@@ -39,6 +39,28 @@ def test_el_perfil_publico_muestra_los_datos_de_contacto(client, db, crear_usuar
     assert "5492615551234" in html
 
 
+def test_el_perfil_renderiza_la_bio_con_formato(client, db, crear_usuario):
+    usuario = crear_usuario(username="tomy")
+    usuario.biography = "Somos **artesanales** desde 1990.\nVisitanos!"
+    db.session.commit()
+
+    html = client.get(f"/perfil/{usuario.id}").get_data(as_text=True)
+
+    assert "<strong>artesanales</strong>" in html
+    assert "1990.<br>Visitanos" in html
+
+
+def test_el_perfil_no_ejecuta_html_inyectado_en_la_bio(client, db, crear_usuario):
+    usuario = crear_usuario(username="tomy")
+    usuario.biography = "<script>alert('xss')</script>"
+    db.session.commit()
+
+    html = client.get(f"/perfil/{usuario.id}").get_data(as_text=True)
+
+    assert "<script>alert" not in html
+    assert "&lt;script&gt;" in html
+
+
 def test_editar_perfil_sube_un_avatar_valido(client, db, crear_usuario, login):
     usuario = crear_usuario(username="tomy")
     login(usuario.id)

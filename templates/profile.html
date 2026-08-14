@@ -25,7 +25,7 @@
             <p class="role">{{ user.rol or 'Miembro de IMPULSAR' }}</p>
             
             {% if user.biography %}
-                <p class="biography">{{ user.biography }}</p>
+                <p class="biography">{{ user.biography | render_bio }}</p>
             {% else %}
                 <p class="biography biography--empty">Aún no tienes biografía. ¡Contanos tu historia!</p>
             {% endif %}

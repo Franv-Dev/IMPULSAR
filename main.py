@@ -21,6 +21,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from config import get_config
 from db import db
+from services.formatting import render_biography
 from services.uploads import MAX_IMAGE_BYTES
 
 # Blueprints
@@ -51,6 +52,7 @@ def create_app(config_name=None):
     _registrar_blueprints(app)
     _registrar_rutas(app)
     _registrar_manejadores_de_error(app)
+    _registrar_filtros_jinja(app)
 
     return app
 
@@ -83,6 +85,13 @@ def _registrar_rutas(app):
     @app.route("/")
     def index():
         return render_template("home.html")
+
+
+def _registrar_filtros_jinja(app):
+    # Convierte **negrita**, [links](url) y saltos de linea de la bio en HTML
+    # seguro (ver services/formatting.py). Se registra como filtro para no
+    # tener que importarlo en cada vista que renderiza una biografia.
+    app.jinja_env.filters["render_bio"] = render_biography
 
 
 def _registrar_manejadores_de_error(app):
