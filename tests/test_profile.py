@@ -327,6 +327,33 @@ def test_dos_usernames_que_dan_el_mismo_slug_no_colisionan(crear_usuario):
     assert segundo.slug == "pan-casero-2"
 
 
+def test_un_username_reservado_no_se_queda_con_la_ruta(client, crear_usuario):
+    """"edit" es una ruta real bajo /perfil/ y le gana a /perfil/<slug>."""
+    usuario = crear_usuario(username="edit")
+
+    assert usuario.slug == "edit-2"
+
+    # Y la ruta estatica sigue siendo la de edicion, no el perfil de nadie.
+    assert client.get("/perfil/edit").status_code in (302, 200)
+    assert client.get("/perfil/edit-2").status_code == 200
+
+
+def test_los_slugs_reservados_no_se_asignan(crear_usuario):
+    from services.slugs import SLUGS_RESERVADOS
+
+    for reservado in ("admin", "api", "static", "login", "logout", "perfil", "create_bio"):
+        assert reservado in SLUGS_RESERVADOS
+
+    usuario = crear_usuario(username="Admin", email="admin@test.com")
+    assert usuario.slug == "admin-2"
+
+
+def test_un_slug_normal_no_se_ve_afectado_por_la_lista(crear_usuario):
+    usuario = crear_usuario(username="editorial")
+
+    assert usuario.slug == "editorial"
+
+
 def test_el_perfil_responde_por_slug(client, crear_usuario):
     usuario = crear_usuario(username="Tomy")
 
