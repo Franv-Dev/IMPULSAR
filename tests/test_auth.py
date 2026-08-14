@@ -136,6 +136,45 @@ def test_la_colision_de_username_tambien_la_agarra_el_formulario(client, db):
     assert User.query.count() == 1
 
 
+def test_no_se_puede_repetir_un_username_de_base_numerica(client):
+    """El chequeo normalizado busca por prefijo de slug, pero un username de
+    base numerica no genera un slug que empiece con esa base: slug_disponible
+    antepone "usuario-" ("123." -> "usuario-123"). Sin el chequeo exacto, el
+    repetido se colaba hasta el IntegrityError y salia el mensaje generico."""
+    primero = client.post("/auth/api/register", json={
+        "username": "123.", "email": "a@test.com", "password": "secreta123",
+    })
+    segundo = client.post("/auth/api/register", json={
+        "username": "123.", "email": "b@test.com", "password": "secreta123",
+    })
+
+    assert primero.status_code == 201
+    assert segundo.status_code == 400
+    assert "username ya existe" in segundo.get_json()["errors"]
+
+
+def test_el_formulario_tambien_rechaza_el_username_de_base_numerica_repetido(client):
+    from models.user import User
+
+    # "(456)" y no "45-6": los parentesis se caen al generar el slug y la base
+    # queda "456", toda numerica, que es la rama que rompe la invariante. Con
+    # "45-6" el guion sobrevive, la base no es numerica y el chequeo por
+    # prefijo ya alcanzaba.
+    client.post("/auth/register", data={
+        "username": "(456)", "email": "a@test.com", "password": "secreta123",
+    })
+    respuesta = client.post("/auth/register", data={
+        "username": "(456)", "email": "b@test.com", "password": "secreta123",
+    })
+
+    assert respuesta.status_code == 200
+    assert User.query.filter_by(username="(456)").count() == 1
+    # El duplicado no entra ni sin el fix, porque lo frena el IntegrityError.
+    # Lo que cambia es el mensaje: sin el chequeo se cae al generico.
+    html = respuesta.get_data(as_text=True)
+    assert "El usuario (456) ya se encuentra registrado" in html
+
+
 def test_dos_usernames_realmente_distintos_no_se_bloquean(client):
     """La normalizacion no debe pasarse de celosa: la collation tampoco ignora
     espacios ni puntuacion."""

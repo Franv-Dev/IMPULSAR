@@ -95,20 +95,37 @@ class User(db.Model):
     def existe_username_equivalente(username):
         """True si ya hay un username que la base consideraria el mismo.
 
-        No alcanza con filter_by(username=...): eso compara exacto, mientras
-        que el unique de MySQL ignora mayusculas y tildes (ver
-        normalizar_username). En SQLite, que si distingue, esto es ademas lo
-        unico que evita que se cuelen dos nombres equivalentes.
+        Son dos chequeos y no uno, porque ninguno cubre al otro:
+
+        - El exacto (filter_by) es el unico que no depende de como quedo el
+          slug del usuario que ya existe.
+        - El normalizado agarra los equivalentes que la collation de MySQL
+          considera iguales ("Panadería" / "panaderia"), que el exacto deja
+          pasar.
         """
+        username = (username or "").strip()
+        if not username:
+            return False
+
+        # Chequeo exacto. Va aparte del normalizado a proposito: el de abajo
+        # busca por prefijo de slug asumiendo que un username genera un slug
+        # que empieza con su propia base, y eso no se cumple cuando la base es
+        # numerica, porque slug_disponible antepone "usuario-" en vez de
+        # sufijar ("123." -> slug "usuario-123", base "123"). Sin esta linea,
+        # registrar "123." dos veces no lo detectaba el chequeo y terminaba en
+        # el IntegrityError, con el mensaje generico en vez del especifico.
+        if User.query.filter_by(username=username).first():
+            return True
+
         objetivo = normalizar_username(username)
         if not objetivo:
             return False
 
-        # Se busca por slug en vez de recorrer la tabla entera: dos usernames
-        # que solo difieren en mayusculas o tildes generan el mismo slug base,
-        # asi que los candidatos caen todos bajo ese prefijo, que esta
-        # indexado. El patron sale de generar_slug, que solo devuelve
-        # [a-z0-9-], asi que no puede meter comodines en el LIKE.
+        # Chequeo normalizado. Se busca por slug en vez de recorrer la tabla
+        # entera: dos usernames que solo difieren en mayusculas o tildes
+        # generan el mismo slug base, asi que los candidatos caen todos bajo
+        # ese prefijo, que esta indexado. El patron sale de generar_slug, que
+        # solo devuelve [a-z0-9-], asi que no puede meter comodines en el LIKE.
         base = generar_slug(username)
         candidatos = User.query.filter(User.slug.like(f"{base}%")).all()
         return any(normalizar_username(c.username) == objetivo for c in candidatos)
