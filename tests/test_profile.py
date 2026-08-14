@@ -150,3 +150,87 @@ def test_un_visitante_no_ve_las_vistas_en_el_perfil_ajeno(
     html = client.get(f"/perfil/{autor.id}").get_data(as_text=True)
 
     assert "vista" not in html
+
+
+# --------------------------------------------------- historial de reseñas
+
+def test_el_historial_junta_resenias_de_todos_los_emprendimientos(
+    client, db, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    cliente1 = crear_usuario(username="cliente1")
+    cliente2 = crear_usuario(username="cliente2")
+    post1 = crear_post(autor.id, title="Panadería")
+    post2 = crear_post(autor.id, title="Verdulería")
+
+    db.session.add(Review(post_id=post1.id, user_id=cliente1.id, rating=5, comment="Excelente pan"))
+    db.session.add(Review(post_id=post2.id, user_id=cliente2.id, rating=4, comment="Buena verdura"))
+    db.session.commit()
+
+    html = client.get(f"/perfil/{autor.id}/resenias").get_data(as_text=True)
+
+    assert "Excelente pan" in html
+    assert "Buena verdura" in html
+    assert "Panadería" in html
+    assert "Verdulería" in html
+
+
+def test_el_historial_no_incluye_resenias_de_otros_emprendedores(
+    client, db, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    otro_autor = crear_usuario(username="otro_autor")
+    cliente = crear_usuario(username="cliente")
+    post_propio = crear_post(autor.id, title="Mi negocio")
+    post_ajeno = crear_post(otro_autor.id, title="Negocio ajeno")
+
+    db.session.add(Review(post_id=post_propio.id, user_id=cliente.id, rating=5, comment="Mío"))
+    db.session.add(Review(post_id=post_ajeno.id, user_id=cliente.id, rating=1, comment="Ajeno"))
+    db.session.commit()
+
+    html = client.get(f"/perfil/{autor.id}/resenias").get_data(as_text=True)
+
+    assert "Mío" in html
+    assert "Ajeno" not in html
+
+
+def test_el_historial_muestra_la_respuesta_del_dueño(client, db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    db.session.add(Review(
+        post_id=post.id, user_id=cliente.id, rating=5, comment="Buenísimo",
+        reply="Gracias por tu compra",
+    ))
+    db.session.commit()
+
+    html = client.get(f"/perfil/{autor.id}/resenias").get_data(as_text=True)
+
+    assert "Gracias por tu compra" in html
+
+
+def test_el_historial_se_pagina(client, db, app, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    por_pagina = app.config["POSTS_POR_PAGINA"]
+    post = crear_post(autor.id)
+
+    for numero in range(por_pagina + 2):
+        cliente = crear_usuario(username=f"cliente{numero}")
+        db.session.add(Review(post_id=post.id, user_id=cliente.id, rating=3, comment=f"Reseña {numero}"))
+    db.session.commit()
+
+    primera = client.get(f"/perfil/{autor.id}/resenias").get_data(as_text=True)
+    segunda = client.get(f"/perfil/{autor.id}/resenias?page=2").get_data(as_text=True)
+
+    assert primera.count("review-card") > 0
+    assert "Página 2" in segunda
+
+
+def test_el_perfil_linkea_al_historial_de_reseñas(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id)
+
+    html = client.get(f"/perfil/{autor.id}").get_data(as_text=True)
+
+    assert f'/perfil/{autor.id}/resenias' in html

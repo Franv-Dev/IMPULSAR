@@ -3,8 +3,10 @@ import os
 from flask import (
     render_template, Blueprint, redirect, flash, g, request, url_for, current_app
 )
+from sqlalchemy.orm import joinedload
 
 from models.post import Post
+from models.review import Review
 from models.user import User
 from views.auth import login_required
 from db import db
@@ -29,6 +31,30 @@ def view_profile(user_id):
         posts=serializar_con_rating(filas),
         MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
+
+
+@profile.route("/<int:user_id>/resenias")
+def reviews(user_id):
+    """Todas las reseñas recibidas en los emprendimientos del usuario, paginadas.
+
+    A diferencia del detalle de un post (que solo muestra las reseñas de ESE
+    emprendimiento), esto junta las de todos los emprendimientos del usuario
+    en un solo listado.
+    """
+    user = User.query.get_or_404(user_id)
+    paginacion = (
+        Review.query
+        .join(Post, Post.id == Review.post_id)
+        .options(joinedload(Review.post), joinedload(Review.user))
+        .filter(Post.author == user_id)
+        .order_by(Review.created.desc())
+        .paginate(
+            page=request.args.get("page", 1, type=int),
+            per_page=current_app.config["POSTS_POR_PAGINA"],
+            error_out=False,
+        )
+    )
+    return render_template("profile/reviews.html", user=user, paginacion=paginacion)
 
 # --- 2. RUTA DE BIOGRAFÍA
 

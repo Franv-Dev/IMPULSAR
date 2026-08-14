@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Reseñas recibidas por {{ user.username }} – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 800px;">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Reseñas recibidas</h2>
+                <p class="section__subtitle">
+                    {{ paginacion.total }} reseña{{ "s" if paginacion.total != 1 else "" }}
+                    en los emprendimientos de {{ user.username }}.
+                </p>
+            </div>
+            <a href="{{ url_for('profile.view_profile', user_id=user.id) }}" class="section__link">← Volver al perfil</a>
+        </div>
+
+        {% if paginacion.items %}
+            <div class="reviews-list">
+                {% for r in paginacion.items %}
+                    <div class="review-card">
+                        <div class="review-card__header">
+                            <strong class="review-card__author">
+                                {{ r.user.username if r.user else "Usuario borrado" }}
+                                {% if r.updated_at %}
+                                    <span class="review-card__edited">(editado)</span>
+                                {% endif %}
+                            </strong>
+                            <div class="review-card__stars">
+                                {% for i in range(1, 6) %}
+                                    {% if i <= r.rating %}★{% else %}☆{% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <p class="card__location">
+                            Sobre
+                            <a href="{{ url_for('blog.detail', id=r.post_id) }}">{{ r.post.title if r.post else "un emprendimiento" }}</a>
+                        </p>
+
+                        <p class="review-card__comment {% if not r.comment %}review-card__comment--empty{% endif %}">
+                            {{ r.comment or 'Sin comentario escrito.' }}
+                        </p>
+
+                        {% if r.reply %}
+                            <div class="review-card__reply">
+                                <strong>Respuesta de {{ user.username }}:</strong>
+                                <p>{{ r.reply }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% include "partials/_paginacion.html" %}
+        {% else %}
+            <p class="reviews-empty">Todavía no recibió ninguna reseña.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
