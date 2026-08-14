@@ -5,12 +5,14 @@ from flask import (
 )
 from sqlalchemy.orm import joinedload
 
+from models.horario import Horario
 from models.post import Post
 from models.review import Review
 from models.user import User
 from views.auth import login_required
 from db import db
 from services.geocoding import get_coordinates_from_address
+from services.horarios import DIAS, esta_abierto, formatear as formatear_hora, parsear_hora
 from services.ratings import query_posts_con_rating, serializar_con_rating
 from services.stats import estadisticas_de_usuario
 from services.uploads import save_post_image
@@ -34,11 +36,17 @@ def view_profile(slug):
     # asi que ni siquiera se calculan cuando mira otro (una consulta menos y
     # ningun dato que se pueda filtrar por error en el template).
     es_dueño = bool(g.user and g.user.id == user.id)
+    horarios = sorted(user.horarios, key=lambda h: h.dia_semana)
     return render_template(
         "profile.html",
         user=user,
         posts=serializar_con_rating(filas),
         estadisticas=estadisticas_de_usuario(user.id) if es_dueño else None,
+        horarios=horarios,
+        # None y no False cuando no hay horarios cargados: el template tiene que
+        # poder distinguir "cerrado ahora" de "este usuario no publico horarios".
+        abierto_ahora=esta_abierto(horarios) if horarios else None,
+        etiquetas_dias=dict(DIAS),
         MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
 
@@ -93,6 +101,70 @@ def view_profile_por_id(user_id):
 def reviews_por_id(user_id):
     user = User.query.get_or_404(user_id)
     return _redirect_301_al_slug("profile.reviews", user.slug)
+
+
+# --- 1.c HORARIOS DE ATENCION
+
+@profile.route("/horarios", methods=("GET", "POST"))
+@login_required
+def horarios():
+    """Panel donde el dueño carga su horario de atencion, un rango por dia."""
+    existentes = {h.dia_semana: h for h in g.user.horarios}
+
+    def fila(dia, etiqueta, cerrado, abre, cierra):
+        """Una linea del formulario, con las horas ya como texto "HH:MM"."""
+        return {
+            "dia": dia, "etiqueta": etiqueta, "cerrado": cerrado,
+            "abre": formatear_hora(abre), "cierra": formatear_hora(cierra),
+        }
+
+    if request.method == "GET":
+        filas = [
+            fila(dia, etiqueta,
+                 existentes[dia].cerrado if dia in existentes else False,
+                 existentes[dia].abre if dia in existentes else None,
+                 existentes[dia].cierra if dia in existentes else None)
+            for dia, etiqueta in DIAS
+        ]
+        return render_template("profile/horarios.html", filas=filas)
+
+    error = None
+    pendientes = []
+    for dia, etiqueta in DIAS:
+        cerrado = request.form.get(f"cerrado_{dia}") == "on"
+        abre = parsear_hora(request.form.get(f"abre_{dia}"))
+        cierra = parsear_hora(request.form.get(f"cierra_{dia}"))
+
+        if not cerrado and (abre is None) != (cierra is None):
+            error = f"{etiqueta}: cargá la hora de apertura y la de cierre, o marcá el día como cerrado."
+        elif not cerrado and abre and cierra and abre == cierra:
+            error = f"{etiqueta}: la hora de apertura y la de cierre no pueden ser iguales."
+
+        pendientes.append((dia, etiqueta, cerrado, abre, cierra))
+
+    if error:
+        # Se le devuelve lo que escribio, no lo que hay guardado: perder el
+        # formulario entero por un dia mal cargado obliga a rehacer los siete.
+        flash(error)
+        return render_template(
+            "profile/horarios.html",
+            filas=[fila(d, e, c, a, ci) for d, e, c, a, ci in pendientes],
+        )
+
+    for dia, _etiqueta, cerrado, abre, cierra in pendientes:
+        horario = existentes.get(dia)
+        if horario is None:
+            horario = Horario(user_id=g.user.id, dia_semana=dia)
+            db.session.add(horario)
+        # Un dia sin horas cargadas se guarda como cerrado: deja la fila
+        # completa en vez de a medias, y el indicador lo lee igual.
+        horario.cerrado = cerrado or not (abre and cierra)
+        horario.abre = None if horario.cerrado else abre
+        horario.cierra = None if horario.cerrado else cierra
+
+    db.session.commit()
+    flash("Horarios actualizados correctamente.")
+    return redirect(url_for("profile.view_profile", slug=g.user.slug))
 
 
 # --- 2. RUTA DE BIOGRAFÍA

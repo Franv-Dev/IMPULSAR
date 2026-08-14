@@ -487,6 +487,87 @@ main {
     color: var(--color-muted);
 }
 
+/* HORARIOS DE ATENCION */
+
+.estado-atencion {
+    display: inline-block;
+    margin: 0.35rem 0 0;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.estado-atencion--abierto {
+    background-color: #DCFCE7;
+    color: #15803D;
+}
+
+.estado-atencion--cerrado {
+    background-color: #FEE2E2;
+    color: #B91C1C;
+}
+
+.profile-horarios {
+    padding: 0 2rem 1rem;
+}
+
+.horarios-lista {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    max-width: 320px;
+}
+
+.horarios-lista__item {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.9rem;
+}
+
+.horarios-lista__dia {
+    font-weight: 600;
+}
+
+.horarios-lista__rango {
+    color: var(--color-muted);
+}
+
+.horario-fila {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+}
+
+.horario-fila__dia {
+    min-width: 90px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.horario-fila__hora {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.horario-fila__separador {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+}
+
+.horario-fila__cerrado {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
 /* GALERIA DE FOTOS DEL EMPRENDIMIENTO */
 
 .galeria-grid {

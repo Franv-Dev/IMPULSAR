@@ -26,6 +26,14 @@
             {% if user.location %}
                 <p class="profile-location">📍 {{ user.location }}</p>
             {% endif %}
+
+            {# abierto_ahora es None cuando el usuario no cargo horarios: en ese
+               caso no se muestra nada, porque "Cerrado" seria mentira. #}
+            {% if abierto_ahora is not none %}
+                <p class="estado-atencion {{ 'estado-atencion--abierto' if abierto_ahora else 'estado-atencion--cerrado' }}">
+                    {{ "Abierto ahora" if abierto_ahora else "Cerrado" }}
+                </p>
+            {% endif %}
             
             {% if user.biography %}
                 <p class="biography">{{ user.biography | render_bio }}</p>
@@ -94,6 +102,37 @@
         </div>
         {% endif %}
     </div>
+
+    {% if horarios or (g.user and g.user.id == user.id) %}
+        <section class="profile-horarios">
+            <div class="section__header" style="padding:0;">
+                <h2 class="section__title">Horarios de atención</h2>
+                {% if g.user and g.user.id == user.id %}
+                    <a href="{{ url_for('profile.horarios') }}" class="btn btn--secondary">
+                        {{ "Editar horarios" if horarios else "Cargar horarios" }}
+                    </a>
+                {% endif %}
+            </div>
+            {% if horarios %}
+                <ul class="horarios-lista">
+                    {% for horario in horarios %}
+                        <li class="horarios-lista__item">
+                            <span class="horarios-lista__dia">{{ etiquetas_dias[horario.dia_semana] }}</span>
+                            <span class="horarios-lista__rango">
+                                {% if horario.cerrado or not horario.abre %}
+                                    Cerrado
+                                {% else %}
+                                    {{ horario.abre.strftime("%H:%M") }} a {{ horario.cierra.strftime("%H:%M") }}
+                                {% endif %}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="reviews-empty">Todavía no cargaste tus horarios de atención.</p>
+            {% endif %}
+        </section>
+    {% endif %}
 
     {% if estadisticas %}
         <section class="profile-stats">
