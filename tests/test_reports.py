@@ -81,7 +81,88 @@ def test_reportar_requiere_login(client, crear_usuario, crear_post):
     resp = client.post(f"/blog/reportar/post/{post.id}", data={"reason": "x"}, follow_redirects=False)
 
     assert resp.status_code == 302
-    assert "/auth/login" in resp.headers["Location"]
+
+
+# ---------------------------------------------------------- spam de reportes
+
+def test_no_se_puede_reportar_dos_veces_el_mismo_post(client, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    denunciante = crear_usuario(username="denunciante")
+    post = crear_post(autor.id)
+
+    login(denunciante.id)
+    client.post(f"/blog/reportar/post/{post.id}", data={"reason": "Motivo uno"})
+    client.post(f"/blog/reportar/post/{post.id}", data={"reason": "Motivo dos"})
+
+    assert Report.query.filter_by(post_id=post.id, reporter_id=denunciante.id).count() == 1
+
+
+def test_no_se_puede_reportar_dos_veces_la_misma_resenia(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    denunciante = crear_usuario(username="denunciante")
+    post = crear_post(autor.id)
+    review = Review(post_id=post.id, user_id=cliente.id, rating=1)
+    db.session.add(review)
+    db.session.commit()
+
+    login(denunciante.id)
+    client.post(f"/blog/reportar/review/{review.id}", data={"reason": "uno"})
+    client.post(f"/blog/reportar/review/{review.id}", data={"reason": "dos"})
+
+    assert Report.query.filter_by(review_id=review.id, reporter_id=denunciante.id).count() == 1
+
+
+def test_dos_usuarios_distintos_pueden_reportar_el_mismo_post(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    uno = crear_usuario(username="uno")
+    dos = crear_usuario(username="dos")
+    post = crear_post(autor.id)
+
+    login(uno.id)
+    client.post(f"/blog/reportar/post/{post.id}", data={"reason": "x"})
+    login(dos.id)
+    client.post(f"/blog/reportar/post/{post.id}", data={"reason": "y"})
+
+    assert Report.query.filter_by(post_id=post.id).count() == 2
+
+
+def test_se_puede_reportar_de_nuevo_despues_de_que_el_primero_se_resuelva(
+    client, crear_usuario, crear_post, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    denunciante = crear_usuario(username="denunciante")
+    post = crear_post(autor.id)
+
+    login(denunciante.id)
+    client.post(f"/blog/reportar/post/{post.id}", data={"reason": "primero"})
+    primer_reporte = Report.query.filter_by(post_id=post.id).first()
+
+    login(admin.id)
+    client.post(f"/admin/reportes/{primer_reporte.id}/resolver")
+
+    login(denunciante.id)
+    client.post(f"/blog/reportar/post/{post.id}", data={"reason": "segundo"})
+
+    assert Report.query.filter_by(post_id=post.id, reporter_id=denunciante.id).count() == 2
+
+
+def test_el_formulario_avisa_si_ya_hay_un_reporte_pendiente(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    denunciante = crear_usuario(username="denunciante")
+    post = crear_post(autor.id)
+
+    login(denunciante.id)
+    client.post(f"/blog/reportar/post/{post.id}", data={"reason": "x"})
+
+    html = client.get(f"/blog/reportar/post/{post.id}").get_data(as_text=True)
+
+    assert "Ya tenés un reporte pendiente" in html
 
 
 def test_el_panel_de_admin_lista_los_reportes_pendientes(

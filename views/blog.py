@@ -528,7 +528,20 @@ def report(tipo, target_id):
             return redirect(url_for("blog.detail", id=objetivo.post_id))
         volver = url_for("blog.detail", id=objetivo.post_id)
 
+    # No tiene sentido dejar que el mismo usuario apile reportes sobre el
+    # mismo objetivo: uno sin resolver ya alcanza para que el admin lo vea.
+    # MySQL no soporta indices UNIQUE condicionales (solo sobre resolved=0),
+    # asi que el chequeo queda en la aplicacion en vez de en la base.
+    filtro_objetivo = {"post_id": target_id} if tipo == "post" else {"review_id": target_id}
+    ya_reportado = Report.query.filter_by(
+        reporter_id=g.user.id, resolved=False, **filtro_objetivo
+    ).first() is not None
+
     if request.method == "POST":
+        if ya_reportado:
+            flash("Ya tenés un reporte pendiente sobre esto. El equipo lo va a revisar.")
+            return redirect(volver)
+
         motivo = (request.form.get("reason") or "").strip()
         if not motivo:
             flash("Contanos el motivo del reporte.")
@@ -543,4 +556,6 @@ def report(tipo, target_id):
             flash("Gracias, revisaremos tu reporte.")
             return redirect(volver)
 
-    return render_template("blog/report.html", tipo=tipo, objetivo=objetivo, volver=volver)
+    return render_template(
+        "blog/report.html", tipo=tipo, objetivo=objetivo, volver=volver, ya_reportado=ya_reportado
+    )
