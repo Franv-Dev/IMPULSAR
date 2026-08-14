@@ -85,9 +85,12 @@
                                         </span>
                                     {% endif %}
                                 </div>
-                                {% if g.user %}
-                                    {% include "partials/_favorito_boton.html" %}
-                                {% endif %}
+                                <div style="display:flex; gap:0.35rem; align-items:center;">
+                                    {% include "partials/_compartir_boton.html" %}
+                                    {% if g.user %}
+                                        {% include "partials/_favorito_boton.html" %}
+                                    {% endif %}
+                                </div>
                             </div>
 
                             <h3 class="card__title">

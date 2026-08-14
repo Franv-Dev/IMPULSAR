@@ -1,0 +1,9 @@
+{# Boton de compartir. Requiere "post" en el contexto. El click lo maneja
+   static/js/share.js (Web Share API en mobile, o copiar el link al portapapeles). #}
+<button type="button" class="share-btn"
+    data-share-url="{{ url_for('blog.detail', id=post.id, _external=True) }}"
+    data-share-title="{{ post.title }}"
+    aria-label="Compartir {{ post.title }}"
+    title="Compartir">
+    🔗
+</button>

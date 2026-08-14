@@ -38,6 +38,7 @@ function renderPosts(posts) {
         
         // 1. Construimos las URLs que necesitamos
         const postDetailUrl = `/blog/${post.id}`; // URL a la vista de detalle
+        const postAbsoluteUrl = `${location.origin}${postDetailUrl}`; // para compartir
         const postImageUrl = post.image ? `/static/uploads/${escapeHtml(post.image)}` : null;
 
         // 2. Variable para el HTML de la imagen (si existe)
@@ -61,8 +62,15 @@ function renderPosts(posts) {
         card.innerHTML = `
             ${imageHtml} 
             <div class="card__body">
-                <div class="card__tags">
+                <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <span class="badge badge--category">${categoryText}</span>
+                    <button type="button" class="share-btn"
+                        data-share-url="${postAbsoluteUrl}"
+                        data-share-title="${title}"
+                        aria-label="Compartir ${title}"
+                        title="Compartir">
+                        🔗
+                    </button>
                 </div>
                 <h3 class="card__title">
                     <a href="${postDetailUrl}" style="text-decoration:none; color:inherit;">

@@ -547,3 +547,23 @@ def test_sin_filtro_de_cercania_el_orden_por_defecto_no_cambia(
 
     # Orden por fecha de creacion (mas nuevo primero), no por distancia.
     assert html.index("Segundo") < html.index("Primero")
+
+
+# ------------------------------------------------------------------ compartir
+
+def test_la_tarjeta_incluye_el_link_para_compartir(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio")
+
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert f'data-share-url="http://localhost/blog/{post.id}"' in html
+
+
+def test_el_detalle_incluye_el_link_para_compartir(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio")
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert f'data-share-url="http://localhost/blog/{post.id}"' in html

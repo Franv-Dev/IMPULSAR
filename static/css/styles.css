@@ -1550,3 +1550,29 @@ textarea.auth__input {
 .favorite-btn--active {
     color: #DC2626;
 }
+
+/* === Compartir === */
+.share-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0.15rem 0.3rem;
+    border-radius: var(--radius-sm);
+    color: var(--color-muted);
+    transition: transform 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.share-btn:hover {
+    transform: scale(1.1);
+    color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+}
+
+.share-btn--copied {
+    color: #16A34A;
+    font-size: 0.75rem;
+    font-weight: 600;
+}

@@ -45,7 +45,10 @@
                         <div class="card__body">
                             <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
                                 <span class="badge badge--category">{{ post.category_label }}</span>
-                                {% include "partials/_favorito_boton.html" %}
+                                <div style="display:flex; gap:0.35rem; align-items:center;">
+                                    {% include "partials/_compartir_boton.html" %}
+                                    {% include "partials/_favorito_boton.html" %}
+                                </div>
                             </div>
 
                             <h3 class="card__title">
