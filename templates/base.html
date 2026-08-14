@@ -41,6 +41,10 @@
         Emprendimientos
     </a>
 
+    <a href="{{ url_for('eventos.index') }}" class="navbar__link {% if request.endpoint and request.endpoint.startswith('eventos.') %}navbar__link--active{% endif %}">
+        Eventos
+    </a>
+
     <a href="{{ url_for('pages.about') }}" class="navbar__link {% if request.endpoint == 'pages.about' %}navbar__link--active{% endif %}">
         Sobre IMPULSAR
     </a>

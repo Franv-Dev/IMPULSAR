@@ -318,3 +318,89 @@ def test_el_perfil_muestra_los_avisos(client, emprendedor_con_post):
     }, follow_redirects=True)
 
     assert "Evento publicado correctamente." in respuesta.get_data(as_text=True)
+
+
+# --- cartelera general
+
+def test_la_cartelera_responde_sin_login(client):
+    assert client.get("/eventos/").status_code == 200
+
+
+def test_la_cartelera_junta_eventos_de_varios_emprendedores(
+    client, crear_usuario, crear_post, crear_evento
+):
+    una = crear_usuario(username="panaderia")
+    otra = crear_usuario(username="ceramica")
+    crear_evento(crear_post(una.id).id, titulo="Feria de pan")
+    crear_evento(crear_post(otra.id, title="Taller").id, titulo="Feria de ceramica")
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert "Feria de pan" in html
+    assert "Feria de ceramica" in html
+
+
+def test_la_cartelera_no_muestra_lo_que_ya_paso(
+    client, crear_usuario, crear_post, crear_evento
+):
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    crear_evento(post.id, titulo="Feria vieja", dias=-3)
+    crear_evento(post.id, titulo="Feria que viene", dias=3)
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert "Feria que viene" in html
+    assert "Feria vieja" not in html
+
+
+def test_la_cartelera_ordena_del_mas_cercano_al_mas_lejano(
+    client, crear_usuario, crear_post, crear_evento
+):
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    crear_evento(post.id, titulo="La lejana", dias=30)
+    crear_evento(post.id, titulo="La cercana", dias=2)
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert html.index("La cercana") < html.index("La lejana")
+
+
+def test_cada_evento_linkea_al_perfil_de_quien_lo_publico(
+    client, crear_usuario, crear_post, crear_evento
+):
+    usuario = crear_usuario(username="Panadería del barrio")
+    crear_evento(crear_post(usuario.id).id)
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert f'/perfil/{usuario.slug}"' in html
+
+
+def test_la_cartelera_esta_paginada(client, app, crear_usuario, crear_post, crear_evento):
+    """Sin paginar, la cartelera se trae todo con .all() y crece sin limite."""
+    por_pagina = app.config["POSTS_POR_PAGINA"]
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    for numero in range(por_pagina + 2):
+        crear_evento(post.id, titulo=f"Feria numero {numero}", dias=numero + 1)
+
+    primera = client.get("/eventos/").get_data(as_text=True)
+    segunda = client.get("/eventos/?page=2").get_data(as_text=True)
+
+    # La pagina 1 llega hasta el indice por_pagina - 1; el siguiente ya cae en
+    # la 2, que es justamente lo que no pasaria si la vista trajera todo junto.
+    assert f"Feria numero {por_pagina - 1}" in primera
+    assert f"Feria numero {por_pagina}" not in primera
+    assert f"Feria numero {por_pagina}" in segunda
+    assert "Página 1 de 2" in primera
+
+
+def test_eventos_esta_en_los_slugs_reservados():
+    """/eventos es una ruta de primer nivel: un usuario con ese slug no la tapa
+    hoy (el perfil vive bajo /perfil/), pero se reserva igual, con el mismo
+    criterio que "blog", "mensajes" y "favoritos"."""
+    from services.slugs import SLUGS_RESERVADOS
+
+    assert "eventos" in SLUGS_RESERVADOS

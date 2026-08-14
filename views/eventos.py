@@ -9,17 +9,38 @@ permiso se resuelve mirando el dueño de ese emprendimiento.
 """
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
+    Blueprint, current_app, flash, g, redirect, render_template, request, url_for
 )
+from sqlalchemy.orm import joinedload
 
 from db import db
 from models.event import Event
 from models.post import Post
-from services.eventos import parsear_fecha
+from services.eventos import parsear_fecha, proximos
 from services.horarios import formatear as formatear_hora, parsear_hora
 from views.auth import login_required
 
 eventos = Blueprint("eventos", __name__, url_prefix="/eventos")
+
+
+@eventos.route("/")
+def index():
+    """Cartelera publica: los proximos eventos de todos los emprendimientos.
+
+    Paginada con el mismo criterio que blog.index: traer todo con .all() se
+    rompe solo cuando la cartelera crece. El joinedload trae el emprendimiento
+    en la misma consulta (y con el su autor, que ya es lazy="joined"), para no
+    disparar un SELECT por evento al armar el link al perfil (problema N+1).
+    """
+    paginacion = (
+        proximos(Event.query.options(joinedload(Event.post)))
+        .paginate(
+            page=request.args.get("page", 1, type=int),
+            per_page=current_app.config["POSTS_POR_PAGINA"],
+            error_out=False,
+        )
+    )
+    return render_template("eventos/index.html", paginacion=paginacion)
 
 
 def _evento_propio(id):
