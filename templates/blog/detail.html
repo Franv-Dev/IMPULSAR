@@ -107,7 +107,12 @@
                     {% for r in reviews %}
                         <div class="review-card">
                             <div class="review-card__header">
-                                <strong class="review-card__author">Usuario #{{ r.user_id }}</strong>
+                                <strong class="review-card__author">
+                                    Usuario #{{ r.user_id }}
+                                    {% if r.updated_at %}
+                                        <span class="review-card__edited" title="Editada el {{ r.updated_at }}">(editado)</span>
+                                    {% endif %}
+                                </strong>
                                 <div class="review-card__stars">
                                     {% for i in range(1, 6) %}
                                         {% if i <= r.rating %}★{% else %}☆{% endif %}

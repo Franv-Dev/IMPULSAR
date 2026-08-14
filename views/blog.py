@@ -395,6 +395,13 @@ def add_review(id):
         else:
             review.rating = rating
             review.comment = comment
+            review.updated_at = utcnow()
+            # La respuesta del dueño quedo escrita para el contenido viejo:
+            # si no se limpia, parece que responde a algo que la reseña ya
+            # no dice. Se borra para forzar que responda de nuevo.
+            if review.reply is not None:
+                review.reply = None
+                review.replied_at = None
             mensaje = "Actualizamos tu reseña."
 
         db.session.commit()

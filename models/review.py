@@ -20,6 +20,11 @@ class Review(db.Model):
     comment = db.Column(db.Text, nullable=True)
     created = db.Column(db.DateTime, nullable=False, default=utcnow)
 
+    # Null mientras la reseña no se edito nunca. No usa default/onupdate
+    # automatico a proposito: se setea a mano en blog.add_review() cuando el
+    # contenido realmente cambia, junto con la limpieza de reply/replied_at.
+    updated_at = db.Column(db.DateTime, nullable=True)
+
     # Respuesta publica del dueño del emprendimiento a esta reseña. Vive en la
     # misma fila en vez de una tabla aparte porque una reseña tiene a lo sumo
     # una respuesta.
@@ -44,6 +49,7 @@ class Review(db.Model):
             "rating": self.rating,
             "comment": self.comment,
             "created": self.created.isoformat() if self.created else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "reply": self.reply,
             "replied_at": self.replied_at.isoformat() if self.replied_at else None,
         }

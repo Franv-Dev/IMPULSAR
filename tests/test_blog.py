@@ -227,6 +227,71 @@ def test_el_detalle_precarga_el_formulario_con_la_resenia_propia(
     assert "Muy bueno" in html
 
 
+def test_una_resenia_recien_creada_no_tiene_updated_at(client, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "4", "comment": "Bien"})
+
+    review = Review.query.filter_by(post_id=post.id, user_id=cliente.id).first()
+    assert review.updated_at is None
+
+
+def test_editar_la_resenia_marca_updated_at(client, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "3", "comment": "Regular"})
+    client.post(f"/blog/{post.id}/review", data={"rating": "5", "comment": "Mejoró mucho"})
+
+    review = Review.query.filter_by(post_id=post.id, user_id=cliente.id).first()
+    assert review.updated_at is not None
+
+
+def test_editar_una_resenia_respondida_limpia_la_respuesta(
+    client, db, crear_usuario, crear_post, login
+):
+    """Si el contenido de la reseña cambia, la respuesta vieja ya no aplica."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "1", "comment": "Malo"})
+    review = Review.query.filter_by(post_id=post.id, user_id=cliente.id).first()
+
+    login(autor.id)
+    client.post(f"/blog/review/{review.id}/reply", data={"reply": "Lamento tu experiencia"})
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "5", "comment": "Me arrepentí, ahora es excelente"})
+
+    db.session.refresh(review)
+    assert review.reply is None
+    assert review.replied_at is None
+
+
+def test_el_detalle_muestra_editado_cuando_corresponde(client, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "3", "comment": "Regular"})
+
+    sin_editar = client.get(f"/blog/{post.id}").get_data(as_text=True)
+    assert "(editado)" not in sin_editar
+
+    client.post(f"/blog/{post.id}/review", data={"rating": "5", "comment": "Mejoró"})
+
+    editado = client.get(f"/blog/{post.id}").get_data(as_text=True)
+    assert "(editado)" in editado
+
+
 def test_el_autor_de_la_resenia_puede_eliminarla(client, crear_usuario, crear_post, login):
     autor = crear_usuario(username="autor")
     cliente = crear_usuario(username="cliente")
