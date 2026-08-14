@@ -365,6 +365,36 @@ def test_un_username_reservado_no_se_queda_con_la_ruta(client, crear_usuario):
     assert client.get("/perfil/edit-2").status_code == 200
 
 
+def test_toda_ruta_estatica_bajo_perfil_esta_reservada(app):
+    """Recorre el url_map real en vez de una lista escrita a mano.
+
+    Werkzeug le da prioridad a una ruta estatica sobre /perfil/<slug>, asi que
+    cada vez que se agrega una ruta bajo /perfil/ hay que reservar ese nombre o
+    el usuario que se llame igual queda con el perfil inaccesible. Ya se olvido
+    dos veces (create_bio en la Tanda A, horarios en b284be4), y las dos veces
+    se descubrio a mano: esto lo convierte en un test que falla solo.
+    """
+    from services.slugs import SLUGS_RESERVADOS
+
+    prefijo = "/perfil/"
+    faltantes = {}
+    for regla in app.url_map.iter_rules():
+        if not regla.rule.startswith(prefijo):
+            continue
+        primer_segmento = regla.rule[len(prefijo):].split("/")[0]
+        # "<slug>" y "<int:user_id>" son la ruta del perfil en si, no colisionan.
+        if primer_segmento.startswith("<") or not primer_segmento:
+            continue
+        if primer_segmento not in SLUGS_RESERVADOS:
+            faltantes[primer_segmento] = regla.endpoint
+
+    assert not faltantes, (
+        "Hay rutas bajo /perfil/ cuyo nombre no esta en SLUGS_RESERVADOS "
+        f"(services/slugs.py): {faltantes}. Un usuario con ese slug quedaria "
+        "sin perfil, porque la ruta estatica le gana."
+    )
+
+
 def test_los_slugs_reservados_no_se_asignan(crear_usuario):
     from services.slugs import SLUGS_RESERVADOS
 
