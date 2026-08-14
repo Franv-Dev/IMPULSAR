@@ -1,3 +1,5 @@
+import logging
+
 from flask import (
     render_template, Blueprint, redirect, flash, g, request, url_for, current_app
 )
@@ -16,6 +18,8 @@ from sqlalchemy.exc import IntegrityError
 from services.geocoding import get_coordinates_from_address
 from services.ratings import query_posts_con_rating, serializar_con_rating
 from services.uploads import ALLOWED_EXTENSIONS, allowed_file, save_post_image
+
+logger = logging.getLogger(__name__)
 
 blog = Blueprint("blog", __name__, url_prefix="/blog")
 
@@ -62,13 +66,34 @@ def _guardar_galeria(post, archivos, upload_dir, ya_ocupados):
             f"(te quedan {max(0, libres)})."
         )
 
+    # save_post_image valida y escribe en el mismo paso, asi que no se puede
+    # validar todo primero. Se lleva registro de lo escrito en ESTE intento
+    # para poder borrarlo si una foto posterior falla: sin eso, subir cinco
+    # fotos con la tercera rota dejaba las dos primeras en disco para siempre,
+    # sin ninguna fila que las referenciara (el rollback solo deshace la base).
+    escritos = []
     for numero, archivo in enumerate(archivos, start=ya_ocupados):
         filename, error = save_post_image(archivo, upload_dir)
         if error:
+            _borrar_de_disco(upload_dir, escritos)
             return error
         if filename:
+            escritos.append(filename)
             post.imagenes.append(PostImage(filename=filename, posicion=numero))
     return None
+
+
+def _borrar_de_disco(upload_dir, nombres):
+    """Borra archivos que quedaron escritos por un intento que fallo."""
+    for nombre in nombres:
+        if not nombre:
+            continue
+        try:
+            os.remove(os.path.join(upload_dir, nombre))
+        except OSError:
+            # Que no se pueda borrar no justifica romperle el formulario al
+            # usuario: queda el archivo suelto y el aviso en el log.
+            logger.warning("No se pudo borrar la imagen huerfana %s", nombre)
 
 
 def _distancia_km(lat, lon):
@@ -307,6 +332,9 @@ def create():
             )
             if galeria_error:
                 db.session.rollback()
+                # La galeria ya borro lo suyo; falta la principal, que se
+                # escribio antes y se queda sin post que la referencie.
+                _borrar_de_disco(upload_dir, [filename])
                 flash(galeria_error)
                 return render_template("blog/create.html", categorias=Categorias.ETIQUETAS)
 
@@ -340,12 +368,15 @@ def update(id):
 
 
         error = None
+        # Arranca en None para poder consultarla en el branch de error aunque
+        # la validacion haya cortado antes de llegar a guardar la imagen.
+        filename = None
+        upload_dir = os.path.join(current_app.root_path, "static", "uploads")
         if not title:
             error = "Se requiere un título."
 
         # Imagen nueva (si no se sube ninguna, se conserva la que ya tenia)
         if error is None:
-            upload_dir = os.path.join(current_app.root_path, "static", "uploads")
             filename, image_error = save_post_image(file, upload_dir)
             if image_error:
                 error = image_error
@@ -365,6 +396,9 @@ def update(id):
             # nueva, las fotos de galeria ya agregadas). Sin esto un autoflush
             # posterior puede terminar guardando una edicion que se rechazo.
             db.session.rollback()
+            # Y lo que ya se habia escrito en disco: la edicion no se guardo,
+            # asi que la imagen principal nueva no la referencia nadie.
+            _borrar_de_disco(upload_dir, [filename])
             flash(error)
         else:
             # --- LÓGICA DE GEOCODIFICACIÓN (UPDATE) ---

@@ -845,3 +845,84 @@ def test_borrar_un_emprendimiento_borra_sus_fotos(client, db, crear_usuario, cre
     assert respuesta.status_code in (200, 302)
     assert Post.query.get(post_id) is None
     assert PostImage.query.filter_by(post_id=post_id).count() == 0
+
+
+def _archivo_roto(nombre="roto.png"):
+    """Pasa el filtro de extension pero no es una imagen: Pillow lo rechaza."""
+    import io
+
+    from werkzeug.datastructures import FileStorage
+
+    return FileStorage(
+        stream=io.BytesIO(b"esto no es una imagen"),
+        filename=nombre,
+        content_type="image/png",
+    )
+
+
+def _archivos_en_uploads(app):
+    import os
+
+    carpeta = os.path.join(app.root_path, "static", "uploads")
+    os.makedirs(carpeta, exist_ok=True)
+    return {n for n in os.listdir(carpeta) if os.path.isfile(os.path.join(carpeta, n))}
+
+
+def test_una_foto_invalida_no_deja_huerfanas_las_anteriores(
+    client, db, app, crear_usuario, login
+):
+    """Si la tercera foto falla, las dos primeras ya se escribieron a disco. Sin
+    limpiarlas quedan ahi para siempre: el rollback solo deshace la base."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    antes = _archivos_en_uploads(app)
+
+    client.post("/blog/create", data={
+        "title": "Con una rota", "body": "Descripción", "category": "otros",
+        "image": _imagen("principal.png"),
+        "galeria": [_imagen("uno.png"), _imagen("dos.png"), _archivo_roto(), _imagen("cuatro.png")],
+    }, content_type="multipart/form-data")
+
+    assert Post.query.filter_by(title="Con una rota").first() is None
+    assert _archivos_en_uploads(app) == antes
+
+
+def test_una_foto_invalida_al_editar_tampoco_deja_huerfanas(
+    client, db, app, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería")
+    login(autor.id)
+    antes = _archivos_en_uploads(app)
+
+    client.post(f"/blog/update/{post.id}", data={
+        "title": "Panadería", "body": "Pan", "category": "alimentos",
+        "image": _imagen("nueva_principal.png"),
+        "galeria": [_imagen("uno.png"), _archivo_roto()],
+    }, content_type="multipart/form-data")
+
+    db.session.refresh(post)
+    assert post.imagenes == []
+    assert post.image is None  # no se guardo la principal nueva
+    assert _archivos_en_uploads(app) == antes
+
+
+def test_una_galeria_valida_si_deja_los_archivos(client, db, app, crear_usuario, login):
+    """El contrapeso del test de arriba: no hay que borrar de mas."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    antes = _archivos_en_uploads(app)
+
+    client.post("/blog/create", data={
+        "title": "Todas buenas", "body": "Descripción", "category": "otros",
+        "image": _imagen("principal.png"),
+        "galeria": [_imagen("uno.png"), _imagen("dos.png")],
+    }, content_type="multipart/form-data")
+
+    post = Post.query.filter_by(title="Todas buenas").first()
+    assert post is not None
+    nuevos = _archivos_en_uploads(app) - antes
+    assert len(nuevos) == 3
+    assert post.image in nuevos
+    for imagen in post.imagenes:
+        assert imagen.filename in nuevos
