@@ -69,6 +69,16 @@ class Post(db.Model):
         order_by="PostImage.posicion",
     )
 
+    # Mismo criterio que imagenes: la FK ya borra en la base, pero sin el
+    # cascade del ORM borrar un Post desde la sesion intenta dejar los eventos
+    # huerfanos con post_id en NULL, que es NOT NULL.
+    eventos = db.relationship(
+        "Event",
+        backref="post",
+        cascade="all, delete-orphan",
+        order_by="Event.fecha",
+    )
+
     #coordenadas 
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
