@@ -17,14 +17,30 @@
         {% endwith %}
 
         <div class="card post-detail-card">
-            {% if post.image %}
+            {% set galeria = post.galeria %}
+            {% if galeria %}
                 <div class="card__image-wrapper">
                     <img
-                        src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                        src="{{ url_for('static', filename='uploads/' ~ galeria[0]) }}"
                         alt="Imagen de {{ post.title }}"
                         class="card__image"
                     >
                 </div>
+                {# El resto de la galeria va abajo de la principal, en grilla. #}
+                {% if galeria|length > 1 %}
+                    <div class="galeria-grid">
+                        {% for foto in galeria[1:] %}
+                            <a href="{{ url_for('static', filename='uploads/' ~ foto) }}"
+                               target="_blank" rel="noopener noreferrer" class="galeria-grid__item">
+                                <img
+                                    src="{{ url_for('static', filename='uploads/' ~ foto) }}"
+                                    alt="Foto {{ loop.index + 1 }} de {{ post.title }}"
+                                    loading="lazy"
+                                >
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             {% endif %}
             
             <div class="card__body">

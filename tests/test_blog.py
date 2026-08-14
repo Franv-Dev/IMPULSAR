@@ -735,3 +735,113 @@ def test_las_vistas_se_muestran_en_mis_emprendimientos(client, crear_usuario, cr
     html = client.get("/blog/mis-emprendimientos").get_data(as_text=True)
 
     assert "1 vista" in html
+
+
+# ------------------------------------------------------- galeria de fotos
+
+def _imagen(nombre="foto.png", color="blue"):
+    """Un archivo de imagen valido, listo para subir en un multipart."""
+    import io
+
+    from PIL import Image
+    from werkzeug.datastructures import FileStorage
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (10, 10), color).save(buffer, format="PNG")
+    buffer.seek(0)
+    return FileStorage(stream=buffer, filename=nombre, content_type="image/png")
+
+
+def test_crear_un_emprendimiento_con_galeria(client, db, crear_usuario, login):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    client.post("/blog/create", data={
+        "title": "Panadería", "body": "Pan artesanal", "category": "alimentos",
+        "image": _imagen("principal.png"),
+        "galeria": [_imagen("uno.png"), _imagen("dos.png")],
+    }, content_type="multipart/form-data")
+
+    post = Post.query.filter_by(title="Panadería").first()
+    assert post is not None
+    assert post.image is not None
+    assert len(post.imagenes) == 2
+    # La principal va primero y despues las de la galeria.
+    assert len(post.galeria) == 3
+    assert post.galeria[0] == post.image
+
+
+def test_no_se_pueden_subir_mas_de_cinco_fotos(client, db, crear_usuario, login):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    client.post("/blog/create", data={
+        "title": "Demasiadas", "body": "Descripción", "category": "otros",
+        "image": _imagen("principal.png"),
+        "galeria": [_imagen(f"f{i}.png") for i in range(5)],  # 1 + 5 = 6
+    }, content_type="multipart/form-data")
+
+    assert Post.query.filter_by(title="Demasiadas").first() is None
+
+
+def test_las_fotos_que_ya_estaban_cuentan_para_el_limite(client, db, crear_usuario, crear_post, login):
+    from models.post_image import PostImage
+
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería")
+    post.image = "principal.png"
+    for i in range(3):
+        post.imagenes.append(PostImage(filename=f"vieja{i}.png", posicion=i))
+    db.session.commit()
+    login(autor.id)
+
+    # Ya tiene 4 (principal + 3): subir 2 mas se pasaria de 5.
+    client.post(f"/blog/update/{post.id}", data={
+        "title": "Panadería", "body": "Pan", "category": "alimentos",
+        "galeria": [_imagen("nueva1.png"), _imagen("nueva2.png")],
+    }, content_type="multipart/form-data")
+
+    db.session.refresh(post)
+    assert len(post.imagenes) == 3  # no se agrego ninguna
+
+    # Una sola si entra.
+    client.post(f"/blog/update/{post.id}", data={
+        "title": "Panadería", "body": "Pan", "category": "alimentos",
+        "galeria": [_imagen("nueva1.png")],
+    }, content_type="multipart/form-data")
+
+    db.session.refresh(post)
+    assert len(post.imagenes) == 4
+
+
+def test_el_detalle_muestra_todas_las_fotos(client, db, crear_usuario, crear_post):
+    from models.post_image import PostImage
+
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería")
+    post.image = "principal.png"
+    post.imagenes.append(PostImage(filename="segunda.png", posicion=1))
+    db.session.commit()
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "uploads/principal.png" in html
+    assert "uploads/segunda.png" in html
+
+
+def test_borrar_un_emprendimiento_borra_sus_fotos(client, db, crear_usuario, crear_post, login):
+    """El bug de FK RESTRICT que ya aparecio en reports, favorites y messages."""
+    from models.post_image import PostImage
+
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    post.imagenes.append(PostImage(filename="foto.png", posicion=0))
+    db.session.commit()
+    post_id = post.id
+    login(autor.id)
+
+    respuesta = client.post(f"/blog/delete/{post_id}")
+
+    assert respuesta.status_code in (200, 302)
+    assert Post.query.get(post_id) is None
+    assert PostImage.query.filter_by(post_id=post_id).count() == 0

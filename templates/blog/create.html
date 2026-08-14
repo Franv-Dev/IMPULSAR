@@ -71,7 +71,22 @@
                         Formatos permitidos: PNG, JPG, JPEG o GIF.
                     </small>
                 </div>
-                
+
+                <div class="auth__field">
+                    <label for="galeria" class="auth__label">Más fotos (opcional)</label>
+                    <input
+                        id="galeria"
+                        name="galeria"
+                        type="file"
+                        multiple
+                        class="auth__input"
+                        accept=".png,.jpg,.jpeg,.gif"
+                    >
+                    <small class="auth__hint">
+                        Hasta 5 fotos en total, contando la principal de arriba.
+                    </small>
+                </div>
+
                 <div class="auth__field">
                     <label for="address_street" class="auth__label">Dirección Completa (opcional)</label>
                     <input

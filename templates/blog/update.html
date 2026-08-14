@@ -85,7 +85,34 @@
                         Si seleccionás una nueva imagen, se reemplazará la anterior.
                     </small>
                 </div>
-                
+
+                <div class="auth__field">
+                    <label class="auth__label">Galería</label>
+                    {% if post.imagenes %}
+                        <div class="galeria-miniaturas">
+                            {% for imagen in post.imagenes %}
+                                <img src="{{ url_for('static', filename='uploads/' ~ imagen.filename) }}"
+                                     alt="Foto de {{ post.title }}" class="galeria-miniatura">
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <input
+                        id="galeria"
+                        name="galeria"
+                        type="file"
+                        multiple
+                        class="auth__input"
+                        accept=".png,.jpg,.jpeg,.gif"
+                    >
+                    <small class="auth__hint">
+                        {% if post.lugares_de_imagen_libres %}
+                            Podés sumar {{ post.lugares_de_imagen_libres }} foto{{ "s" if post.lugares_de_imagen_libres != 1 else "" }} más. Las nuevas se agregan a las que ya están.
+                        {% else %}
+                            Ya llegaste al máximo de 5 fotos.
+                        {% endif %}
+                    </small>
+                </div>
+
                 <div class="auth__field">
                     <label for="address_street" class="auth__label">Dirección Completa (opcional)</label>
                     <input

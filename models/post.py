@@ -29,6 +29,11 @@ class Categorias:
     }
 
 
+# Cuantas fotos puede tener un emprendimiento contando la principal
+# (Post.image). Las que sobran van en post_images (ver models/post_image.py).
+MAX_IMAGENES_POR_POST = 5
+
+
 class Post(db.Model):
     __tablename__ = "posts"
 
@@ -54,6 +59,16 @@ class Post(db.Model):
     # y template: con esto se escribe directamente post.author_user.username.
     author_user = db.relationship("User", backref="posts", lazy="joined")
 
+    # cascade="all, delete-orphan": la FK ya borra en la base, pero sin esto el
+    # ORM intenta dejar las filas huerfanas poniendo post_id en NULL cuando se
+    # borra un Post desde la sesion, y la columna es NOT NULL.
+    imagenes = db.relationship(
+        "PostImage",
+        backref="post",
+        cascade="all, delete-orphan",
+        order_by="PostImage.posicion",
+    )
+
     #coordenadas 
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
@@ -77,6 +92,22 @@ class Post(db.Model):
     @property
     def category_label(self):
         return Categorias.ETIQUETAS.get(self.category, self.category)
+
+    @property
+    def galeria(self):
+        """Todas las fotos del emprendimiento, con la principal primero.
+
+        Los listados siguen usando post.image directamente; esto es para el
+        detalle, que las muestra todas juntas.
+        """
+        fotos = [self.image] if self.image else []
+        fotos += [imagen.filename for imagen in self.imagenes]
+        return fotos
+
+    @property
+    def lugares_de_imagen_libres(self):
+        """Cuantas fotos mas se pueden subir antes de llegar al maximo."""
+        return max(0, MAX_IMAGENES_POR_POST - len(self.galeria))
 
     # Método para devolver JSON
     def serialize(self, include_views=False):

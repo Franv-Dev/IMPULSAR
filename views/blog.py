@@ -3,7 +3,8 @@ from flask import (
 )
 from werkzeug.exceptions import abort
 from models.favorite import Favorite
-from models.post import Categorias, Post
+from models.post import Categorias, MAX_IMAGENES_POR_POST, Post
+from models.post_image import PostImage
 from models.report import Report
 from models.user import User
 from views.auth import login_required
@@ -38,6 +39,36 @@ def _ids_favoritos(user_id):
     """IDs de los posts que el usuario marco como favoritos, en una sola consulta."""
     filas = db.session.query(Favorite.post_id).filter_by(user_id=user_id).all()
     return {post_id for (post_id,) in filas}
+
+
+def _guardar_galeria(post, archivos, upload_dir, ya_ocupados):
+    """Guarda las fotos adicionales de un emprendimiento.
+
+    Reusa save_post_image, o sea que cada foto pasa por la misma validacion,
+    compresion y nombre con uuid que la principal. Devuelve un mensaje de error
+    si alguna no se pudo guardar, o None.
+
+    `ya_ocupados` es cuantos lugares gasta lo que ya tiene el post (la foto
+    principal y las que subio antes).
+    """
+    archivos = [f for f in archivos if f and f.filename]
+    if not archivos:
+        return None
+
+    libres = MAX_IMAGENES_POR_POST - ya_ocupados
+    if len(archivos) > libres:
+        return (
+            f"Podés subir hasta {MAX_IMAGENES_POR_POST} fotos por emprendimiento "
+            f"(te quedan {max(0, libres)})."
+        )
+
+    for numero, archivo in enumerate(archivos, start=ya_ocupados):
+        filename, error = save_post_image(archivo, upload_dir)
+        if error:
+            return error
+        if filename:
+            post.imagenes.append(PostImage(filename=filename, posicion=numero))
+    return None
 
 
 def _distancia_km(lat, lon):
@@ -219,6 +250,7 @@ def create():
         title = request.form.get("title", "").strip()
         body = request.form.get("body", "").strip()
         file = request.files.get("image")
+        galeria = request.files.getlist("galeria")
         category = request.form.get("category", "").strip()
 
         address_street = request.form.get("address_street", "").strip()
@@ -233,6 +265,14 @@ def create():
             error = "Se requiere un título."
         elif not body:
             error = "Se requiere una descripción."
+
+        # El limite se chequea antes de tocar el disco: si se pasa, no tiene
+        # sentido haber guardado y comprimido las fotos para despues descartarlas.
+        fotos_pedidas = len([f for f in galeria if f and f.filename])
+        if file and file.filename:
+            fotos_pedidas += 1
+        if error is None and fotos_pedidas > MAX_IMAGENES_POR_POST:
+            error = f"Podés subir hasta {MAX_IMAGENES_POR_POST} fotos por emprendimiento."
 
         if error is None:
             upload_dir = os.path.join(current_app.root_path, "static", "uploads")
@@ -262,6 +302,14 @@ def create():
             )
             # --- FIN CAMBIOS ---
 
+            galeria_error = _guardar_galeria(
+                post, galeria, upload_dir, ya_ocupados=1 if filename else 0
+            )
+            if galeria_error:
+                db.session.rollback()
+                flash(galeria_error)
+                return render_template("blog/create.html", categorias=Categorias.ETIQUETAS)
+
             db.session.add(post)
             db.session.commit()
             flash("Emprendimiento registrado correctamente.")
@@ -283,6 +331,7 @@ def update(id):
         title = request.form.get("title", "").strip()
         body = request.form.get("body", "").strip()
         file = request.files.get("image")
+        galeria = request.files.getlist("galeria")
         category = request.form.get("category", "").strip()
 
         address_street = request.form.get("address_street", "").strip()
@@ -303,7 +352,19 @@ def update(id):
             elif filename:
                 post.image = filename
 
+        # Las fotos que ya tenia siguen contando para el limite: se suman a las
+        # nuevas en vez de reemplazarlas.
+        if error is None:
+            error = _guardar_galeria(
+                post, galeria, upload_dir,
+                ya_ocupados=len(post.galeria),
+            )
+
         if error:
+            # Descarta lo que quedo pendiente en la sesion (la imagen principal
+            # nueva, las fotos de galeria ya agregadas). Sin esto un autoflush
+            # posterior puede terminar guardando una edicion que se rechazo.
+            db.session.rollback()
             flash(error)
         else:
             # --- LÓGICA DE GEOCODIFICACIÓN (UPDATE) ---
