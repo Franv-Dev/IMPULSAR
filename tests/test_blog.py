@@ -196,6 +196,69 @@ def test_se_rechazan_ratings_invalidos(client, crear_usuario, crear_post, login,
     assert Review.query.count() == 0
 
 
+def test_el_autor_de_la_resenia_puede_editarla(client, crear_usuario, crear_post, login):
+    """Reenviar el formulario de reseña la actualiza (mismo endpoint add_review)."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "3", "comment": "Regular"})
+    client.post(f"/blog/{post.id}/review", data={"rating": "5", "comment": "Mejoró mucho"})
+
+    review = Review.query.filter_by(post_id=post.id, user_id=cliente.id).first()
+    assert review.rating == 5
+    assert review.comment == "Mejoró mucho"
+
+
+def test_el_detalle_precarga_el_formulario_con_la_resenia_propia(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "4", "comment": "Muy bueno"})
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Actualizar reseña" in html
+    assert "Muy bueno" in html
+
+
+def test_el_autor_de_la_resenia_puede_eliminarla(client, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "4", "comment": "Bien"})
+    review = Review.query.filter_by(post_id=post.id, user_id=cliente.id).first()
+
+    client.post(f"/blog/review/{review.id}/delete")
+
+    assert Review.query.get(review.id) is None
+
+
+def test_un_extranio_no_puede_eliminar_la_resenia_de_otro(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    intruso = crear_usuario(username="intruso")
+    post = crear_post(autor.id)
+
+    login(cliente.id)
+    client.post(f"/blog/{post.id}/review", data={"rating": "4", "comment": "Bien"})
+    review = Review.query.filter_by(post_id=post.id, user_id=cliente.id).first()
+
+    login(intruso.id)
+    client.post(f"/blog/review/{review.id}/delete")
+
+    assert Review.query.get(review.id) is not None
+
+
 def test_una_segunda_resenia_actualiza_la_primera(client, crear_usuario, crear_post, login):
     """Sin esto un usuario podria inflar el promedio dejando varias resenas."""
     autor = crear_usuario(username="autor")

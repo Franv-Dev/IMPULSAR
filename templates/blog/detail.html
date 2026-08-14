@@ -145,7 +145,7 @@
         </section>
 
         <section class="review-form-section">
-            <h2 class="section__title">Dejar una reseña</h2>
+            <h2 class="section__title">{% if mi_review %}Tu reseña{% else %}Dejar una reseña{% endif %}</h2>
 
             {% if not g.user %}
                 <p class="review-form-info">
@@ -162,7 +162,8 @@
                         <label class="auth__label">Tu calificación</label>
                         <div class="rating">
                             {% for i in range(5, 0, -1) %}
-                                <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" required>
+                                <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}"
+                                    {% if mi_review and mi_review.rating == i %}checked{% endif %} required>
                                 <label for="star{{ i }}">★</label>
                             {% endfor %}
                         </div>
@@ -176,13 +177,26 @@
                             rows="4"
                             class="auth__input"
                             placeholder="Contá tu experiencia con este emprendimiento..."
-                        ></textarea>
+                        >{{ mi_review.comment or '' if mi_review else '' }}</textarea>
                     </div>
 
                     <button type="submit" class="btn btn--primary auth__submit">
-                        Enviar reseña
+                        {% if mi_review %}Actualizar reseña{% else %}Enviar reseña{% endif %}
                     </button>
                 </form>
+
+                {% if mi_review %}
+                    <form method="post"
+                        action="{{ url_for('blog.delete_review', review_id=mi_review.id) }}"
+                        class="form-inline"
+                        style="margin-top:0.75rem;"
+                        onsubmit="return confirm('¿Seguro que querés eliminar tu reseña?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn--ghost" style="font-size:0.85rem;">
+                            Eliminar mi reseña
+                        </button>
+                    </form>
+                {% endif %}
             {% endif %}
         </section>
 

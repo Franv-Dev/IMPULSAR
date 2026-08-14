@@ -94,12 +94,21 @@ def detail(id):
     # Redondeo simple a 1 decimal
     avg_rating = round(avg_rating, 1) if avg_rating else None
 
+    # La reseña propia (si existe) se usa para precargar el formulario en modo
+    # edicion, en vez de mostrar siempre el formulario vacio de "dejar una
+    # reseña" aunque el usuario ya haya dejado la suya.
+    mi_review = (
+        Review.query.filter_by(post_id=id, user_id=g.user.id).first()
+        if g.user else None
+    )
+
     return render_template(
             "blog/detail.html",
             post=post,
             author=author,
             reviews=reviews,
             avg_rating=avg_rating,
+            mi_review=mi_review,
             MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
 
@@ -343,3 +352,22 @@ def reply_review(review_id):
     flash("Tu respuesta se publicó correctamente.")
 
     return redirect(url_for("blog.detail", id=review.post_id))
+
+
+@blog.route("/review/<int:review_id>/delete", methods=["POST"])
+@login_required
+def delete_review(review_id):
+    """Eliminar la propia reseña. Editarla ya se resuelve reenviando add_review,
+    que actualiza en vez de duplicar (ver el UniqueConstraint de Review)."""
+    review = Review.query.get_or_404(review_id)
+
+    if review.user_id != g.user.id:
+        flash("No tenés permiso para eliminar esta reseña.")
+        return redirect(url_for("blog.detail", id=review.post_id))
+
+    post_id = review.post_id
+    db.session.delete(review)
+    db.session.commit()
+    flash("Tu reseña se eliminó correctamente.")
+
+    return redirect(url_for("blog.detail", id=post_id))
