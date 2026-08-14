@@ -327,6 +327,33 @@ def test_dos_usernames_que_dan_el_mismo_slug_no_colisionan(crear_usuario):
     assert segundo.slug == "pan-casero-2"
 
 
+def test_un_username_largo_no_pasa_el_largo_de_la_columna(crear_usuario):
+    from services.slugs import LARGO_MAXIMO_SLUG
+
+    usuario = crear_usuario(username="a" * 80)
+
+    assert len(usuario.slug) == LARGO_MAXIMO_SLUG
+
+
+def test_dos_usernames_largos_e_iguales_no_terminan_con_el_mismo_slug(crear_usuario):
+    """Recortar despues de pegar el sufijo se comeria el "-2", que es lo unico
+    que los diferencia."""
+    from services.slugs import LARGO_MAXIMO_SLUG
+
+    primero = crear_usuario(username="b" * 80, email="uno@test.com")
+    segundo = crear_usuario(username="B" * 80, email="dos@test.com")
+
+    assert primero.slug != segundo.slug
+    assert segundo.slug.endswith("-2")
+    assert len(segundo.slug) <= LARGO_MAXIMO_SLUG
+
+
+def test_el_slug_recortado_no_queda_con_un_guion_colgando(crear_usuario):
+    usuario = crear_usuario(username=("c" * 59) + " palabra")
+
+    assert not usuario.slug.endswith("-")
+
+
 def test_un_username_reservado_no_se_queda_con_la_ruta(client, crear_usuario):
     """"edit" es una ruta real bajo /perfil/ y le gana a /perfil/<slug>."""
     usuario = crear_usuario(username="edit")
