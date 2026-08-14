@@ -30,13 +30,17 @@ LARGO_MAXIMO_SLUG = 60
 # dia de mañana el perfil pasa a colgar de la raiz, y ademas evitan que alguien
 # se registre como "admin" o "soporte" para hacerse pasar por el sitio.
 SLUGS_RESERVADOS = frozenset({
-    # rutas reales bajo /perfil/ (ver views/profile.py)
-    "edit", "create_bio",
+    # rutas reales bajo /perfil/ (ver views/profile.py). Cada vez que se suma
+    # una ruta estatica ahi hay que sumarla aca: Werkzeug le da prioridad sobre
+    # /perfil/<slug>, asi que el usuario que se llame igual queda sin perfil.
+    "edit", "create_bio", "horarios",
+    # sub-rutas de /perfil/<slug>/: no tapan un slug, se reservan por prolijidad
+    "resenias", "seguir",
     # prefijos de blueprint y rutas de primer nivel de la app
     "admin", "api", "static", "auth", "blog", "mensajes", "perfil",
     "login", "logout", "register", "registro", "me",
     "sobre", "contacto", "terminos", "privacidad",
-    "favoritos", "mis-emprendimientos", "resenias",
+    "favoritos", "mis-emprendimientos",
     # nombres institucionales, para que no se los pueda usurpar
     "impulsar", "soporte", "ayuda", "root", "administrador",
 })

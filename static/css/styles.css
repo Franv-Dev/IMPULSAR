@@ -487,6 +487,44 @@ main {
     color: var(--color-muted);
 }
 
+/* SEGUIR EMPRENDEDORES */
+
+.profile-siguiendo {
+    padding: 0 2rem 1rem;
+}
+
+.siguiendo-lista {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0.75rem 0 0;
+    padding: 0;
+}
+
+.siguiendo-lista__item a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.siguiendo-lista__item a:hover {
+    border-color: var(--color-primary);
+}
+
+.siguiendo-lista__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 /* HORARIOS DE ATENCION */
 
 .estado-atencion {

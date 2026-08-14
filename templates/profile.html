@@ -74,6 +74,18 @@
                 <a href="{{ url_for('profile.reviews', slug=user.slug) }}" class="btn btn--secondary">
                     Ver reseñas recibidas
                 </a>
+                {# El boton de seguir solo aparece en perfiles ajenos y con
+                   sesion iniciada: no hay a quien atribuirle el seguimiento
+                   si no hay usuario, y nadie se sigue a si mismo. #}
+                {% if g.user and g.user.id != user.id %}
+                    <form method="post" action="{{ url_for('profile.toggle_follow', slug=user.slug) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn {{ 'btn--secondary' if lo_sigo else 'btn--primary' }}"
+                                aria-pressed="{{ 'true' if lo_sigo else 'false' }}">
+                            {{ "Dejar de seguir" if lo_sigo else "Seguir" }}
+                        </button>
+                    </form>
+                {% endif %}
                 {# Fuera del chequeo de dueño: cualquiera puede compartir un perfil ajeno. #}
                 {% with share_url=url_for('profile.view_profile', slug=user.slug, _external=True),
                         share_title="Perfil de " ~ user.username %}
@@ -102,6 +114,34 @@
         </div>
         {% endif %}
     </div>
+
+    {# "Sigo a" solo lo ve el dueño: la vista ni siquiera arma la lista cuando
+       mira otro, mismo criterio que las estadisticas. #}
+    {% if g.user and g.user.id == user.id %}
+        <section class="profile-siguiendo">
+            <h2 class="section__title">Sigo a</h2>
+            {% if siguiendo %}
+                <ul class="siguiendo-lista">
+                    {% for seguido in siguiendo %}
+                        <li class="siguiendo-lista__item">
+                            <a href="{{ url_for('profile.view_profile', slug=seguido.slug) }}">
+                                {% if seguido.avatar %}
+                                    <img src="{{ url_for('static', filename='uploads/avatars/' ~ seguido.avatar) }}"
+                                         alt="" class="siguiendo-lista__avatar">
+                                {% else %}
+                                    <img src="{{ url_for('static', filename='icons/logo_perfil.png') }}"
+                                         alt="" class="siguiendo-lista__avatar">
+                                {% endif %}
+                                {{ seguido.username }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="reviews-empty">Todavía no seguís a ningún emprendedor.</p>
+            {% endif %}
+        </section>
+    {% endif %}
 
     {% if horarios or (g.user and g.user.id == user.id) %}
         <section class="profile-horarios">
@@ -149,6 +189,12 @@
                     <span class="stat-card__value">{{ estadisticas.favoritos }}</span>
                     <span class="stat-card__label">
                         Favorito{{ "s" if estadisticas.favoritos != 1 else "" }} recibido{{ "s" if estadisticas.favoritos != 1 else "" }}
+                    </span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-card__value">{{ estadisticas.seguidores }}</span>
+                    <span class="stat-card__label">
+                        Seguidor{{ "es" if estadisticas.seguidores != 1 else "" }}
                     </span>
                 </div>
                 <div class="stat-card">

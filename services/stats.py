@@ -9,6 +9,7 @@ from sqlalchemy import func
 
 from db import db
 from models.favorite import Favorite
+from models.follow import Follow
 from models.post import Post
 from models.review import Review
 
@@ -39,9 +40,19 @@ def estadisticas_de_usuario(user_id):
         .one()
     )
 
+    # La cantidad de seguidores va aca y no en la parte publica del perfil, por
+    # el mismo criterio que las vistas: es una metrica del dueño. Quien lo
+    # sigue no se expone en ningun lado.
+    seguidores = (
+        db.session.query(func.count(Follow.id))
+        .filter(Follow.followed_id == user_id)
+        .scalar()
+    )
+
     return {
         "vistas": vistas or 0,
         "favoritos": favoritos or 0,
+        "seguidores": seguidores or 0,
         # None (y no 0) cuando todavia no hay ninguna reseña: un promedio de
         # 0.0 se leeria como "lo calificaron pésimo".
         "promedio": round(promedio, 1) if promedio else None,

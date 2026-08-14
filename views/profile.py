@@ -5,6 +5,9 @@ from flask import (
 )
 from sqlalchemy.orm import joinedload
 
+from sqlalchemy.exc import IntegrityError
+
+from models.follow import Follow
 from models.horario import Horario
 from models.post import Post
 from models.review import Review
@@ -37,11 +40,31 @@ def view_profile(slug):
     # ningun dato que se pueda filtrar por error en el template).
     es_dueño = bool(g.user and g.user.id == user.id)
     horarios = sorted(user.horarios, key=lambda h: h.dia_semana)
+
+    # Quien sigue a quien es dato privado, con el mismo criterio que
+    # views_count: al visitante solo se le dice si lo sigue EL (su propia
+    # relacion), nunca quien mas lo sigue. La lista "Sigo a" y la cantidad de
+    # seguidores son del dueño y no se calculan si mira otro.
+    lo_sigo = bool(
+        g.user
+        and not es_dueño
+        and Follow.query.filter_by(follower_id=g.user.id, followed_id=user.id).first()
+    )
+    siguiendo = (
+        User.query.join(Follow, Follow.followed_id == User.id)
+        .filter(Follow.follower_id == user.id)
+        .order_by(Follow.created.desc())
+        .all()
+        if es_dueño else []
+    )
+
     return render_template(
         "profile.html",
         user=user,
         posts=serializar_con_rating(filas),
         estadisticas=estadisticas_de_usuario(user.id) if es_dueño else None,
+        lo_sigo=lo_sigo,
+        siguiendo=siguiendo,
         horarios=horarios,
         # None y no False cuando no hay horarios cargados: el template tiene que
         # poder distinguir "cerrado ahora" de "este usuario no publico horarios".
@@ -101,6 +124,40 @@ def view_profile_por_id(user_id):
 def reviews_por_id(user_id):
     user = User.query.get_or_404(user_id)
     return _redirect_301_al_slug("profile.reviews", user.slug)
+
+
+# --- 1.d SEGUIR / DEJAR DE SEGUIR
+
+@profile.route("/<slug>/seguir", methods=("POST",))
+@login_required
+def toggle_follow(slug):
+    """Empieza o deja de seguir a un emprendedor (toggle, como favoritos)."""
+    user = User.query.filter_by(slug=slug).first_or_404()
+
+    if user.id == g.user.id:
+        # No es solo cosmetico: sin esto queda una fila que hace que el usuario
+        # se vea a si mismo en su propia lista de "Sigo a".
+        flash("No podés seguirte a vos mismo.")
+        return redirect(url_for("profile.view_profile", slug=user.slug))
+
+    seguimiento = Follow.query.filter_by(
+        follower_id=g.user.id, followed_id=user.id
+    ).first()
+
+    if seguimiento:
+        db.session.delete(seguimiento)
+        db.session.commit()
+        flash(f"Dejaste de seguir a {user.username}.")
+    else:
+        try:
+            db.session.add(Follow(follower_id=g.user.id, followed_id=user.id))
+            db.session.commit()
+            flash(f"Ahora seguís a {user.username}.")
+        except IntegrityError:
+            # Ventana de carrera: dos clicks casi simultaneos en "Seguir".
+            db.session.rollback()
+
+    return redirect(url_for("profile.view_profile", slug=user.slug))
 
 
 # --- 1.c HORARIOS DE ATENCION
