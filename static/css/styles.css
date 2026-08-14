@@ -299,11 +299,18 @@ main {
 .search__form {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 1rem;
     background-color: var(--color-white);
     border-radius: 999px;
     padding: 0.5rem 0.75rem;
     box-shadow: var(--shadow-soft);
+}
+
+.search__hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-muted);
 }
 
 .search__group {

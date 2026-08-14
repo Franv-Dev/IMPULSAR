@@ -9,7 +9,7 @@ from views.auth import login_required
 from db import db, utcnow
 import os
 from models.review import Review
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlalchemy.exc import IntegrityError
 from services.geocoding import get_coordinates_from_address
 from services.ratings import query_posts_con_rating, serializar_con_rating
@@ -38,6 +38,30 @@ def _ids_favoritos(user_id):
     filas = db.session.query(Favorite.post_id).filter_by(user_id=user_id).all()
     return {post_id for (post_id,) in filas}
 
+
+def _distancia_km(lat, lon):
+    """Expresion SQL: distancia en km entre (lat, lon) y cada Post.
+
+    Formula del semiverseno resuelta con funciones matematicas de MySQL, para
+    que el ORDER BY y la paginacion los siga resolviendo la base de datos en
+    vez de traer todos los posts a Python para ordenarlos ahi.
+    """
+    argumento = (
+        func.cos(func.radians(lat)) * func.cos(func.radians(Post.latitude)) *
+        func.cos(func.radians(Post.longitude) - func.radians(lon)) +
+        func.sin(func.radians(lat)) * func.sin(func.radians(Post.latitude))
+    )
+    # Buscar cerca de un post con las mismas coordenadas puede dar, por
+    # redondeo de punto flotante, un argumento apenas fuera de [-1, 1]; ACOS()
+    # de eso es NULL. Se acota con CASE (no LEAST/GREATEST: no existen en
+    # SQLite, que es lo que usan los tests).
+    argumento_acotado = case(
+        (argumento > 1, 1),
+        (argumento < -1, -1),
+        else_=argumento,
+    )
+    return 6371 * func.acos(argumento_acotado)
+
 # Rutas públicas
 
 @blog.route("/")
@@ -57,9 +81,31 @@ def index():
     if categoria in Categorias.TODAS:
         query = query.filter(Post.category == categoria)
 
+    # Busqueda por cercania: se puede pasar lat/lon directamente (por ejemplo
+    # desde la geolocalizacion del navegador) o una direccion en texto para
+    # geocodificar con MapTiler, igual que al cargar un emprendimiento.
+    cerca_de = (request.args.get("near") or "").strip()
+    lat = request.args.get("lat", type=float)
+    lon = request.args.get("lon", type=float)
+    if cerca_de and lat is None and lon is None:
+        lat, lon = get_coordinates_from_address(cerca_de, current_app.config["MAPTILER_KEY"])
+        if lat is None:
+            flash("No pudimos ubicar esa dirección en el mapa. Probá con otro formato, o dejá el campo vacío.")
+
+    ordenar_por_distancia = lat is not None and lon is not None
+    if ordenar_por_distancia:
+        # Sin coordenadas propias, un post no tiene con que calcular la
+        # distancia: se excluye en vez de mostrarlo con un orden arbitrario.
+        query = query.filter(Post.latitude.isnot(None), Post.longitude.isnot(None))
+        distancia = _distancia_km(lat, lon)
+        query = query.add_columns(distancia.label("distance_km"))
+        orden = distancia.asc()
+    else:
+        orden = Post.created.desc()
+
     paginacion = (
         query
-        .order_by(Post.created.desc())
+        .order_by(orden)
         .paginate(
             page=request.args.get("page", 1, type=int),
             per_page=current_app.config["POSTS_POR_PAGINA"],
@@ -67,7 +113,22 @@ def index():
         )
     )
     favoritos = _ids_favoritos(g.user.id) if g.user else frozenset()
-    posts = serializar_con_rating(paginacion.items, favoritos)
+    if ordenar_por_distancia:
+        posts = [
+            {
+                "post": post,
+                "avg_rating": round(avg_rating, 1) if avg_rating else None,
+                "review_count": review_count or 0,
+                "is_favorite": post.id in favoritos,
+                "distance_km": round(distance_km, 1) if distance_km is not None else None,
+            }
+            for post, avg_rating, review_count, distance_km in paginacion.items
+        ]
+    else:
+        posts = serializar_con_rating(paginacion.items, favoritos)
+        for item in posts:
+            item["distance_km"] = None
+
     return render_template(
         "blog/index.html",
         posts=posts,
@@ -75,6 +136,8 @@ def index():
         categorias=Categorias.ETIQUETAS,
         categoria_actual=categoria,
         busqueda_actual=busqueda,
+        cerca_de_actual=cerca_de,
+        ordenado_por_distancia=ordenar_por_distancia,
     )
 
 @blog.route("/<int:id>")

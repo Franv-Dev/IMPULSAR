@@ -497,3 +497,53 @@ def test_la_api_de_posts_filtra_por_categoria(client, crear_usuario, crear_post)
 
     assert datos["total"] == 1
     assert datos["items"][0]["title"] == "Reparación de PCs"
+
+
+# --------------------------------------------------------------- cercania
+
+def test_ordena_por_distancia_cuando_se_pasan_lat_lon(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    # Referencia: Ciudad de Mendoza. "Cerca" queda a metros, "Lejos" a ~90km.
+    crear_post(autor.id, title="Lejos", latitude=-33.5, longitude=-69.5)
+    crear_post(autor.id, title="Cerca", latitude=-32.891, longitude=-68.841)
+
+    html = client.get("/blog/?lat=-32.89&lon=-68.84").get_data(as_text=True)
+
+    assert html.index("Cerca") < html.index("Lejos")
+
+
+def test_excluye_posts_sin_ubicacion_al_buscar_por_cercania(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Con ubicación", latitude=-32.891, longitude=-68.841)
+    crear_post(autor.id, title="Sin ubicación")
+
+    html = client.get("/blog/?lat=-32.89&lon=-68.84").get_data(as_text=True)
+
+    assert "Con ubicación" in html
+    assert "Sin ubicación" not in html
+
+
+def test_la_direccion_de_texto_sin_maptiler_key_no_rompe_el_listado(
+    client, crear_usuario, crear_post
+):
+    """En testing no hay MAPTILER_KEY: cae al orden por defecto en vez de fallar."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería del barrio")
+
+    resp = client.get("/blog/?near=Av+San+Martin+123")
+
+    assert resp.status_code == 200
+    assert "Panadería del barrio" in resp.get_data(as_text=True)
+
+
+def test_sin_filtro_de_cercania_el_orden_por_defecto_no_cambia(
+    client, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Primero", latitude=-32.891, longitude=-68.841)
+    crear_post(autor.id, title="Segundo")
+
+    html = client.get("/blog/").get_data(as_text=True)
+
+    # Orden por fecha de creacion (mas nuevo primero), no por distancia.
+    assert html.index("Segundo") < html.index("Primero")

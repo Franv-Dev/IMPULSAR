@@ -36,8 +36,27 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="search__group">
+                <span class="search__icon">📍</span>
+                <input
+                    type="text"
+                    name="near"
+                    id="near-input"
+                    class="search__input"
+                    placeholder="Cerca de (dirección)..."
+                    value="{{ cerca_de_actual }}"
+                >
+            </div>
+            <button type="button" id="use-my-location" class="btn btn--secondary" title="Usar mi ubicación actual">
+                📍 Mi ubicación
+            </button>
+            <input type="hidden" name="lat" id="near-lat" value="{{ request.args.get('lat', '') }}">
+            <input type="hidden" name="lon" id="near-lon" value="{{ request.args.get('lon', '') }}">
             <button type="submit" class="btn btn--primary search__button">Filtrar</button>
         </form>
+        {% if ordenado_por_distancia %}
+            <p class="search__hint">Ordenado por cercanía.</p>
+        {% endif %}
 
         {% if posts %}
             <div class="cards-grid">
@@ -77,6 +96,10 @@
                                     {{ post.title }}
                                 </a>
                             </h3>
+
+                            {% if item.distance_km is not none %}
+                                <p class="card__location">📍 A {{ item.distance_km }} km</p>
+                            {% endif %}
 
                             {% if item.avg_rating %}
                                 <p class="card__rating" aria-label="Calificación promedio: {{ item.avg_rating }} de 5">
@@ -131,7 +154,9 @@
         {% else %}
             <div class="emprendimientos__empty" style="margin-top:1rem;">
                 <p>
-                    {% if busqueda_actual or categoria_actual %}
+                    {% if ordenado_por_distancia %}
+                        No encontramos emprendimientos con ubicación cargada cerca de ahí.
+                    {% elif busqueda_actual or categoria_actual or cerca_de_actual %}
                         No encontramos emprendimientos con esos filtros.
                     {% else %}
                         No hay emprendimientos registrados todavía.

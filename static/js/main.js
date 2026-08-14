@@ -227,3 +227,48 @@ document.addEventListener("DOMContentLoaded", () => {
     actualizarBadge();
     setInterval(actualizarBadge, 20000);
 });
+
+// =============================
+// BÚSQUEDA POR CERCANÍA (listado de emprendimientos)
+// =============================
+document.addEventListener("DOMContentLoaded", () => {
+    const boton = document.getElementById("use-my-location");
+    const nearInput = document.getElementById("near-input");
+    const latInput = document.getElementById("near-lat");
+    const lonInput = document.getElementById("near-lon");
+
+    if (!boton || !nearInput || !latInput || !lonInput) return; // no estamos en /blog/
+
+    // Si el usuario retoca el texto a mano, las coordenadas anteriores (de
+    // "Mi ubicación" o de una busqueda previa) quedan obsoletas: sin esto, el
+    // servidor las usaria en vez de geocodificar el texto nuevo.
+    nearInput.addEventListener("input", () => {
+        latInput.value = "";
+        lonInput.value = "";
+    });
+
+    boton.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+            alert("Tu navegador no soporta geolocalización.");
+            return;
+        }
+
+        const textoOriginal = boton.textContent;
+        boton.disabled = true;
+        boton.textContent = "Ubicando...";
+
+        navigator.geolocation.getCurrentPosition(
+            (posicion) => {
+                latInput.value = posicion.coords.latitude;
+                lonInput.value = posicion.coords.longitude;
+                nearInput.value = "";
+                boton.closest("form").submit();
+            },
+            () => {
+                alert("No pudimos acceder a tu ubicación.");
+                boton.disabled = false;
+                boton.textContent = textoOriginal;
+            }
+        );
+    });
+});
