@@ -106,6 +106,67 @@ def test_el_registro_por_formulario_rechaza_un_username_numerico(client, db):
     assert User.query.filter_by(username="999").first() is None
 
 
+def test_no_se_pueden_repetir_usernames_cambiando_mayusculas_o_tildes(client):
+    """En MySQL el unique usa utf8mb4_unicode_ci: "Panadería" y "panaderia" son
+    el mismo username y el INSERT explotaba con IntegrityError. SQLite si los
+    distingue, asi que sin el chequeo normalizado este caso no se detecta."""
+    primero = client.post("/auth/api/register", json={
+        "username": "Panadería", "email": "a@test.com", "password": "secreta123",
+    })
+    segundo = client.post("/auth/api/register", json={
+        "username": "panaderia", "email": "b@test.com", "password": "secreta123",
+    })
+
+    assert primero.status_code == 201
+    assert segundo.status_code == 400
+    assert "username ya existe" in segundo.get_json()["errors"]
+
+
+def test_la_colision_de_username_tambien_la_agarra_el_formulario(client, db):
+    from models.user import User
+
+    client.post("/auth/register", data={
+        "username": "Ñandú", "email": "a@test.com", "password": "secreta123",
+    })
+    respuesta = client.post("/auth/register", data={
+        "username": "nandu", "email": "b@test.com", "password": "secreta123",
+    })
+
+    assert respuesta.status_code == 200  # se queda en el formulario
+    assert User.query.count() == 1
+
+
+def test_dos_usernames_realmente_distintos_no_se_bloquean(client):
+    """La normalizacion no debe pasarse de celosa: la collation tampoco ignora
+    espacios ni puntuacion."""
+    primero = client.post("/auth/api/register", json={
+        "username": "pan casero", "email": "a@test.com", "password": "secreta123",
+    })
+    segundo = client.post("/auth/api/register", json={
+        "username": "pan-casero", "email": "b@test.com", "password": "secreta123",
+    })
+
+    assert primero.status_code == 201
+    assert segundo.status_code == 201
+
+
+def test_normalizar_username_replica_la_collation_de_mysql():
+    from services.validation import normalizar_username
+
+    # Iguales para MySQL (verificado con SELECT 'a' = 'b' en utf8mb4_unicode_ci)
+    for a, b in (("Panadería", "panaderia"), ("Ñandú", "nandu"),
+                 ("Tomy", "tomy"), ("café", "cafe"), ("ß", "ss")):
+        assert normalizar_username(a) == normalizar_username(b), (a, b)
+
+    # Distintos para MySQL: no se deben colapsar
+    for a, b in (("a b", "a  b"), ("a-b", "a b")):
+        assert normalizar_username(a) != normalizar_username(b), (a, b)
+
+    # Dos nombres en otro alfabeto siguen siendo distintos entre si: descartar
+    # todo lo no-ASCII los dejaria vacios a los dos y los haria colisionar.
+    assert normalizar_username("Привет") != normalizar_username("Пока")
+
+
 def test_no_se_puede_registrar_un_username_mas_largo_que_la_columna(client):
     """Sin validar el largo, el nombre llegaba al INSERT y MySQL tiraba un
     DataError sin manejar: 500 en vez de un error de formulario."""

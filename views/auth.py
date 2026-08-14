@@ -42,7 +42,7 @@ def register():
             error = validate_password(password)
 
         # Unicidad
-        if error is None and User.query.filter_by(username=username).first():
+        if error is None and User.existe_username_equivalente(username):
             error = f"El usuario {username} ya se encuentra registrado"
         if error is None and User.query.filter_by(email=email).first():
             error = f"El email {email} ya se encuentra registrado"
@@ -163,7 +163,7 @@ def api_register():
         password_error = validate_password(password)
         if password_error:
             errors.append(password_error)
-    if User.query.filter_by(username=username).first(): errors.append("username ya existe")
+    if User.existe_username_equivalente(username): errors.append("username ya existe")
     if User.query.filter_by(email=email).first(): errors.append("email ya existe")
     if errors:
         return jsonify({"errors": errors}), 400

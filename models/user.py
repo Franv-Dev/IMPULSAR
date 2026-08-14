@@ -1,5 +1,6 @@
 from db import db, utcnow
 from services.slugs import generar_slug, slug_disponible
+from services.validation import normalizar_username
 
 
 class Roles:
@@ -89,6 +90,28 @@ class User(db.Model):
         self.latitude = latitude
         self.longitude = longitude
         self.address_street = address_street
+
+    @staticmethod
+    def existe_username_equivalente(username):
+        """True si ya hay un username que la base consideraria el mismo.
+
+        No alcanza con filter_by(username=...): eso compara exacto, mientras
+        que el unique de MySQL ignora mayusculas y tildes (ver
+        normalizar_username). En SQLite, que si distingue, esto es ademas lo
+        unico que evita que se cuelen dos nombres equivalentes.
+        """
+        objetivo = normalizar_username(username)
+        if not objetivo:
+            return False
+
+        # Se busca por slug en vez de recorrer la tabla entera: dos usernames
+        # que solo difieren en mayusculas o tildes generan el mismo slug base,
+        # asi que los candidatos caen todos bajo ese prefijo, que esta
+        # indexado. El patron sale de generar_slug, que solo devuelve
+        # [a-z0-9-], asi que no puede meter comodines en el LIKE.
+        base = generar_slug(username)
+        candidatos = User.query.filter(User.slug.like(f"{base}%")).all()
+        return any(normalizar_username(c.username) == objetivo for c in candidatos)
 
     @staticmethod
     def generar_slug_unico(username):

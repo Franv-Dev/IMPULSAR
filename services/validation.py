@@ -6,6 +6,8 @@ sumar una lista de contraseñas obvias, habia que acordarse de tocar los dos
 lugares.
 """
 
+import unicodedata
+
 MIN_PASSWORD_LENGTH = 8
 
 # Tiene que coincidir con el largo de User.username (models/user.py). Sin este
@@ -21,6 +23,30 @@ CONTRASENIAS_OBVIAS = {
     "qwertyui", "asdfghjk", "11111111", "00000000",
     "admin123", "admin1234", "iloveyou1", "letmein12",
 }
+
+
+def normalizar_username(username):
+    """Forma canonica para comparar dos usernames como los compara la base.
+
+    El unique de users.username vive en MySQL con utf8mb4_unicode_ci, que
+    ignora mayusculas y tildes: para la base "Panadería" y "panaderia" son el
+    mismo nombre. Sin normalizar antes de chequear disponibilidad, el registro
+    creia que estaba libre y el choque recien saltaba como IntegrityError.
+
+    Se replica lo que hace esa collation y nada mas:
+      - casefold primero (ademas de las mayusculas resuelve "ß" -> "ss")
+      - despues se sacan los acentos descomponiendo y tirando las marcas
+
+    Se descartan solo las marcas de acento y no todo lo no-ASCII: con
+    encode("ascii") dos nombres en cirilico quedarian los dos vacios y se
+    tomarian por iguales, cuando para MySQL son distintos.
+
+    Los espacios internos y la puntuacion se dejan como estan, porque la
+    collation tampoco los ignora ("a b" != "a  b" y "a-b" != "a b").
+    """
+    texto = (username or "").strip().casefold()
+    descompuesto = unicodedata.normalize("NFKD", texto)
+    return "".join(c for c in descompuesto if not unicodedata.combining(c))
 
 
 def validate_username(username):
