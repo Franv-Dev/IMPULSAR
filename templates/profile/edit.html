@@ -129,7 +129,23 @@
                 </div>
 
                 <div class="auth__field">
-                    <label for="address_street" class="auth__label">Tu Ubicación (opcional)</label>
+                    <label for="location" class="auth__label">Ciudad y provincia (opcional)</label>
+                    <input
+                        type="text"
+                        id="location"
+                        name="location"
+                        class="auth__input"
+                        placeholder="Ej: Maipú, Mendoza"
+                        value="{{ user.location or '' }}"
+                    >
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Solo se muestra como texto en tu perfil. No mueve el mapa:
+                        para eso está la dirección de acá abajo.
+                    </small>
+                </div>
+
+                <div class="auth__field">
+                    <label for="address_street" class="auth__label">Dirección para el mapa (opcional)</label>
                     <input
                         type="text"
                         id="address_street"

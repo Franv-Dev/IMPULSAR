@@ -113,6 +113,9 @@ def edit():
     if request.method == "POST":
         # Obtenemos los datos del formulario
         biography = request.form.get("biography", "").strip()
+        # Ojo: son dos campos distintos. location es texto libre que solo se
+        # muestra; address_street es la direccion que se geocodifica mas abajo.
+        location = request.form.get("location", "").strip()
         address_street = request.form.get("address_street", "").strip()
         phone = request.form.get("phone", "").strip()
         whatsapp = request.form.get("whatsapp", "").strip()
@@ -151,6 +154,10 @@ def edit():
         g.user.instagram_url = instagram_url or None
         g.user.facebook_url = facebook_url or None
         g.user.twitter_url = twitter_url or None
+
+        # 1.d Ubicacion textual. Se guarda tal cual, sin geocodificar: no toca
+        # latitude/longitude ni address_street.
+        g.user.location = location or None
 
         # 2. Geocodificación y ubicación
         # Solo geocodificamos SI la dirección cambió o se eliminó

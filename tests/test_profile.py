@@ -354,6 +354,93 @@ def test_el_historial_por_id_redirige_301_al_slug(client, crear_usuario):
     assert respuesta.headers["Location"].endswith("/perfil/tomy/resenias")
 
 
+# --------------------------------------------------- ubicacion textual
+
+def test_editar_perfil_guarda_la_ubicacion_textual(client, db, crear_usuario, login):
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    client.post("/perfil/edit", data={
+        "biography": "Bio", "location": "Maipú, Mendoza", "address_street": "",
+    })
+
+    db.session.refresh(usuario)
+    assert usuario.location == "Maipú, Mendoza"
+
+
+def test_la_ubicacion_textual_no_se_geocodifica(client, db, crear_usuario, login, monkeypatch):
+    """Es texto libre: no toca address_street ni las coordenadas del mapa."""
+    # sys.modules y no "import views.profile": views/__init__.py reexporta el
+    # Blueprint con ese mismo nombre, asi que el atributo del paquete no es el modulo.
+    import sys
+    modulo = sys.modules["views.profile"]
+
+    def _explotar(*args, **kwargs):
+        raise AssertionError("no se debe geocodificar la ubicación textual")
+
+    monkeypatch.setattr(modulo, "get_coordinates_from_address", _explotar)
+
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    client.post("/perfil/edit", data={
+        "biography": "Bio", "location": "Maipú, Mendoza", "address_street": "",
+    })
+
+    db.session.refresh(usuario)
+    assert usuario.location == "Maipú, Mendoza"
+    assert usuario.address_street is None
+    assert usuario.latitude is None
+    assert usuario.longitude is None
+
+
+def test_la_ubicacion_textual_y_la_direccion_del_mapa_conviven(
+    client, db, crear_usuario, login, monkeypatch
+):
+    import sys
+
+    monkeypatch.setattr(
+        sys.modules["views.profile"], "get_coordinates_from_address",
+        lambda *a, **k: (-32.9, -68.8),
+    )
+
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    client.post("/perfil/edit", data={
+        "biography": "Bio",
+        "location": "Maipú, Mendoza",
+        "address_street": "Av. San Martín 123, Maipú, Mendoza",
+    })
+
+    db.session.refresh(usuario)
+    assert usuario.location == "Maipú, Mendoza"
+    assert usuario.address_street == "Av. San Martín 123, Maipú, Mendoza"
+    assert usuario.latitude == -32.9
+
+
+def test_el_perfil_publico_muestra_la_ubicacion_textual(client, db, crear_usuario):
+    usuario = crear_usuario(username="tomy")
+    usuario.location = "Maipú, Mendoza"
+    db.session.commit()
+
+    html = client.get("/perfil/tomy").get_data(as_text=True)
+
+    assert "Maipú, Mendoza" in html
+
+
+def test_la_ubicacion_textual_sola_no_dibuja_el_mapa(client, db, crear_usuario):
+    """El mapa cuelga de address_street/coordenadas, no de location."""
+    usuario = crear_usuario(username="tomy")
+    usuario.location = "Maipú, Mendoza"
+    db.session.commit()
+
+    html = client.get("/perfil/tomy").get_data(as_text=True)
+
+    assert "Maipú, Mendoza" in html
+    assert "new maplibregl.Map" not in html
+
+
 # --------------------------------------------------- compartir perfil
 
 def test_el_perfil_trae_el_boton_de_compartir_apuntando_al_perfil(

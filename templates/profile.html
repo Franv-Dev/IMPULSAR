@@ -23,6 +23,9 @@
         <div class="profile-main">
             <h1 class="username">{{ user.username }}</h1>
             <p class="role">{{ user.rol or 'Miembro de IMPULSAR' }}</p>
+            {% if user.location %}
+                <p class="profile-location">📍 {{ user.location }}</p>
+            {% endif %}
             
             {% if user.biography %}
                 <p class="biography">{{ user.biography | render_bio }}</p>

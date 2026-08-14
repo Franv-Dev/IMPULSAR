@@ -49,6 +49,12 @@ class User(db.Model):
     facebook_url = db.Column(db.String(255), nullable=True)
     twitter_url = db.Column(db.String(255), nullable=True)
 
+    # Texto libre ("Maipú, Mendoza") que el emprendedor escribe para que se vea
+    # en su perfil. NO se geocodifica ni tiene nada que ver con address_street,
+    # que es la direccion exacta del emprendimiento y es la que mueve el mapa:
+    # son dos campos distintos y se editan por separado.
+    location = db.Column(db.String(120), nullable=True)
+
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
     address_street = db.Column(db.String(255), nullable=True)
@@ -58,7 +64,7 @@ class User(db.Model):
 
     def __init__(self, username, password, email, rol=Roles.USUARIO,
                  biography="Biografía", latitude=None, longitude=None,
-                 address_street=None, avatar=None, cover_image=None, phone=None,
+                 address_street=None, location=None, avatar=None, cover_image=None, phone=None,
                  whatsapp=None, instagram_url=None, facebook_url=None, twitter_url=None,
                  slug=None):
         self.username = username
@@ -79,6 +85,7 @@ class User(db.Model):
         self.instagram_url = instagram_url
         self.facebook_url = facebook_url
         self.twitter_url = twitter_url
+        self.location = location
         self.latitude = latitude
         self.longitude = longitude
         self.address_street = address_street
@@ -117,6 +124,7 @@ class User(db.Model):
             "instagram_url": self.instagram_url,
             "facebook_url": self.facebook_url,
             "twitter_url": self.twitter_url,
+            "location": self.location,
             "latitude": self.latitude,
             "longitude": self.longitude,
             "address_street": self.address_street,

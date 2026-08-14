@@ -487,6 +487,12 @@ main {
     color: var(--color-muted);
 }
 
+.profile-location {
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+}
+
 /* ESTADISTICAS DEL PERFIL (solo las ve el dueño) */
 
 .profile-stats {
