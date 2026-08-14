@@ -1,6 +1,34 @@
 from db import db, utcnow
 
 
+class Categorias:
+    """Categorias validas para un emprendimiento.
+
+    Igual que Roles en models/user.py: los strings viven en un solo lugar
+    para no repetirlos sueltos por vistas y templates.
+    """
+
+    ALIMENTOS = "alimentos"
+    INDUMENTARIA = "indumentaria"
+    SERVICIOS = "servicios"
+    ARTESANIAS = "artesanias"
+    TECNOLOGIA = "tecnologia"
+    HOGAR = "hogar"
+    OTROS = "otros"
+
+    TODAS = (ALIMENTOS, INDUMENTARIA, SERVICIOS, ARTESANIAS, TECNOLOGIA, HOGAR, OTROS)
+
+    ETIQUETAS = {
+        ALIMENTOS: "Alimentos",
+        INDUMENTARIA: "Indumentaria",
+        SERVICIOS: "Servicios",
+        ARTESANIAS: "Artesanías",
+        TECNOLOGIA: "Tecnología",
+        HOGAR: "Hogar",
+        OTROS: "Otros",
+    }
+
+
 class Post(db.Model):
     __tablename__ = "posts"
 
@@ -12,6 +40,10 @@ class Post(db.Model):
     body = db.Column(db.Text)
     created = db.Column(db.DateTime, nullable=False, default=utcnow)
     image = db.Column(db.String(100), nullable=True)
+    category = db.Column(
+        db.String(50), nullable=False,
+        default=Categorias.OTROS, server_default=Categorias.OTROS, index=True,
+    )
 
     # Evita tener que hacer User.query.get(post.author) a mano en cada vista
     # y template: con esto se escribe directamente post.author_user.username.
@@ -23,7 +55,8 @@ class Post(db.Model):
 
     address_street = db.Column(db.String(255), nullable=True)
 
-    def __init__(self, author, title, body, image=None,latitude=None,longitude=None,address_street=None):
+    def __init__(self, author, title, body, image=None, latitude=None, longitude=None,
+                 address_street=None, category=Categorias.OTROS):
         self.author = author
         self.title = title
         self.body = body
@@ -31,9 +64,14 @@ class Post(db.Model):
         self.latitude = latitude
         self.longitude = longitude
         self.address_street = address_street
+        self.category = category if category in Categorias.TODAS else Categorias.OTROS
 
     def __repr__(self):
         return f"Post: {self.title}"
+
+    @property
+    def category_label(self):
+        return Categorias.ETIQUETAS.get(self.category, self.category)
 
     # Método para devolver JSON
     def serialize(self):
@@ -43,6 +81,7 @@ class Post(db.Model):
             "title": self.title,
             "body": self.body,
             "image": self.image,
+            "category": self.category,
             "created": self.created.isoformat() if self.created else None,
             "latitude": self.latitude,
             "longitude": self.longitude,

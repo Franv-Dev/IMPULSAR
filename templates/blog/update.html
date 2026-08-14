@@ -49,6 +49,17 @@
                 </div>
 
                 <div class="auth__field">
+                    <label for="category" class="auth__label">Categoría</label>
+                    <select id="category" name="category" class="auth__input">
+                        {% for valor, etiqueta in categorias.items() %}
+                            <option value="{{ valor }}" {% if valor == post.category %}selected{% endif %}>
+                                {{ etiqueta }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="auth__field">
                     <label class="auth__label">Imagen actual</label>
                     {% if post.image %}
                         <img

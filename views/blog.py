@@ -2,7 +2,7 @@ from flask import (
     render_template, Blueprint, redirect, flash, g, request, url_for, current_app
 )
 from werkzeug.exceptions import abort
-from models.post import Post
+from models.post import Categorias, Post
 from models.user import User
 from views.auth import login_required
 from db import db, utcnow
@@ -35,7 +35,7 @@ def get_post(id, check_author=True):
 
 @blog.route("/")
 def index():
-    """Lista pública de emprendimientos, paginada."""
+    """Lista pública de emprendimientos, paginada, con busqueda y filtro por categoria."""
     # La relacion author_user usa lazy="joined", asi que el autor viene en la
     # misma consulta y no se dispara un SELECT por cada post (problema N+1).
     # El promedio de reseñas se trae igual, con un outerjoin a una subquery
@@ -51,10 +51,23 @@ def index():
         .subquery()
     )
 
-    paginacion = (
+    query = (
         Post.query
         .outerjoin(ratings, ratings.c.post_id == Post.id)
         .add_columns(ratings.c.avg_rating, ratings.c.review_count)
+    )
+
+    busqueda = (request.args.get("q") or "").strip()
+    if busqueda:
+        patron = f"%{busqueda}%"
+        query = query.filter(Post.title.ilike(patron) | Post.body.ilike(patron))
+
+    categoria = (request.args.get("category") or "").strip()
+    if categoria in Categorias.TODAS:
+        query = query.filter(Post.category == categoria)
+
+    paginacion = (
+        query
         .order_by(Post.created.desc())
         .paginate(
             page=request.args.get("page", 1, type=int),
@@ -71,7 +84,12 @@ def index():
         for post, avg_rating, review_count in paginacion.items
     ]
     return render_template(
-        "blog/index.html", posts=posts, paginacion=paginacion
+        "blog/index.html",
+        posts=posts,
+        paginacion=paginacion,
+        categorias=Categorias.ETIQUETAS,
+        categoria_actual=categoria,
+        busqueda_actual=busqueda,
     )
 
 @blog.route("/<int:id>")
@@ -140,11 +158,12 @@ def create():
         title = request.form.get("title", "").strip()
         body = request.form.get("body", "").strip()
         file = request.files.get("image")
-        
+        category = request.form.get("category", "").strip()
+
         address_street = request.form.get("address_street", "").strip()
         latitude = None
         longitude = None
-        
+
 
         error = None
         filename = None
@@ -171,22 +190,23 @@ def create():
                     flash("No se pudo encontrar la dirección en el mapa, pero el post se guardó sin ubicación. Revisá el formato de la dirección.")
 
             post = Post(
-                author=g.user.id, 
-                title=title, 
-                body=body, 
+                author=g.user.id,
+                title=title,
+                body=body,
                 image=filename,
                 latitude=latitude,
                 longitude=longitude,
-                address_street=address_street if address_street else None
+                address_street=address_street if address_street else None,
+                category=category,
             )
             # --- FIN CAMBIOS ---
-            
+
             db.session.add(post)
             db.session.commit()
             flash("Emprendimiento registrado correctamente.")
             return redirect(url_for("blog.my_posts"))
 
-    return render_template("blog/create.html")
+    return render_template("blog/create.html", categorias=Categorias.ETIQUETAS)
 
 
 @blog.route("/update/<int:id>", methods=("GET", "POST"))
@@ -202,11 +222,12 @@ def update(id):
         title = request.form.get("title", "").strip()
         body = request.form.get("body", "").strip()
         file = request.files.get("image")
-        
+        category = request.form.get("category", "").strip()
+
         address_street = request.form.get("address_street", "").strip()
         latitude = post.latitude
         longitude = post.longitude
-        
+
 
         error = None
         if not title:
@@ -244,13 +265,14 @@ def update(id):
             post.latitude = latitude
             post.longitude = longitude
             post.address_street = address_street if address_street else None
+            post.category = category if category in Categorias.TODAS else post.category
             # --- FIN CAMBIOS ---
 
             db.session.commit()
             flash("Emprendimiento actualizado correctamente.")
             return redirect(url_for("blog.my_posts"))
 
-    return render_template("blog/update.html", post=post)
+    return render_template("blog/update.html", post=post, categorias=Categorias.ETIQUETAS)
 
 
 @blog.route("/delete/<int:id>", methods=("POST",))

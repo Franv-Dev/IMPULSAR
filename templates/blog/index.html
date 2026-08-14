@@ -15,6 +15,30 @@
             <a href="{{ url_for('index') }}" class="section__link">Volver al inicio</a>
         </div>
 
+        <form method="get" class="search__form" style="margin-bottom:1.5rem;">
+            <div class="search__group search__group--full">
+                <span class="search__icon">🔍</span>
+                <input
+                    type="text"
+                    name="q"
+                    class="search__input"
+                    placeholder="Buscar por nombre o descripción..."
+                    value="{{ busqueda_actual }}"
+                >
+            </div>
+            <div class="search__group">
+                <select name="category" class="search__input">
+                    <option value="">Todas las categorías</option>
+                    {% for valor, etiqueta in categorias.items() %}
+                        <option value="{{ valor }}" {% if valor == categoria_actual %}selected{% endif %}>
+                            {{ etiqueta }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn--primary search__button">Filtrar</button>
+        </form>
+
         {% if posts %}
             <div class="cards-grid">
                 {% for item in posts %}
@@ -33,7 +57,7 @@
                         {% endif %}
                         <div class="card__body">
                             <div class="card__tags">
-                                <span class="badge badge--category">Emprendimiento</span>
+                                <span class="badge badge--category">{{ post.category_label }}</span>
                                 {% if post.author_user %}
                                     <span class="badge badge--author">
                                         {{ post.author_user.username }}
@@ -100,7 +124,13 @@
             {% include "partials/_paginacion.html" %}
         {% else %}
             <div class="emprendimientos__empty" style="margin-top:1rem;">
-                <p>No hay emprendimientos registrados todavía.</p>
+                <p>
+                    {% if busqueda_actual or categoria_actual %}
+                        No encontramos emprendimientos con esos filtros.
+                    {% else %}
+                        No hay emprendimientos registrados todavía.
+                    {% endif %}
+                </p>
             </div>
         {% endif %}
     </div>

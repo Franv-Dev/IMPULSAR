@@ -1,12 +1,22 @@
 {# Controles de paginacion reutilizables.
    Uso: {% include "partials/_paginacion.html" %} con una variable "paginacion"
-   en el contexto (el objeto que devuelve .paginate() de Flask-SQLAlchemy). #}
+   en el contexto (el objeto que devuelve .paginate() de Flask-SQLAlchemy).
+
+   url_for solo toma request.view_args (los <int:id> de la ruta), no la
+   querystring: sin sumar request.args ademas, cambiar de pagina tirab a
+   los filtros de busqueda/categoria/cercania que esten activos. #}
+
+{% set query_params = request.args.to_dict() %}
+{% set _ = query_params.pop("page", None) %}
+{# Jinja no permite dos "**" en la misma llamada: se fusionan los dos dicts
+   de parametros en uno solo antes de pasarlo a url_for. #}
+{% set link_params = dict(request.view_args, **query_params) %}
 
 {% if paginacion and paginacion.pages > 1 %}
 <nav class="pagination" aria-label="Paginación de emprendimientos">
     {% if paginacion.has_prev %}
         <a class="pagination__link"
-           href="{{ url_for(request.endpoint, page=paginacion.prev_num, **request.view_args) }}"
+           href="{{ url_for(request.endpoint, page=paginacion.prev_num, **link_params) }}"
            rel="prev">← Anterior</a>
     {% else %}
         <span class="pagination__link pagination__link--disabled">← Anterior</span>
@@ -18,7 +28,7 @@
 
     {% if paginacion.has_next %}
         <a class="pagination__link"
-           href="{{ url_for(request.endpoint, page=paginacion.next_num, **request.view_args) }}"
+           href="{{ url_for(request.endpoint, page=paginacion.next_num, **link_params) }}"
            rel="next">Siguiente →</a>
     {% else %}
         <span class="pagination__link pagination__link--disabled">Siguiente →</span>

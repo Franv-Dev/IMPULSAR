@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app, jsonify, request
 
-from models.post import Post
+from models.post import Categorias, Post
 
 posts_api = Blueprint("posts_api", __name__, url_prefix="/api/posts")
 
@@ -31,6 +31,10 @@ def list_posts():
         # todos los posts al navegador y se filtraban ahi, lo que no escala.
         patron = f"%{busqueda}%"
         query = query.filter(Post.title.ilike(patron) | Post.body.ilike(patron))
+
+    categoria = (request.args.get("category") or "").strip()
+    if categoria in Categorias.TODAS:
+        query = query.filter(Post.category == categoria)
 
     paginacion = (
         query.order_by(Post.created.desc())

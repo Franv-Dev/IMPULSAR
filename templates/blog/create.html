@@ -50,6 +50,15 @@
                 </div>
 
                 <div class="auth__field">
+                    <label for="category" class="auth__label">Categoría</label>
+                    <select id="category" name="category" class="auth__input">
+                        {% for valor, etiqueta in categorias.items() %}
+                            <option value="{{ valor }}">{{ etiqueta }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="auth__field">
                     <label for="image" class="auth__label">Imagen (opcional)</label>
                     <input
                         id="image"

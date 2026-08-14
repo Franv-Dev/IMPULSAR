@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from models.post import Post
+from models.post import Categorias, Post
 from models.review import Review
 from views.blog import get_post
 
@@ -412,3 +412,88 @@ def test_la_api_busca_por_titulo_y_descripcion(client, crear_usuario, crear_post
     assert por_cuerpo["total"] == 1
     assert por_cuerpo["items"][0]["title"] == "Taller mecánico"
     assert sin_resultados["total"] == 0
+
+
+# ------------------------------------------------------------------- categorias
+
+def test_crear_guarda_la_categoria_elegida(client, crear_usuario, login):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    client.post("/blog/create", data={
+        "title": "Dulces Mendoza", "body": "Alfajores", "category": Categorias.ALIMENTOS,
+    })
+
+    post = Post.query.filter_by(title="Dulces Mendoza").first()
+    assert post.category == Categorias.ALIMENTOS
+
+
+def test_una_categoria_invalida_cae_en_otros(client, crear_usuario, login):
+    """El valor viaja como texto libre desde el form: no hay que confiar en el cliente."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    client.post("/blog/create", data={
+        "title": "Emprendimiento raro", "body": "x", "category": "no-es-una-categoria-real",
+    })
+
+    post = Post.query.filter_by(title="Emprendimiento raro").first()
+    assert post.category == Categorias.OTROS
+
+
+def test_editar_actualiza_la_categoria(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, category=Categorias.OTROS)
+
+    login(autor.id)
+    client.post(f"/blog/update/{post.id}", data={
+        "title": post.title, "body": post.body, "category": Categorias.TECNOLOGIA,
+    })
+
+    db.session.refresh(post)
+    assert post.category == Categorias.TECNOLOGIA
+
+
+def test_el_listado_filtra_por_categoria(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería", category=Categorias.ALIMENTOS)
+    crear_post(autor.id, title="Reparación de PCs", category=Categorias.TECNOLOGIA)
+
+    html = client.get(f"/blog/?category={Categorias.ALIMENTOS}").get_data(as_text=True)
+
+    assert "Panadería" in html
+    assert "Reparación de PCs" not in html
+
+
+def test_el_listado_combina_categoria_y_busqueda(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería del barrio", category=Categorias.ALIMENTOS)
+    crear_post(autor.id, title="Verdulería central", category=Categorias.ALIMENTOS)
+
+    html = client.get(f"/blog/?category={Categorias.ALIMENTOS}&q=barrio").get_data(as_text=True)
+
+    assert "Panadería del barrio" in html
+    assert "Verdulería central" not in html
+
+
+def test_la_paginacion_conserva_los_filtros_activos(client, app, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    por_pagina = app.config["POSTS_POR_PAGINA"]
+    for numero in range(por_pagina + 2):
+        crear_post(autor.id, title=f"Alimento {numero}", category=Categorias.ALIMENTOS)
+
+    html = client.get(f"/blog/?category={Categorias.ALIMENTOS}").get_data(as_text=True)
+
+    assert f"category={Categorias.ALIMENTOS}" in html
+    assert "page=2" in html
+
+
+def test_la_api_de_posts_filtra_por_categoria(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería", category=Categorias.ALIMENTOS)
+    crear_post(autor.id, title="Reparación de PCs", category=Categorias.TECNOLOGIA)
+
+    datos = client.get(f"/api/posts/?category={Categorias.TECNOLOGIA}").get_json()
+
+    assert datos["total"] == 1
+    assert datos["items"][0]["title"] == "Reparación de PCs"
