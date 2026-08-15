@@ -7,6 +7,7 @@ from werkzeug.exceptions import abort
 from models.favorite import Favorite
 from models.post import Categorias, MAX_IMAGENES_POR_POST, Post
 from models.post_image import PostImage
+from models.product import Product
 from models.report import Report
 from models.user import User
 from views.auth import login_required
@@ -201,11 +202,22 @@ def detail(id):
     """Detalle de un emprendimiento + reseñas."""
     post = Post.query.get_or_404(id)
     author = post.author_user
+    es_dueño = bool(g.user and g.user.id == post.author)
 
     # No cuenta las vistas del propio dueño revisando su publicacion.
-    if not (g.user and g.user.id == post.author):
+    if not es_dueño:
         post.views_count += 1
         db.session.commit()
+
+    # El catalogo. Los productos marcados como no disponibles los ve solo el
+    # dueño: para el visitante no existen, asi el emprendedor puede apagar algo
+    # que se le acabo sin tener que borrarlo y volver a cargarlo. El filtro va
+    # en la consulta y no en el template: si se filtrara al mostrar, los datos
+    # igual viajarian al HTML y cualquiera los leeria en el codigo fuente.
+    consulta_productos = Product.query.filter_by(post_id=id)
+    if not es_dueño:
+        consulta_productos = consulta_productos.filter_by(disponible=True)
+    productos = consulta_productos.order_by(Product.nombre).all()
 
     reviews = (
         Review.query
@@ -243,6 +255,8 @@ def detail(id):
             avg_rating=avg_rating,
             mi_review=mi_review,
             is_favorite=is_favorite,
+            productos=productos,
+            es_dueño=es_dueño,
             MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
 

@@ -454,3 +454,152 @@ def test_el_panel_muestra_el_precio_formateado(
     html = client.get("/productos/").get_data(as_text=True)
 
     assert "$ 1.500,50" in html
+
+
+# --- catalogo publico
+
+def test_el_catalogo_se_ve_en_la_pagina_del_emprendimiento(
+    client, crear_usuario, crear_post, crear_producto
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_producto(post.id, nombre="Pan de campo", precio="1500.50")
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Pan de campo" in html
+    assert "$ 1.500,50" in html
+
+
+def test_un_visitante_no_ve_los_productos_sin_stock(
+    client, crear_usuario, crear_post, crear_producto
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_producto(post.id, nombre="Pan disponible")
+    crear_producto(post.id, nombre="Torta agotada", disponible=False)
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Pan disponible" in html
+    # No alcanza con no mostrarlo: si viajara al HTML se leeria en el codigo
+    # fuente igual, por eso el filtro va en la consulta.
+    assert "Torta agotada" not in html
+
+
+def test_otro_usuario_logueado_tampoco_ve_los_sin_stock(
+    client, crear_usuario, crear_post, crear_producto, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_producto(post.id, nombre="Torta agotada", disponible=False)
+    curioso = crear_usuario(username="curioso")
+    login(curioso.id)
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Torta agotada" not in html
+
+
+def test_el_dueno_ve_tambien_los_sin_stock(
+    client, crear_usuario, crear_post, crear_producto, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_producto(post.id, nombre="Torta agotada", disponible=False)
+    login(autor.id)
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Torta agotada" in html
+
+
+def test_el_catalogo_de_un_emprendimiento_no_muestra_el_de_otro(
+    client, crear_usuario, crear_post, crear_producto
+):
+    autor = crear_usuario(username="autor")
+    panaderia = crear_post(autor.id, title="Panaderia")
+    huerta = crear_post(autor.id, title="Huerta")
+    crear_producto(panaderia.id, nombre="Pan de campo")
+    crear_producto(huerta.id, nombre="Lechuga")
+
+    html = client.get(f"/blog/{panaderia.id}").get_data(as_text=True)
+
+    assert "Pan de campo" in html
+    assert "Lechuga" not in html
+
+
+def test_sin_productos_el_visitante_no_ve_la_seccion(
+    client, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Qué vende" not in html
+
+
+def test_sin_productos_el_dueno_ve_la_invitacion_a_cargar(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    login(autor.id)
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Qué vende" in html
+    assert "/productos/nuevo" in html
+
+
+def test_el_visitante_no_ve_el_boton_de_editar_el_catalogo(
+    client, crear_usuario, crear_post, crear_producto
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_producto(post.id)
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Editar catálogo" not in html
+
+
+def test_el_catalogo_sale_ordenado_alfabeticamente(
+    client, crear_usuario, crear_post, crear_producto
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_producto(post.id, nombre="Torta")
+    crear_producto(post.id, nombre="Alfajores")
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert html.index("Alfajores") < html.index("Torta")
+
+
+def test_el_catalogo_no_dispara_una_consulta_por_producto(
+    client, db, crear_usuario, crear_post, crear_producto
+):
+    """El catalogo se trae con una sola consulta, no una por producto: sin eso,
+    un emprendimiento con 50 productos hace 50 SELECT para mostrar la pagina."""
+    from sqlalchemy import event
+
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    for numero in range(5):
+        crear_producto(post.id, nombre=f"Producto {numero}")
+
+    consultas = []
+
+    def contar(conn, cursor, statement, *args):
+        if "products" in statement.lower():
+            consultas.append(statement)
+
+    event.listen(db.engine, "before_cursor_execute", contar)
+    try:
+        client.get(f"/blog/{post.id}")
+    finally:
+        event.remove(db.engine, "before_cursor_execute", contar)
+
+    assert len(consultas) == 1
