@@ -161,6 +161,58 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 // =============================
+// SWITCH DE TEMA (CLARO / OSCURO)
+// =============================
+// El tema inicial ya lo resolvio el script inline del <head> de base.html
+// (tiene que correr antes del primer pintado para que no parpadee). Aca solo
+// esta el switch: cambiar el atributo, persistir la eleccion y mantener el
+// estado accesible del boton.
+const TEMA_STORAGE_KEY = "impulsar-tema";
+
+function temaGuardado() {
+    try {
+        const valor = localStorage.getItem(TEMA_STORAGE_KEY);
+        return valor === "dark" || valor === "light" ? valor : null;
+    } catch (e) {
+        return null; // modo privado / cookies bloqueadas
+    }
+}
+
+function aplicarTema(tema, boton) {
+    document.documentElement.setAttribute("data-theme", tema);
+    if (boton) boton.setAttribute("aria-pressed", tema === "dark" ? "true" : "false");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const boton = document.getElementById("theme-toggle");
+    if (!boton) return;
+
+    const temaActual = document.documentElement.getAttribute("data-theme") || "light";
+    boton.setAttribute("aria-pressed", temaActual === "dark" ? "true" : "false");
+
+    boton.addEventListener("click", () => {
+        const nuevo =
+            document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        aplicarTema(nuevo, boton);
+        try {
+            // A partir del primer click la eleccion manual pisa al sistema
+            // operativo, incluso si despues el SO cambia de tema.
+            localStorage.setItem(TEMA_STORAGE_KEY, nuevo);
+        } catch (e) {
+            // Sin persistencia el tema igual cambia, pero solo en esta pagina.
+        }
+    });
+
+    // Mientras el usuario nunca haya tocado el switch, seguimos al sistema en
+    // vivo: si cambia el tema del SO con la pestaña abierta, la pagina acompaña.
+    const consultaSO = window.matchMedia("(prefers-color-scheme: dark)");
+    consultaSO.addEventListener("change", (evento) => {
+        if (temaGuardado()) return; // hay eleccion explicita: no la pisamos
+        aplicarTema(evento.matches ? "dark" : "light", boton);
+    });
+});
+
+// =============================
 // MENÚ DE USUARIO EN LA NAVBAR
 // =============================
 document.addEventListener("DOMContentLoaded", () => {

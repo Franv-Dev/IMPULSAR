@@ -249,6 +249,50 @@ main {
     gap: 0.75rem;
 }
 
+/* SWITCH DE TEMA (claro / oscuro) */
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background-color: transparent;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.15s ease;
+}
+
+.theme-toggle:hover {
+    background-color: var(--color-primary-soft);
+    border-color: var(--color-primary-soft);
+    transform: translateY(-1px);
+}
+
+/* Se muestra solo el icono de la accion disponible: en claro la luna (ir a
+   oscuro), en oscuro el sol (volver a claro). */
+.theme-toggle__icon {
+    display: none;
+}
+
+[data-theme="light"] .theme-toggle__icon--light,
+[data-theme="dark"] .theme-toggle__icon--dark {
+    display: inline;
+}
+
+/* Sin JS no hay atributo data-theme y el sitio queda en claro (el default de
+   :root): sin esto el boton se veria vacio en vez de mostrar la luna. */
+:root:not([data-theme]) .theme-toggle__icon--light {
+    display: inline;
+}
+
 /* Toggle mobile */
 
 .navbar__toggle {
@@ -1027,7 +1071,17 @@ main {
         display: block;
         order: 2; /* Botón de hamburguesa va segundo */
     }
-    
+
+    /* Mismo order que la hamburguesa: quedan los dos en la fila de arriba, en
+       el orden del HTML (tema, despues hamburguesa), mientras los links y las
+       acciones se van a la fila de abajo con order 3. Asi el switch sigue
+       visible en mobile aunque el menu este cerrado. */
+    .theme-toggle {
+        order: 2;
+        margin-left: auto;
+        margin-right: 0.5rem;
+    }
+
     /* El logo va primero */
     .navbar__logo {
         order: 1;

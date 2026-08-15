@@ -20,6 +20,32 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
+    {# Tema claro/oscuro: esto tiene que correr ANTES de que cargue styles.css.
+       Si se resolviera el tema recien en main.js (al final del <body>), el
+       navegador ya habria pintado la pagina en claro y se veria un parpadeo
+       claro->oscuro en cada carga. Es inline y sin dependencias por lo mismo:
+       un <script src> seria una request mas antes del primer pintado.
+
+       Primera visita (nada en localStorage) => manda el sistema operativo.
+       Una vez que el usuario toca el switch, esa eleccion explicita pisa al
+       sistema para siempre, hasta que borre localStorage. #}
+    <script>
+        (function () {
+            try {
+                var guardado = window.localStorage.getItem("impulsar-tema");
+                var tema = (guardado === "dark" || guardado === "light")
+                    ? guardado
+                    : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+                document.documentElement.setAttribute("data-theme", tema);
+            } catch (e) {
+                /* localStorage puede tirar en modo privado o con cookies
+                   bloqueadas: sin tema explicito el sitio queda en claro,
+                   que es el default de :root. */
+                document.documentElement.setAttribute("data-theme", "light");
+            }
+        })();
+    </script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
 </head>
@@ -95,6 +121,22 @@
                 {% endif %}
             </div>
 
+
+            {# Va fuera de .navbar__actions a proposito: en mobile ese contenedor
+               se colapsa dentro del menu hamburguesa, y el switch de tema tiene
+               que quedar visible en todas las páginas y tamaños. #}
+            <button type="button"
+                    class="theme-toggle"
+                    id="theme-toggle"
+                    aria-label="Cambiar entre modo claro y oscuro"
+                    title="Cambiar entre modo claro y oscuro"
+                    aria-pressed="false">
+                {# Los dos iconos van siempre en el HTML y el CSS muestra el que
+                   corresponde segun data-theme. Si lo eligiera el JS, el icono
+                   parpadearia igual que parpadeaba la pagina. #}
+                <span class="theme-toggle__icon theme-toggle__icon--light" aria-hidden="true">🌙</span>
+                <span class="theme-toggle__icon theme-toggle__icon--dark" aria-hidden="true">☀️</span>
+            </button>
 
             <button type="button" class="navbar__toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navbar-links">
                 ☰
