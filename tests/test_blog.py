@@ -6,6 +6,7 @@ import pytest
 
 from models.post import Categorias, Post
 from models.review import Review
+from models.user import User
 from views.blog import get_post
 
 
@@ -926,3 +927,43 @@ def test_una_galeria_valida_si_deja_los_archivos(client, db, app, crear_usuario,
     assert post.image in nuevos
     for imagen in post.imagenes:
         assert imagen.filename in nuevos
+
+
+def test_borrar_un_usuario_borra_sus_emprendimientos_y_lo_que_cuelga(
+    db, crear_usuario, crear_post
+):
+    """Borrar un User tiene que llevarse sus posts y todo lo que depende de ellos.
+
+    Antes fallaba con IntegrityError: el ORM intentaba dejar los posts
+    huerfanos con un UPDATE posts SET author=NULL y la columna es NOT NULL.
+    Ahora la FK tiene ON DELETE CASCADE y la relacion, delete-orphan.
+    """
+    import datetime
+
+    from models.event import Event
+    from models.favorite import Favorite
+    from models.post_image import PostImage
+
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    # Cada cosa que cuelga de un emprendimiento, para que ninguna quede suelta.
+    db.session.add_all([
+        Review(post_id=post.id, user_id=cliente.id, rating=5, comment="Muy bueno"),
+        PostImage(post_id=post.id, filename="foto.png", posicion=0),
+        Event(post_id=post.id, titulo="Feria", fecha=datetime.date(2026, 9, 1)),
+        Favorite(user_id=cliente.id, post_id=post.id),
+    ])
+    db.session.commit()
+    post_id = post.id
+
+    db.session.delete(autor)
+    db.session.commit()
+
+    assert Post.query.get(post_id) is None
+    assert Review.query.filter_by(post_id=post_id).count() == 0
+    assert PostImage.query.filter_by(post_id=post_id).count() == 0
+    assert Event.query.filter_by(post_id=post_id).count() == 0
+    assert Favorite.query.filter_by(post_id=post_id).count() == 0
+    # El otro usuario no se toca: solo se va lo que colgaba del que se borro.
+    assert User.query.get(cliente.id) is not None

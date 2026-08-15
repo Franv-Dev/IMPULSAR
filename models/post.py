@@ -40,7 +40,15 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     # OJO: la columna se llama "author" pero guarda un id, no un objeto User.
     # Para acceder al usuario usar la relacion author_user de mas abajo.
-    author = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    # ondelete="CASCADE": si se borra un usuario se borran sus emprendimientos.
+    # Es coherente con que todo lo que cuelga de un emprendimiento (resenias,
+    # eventos, fotos, favoritos, mensajes, reportes) ya se va con el. Sin esto
+    # borrar un User terminaba en IntegrityError: el ORM intentaba dejar los
+    # posts huerfanos con author en NULL, y la columna es NOT NULL.
+    author = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
     title = db.Column(db.String(100))
     body = db.Column(db.Text)
     created = db.Column(db.DateTime, nullable=False, default=utcnow)
@@ -57,7 +65,23 @@ class Post(db.Model):
 
     # Evita tener que hacer User.query.get(post.author) a mano en cada vista
     # y template: con esto se escribe directamente post.author_user.username.
-    author_user = db.relationship("User", backref="posts", lazy="joined")
+    #
+    # cascade="all, delete-orphan" en el lado User.posts: la FK ya borra en la
+    # base, pero sin esto el ORM intenta dejar los posts huerfanos poniendo
+    # author en NULL cuando se borra un User desde la sesion, y la columna es
+    # NOT NULL (mismo caso que imagenes y eventos aca abajo).
+    #
+    # Sin passive_deletes a proposito, al reves que el resto: aca conviene que
+    # el ORM baje post por post, porque asi corren tambien las cascadas del
+    # ORM de cada Post (reviews, imagenes, eventos). reviews.post_id todavia
+    # no tiene ON DELETE CASCADE en la base, asi que si dejaramos que borre
+    # solo el motor, un usuario con un emprendimiento resenado volveria a
+    # fallar con IntegrityError.
+    author_user = db.relationship(
+        "User",
+        backref=db.backref("posts", cascade="all, delete-orphan"),
+        lazy="joined",
+    )
 
     # cascade="all, delete-orphan": la FK ya borra en la base, pero sin esto el
     # ORM intenta dejar las filas huerfanas poniendo post_id en NULL cuando se

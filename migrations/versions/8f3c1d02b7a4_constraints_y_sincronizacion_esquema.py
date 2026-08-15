@@ -151,7 +151,11 @@ def upgrade():
             sa.Column("latitude", sa.Float(), nullable=True),
             sa.Column("longitude", sa.Float(), nullable=True),
             sa.Column("address_street", sa.String(length=255), nullable=True),
-            sa.ForeignKeyConstraint(["author"], ["users.id"]),
+            # Con nombre explicito, por lo mismo que las de reviews mas abajo:
+            # sin nombre seria posts_ibfk_1 en MySQL y nada en SQLite, y la
+            # migracion que le agrega el ON DELETE CASCADE necesita dropearla.
+            sa.ForeignKeyConstraint(["author"], ["users.id"],
+                                    name="fk_posts_author_users"),
             sa.PrimaryKeyConstraint("id"),
         )
         op.create_index("ix_posts_author", "posts", ["author"])
