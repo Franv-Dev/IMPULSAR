@@ -27,14 +27,15 @@ emprendimientos, ni sus resenias sobre emprendimientos reales.
 
 Las fotos son imagenes generadas (un degrade con las iniciales), no fotos de
 verdad: son para ver como queda la maqueta, no para simular contenido real.
-Del disco solo borra los archivos que empiezan con PREFIJO_IMAGEN.
 
-OJO con eso ultimo si tenes mas de una base: las filas viven en la base pero
-las imagenes viven en static/uploads, que es una sola carpeta para todas.
-Correr --borrar apuntando a una base se lleva las imagenes de TODAS, y las
-otras quedan con las filas apuntando a archivos que ya no estan. Se arregla
-corriendo --reset sobre cada una, pero es mas facil no pisarlo: no uses este
-script contra una base descartable si la de desarrollo tiene seed cargado.
+Del disco borra exactamente los archivos que nombran las filas de seed de la
+base a la que esta conectado (Post.image, PostImage.filename y Product.foto),
+uno por uno. No barre el directorio buscando el prefijo, y la diferencia
+importa: static/uploads es una sola carpeta para todas las bases, asi que un
+glob de seed_* apuntando a una base se llevaba tambien las imagenes de otra
+base sembrada aparte, dejandola con las filas apuntando a archivos que ya no
+estaban. Por lo mismo, cada corrida les pone un sufijo propio al nombre (ver
+CORRIDA): dos bases sembradas por separado no comparten un solo archivo.
 
 Corre contra la base que diga el entorno, igual que la app: por defecto la de
 desarrollo del .env. Si esa base no esta en localhost, pide confirmacion
@@ -44,6 +45,7 @@ antes de tocar nada (ver _confirmar_si_no_es_local).
 import os
 import random
 import sys
+import uuid
 from datetime import date, time, timedelta
 from decimal import Decimal
 
@@ -71,6 +73,12 @@ from models.user import Roles, User  # noqa: E402
 # Marcas que identifican lo que creo este script.
 EMAIL_SEED = "@seed.impulsar.test"
 PREFIJO_IMAGEN = "seed_"
+
+# Sufijo distinto en cada corrida. Sin esto, dos bases sembradas por
+# separado generan los mismos nombres de archivo (seed_post_0.png y
+# compania) sobre la misma carpeta static/uploads: la segunda pisa las
+# imagenes de la primera, y borrar una deja a la otra sin fotos.
+CORRIDA = uuid.uuid4().hex[:8]
 
 # La misma para todos, y escrita aca a proposito: son datos de prueba de una
 # base de desarrollo, no hay nada que proteger y hace falta poder entrar.
@@ -118,6 +126,12 @@ def _generar_imagen(carpeta, nombre, texto, color):
     ruta = os.path.join(carpeta, nombre)
     imagen.save(ruta, format="PNG", optimize=True)
     return nombre
+
+
+def _nombre_de_imagen(que):
+    """seed_<corrida>_<que>.png. El prefijo para reconocerlas de un
+    vistazo en la carpeta; la corrida para que no se pisen entre bases."""
+    return f"{PREFIJO_IMAGEN}{CORRIDA}_{que}.png"
 
 
 def _iniciales(titulo):
@@ -313,6 +327,48 @@ def _usuarios_de_seed():
     return User.query.filter(User.email.like(f"%{EMAIL_SEED}")).all()
 
 
+def _archivos_de(ids_posts):
+    """Los nombres de archivo que referencian las filas de esos posts.
+
+    Se pregunta a la base en vez de barrer el directorio buscando el prefijo:
+    static/uploads es una sola carpeta para todas las bases, asi que un glob
+    de seed_* se lleva tambien las imagenes de otra base sembrada aparte. Los
+    nombres salen de las tres columnas que guardan uno: Post.image,
+    PostImage.filename y Product.foto.
+    """
+    if not ids_posts:
+        return []
+
+    nombres = []
+    for post in Post.query.filter(Post.id.in_(ids_posts)):
+        nombres.append(post.image)
+    for (nombre,) in db.session.query(PostImage.filename).filter(
+        PostImage.post_id.in_(ids_posts)
+    ):
+        nombres.append(nombre)
+    for (nombre,) in db.session.query(Product.foto).filter(
+        Product.post_id.in_(ids_posts)
+    ):
+        nombres.append(nombre)
+    return [n for n in nombres if n]
+
+
+def _borrar_archivos(app, nombres):
+    """Borra esos archivos del disco. Solo esos, por nombre exacto."""
+    carpeta = _carpeta_uploads(app)
+    borradas = 0
+    for nombre in nombres:
+        try:
+            os.remove(os.path.join(carpeta, nombre))
+            borradas += 1
+        except FileNotFoundError:
+            # Ya no estaba: nada que hacer, y no es un error.
+            pass
+        except OSError:
+            print(f"  (no se pudo borrar {nombre})")
+    return borradas
+
+
 def borrar(app):
     """Saca todo lo que dejo este script, y nada mas.
 
@@ -324,56 +380,53 @@ def borrar(app):
     usuarios = _usuarios_de_seed()
     if not usuarios:
         print("No hay datos de seed que borrar.")
-    else:
-        ids = [u.id for u in usuarios]
-        posts = Post.query.filter(Post.author.in_(ids)).all()
-        ids_posts = [p.id for p in posts]
+        # Y por lo tanto tampoco hay archivos: los nombres salen de las filas.
+        print("Ningún archivo tocado.")
+        return
 
-        def borrar_filas(modelo, condicion):
-            if ids_posts or ids:
-                modelo.query.filter(condicion).delete(synchronize_session=False)
+    ids = [u.id for u in usuarios]
+    posts = Post.query.filter(Post.author.in_(ids)).all()
+    ids_posts = [p.id for p in posts]
 
-        borrar_filas(Report, db.or_(
-            Report.reporter_id.in_(ids),
-            Report.post_id.in_(ids_posts or [0]),
-        ))
-        borrar_filas(Follow, db.or_(
-            Follow.follower_id.in_(ids), Follow.followed_id.in_(ids)
-        ))
-        borrar_filas(Favorite, db.or_(
-            Favorite.user_id.in_(ids), Favorite.post_id.in_(ids_posts or [0])
-        ))
-        borrar_filas(Message, db.or_(
-            Message.client_id.in_(ids), Message.sender_id.in_(ids),
-            Message.post_id.in_(ids_posts or [0]),
-        ))
-        borrar_filas(Review, db.or_(
-            Review.user_id.in_(ids), Review.post_id.in_(ids_posts or [0])
-        ))
-        db.session.flush()
+    # Los nombres de archivo se juntan ANTES de borrar las filas: despues no
+    # queda de donde sacarlos.
+    archivos = _archivos_de(ids_posts)
 
-        for post in posts:
-            # Por el ORM y no con delete() masivo, para que se lleve productos,
-            # eventos e imagenes con la cascada del modelo.
-            db.session.delete(post)
-        db.session.flush()
+    def borrar_filas(modelo, condicion):
+        modelo.query.filter(condicion).delete(synchronize_session=False)
 
-        for usuario in usuarios:
-            db.session.delete(usuario)
-        db.session.commit()
-        print(f"Borrados {len(usuarios)} usuarios de seed y sus {len(posts)} emprendimientos.")
+    borrar_filas(Report, db.or_(
+        Report.reporter_id.in_(ids),
+        Report.post_id.in_(ids_posts or [0]),
+    ))
+    borrar_filas(Follow, db.or_(
+        Follow.follower_id.in_(ids), Follow.followed_id.in_(ids)
+    ))
+    borrar_filas(Favorite, db.or_(
+        Favorite.user_id.in_(ids), Favorite.post_id.in_(ids_posts or [0])
+    ))
+    borrar_filas(Message, db.or_(
+        Message.client_id.in_(ids), Message.sender_id.in_(ids),
+        Message.post_id.in_(ids_posts or [0]),
+    ))
+    borrar_filas(Review, db.or_(
+        Review.user_id.in_(ids), Review.post_id.in_(ids_posts or [0])
+    ))
+    db.session.flush()
 
-    carpeta = _carpeta_uploads(app)
-    borradas = 0
-    if os.path.isdir(carpeta):
-        for nombre in os.listdir(carpeta):
-            if nombre.startswith(PREFIJO_IMAGEN):
-                try:
-                    os.remove(os.path.join(carpeta, nombre))
-                    borradas += 1
-                except OSError:
-                    print(f"  (no se pudo borrar {nombre})")
-    print(f"Borradas {borradas} imágenes de seed del disco.")
+    for post in posts:
+        # Por el ORM y no con delete() masivo, para que se lleve productos,
+        # eventos e imagenes con la cascada del modelo.
+        db.session.delete(post)
+    db.session.flush()
+
+    for usuario in usuarios:
+        db.session.delete(usuario)
+    db.session.commit()
+    print(f"Borrados {len(usuarios)} usuarios de seed y sus {len(posts)} emprendimientos.")
+
+    borradas = _borrar_archivos(app, archivos)
+    print(f"Borradas {borradas} imágenes del disco (de {len(archivos)} que referenciaban).")
 
 
 # --------------------------------------------------------------------- cargar
@@ -431,7 +484,7 @@ def cargar(app):
             latitude=CENTRO[0] + azar.uniform(-0.035, 0.035),
             longitude=CENTRO[1] + azar.uniform(-0.035, 0.035),
             image=_generar_imagen(
-                carpeta, f"{PREFIJO_IMAGEN}post_{numero}.png", _iniciales(titulo), color
+                carpeta, _nombre_de_imagen(f"post_{numero}"), _iniciales(titulo), color
             ),
         )
         post.views_count = azar.randint(4, 190)
@@ -443,7 +496,7 @@ def cargar(app):
             for extra in range(2):
                 post.imagenes.append(PostImage(
                     filename=_generar_imagen(
-                        carpeta, f"{PREFIJO_IMAGEN}post_{numero}_{extra}.png",
+                        carpeta, _nombre_de_imagen(f"post_{numero}_{extra}"),
                         _iniciales(titulo), tuple(min(255, c + 45 * (extra + 1)) for c in color),
                     ),
                     posicion=extra,
@@ -464,7 +517,7 @@ def cargar(app):
                 # Foto solo en los dos primeros de cada catalogo, para ver las
                 # dos variantes de tarjeta (con imagen y sin).
                 foto=_generar_imagen(
-                    carpeta, f"{PREFIJO_IMAGEN}prod_{numero}_{indice}.png",
+                    carpeta, _nombre_de_imagen(f"prod_{numero}_{indice}"),
                     _iniciales(nombre),
                     tuple(min(255, c + 25) for c in colores[titulo]),
                 ) if indice < 2 else None,
