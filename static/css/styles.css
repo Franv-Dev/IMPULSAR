@@ -439,6 +439,8 @@ main {
     background-color: var(--color-primary);
     top: 62px;
     right: 68px;
+    /* Sombra de marca: el halo tiene que ser del violeta del pin, no de la
+       sombra neutra de las tarjetas, asi que va hardcodeada en los dos temas. */
     box-shadow: 0 6px 16px rgba(88, 80, 236, 0.5);
 }
 
@@ -1412,7 +1414,7 @@ textarea.auth__input {
 
 .contact__email:hover {
     background-color: var(--color-primary);
-    color: var(--color-surface);
+    color: var(--color-on-primary);
     transform: translateY(-2px);
 }
 .legal {

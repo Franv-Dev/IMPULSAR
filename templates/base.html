@@ -18,33 +18,37 @@
     <meta property="og:url" content="{{ request.url }}">
     <meta name="twitter:card" content="summary_large_image">
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
     {# Tema claro/oscuro: esto tiene que correr ANTES de que cargue styles.css.
        Si se resolviera el tema recien en main.js (al final del <body>), el
        navegador ya habria pintado la pagina en claro y se veria un parpadeo
        claro->oscuro en cada carga. Es inline y sin dependencias por lo mismo:
-       un <script src> seria una request mas antes del primer pintado.
+       un <script src> seria una request mas antes del primer pintado. Va
+       arriba de los <link> a hosts externos (Google Fonts, unpkg) para que
+       resolver el tema no quede detras de una request de terceros.
 
        Primera visita (nada en localStorage) => manda el sistema operativo.
        Una vez que el usuario toca el switch, esa eleccion explicita pisa al
        sistema para siempre, hasta que borre localStorage. #}
     <script>
         (function () {
+            var guardado = null;
             try {
-                var guardado = window.localStorage.getItem("impulsar-tema");
-                var tema = (guardado === "dark" || guardado === "light")
-                    ? guardado
-                    : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-                document.documentElement.setAttribute("data-theme", tema);
+                guardado = window.localStorage.getItem("impulsar-tema");
             } catch (e) {
                 /* localStorage puede tirar en modo privado o con cookies
-                   bloqueadas: sin tema explicito el sitio queda en claro,
-                   que es el default de :root. */
-                document.documentElement.setAttribute("data-theme", "light");
+                   bloqueadas: lo tratamos como "no hay eleccion guardada" y
+                   seguimos al sistema, igual que temaGuardado() en main.js.
+                   Si aca cayeramos a claro, la pagina arrancaria en claro y
+                   saltaria a oscuro al primer change del SO. */
             }
+            var tema = (guardado === "dark" || guardado === "light")
+                ? guardado
+                : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            document.documentElement.setAttribute("data-theme", tema);
         })();
     </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
