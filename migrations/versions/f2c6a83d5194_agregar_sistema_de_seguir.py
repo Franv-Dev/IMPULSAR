@@ -43,7 +43,7 @@ def upgrade():
 
 
 def downgrade():
-    with op.batch_alter_table('follows', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_follows_followed_id'))
-        batch_op.drop_index(batch_op.f('ix_follows_follower_id'))
+    # Solo drop_table: los drop_index que pone alembic solo antes fallan sobre
+    # MySQL con "Cannot drop index 'ix_follows_...': needed in a foreign key
+    # constraint", porque esos indices sostienen las dos FK.
     op.drop_table('follows')

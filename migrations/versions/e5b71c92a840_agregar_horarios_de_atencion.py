@@ -42,6 +42,7 @@ def upgrade():
 
 
 def downgrade():
-    with op.batch_alter_table('horarios', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_horarios_user_id'))
+    # Solo drop_table: el drop_index que pone alembic solo antes falla sobre
+    # MySQL con "Cannot drop index 'ix_horarios_user_id': needed in a foreign
+    # key constraint", porque ese indice sostiene la FK.
     op.drop_table('horarios')

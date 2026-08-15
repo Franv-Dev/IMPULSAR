@@ -45,7 +45,8 @@ def upgrade():
 
 
 def downgrade():
-    with op.batch_alter_table('events', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_events_fecha'))
-        batch_op.drop_index(batch_op.f('ix_events_post_id'))
+    # Solo drop_table. Los drop_index que pone alembic solo antes fallan sobre
+    # MySQL con "Cannot drop index 'ix_events_post_id': needed in a foreign key
+    # constraint": ese indice sostiene la FK y no se puede sacar mientras la FK
+    # exista. Dropear la tabla se lleva sus indices igual, en los dos motores.
     op.drop_table('events')

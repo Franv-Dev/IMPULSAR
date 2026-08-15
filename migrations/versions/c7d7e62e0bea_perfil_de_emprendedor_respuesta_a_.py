@@ -67,10 +67,7 @@ def downgrade():
         batch_op.drop_column('replied_at')
         batch_op.drop_column('reply')
 
-    with op.batch_alter_table('messages', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_messages_post_id'))
-        batch_op.drop_index(batch_op.f('ix_messages_created'))
-        batch_op.drop_index(batch_op.f('ix_messages_client_id'))
-
+    # Solo drop_table: los drop_index que venian autogenerados fallan sobre
+    # MySQL con "Cannot drop index 'ix_messages_post_id': needed in a foreign
+    # key constraint", porque ese indice y el de client_id sostienen las FK.
     op.drop_table('messages')
-    # ### end Alembic commands ###
