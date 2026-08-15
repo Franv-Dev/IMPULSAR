@@ -2,18 +2,43 @@
 
 No es un one-off: se puede volver a correr. Todo lo que crea queda marcado
 (los usuarios con el dominio de EMAIL_SEED, las imagenes con el prefijo
-PREFIJO_IMAGEN), asi que `--reset` sabe exactamente que borrar y no toca nada
-que hayas cargado a mano.
+PREFIJO_IMAGEN), asi que `--reset` y `--borrar` saben exactamente que sacar.
 
     python scripts/seed.py            # carga, si todavia no hay datos de seed
     python scripts/seed.py --reset    # borra los de antes y vuelve a cargar
     python scripts/seed.py --borrar   # solo borra
 
+QUE BORRA EXACTAMENTE --borrar (y --reset antes de recargar)
+
+No es solo "lo que creo el seed". Borra los usuarios de seed, sus
+emprendimientos y todo lo que cuelga de esos emprendimientos, y eso incluye
+filas de usuarios REALES que apunten a contenido del seed:
+
+- la resenia que un usuario tuyo le dejo a un emprendimiento del seed,
+- el favorito que marco sobre uno de ellos,
+- los mensajes de esa conversacion,
+- el reporte que hizo sobre uno de esos posts,
+- y el follow a un usuario del seed (en cualquiera de las dos direcciones).
+
+No hay forma de evitarlo: si se va el emprendimiento, la resenia que apunta a
+el no puede quedar. Lo que si esta garantizado es lo otro: nada que no
+referencie contenido del seed se toca, ni un usuario real, ni sus
+emprendimientos, ni sus resenias sobre emprendimientos reales.
+
 Las fotos son imagenes generadas (un degrade con las iniciales), no fotos de
 verdad: son para ver como queda la maqueta, no para simular contenido real.
+Del disco solo borra los archivos que empiezan con PREFIJO_IMAGEN.
+
+OJO con eso ultimo si tenes mas de una base: las filas viven en la base pero
+las imagenes viven en static/uploads, que es una sola carpeta para todas.
+Correr --borrar apuntando a una base se lleva las imagenes de TODAS, y las
+otras quedan con las filas apuntando a archivos que ya no estan. Se arregla
+corriendo --reset sobre cada una, pero es mas facil no pisarlo: no uses este
+script contra una base descartable si la de desarrollo tiene seed cargado.
 
 Corre contra la base que diga el entorno, igual que la app: por defecto la de
-desarrollo del .env.
+desarrollo del .env. Si esa base no esta en localhost, pide confirmacion
+antes de tocar nada (ver _confirmar_si_no_es_local).
 """
 
 import os
@@ -22,6 +47,7 @@ import sys
 from datetime import date, time, timedelta
 from decimal import Decimal
 
+from sqlalchemy.engine import make_url
 from werkzeug.security import generate_password_hash
 
 # El script vive en scripts/, asi que la raiz del proyecto no esta en el path
@@ -515,13 +541,61 @@ def cargar(app):
     }
 
 
+HOSTS_LOCALES = {"", "localhost", "127.0.0.1", "::1", "host.docker.internal"}
+
+
+def _confirmar_si_no_es_local(app):
+    """Freno si la base no esta en esta maquina. Devuelve si seguir o no.
+
+    El script borra filas y sube archivos: contra la base de desarrollo eso es
+    lo que uno quiere, contra cualquier otra es un accidente. Y es un
+    accidente facil, porque el destino sale del entorno (DATABASE_URL o el
+    .env) y no de un argumento que uno escriba y vea.
+
+    Con --forzar-host no pregunta: es para poder usarlo en un contenedor o en
+    un CI, donde no hay nadie del otro lado para contestar.
+    """
+    host = make_url(app.config["SQLALCHEMY_DATABASE_URI"]).host or ""
+    if host.lower() in HOSTS_LOCALES:
+        return True
+
+    if "--forzar-host" in sys.argv:
+        print(f"Base remota ({host}), pero se paso --forzar-host. Sigo.")
+        return True
+
+    print(
+        f"\n  La base NO esta en esta maquina: {host}\n"
+        "  Este script borra filas y escribe archivos. Si esa base es de\n"
+        "  produccion o la comparte alguien mas, no la corras.\n"
+    )
+    try:
+        respuesta = input(f"  Escribí el nombre del host ({host}) para seguir: ")
+    except (EOFError, KeyboardInterrupt):
+        # Sin nadie del otro lado que conteste, la respuesta segura es que no.
+        # Se captura en vez de mirar sys.stdin.isatty() porque isatty() miente
+        # segun como se haya invocado el script: dice que hay terminal y el
+        # input() explota igual con EOFError.
+        print("\n  Sin respuesta. Cortado, no se tocó nada.")
+        print("  Si estás seguro, repetí el comando con --forzar-host.")
+        return False
+
+    if respuesta.strip() != host:
+        print("  No coincide. Cortado, no se tocó nada.")
+        return False
+    return True
+
+
 def main():
     reset = "--reset" in sys.argv
     solo_borrar = "--borrar" in sys.argv
 
     app = create_app("development")
     with app.app_context():
-        print(f"Base: {app.config['SQLALCHEMY_DATABASE_URI'].rsplit('@', 1)[-1]}")
+        destino = app.config["SQLALCHEMY_DATABASE_URI"].rsplit("@", 1)[-1]
+        print(f"Base: {destino}")
+
+        if not _confirmar_si_no_es_local(app):
+            return
 
         if reset or solo_borrar:
             borrar(app)
