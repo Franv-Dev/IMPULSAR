@@ -73,10 +73,18 @@ class Post(db.Model):
     #
     # Sin passive_deletes a proposito, al reves que el resto: aca conviene que
     # el ORM baje post por post, porque asi corren tambien las cascadas del
-    # ORM de cada Post (reviews, imagenes, eventos). reviews.post_id todavia
-    # no tiene ON DELETE CASCADE en la base, asi que si dejaramos que borre
-    # solo el motor, un usuario con un emprendimiento resenado volveria a
-    # fallar con IntegrityError.
+    # ORM de cada Post (reviews, imagenes, eventos). La que importa es
+    # reviews.post_id, que todavia no tiene ON DELETE CASCADE en la base: si
+    # dejaramos que borre solo el motor, un usuario con un emprendimiento
+    # resenado volveria a fallar con IntegrityError.
+    #
+    # Ojo, esto no alcanza para borrar cualquier usuario. Quedan 5 FK que
+    # apuntan a users sin CASCADE (favorites.user_id, messages.client_id,
+    # messages.sender_id, reports.reporter_id y reviews.user_id), y ninguna
+    # tiene cascada del ORM, asi que borrar un usuario que dejo una resenia,
+    # un favorito, un mensaje o un reporte en un emprendimiento ajeno sigue
+    # fallando, con passive_deletes o sin el. Queda pendiente a proposito: que
+    # se hace con eso es una decision de producto, no de esquema.
     author_user = db.relationship(
         "User",
         backref=db.backref("posts", cascade="all, delete-orphan"),

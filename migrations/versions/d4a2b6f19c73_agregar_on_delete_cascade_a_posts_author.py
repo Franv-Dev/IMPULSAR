@@ -61,6 +61,14 @@ def _sin_foreign_keys_en_sqlite():
     nadie.
 
     En MySQL no hace falta: ahi el batch es un ALTER TABLE comun, sin recrear.
+
+    Al salir se hace detach de la conexion en vez de volver a prender el
+    pragma: prenderlo no serviria de nada, porque en SQLite un PRAGMA es no-op
+    si ya hay una transaccion abierta, y a esa altura el batch ya emitio DML
+    (el INSERT que copia las filas). Al entrar todavia no hay transaccion, por
+    eso el OFF si toma. Con el detach, el pool descarta esta conexion en vez de
+    reusarla con las FK apagadas, y la proxima se abre de cero (db.py las
+    prende al conectar y al sacarlas del pool).
     """
     bind = op.get_bind()
     if bind.dialect.name != 'sqlite':
@@ -71,7 +79,13 @@ def _sin_foreign_keys_en_sqlite():
     try:
         yield
     finally:
-        bind.exec_driver_sql('PRAGMA foreign_keys=ON')
+        # detach() y no invalidate(): invalidar tira la conexion en el acto y
+        # alembic todavia la necesita para escribir alembic_version (probado:
+        # con invalidate() la version se queda en la revision anterior).
+        # detach la saca del pool pero la deja usable hasta que se cierre, que
+        # es justo lo que hace falta: nadie mas la va a recibir con las FK
+        # apagadas.
+        bind.detach()
 
 
 def upgrade():
