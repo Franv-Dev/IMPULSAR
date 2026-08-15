@@ -25,8 +25,14 @@ def upgrade():
         # Las dos FK con CASCADE: en MySQL el default es RESTRICT y borrar una
         # cuenta con follows fallaria con IntegrityError, el mismo bug de
         # reports (d09128dd029c) y favorites/messages (b30b4ba8d199).
-        sa.ForeignKeyConstraint(['follower_id'], ['users.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['followed_id'], ['users.id'], ondelete='CASCADE'),
+        # Y las dos con nombre explicito: sin nombre cada motor le pone el suyo
+        # (follows_ibfk_1/2 en MySQL, ninguno en SQLite), asi que una migracion
+        # posterior que necesite dropearlas no tendria un nombre que sirva en
+        # los dos, que es lo que rompio d09128dd029c (ver 22dd9d0).
+        sa.ForeignKeyConstraint(['follower_id'], ['users.id'], ondelete='CASCADE',
+                                name='fk_follows_follower_id_users'),
+        sa.ForeignKeyConstraint(['followed_id'], ['users.id'], ondelete='CASCADE',
+                                name='fk_follows_followed_id_users'),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('follower_id', 'followed_id', name='uq_follow_par'),
         sa.CheckConstraint('follower_id <> followed_id', name='ck_follow_no_a_si_mismo'),

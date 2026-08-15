@@ -28,7 +28,12 @@ def upgrade():
         sa.Column('cerrado', sa.Boolean(), nullable=False, server_default='0'),
         # CASCADE explicito: en MySQL el default es RESTRICT y borrar un
         # usuario con horarios cargados fallaria con IntegrityError.
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+        # El nombre tambien: sin nombre cada motor le pone el suyo
+        # (horarios_ibfk_1 en MySQL, ninguno en SQLite) y una migracion
+        # posterior que necesite dropearla no tendria un nombre que sirva en
+        # los dos, que es lo que rompio d09128dd029c (ver 22dd9d0).
+        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE',
+                                name='fk_horarios_user_id_users'),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('user_id', 'dia_semana', name='uq_horario_user_dia'),
     )

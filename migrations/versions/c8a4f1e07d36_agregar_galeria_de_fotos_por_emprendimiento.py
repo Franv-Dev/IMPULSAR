@@ -29,7 +29,12 @@ def upgrade():
         # emprendimiento con fotos falla con IntegrityError, el mismo bug que
         # ya se arreglo en reports (d09128dd029c) y en favorites/messages
         # (b30b4ba8d199).
-        sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ondelete='CASCADE'),
+        # Con nombre explicito ademas: sin nombre cada motor le pone el suyo
+        # (post_images_ibfk_1 en MySQL, ninguno en SQLite) y una migracion
+        # posterior que quiera dropearla no tendria un nombre que sirva en los
+        # dos, que es lo que rompio d09128dd029c (ver 22dd9d0).
+        sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ondelete='CASCADE',
+                                name='fk_post_images_post_id_posts'),
         sa.PrimaryKeyConstraint('id'),
     )
     with op.batch_alter_table('post_images', schema=None) as batch_op:

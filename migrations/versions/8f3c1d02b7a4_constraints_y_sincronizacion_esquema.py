@@ -181,8 +181,17 @@ def upgrade():
             sa.Column("rating", sa.Integer(), nullable=False),
             sa.Column("comment", sa.Text(), nullable=True),
             sa.Column("created", sa.DateTime(), nullable=False),
-            sa.ForeignKeyConstraint(["post_id"], ["posts.id"]),
-            sa.ForeignKeyConstraint(["user_id"], ["users.id"]),
+            # Con nombre explicito: sin nombre cada motor le pone el suyo
+            # (reviews_ibfk_1/2 en MySQL, ninguno en SQLite), asi que una
+            # migracion posterior que necesite dropearlas no tendria un nombre
+            # que sirva en los dos. Es lo que rompio d09128dd029c (ver 22dd9d0).
+            # Ojo: esto solo aplica a las bases que se crean desde cero. Una
+            # base que ya tenia la tabla (la rama else) sigue con los nombres
+            # que le puso su motor.
+            sa.ForeignKeyConstraint(["post_id"], ["posts.id"],
+                                    name="fk_reviews_post_id_posts"),
+            sa.ForeignKeyConstraint(["user_id"], ["users.id"],
+                                    name="fk_reviews_user_id_users"),
             sa.PrimaryKeyConstraint("id"),
             sa.UniqueConstraint("post_id", "user_id", name="uq_review_post_user"),
             sa.CheckConstraint("rating >= 1 AND rating <= 5", name="ck_review_rating"),

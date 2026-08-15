@@ -30,7 +30,12 @@ def upgrade():
         sa.Column('created', sa.DateTime(), nullable=False),
         # CASCADE explicito: en MySQL el default es RESTRICT y borrar un
         # emprendimiento con eventos cargados fallaria con IntegrityError.
-        sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ondelete='CASCADE'),
+        # El nombre tambien explicito: sin nombre, cada motor le pone el suyo
+        # (MySQL la llamaria events_ibfk_1, SQLite no le pone ninguno), asi que
+        # una migracion posterior que necesite dropearla no tendria un nombre
+        # que sirva en los dos. Es lo que rompio d09128dd029c (ver 22dd9d0).
+        sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ondelete='CASCADE',
+                                name='fk_events_post_id_posts'),
         sa.PrimaryKeyConstraint('id'),
     )
     with op.batch_alter_table('events', schema=None) as batch_op:
