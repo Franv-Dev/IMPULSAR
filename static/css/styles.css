@@ -1,20 +1,126 @@
-/* VARIABLES Y RESETEO BÁSICO */
+/* ==========================================================================
+   TEMA (claro / oscuro)
+   --------------------------------------------------------------------------
+   Patron elegido: atributo `data-theme` en <html> ("light" | "dark").
+
+   Lo setea el script inline del <head> de base.html ANTES de que cargue esta
+   hoja, leyendo localStorage y, si no hay nada guardado, prefers-color-scheme.
+   Eso evita el parpadeo claro->oscuro al cargar (FOUC). El switch del navbar
+   solo cambia ese mismo atributo y persiste la eleccion.
+
+   Usamos atributo y no una clase (.dark) para no mezclar el estado del tema
+   con las clases de layout del documento: se lee y escribe con un unico
+   setAttribute, y en CSS los dos bloques quedan con la misma especificidad
+   (0,1,0), asi que gana el que va despues (el oscuro).
+
+   REGLA al agregar estilos nuevos: nada de colores hardcodeados de aca para
+   abajo. Si hace falta un color nuevo, se agrega como token en LOS DOS
+   bloques; si solo se define en :root, el modo oscuro queda roto en silencio.
+   ========================================================================== */
+
 :root {
+    color-scheme: light;
+
     --color-primary: #6C63FF;
+    --color-primary-hover: #5C55E6;
     --color-primary-soft: #E3E0FF;
+    /* Texto/iconos que van encima del violeta solido (botones, avatar). */
+    --color-on-primary: #FFFFFF;
+
     --color-bg: #F8F9FB;
-    --color-white: #FFFFFF;
+    --color-surface: #FFFFFF;
+    --color-surface-alt: #F3F4F6;
+    --color-image-bg: #F8F8F8;
+
     --color-text: #1F2933;
+    --color-text-soft: #4B5563;
     --color-muted: #6B7280;
     --color-border: #E5E7EB;
 
+    --color-input-bg: #F9FAFB;
+    --color-input-bg-focus: #FFFFFF;
+
+    --color-hero-from: #F9FAFB;
+    --color-hero-to: #EEF2FF;
+    --color-hero-illustration: #EEF2FF;
+
+    --color-success-bg: #DCFCE7;
+    --color-success-text: #15803D;
+    --color-success-strong: #16A34A;
+
+    --color-danger-bg: #FEE2E2;
+    --color-danger-text: #B91C1C;
+    --color-danger-strong: #991B1B;
+    --color-danger-border: #FCA5A5;
+    --color-danger-surface: #FEF2F2;
+    --color-heart: #DC2626;
+
+    --color-star: #FBBF24;
+    --color-star-empty: #E5E7EB;
+
     --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.10);
     --shadow-light: 0 4px 12px rgba(15, 23, 42, 0.08);
+    --shadow-card: 0 8px 20px rgba(15, 23, 42, 0.06);
+    --shadow-navbar: 0 1px 4px rgba(15, 23, 42, 0.06);
 
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
 }
+
+/* Paleta oscura: no es "todo gris invertido". Los fondos mantienen la tirada
+   violeta de IMPULSAR (azul-violeta desaturado, no negro neutro) y el primario
+   se aclara, porque el #6C63FF original sobre fondo oscuro queda apagado y con
+   poco contraste. Como el violeta claro es luminoso, el texto que va ENCIMA
+   del primario pasa a ser oscuro (--color-on-primary). */
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-primary: #9B93FF;
+    --color-primary-hover: #B3ACFF;
+    --color-primary-soft: #2E2950;
+    --color-on-primary: #16132A;
+
+    --color-bg: #141222;
+    --color-surface: #1D1A2E;
+    --color-surface-alt: #292440;
+    --color-image-bg: #16132A;
+
+    --color-text: #ECEAF7;
+    --color-text-soft: #C6C2DA;
+    --color-muted: #A29DBA;
+    --color-border: #342E4D;
+
+    --color-input-bg: #221E38;
+    --color-input-bg-focus: #2A2544;
+
+    --color-hero-from: #191630;
+    --color-hero-to: #221D3D;
+    --color-hero-illustration: #221D3D;
+
+    --color-success-bg: #14321F;
+    --color-success-text: #7EE2A8;
+    --color-success-strong: #4ADE80;
+
+    --color-danger-bg: #3A1C22;
+    --color-danger-text: #FCA5A5;
+    --color-danger-strong: #FCA5A5;
+    --color-danger-border: #7F2A34;
+    --color-danger-surface: #2C1720;
+    --color-heart: #F87171;
+
+    --color-star: #FBBF24;
+    --color-star-empty: #3A3454;
+
+    /* Sobre fondo oscuro una sombra azulada translucida no se ve: hace falta
+       negro y bastante mas opacidad para que las tarjetas sigan despegando. */
+    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.55);
+    --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.45);
+    --shadow-card: 0 8px 20px rgba(0, 0, 0, 0.40);
+    --shadow-navbar: 0 1px 4px rgba(0, 0, 0, 0.50);
+}
+
+/* RESETEO BÁSICO */
 
 *,
 *::before,
@@ -53,8 +159,8 @@ main {
     position: sticky;
     top: 0;
     z-index: 20;
-    background-color: var(--color-white);
-    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-navbar);
 }
 
 .navbar__content {
@@ -177,18 +283,18 @@ main {
 
 .btn--primary {
     background-color: var(--color-primary);
-    color: var(--color-white);
+    color: var(--color-on-primary);
     box-shadow: var(--shadow-light);
 }
 
 .btn--primary:hover {
     transform: translateY(-1px);
     box-shadow: var(--shadow-soft);
-    background-color: #5c55e6;
+    background-color: var(--color-primary-hover);
 }
 
 .btn--secondary {
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     color: var(--color-text);
     border-color: var(--color-border);
 }
@@ -211,7 +317,7 @@ main {
 
 .hero {
     padding: 3.5rem 0 3rem;
-    background: linear-gradient(135deg, #F9FAFB 0%, #EEF2FF 100%);
+    background: linear-gradient(135deg, var(--color-hero-from) 0%, var(--color-hero-to) 100%);
 }
 
 .hero__content {
@@ -257,7 +363,7 @@ main {
     width: 320px;
     height: 220px;
     border-radius: var(--radius-lg);
-    background: #EEF2FF;
+    background: var(--color-hero-illustration);
     box-shadow: var(--shadow-light);
     overflow: hidden;
 }
@@ -265,7 +371,7 @@ main {
 .hero-illustration__card {
     position: absolute;
     border-radius: var(--radius-md);
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     box-shadow: var(--shadow-light);
 }
 
@@ -301,7 +407,7 @@ main {
     align-items: center;
     flex-wrap: wrap;
     gap: 1rem;
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border-radius: 999px;
     padding: 0.5rem 0.75rem;
     box-shadow: var(--shadow-soft);
@@ -389,9 +495,9 @@ main {
 /* CARD EMPRENDIMIENTO */
 
 .card {
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border-radius: var(--radius-lg);
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    box-shadow: var(--shadow-card);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -420,7 +526,7 @@ main {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    background-color: #f8f8f8;
+    background-color: var(--color-image-bg);
 }
 
 .card__body {
@@ -446,8 +552,8 @@ main {
 }
 
 .badge--author {
-    background-color: #F3F4F6;
-    color: #4B5563;
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
 }
 
 /* Formularios que deben comportarse como un boton dentro de una fila
@@ -537,13 +643,13 @@ main {
 }
 
 .estado-atencion--abierto {
-    background-color: #DCFCE7;
-    color: #15803D;
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
 }
 
 .estado-atencion--cerrado {
-    background-color: #FEE2E2;
-    color: #B91C1C;
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-text);
 }
 
 .profile-horarios {
@@ -638,7 +744,7 @@ main {
     padding: 0.4rem 0;
     border-radius: var(--radius-md);
     background-color: var(--color-primary);
-    color: #fff;
+    color: var(--color-on-primary);
     line-height: 1.1;
 }
 
@@ -692,7 +798,7 @@ main {
        item es una tarjeta cerrada, no una fila. */
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    background-color: #fff;
+    background-color: var(--color-surface);
     box-shadow: var(--shadow-soft);
 }
 
@@ -799,7 +905,7 @@ main {
     padding: 1rem;
     border: 1px solid var(--color-border);
     border-radius: 12px;
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
 }
 
 .stat-card__value {
@@ -818,7 +924,7 @@ main {
 .footer {
     padding: 1.75rem 0;
     border-top: 1px solid var(--color-border);
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
 }
 
 .footer__content {
@@ -988,7 +1094,7 @@ PÁGINAS DE AUTENTICACIÓN
 .auth__card {
     width: 100%;
     max-width: 420px;
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-soft);
     padding: 2rem 2.25rem;
@@ -1010,11 +1116,13 @@ PÁGINAS DE AUTENTICACIÓN
     margin-bottom: 1rem;
 }
 
+/* Es el unico estilo de flash message del sitio: todas las vistas renderizan
+   get_flashed_messages() con esta clase, asi que alcanza con tematizarla aca. */
 .auth__alert {
     padding: 0.6rem 0.8rem;
     border-radius: var(--radius-md);
-    background-color: #fee2e2;
-    color: #b91c1c;
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-text);
     font-size: 0.85rem;
 }
 
@@ -1042,13 +1150,18 @@ PÁGINAS DE AUTENTICACIÓN
     font-size: 0.9rem;
     font-family: inherit;
     outline: none;
-    background-color: #f9fafb;
+    color: var(--color-text);
+    background-color: var(--color-input-bg);
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.auth__input::placeholder {
+    color: var(--color-muted);
 }
 
 .auth__input:focus {
     border-color: var(--color-primary);
-    background-color: #ffffff;
+    background-color: var(--color-input-bg-focus);
     box-shadow: 0 0 0 1px var(--color-primary-soft);
 }
 
@@ -1120,7 +1233,7 @@ textarea.auth__input {
     height: 28px;
     border-radius: 50%;
     background-color: var(--color-primary);
-    color: var(--color-white);
+    color: var(--color-on-primary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1145,7 +1258,7 @@ textarea.auth__input {
     right: 0;
     top: calc(100% + 0.5rem);
     min-width: 160px;
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-soft);
     padding: 0.4rem 0;
@@ -1172,12 +1285,12 @@ textarea.auth__input {
 }
 
 .user-menu__item--danger {
-    color: #b91c1c;
+    color: var(--color-danger-text);
 }
 
 .user-menu__item--danger:hover {
-    background-color: #fee2e2;
-    color: #991b1b;
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-strong);
 }
 
 .badge--notif {
@@ -1186,8 +1299,9 @@ textarea.auth__input {
     padding: 0.05rem 0.35rem;
     margin-left: 0.35rem;
     border-radius: 999px;
+    /* Rojo fijo en los dos temas: es un indicador de alerta, no una superficie. */
     background-color: #DC2626;
-    color: var(--color-white);
+    color: #FFFFFF;
     font-size: 0.7rem;
     font-weight: 700;
     text-align: center;
@@ -1241,7 +1355,7 @@ textarea.auth__input {
 
 .contact__email:hover {
     background-color: var(--color-primary);
-    color: var(--color-white);
+    color: var(--color-surface);
     transform: translateY(-2px);
 }
 .legal {
@@ -1275,7 +1389,7 @@ textarea.auth__input {
 
 .rating label {
     cursor: pointer;
-    color: #E5E7EB; /* gris clarito */
+    color: var(--color-star-empty); /* estrella sin marcar */
     transition: color 0.15s ease;
 }
 
@@ -1283,7 +1397,7 @@ textarea.auth__input {
 .rating input:checked ~ label,
 .rating label:hover,
 .rating label:hover ~ label {
-    color: #FBBF24; /* amarillo tipo estrella */
+    color: var(--color-star); /* amarillo tipo estrella */
 }
 
 /* 
@@ -1312,7 +1426,7 @@ textarea.auth__input {
 }
 .post-rating__stars {
     font-size: 1.1rem;
-    color: #FBBF24;
+    color: var(--color-star);
 }
 .post-rating__score {
     font-weight: 600;
@@ -1356,7 +1470,7 @@ textarea.auth__input {
 }
 
 .review-card {
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border-radius: var(--radius-md);
     padding: 1.25rem 1.5rem;
     box-shadow: var(--shadow-light);
@@ -1385,7 +1499,7 @@ textarea.auth__input {
 }
 
 .review-card__stars {
-    color: #FBBF24; /* Amarillo estrella */
+    color: var(--color-star); /* Amarillo estrella */
     font-size: 1.1rem;
     flex-shrink: 0; /* Evita que las estrellas se rompan */
 }
@@ -1393,7 +1507,7 @@ textarea.auth__input {
 .review-card__comment {
     margin: 0;
     font-size: 0.9rem;
-    color: #4B5563; /* Un gris un poco más oscuro */
+    color: var(--color-text-soft);
     line-height: 1.5;
 }
 
@@ -1417,7 +1531,7 @@ textarea.auth__input {
 
 .review-card__reply p {
     margin: 0.25rem 0 0;
-    color: #4B5563;
+    color: var(--color-text-soft);
     line-height: 1.5;
 }
 
@@ -1475,7 +1589,7 @@ textarea.auth__input {
 .profile-container {
     max-width: 900px;
     margin: 2rem auto 3rem auto;
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-soft);
@@ -1501,7 +1615,7 @@ textarea.auth__input {
     width: 120px;
     height: 120px;
     border-radius: 50%;
-    border: 4px solid var(--color-white);
+    border: 4px solid var(--color-surface);
     overflow: hidden;
     box-shadow: var(--shadow-light);
 }
@@ -1563,7 +1677,7 @@ textarea.auth__input {
 }
 
 .enlace-biografia:hover {
-    color: #5c55e6; /* Tono más oscuro de --color-primary */
+    color: var(--color-primary-hover);
     text-decoration: underline;
 }
 
@@ -1662,7 +1776,7 @@ textarea.auth__input {
 .profile-map-section {
     padding: 2rem;
     border-top: 1px solid var(--color-border);
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
 }
 
 .profile-map-section h2 {
@@ -1698,7 +1812,7 @@ textarea.auth__input {
     margin: 3rem auto;
     padding: 2.5rem 2rem;
     text-align: center;
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-light);
 }
@@ -1745,7 +1859,7 @@ textarea.auth__input {
     padding: 0.45rem 1rem;
     border-radius: 999px;
     border: 1px solid var(--color-border);
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     color: var(--color-text);
     font-size: 0.85rem;
     text-decoration: none;
@@ -1778,7 +1892,7 @@ textarea.auth__input {
 
 .chat-inbox__item {
     display: block;
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     padding: 1rem 1.25rem;
@@ -1819,7 +1933,7 @@ textarea.auth__input {
     overflow-y: auto;
     margin-top: 1rem;
     padding: 1rem;
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
 }
@@ -1887,7 +2001,7 @@ textarea.auth__input {
 }
 
 .favorite-btn--active {
-    color: #DC2626;
+    color: var(--color-heart);
 }
 
 /* === Compartir === */
@@ -1911,7 +2025,7 @@ textarea.auth__input {
 }
 
 .share-btn--copied {
-    color: #16A34A;
+    color: var(--color-success-strong);
     font-size: 0.75rem;
     font-weight: 600;
 }
@@ -1926,7 +2040,7 @@ textarea.auth__input {
 
 .admin-metric {
     flex: 1 1 160px;
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     padding: 1.25rem;
@@ -1935,8 +2049,8 @@ textarea.auth__input {
 }
 
 .admin-metric--alert {
-    border-color: #FCA5A5;
-    background-color: #FEF2F2;
+    border-color: var(--color-danger-border);
+    background-color: var(--color-danger-surface);
 }
 
 .admin-metric__value {
@@ -1960,7 +2074,7 @@ textarea.auth__input {
 
 .admin-table-wrapper {
     overflow-x: auto;
-    background-color: var(--color-white);
+    background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-light);
@@ -2000,13 +2114,13 @@ textarea.auth__input {
 }
 
 .admin-badge--ok {
-    background-color: #DCFCE7;
-    color: #15803D;
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
 }
 
 .admin-badge--danger {
-    background-color: #FEE2E2;
-    color: #991B1B;
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-strong);
 }
 
 /* === Reportar contenido === */
@@ -2019,6 +2133,6 @@ textarea.auth__input {
 }
 
 .report-link:hover {
-    color: #991B1B;
+    color: var(--color-danger-strong);
     text-decoration: underline;
 }
