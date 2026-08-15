@@ -23,6 +23,7 @@ from config import get_config
 from db import db
 from services.eventos import formatear_fecha, mes_corto
 from services.formatting import render_biography
+from services.precios import formatear as formatear_precio
 from services.uploads import MAX_IMAGE_BYTES
 
 # Blueprints
@@ -33,6 +34,7 @@ from views.eventos import eventos
 from views.messages import messages
 from views.pages import pages
 from views.posts_api import posts_api
+from views.products import products
 from views.profile import profile
 
 # Extensiones. Se crean vacias aca y se enlazan a la app dentro de create_app,
@@ -78,6 +80,7 @@ def _registrar_blueprints(app):
     app.register_blueprint(blog)
     app.register_blueprint(eventos)
     app.register_blueprint(posts_api)
+    app.register_blueprint(products)
     app.register_blueprint(pages)
     app.register_blueprint(profile)
     app.register_blueprint(messages)
@@ -100,6 +103,10 @@ def _registrar_filtros_jinja(app):
     # como variable de contexto desde cada vista.
     app.jinja_env.filters["fecha_evento"] = formatear_fecha
     app.jinja_env.filters["mes_corto"] = mes_corto
+    # "$ 1.500,50", con los separadores de aca (ver services/precios.py).
+    # Filtro y no property del modelo: como mostrar un precio es de la
+    # vista, y asi lo usan igual el catalogo y el panel.
+    app.jinja_env.filters["precio"] = formatear_precio
 
 
 def _registrar_manejadores_de_error(app):

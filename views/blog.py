@@ -17,7 +17,9 @@ from sqlalchemy import case, func
 from sqlalchemy.exc import IntegrityError
 from services.geocoding import get_coordinates_from_address
 from services.ratings import query_posts_con_rating, serializar_con_rating
-from services.uploads import ALLOWED_EXTENSIONS, allowed_file, save_post_image
+from services.uploads import (
+    ALLOWED_EXTENSIONS, allowed_file, borrar_de_disco, save_post_image
+)
 
 logger = logging.getLogger(__name__)
 
@@ -84,16 +86,13 @@ def _guardar_galeria(post, archivos, upload_dir, ya_ocupados):
 
 
 def _borrar_de_disco(upload_dir, nombres):
-    """Borra archivos que quedaron escritos por un intento que fallo."""
-    for nombre in nombres:
-        if not nombre:
-            continue
-        try:
-            os.remove(os.path.join(upload_dir, nombre))
-        except OSError:
-            # Que no se pueda borrar no justifica romperle el formulario al
-            # usuario: queda el archivo suelto y el aviso en el log.
-            logger.warning("No se pudo borrar la imagen huerfana %s", nombre)
+    """Borra archivos que quedaron escritos por un intento que fallo.
+
+    La implementacion se mudo a services/uploads.py cuando el catalogo de
+    productos necesito lo mismo. Se mantiene el nombre local porque es el que
+    usan las llamadas de este modulo.
+    """
+    borrar_de_disco(upload_dir, nombres)
 
 
 def _distancia_km(lat, lon):

@@ -1,5 +1,6 @@
 """Catalogo de productos de un emprendimiento."""
 
+import os
 from decimal import Decimal
 
 import pytest
@@ -154,3 +155,302 @@ def test_el_tope_por_emprendimiento_es_un_numero_razonable():
     """No es configurable todavia (ver models/product.py), pero que quede
     fijado en un test: bajarlo de golpe romperia catalogos ya cargados."""
     assert MAX_PRODUCTOS_POR_POST == 50
+
+
+# --- ABM: helpers
+
+@pytest.fixture
+def emprendedor_con_post(crear_usuario, crear_post, login):
+    """Un usuario logueado con un emprendimiento propio."""
+
+    def _crear(username="tomy"):
+        usuario = crear_usuario(username=username)
+        post = crear_post(usuario.id)
+        login(usuario.id)
+        return usuario, post
+
+    return _crear
+
+
+def _imagen(nombre="producto.png", color="blue"):
+    """Un archivo de imagen valido, listo para subir en un multipart."""
+    import io
+
+    from PIL import Image
+    from werkzeug.datastructures import FileStorage
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (10, 10), color).save(buffer, format="PNG")
+    buffer.seek(0)
+    return FileStorage(stream=buffer, filename=nombre, content_type="image/png")
+
+
+def _ruta_de_upload(app, nombre):
+    return os.path.join(app.root_path, "static", "uploads", nombre)
+
+
+# --- ABM: alta
+
+def test_agregar_un_producto_lo_guarda(client, emprendedor_con_post):
+    _usuario, post = emprendedor_con_post()
+
+    respuesta = client.post("/productos/nuevo", data={
+        "post_id": post.id,
+        "nombre": "Pan de campo",
+        "descripcion": "De masa madre",
+        "precio": "1.500,50",
+        "disponible": "on",
+    })
+
+    assert respuesta.status_code == 302
+    producto = Product.query.filter_by(post_id=post.id).one()
+    assert producto.nombre == "Pan de campo"
+    assert producto.precio == Decimal("1500.50")
+    assert producto.disponible is True
+
+
+def test_un_producto_sin_marcar_disponible_queda_sin_stock(client, emprendedor_con_post):
+    """El checkbox sin marcar directamente no viaja en el POST."""
+    _usuario, post = emprendedor_con_post()
+
+    client.post("/productos/nuevo", data={
+        "post_id": post.id, "nombre": "Torta", "precio": "5000",
+    })
+
+    assert Product.query.one().disponible is False
+
+
+@pytest.mark.parametrize("campos", [
+    {"nombre": "", "precio": "1500"},
+    {"nombre": "Pan", "precio": ""},
+    {"nombre": "Pan", "precio": "gratis"},
+    {"nombre": "Pan", "precio": "-5"},
+])
+def test_un_producto_invalido_no_se_guarda(client, emprendedor_con_post, campos):
+    _usuario, post = emprendedor_con_post()
+
+    respuesta = client.post("/productos/nuevo", data={"post_id": post.id, **campos})
+
+    assert respuesta.status_code == 200  # vuelve al formulario
+    assert Product.query.count() == 0
+
+
+def test_no_se_puede_colgar_un_producto_del_emprendimiento_de_otro(
+    client, crear_usuario, crear_post, login
+):
+    ajeno = crear_usuario(username="ajeno")
+    post_ajeno = crear_post(ajeno.id)
+    intruso = crear_usuario(username="intruso")
+    crear_post(intruso.id)
+    login(intruso.id)
+
+    client.post("/productos/nuevo", data={
+        "post_id": post_ajeno.id, "nombre": "Pan", "precio": "1500",
+    })
+
+    assert Product.query.filter_by(post_id=post_ajeno.id).count() == 0
+
+
+def test_sin_emprendimientos_no_se_puede_cargar_un_producto(client, crear_usuario, login):
+    usuario = crear_usuario(username="sin_posts")
+    login(usuario.id)
+
+    respuesta = client.post("/productos/nuevo", data={
+        "post_id": 1, "nombre": "Pan", "precio": "1500",
+    })
+
+    assert respuesta.status_code == 302
+    assert Product.query.count() == 0
+
+
+def test_el_abm_requiere_estar_logueado(client):
+    for url in ("/productos/", "/productos/nuevo"):
+        assert client.get(url).status_code == 302
+
+
+def test_no_se_pueden_pasar_del_maximo(client, emprendedor_con_post, crear_producto):
+    _usuario, post = emprendedor_con_post()
+    for numero in range(MAX_PRODUCTOS_POR_POST):
+        crear_producto(post.id, nombre=f"Producto {numero:03d}")
+
+    respuesta = client.post("/productos/nuevo", data={
+        "post_id": post.id, "nombre": "Uno de mas", "precio": "1500",
+    })
+
+    assert respuesta.status_code == 200
+    assert Product.query.count() == MAX_PRODUCTOS_POR_POST
+
+
+# --- ABM: edicion y borrado
+
+def test_el_dueno_edita_su_producto(client, db, emprendedor_con_post, crear_producto):
+    _usuario, post = emprendedor_con_post()
+    producto = crear_producto(post.id, nombre="Pan", precio="1500.00")
+
+    client.post(f"/productos/{producto.id}/editar", data={
+        "post_id": post.id, "nombre": "Pan integral",
+        "precio": "1800", "disponible": "on",
+    })
+
+    db.session.refresh(producto)
+    assert producto.nombre == "Pan integral"
+    assert producto.precio == Decimal("1800.00")
+
+
+def test_editar_sin_tocar_el_precio_no_lo_cambia(
+    client, db, emprendedor_con_post, crear_producto
+):
+    """El formulario precarga el precio con texto_para_formulario: reenviarlo
+    tal cual tiene que dejar el mismo Decimal."""
+    _usuario, post = emprendedor_con_post()
+    producto = crear_producto(post.id, precio="1234.56")
+
+    pagina = client.get(f"/productos/{producto.id}/editar").get_data(as_text=True)
+    assert 'value="1234.56"' in pagina
+
+    client.post(f"/productos/{producto.id}/editar", data={
+        "post_id": post.id, "nombre": producto.nombre,
+        "precio": "1234.56", "disponible": "on",
+    })
+
+    db.session.refresh(producto)
+    assert producto.precio == Decimal("1234.56")
+
+
+def test_el_dueno_elimina_su_producto(client, emprendedor_con_post, crear_producto):
+    _usuario, post = emprendedor_con_post()
+    producto = crear_producto(post.id)
+
+    respuesta = client.post(f"/productos/{producto.id}/eliminar")
+
+    assert respuesta.status_code == 302
+    assert Product.query.count() == 0
+
+
+def test_un_extrano_no_puede_editar_un_producto_ajeno(
+    client, db, crear_usuario, crear_post, crear_producto, login
+):
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    producto = crear_producto(post.id, nombre="Pan")
+    intruso = crear_usuario(username="intruso")
+    crear_post(intruso.id)
+    login(intruso.id)
+
+    respuesta = client.post(f"/productos/{producto.id}/editar", data={
+        "post_id": post.id, "nombre": "Robado", "precio": "1",
+    })
+
+    assert respuesta.status_code == 302
+    db.session.refresh(producto)
+    assert producto.nombre == "Pan"
+
+
+def test_un_extrano_no_puede_eliminar_un_producto_ajeno(
+    client, crear_usuario, crear_post, crear_producto, login
+):
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    producto = crear_producto(post.id)
+    intruso = crear_usuario(username="intruso")
+    login(intruso.id)
+
+    respuesta = client.post(f"/productos/{producto.id}/eliminar")
+
+    assert respuesta.status_code == 302
+    assert Product.query.count() == 1
+
+
+def test_eliminar_no_acepta_get(client, emprendedor_con_post, crear_producto):
+    """Un GET no debe tener efectos: lo puede disparar un prefetch o un crawler."""
+    _usuario, post = emprendedor_con_post()
+    producto = crear_producto(post.id)
+
+    respuesta = client.get(f"/productos/{producto.id}/eliminar")
+
+    assert respuesta.status_code == 405
+    assert Product.query.count() == 1
+
+
+# --- ABM: fotos en disco
+
+def test_eliminar_un_producto_borra_su_foto_del_disco(client, app, emprendedor_con_post):
+    """El bug de fotos huerfanas que ya se arreglo en la galeria: la fila se va
+    y el archivo queda ocupando disco para siempre."""
+    _usuario, post = emprendedor_con_post()
+    client.post("/productos/nuevo", data={
+        "post_id": post.id, "nombre": "Pan", "precio": "1500", "foto": _imagen(),
+    }, content_type="multipart/form-data")
+    producto = Product.query.one()
+    ruta = _ruta_de_upload(app, producto.foto)
+    assert os.path.exists(ruta)
+
+    client.post(f"/productos/{producto.id}/eliminar")
+
+    assert not os.path.exists(ruta)
+
+
+def test_cambiar_la_foto_borra_la_anterior(client, app, emprendedor_con_post):
+    _usuario, post = emprendedor_con_post()
+    client.post("/productos/nuevo", data={
+        "post_id": post.id, "nombre": "Pan", "precio": "1500",
+        "foto": _imagen("vieja.png"),
+    }, content_type="multipart/form-data")
+    producto = Product.query.one()
+    vieja = _ruta_de_upload(app, producto.foto)
+
+    client.post(f"/productos/{producto.id}/editar", data={
+        "post_id": post.id, "nombre": "Pan", "precio": "1500",
+        "disponible": "on", "foto": _imagen("nueva.png"),
+    }, content_type="multipart/form-data")
+
+    assert not os.path.exists(vieja)
+    assert os.path.exists(_ruta_de_upload(app, Product.query.one().foto))
+
+
+def test_una_foto_invalida_no_guarda_el_producto(client, emprendedor_con_post):
+    import io
+
+    from werkzeug.datastructures import FileStorage
+
+    _usuario, post = emprendedor_con_post()
+    rota = FileStorage(
+        stream=io.BytesIO(b"esto no es una imagen"),
+        filename="rota.png",
+        content_type="image/png",
+    )
+
+    respuesta = client.post("/productos/nuevo", data={
+        "post_id": post.id, "nombre": "Pan", "precio": "1500", "foto": rota,
+    }, content_type="multipart/form-data")
+
+    assert respuesta.status_code == 200
+    assert Product.query.count() == 0
+
+
+# --- panel
+
+def test_el_panel_muestra_solo_los_productos_propios(
+    client, crear_usuario, crear_post, crear_producto, login
+):
+    dueno = crear_usuario(username="dueno")
+    crear_producto(crear_post(dueno.id).id, nombre="Pan propio")
+    ajeno = crear_usuario(username="ajeno")
+    crear_producto(crear_post(ajeno.id).id, nombre="Pan ajeno")
+    login(dueno.id)
+
+    html = client.get("/productos/").get_data(as_text=True)
+
+    assert "Pan propio" in html
+    assert "Pan ajeno" not in html
+
+
+def test_el_panel_muestra_el_precio_formateado(
+    client, emprendedor_con_post, crear_producto
+):
+    _usuario, post = emprendedor_con_post()
+    crear_producto(post.id, precio="1500.50")
+
+    html = client.get("/productos/").get_data(as_text=True)
+
+    assert "$ 1.500,50" in html

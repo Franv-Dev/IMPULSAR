@@ -68,6 +68,25 @@ def save_post_image(file, upload_dir):
     return filename, None
 
 
+def borrar_de_disco(upload_dir, nombres):
+    """Borra imagenes del disco, ignorando las que no esten.
+
+    Se usa para dos cosas: limpiar lo que escribio un intento que despues
+    fallo, y sacar la foto de algo que se borro de la base. En los dos casos,
+    sin esto el archivo queda ocupando disco para siempre sin ninguna fila que
+    lo referencie.
+    """
+    for nombre in nombres:
+        if not nombre:
+            continue
+        try:
+            os.remove(os.path.join(upload_dir, nombre))
+        except OSError:
+            # Que no se pueda borrar no justifica romperle el formulario al
+            # usuario: queda el archivo suelto y el aviso en el log.
+            logger.warning("No se pudo borrar la imagen huerfana %s", nombre)
+
+
 def _guardar_comprimida(stream, destino):
     """Redimensiona y comprime la imagen antes de guardarla en disco.
 
