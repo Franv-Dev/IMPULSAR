@@ -1,4 +1,11 @@
 from db import db, utcnow
+# Importado aca solo para que la relacion `productos` de mas abajo pueda
+# resolver el nombre "Product". Los otros modelos que Post referencia
+# (PostImage, Event) los termina importando alguna vista, pero depender de eso
+# es fragil: si mañana ninguna vista importa Product, cualquier consulta sobre
+# Post revienta al configurar el mapper. Es seguro porque models/product.py no
+# importa nada de aca (apunta a "posts.id" por nombre), asi que no hay ciclo.
+from models.product import Product  # noqa: F401
 
 
 class Categorias:
@@ -109,6 +116,17 @@ class Post(db.Model):
         backref="post",
         cascade="all, delete-orphan",
         order_by="Event.fecha",
+    )
+
+    # Mismo criterio que imagenes y eventos. El orden alfabetico es el del
+    # catalogo: es el unico que no cambia solo cuando el emprendedor edita un
+    # producto, asi que el visitante que vuelve encuentra las cosas donde
+    # estaban.
+    productos = db.relationship(
+        "Product",
+        backref="post",
+        cascade="all, delete-orphan",
+        order_by="Product.nombre",
     )
 
     #coordenadas 
