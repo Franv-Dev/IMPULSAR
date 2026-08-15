@@ -110,7 +110,10 @@
     --color-heart: #F87171;
 
     --color-star: #FBBF24;
-    --color-star-empty: #3A3454;
+    /* Mas claro que el borde: la estrella sin marcar tiene que insinuarse para
+       que se vea que el widget tiene 5, y sobre fondo oscuro un gris apenas por
+       encima de la superficie directamente desaparece. */
+    --color-star-empty: #4A4370;
 
     /* Sobre fondo oscuro una sombra azulada translucida no se ve: hace falta
        negro y bastante mas opacidad para que las tarjetas sigan despegando. */
