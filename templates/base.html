@@ -75,13 +75,9 @@
         Eventos
     </a>
 
-    <a href="{{ url_for('pages.about') }}" class="navbar__link {% if request.endpoint == 'pages.about' %}navbar__link--active{% endif %}">
-        Sobre IMPULSAR
-    </a>
-
-    <a href="{{ url_for('pages.contact') }}" class="navbar__link {% if request.endpoint == 'pages.contact' %}navbar__link--active{% endif %}">
-        Contacto
-    </a>
+    {# "Sobre IMPULSAR" y "Contacto" viven en el footer: son paginas
+       institucionales, se leen una vez y no compiten con Inicio,
+       Emprendimientos y Eventos, que son la navegacion de todos los dias. #}
 
 </nav>
 
@@ -153,15 +149,22 @@
     </main>
 
     <footer class="footer">
-    <div class="container footer__content">
-        <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
-        <div class="footer__links">
-            <a href="{{ url_for('pages.terms') }}" class="footer__link">Términos</a>
-            <a href="{{ url_for('pages.privacy') }}" class="footer__link">Privacidad</a>
-            <a href="{{ url_for('pages.contact') }}" class="footer__link">Contacto</a>
+        <div class="container footer__content">
+            <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
+            <nav class="footer__links" aria-label="Enlaces del pie">
+                <a href="{{ url_for('pages.about') }}"
+                   class="footer__link {% if request.endpoint == 'pages.about' %}footer__link--active{% endif %}">
+                    Sobre IMPULSAR
+                </a>
+                <a href="{{ url_for('pages.contact') }}"
+                   class="footer__link {% if request.endpoint == 'pages.contact' %}footer__link--active{% endif %}">
+                    Contacto
+                </a>
+                <a href="{{ url_for('pages.terms') }}" class="footer__link">Términos</a>
+                <a href="{{ url_for('pages.privacy') }}" class="footer__link">Privacidad</a>
+            </nav>
         </div>
-    </div>
-</footer>
+    </footer>
 
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

@@ -214,6 +214,11 @@ main {
     align-items: center;
     gap: 1.5rem;
     font-size: 0.9rem;
+    /* El navbar reparte el sobrante con space-between. Al quedar tres links en
+       vez de cinco, ese sobrante se colaba entre el logo y el menu y los links
+       quedaban flotando en el medio; con el margen automatico el aire se junta
+       todo de un lado y los links siguen pegados al logo. */
+    margin-right: auto;
 }
 
 .navbar__link {
@@ -924,6 +929,14 @@ main {
     color: var(--color-text);
 }
 
+/* "Sobre IMPULSAR" y "Contacto" ahora se navegan desde aca, asi que el pie
+   tiene que poder decir en cual de las dos estas parado. Sin subrayado ni
+   barrita como el navbar: es un pie, no la navegacion principal. */
+.footer__link--active {
+    color: var(--color-text);
+    font-weight: 500;
+}
+
 /* RESPONSIVE */
 
 @media (max-width: 900px) {
@@ -964,6 +977,9 @@ main {
         align-items: flex-start; /* Alineamos a la izquierda */
         padding: 0;
         gap: 0; /* Reseteamos gaps */
+        /* Aca los links son una fila entera del menu desplegable: el margen
+           automatico que los pega al logo en desktop no corresponde. */
+        margin-right: 0;
 
         /* Transición */
         transition: all 0.3s ease-in-out;
