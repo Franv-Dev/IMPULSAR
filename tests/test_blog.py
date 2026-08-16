@@ -862,9 +862,18 @@ def _archivo_roto(nombre="roto.png"):
 
 
 def _archivos_en_uploads(app):
+    """Los archivos que hay en la carpeta de uploads QUE USA LA APP.
+
+    La ruta sale de la config y no se recalcula a mano: si el test mira un
+    directorio y la app escribe en otro, los asserts de huerfanas comparan un
+    directorio vacio contra si mismo y pasan sin probar nada. Es lo que pasaba
+    cuando esto armaba os.path.join(app.root_path, "static", "uploads"), que
+    coincidia con la carpeta real solo mientras nadie moviera nada ni definiera
+    UPLOAD_FOLDER.
+    """
     import os
 
-    carpeta = os.path.join(app.root_path, "static", "uploads")
+    carpeta = app.config["UPLOAD_FOLDER"]
     os.makedirs(carpeta, exist_ok=True)
     return {n for n in os.listdir(carpeta) if os.path.isfile(os.path.join(carpeta, n))}
 

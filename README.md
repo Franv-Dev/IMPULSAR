@@ -309,9 +309,9 @@ SECRET_KEY=clave-secreta
 JWT_SECRET_KEY=clave-jwt
 ```
 
-Para producción:
+Para producción, con `--app` explícito para no depender del `.env` de la máquina:
 ```bash
-flask run --host=0.0.0.0 --port=8080
+flask --app wsgi run --host=0.0.0.0 --port=8080
 ```
 
 ---

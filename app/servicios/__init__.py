@@ -15,9 +15,17 @@ sobre eso. Comparten el blueprint, el prefijo /servicios y los templates.
 No reexporta nada, por la misma razon que app/__init__.py y que el
 views/__init__.py que se limpio en el paso anterior, y esta vez con la prueba
 al lado: la primera version de este archivo hacia `from app.servicios.vistas
-import servicios`, y con eso cualquiera que importara app.servicios.modelo
-arrastraba las vistas, que importan consultas, que importa models.post, que
-importa app.servicios.modelo... o sea el modulo a medio inicializar del que
-habia salido. Reventaba al arrancar. Quien quiera el blueprint lo pide donde
-esta: `from app.servicios.vistas import servicios`.
+import servicios`, y con eso la app no arrancaba.
+
+El ciclo, en el orden en que pasa de verdad (se reproduce con `import
+models.post`, o con cualquier cosa que lo importe, como main): models.post
+empieza a ejecutarse y en su linea 11 pide app.servicios.modelo; para eso Python
+corre primero este __init__, que importaba vistas, que importa consultas, que
+importa models.post... y models.post esta a medio ejecutar, todavia sin
+definir la clase Post, asi que el import falla ahi. El modulo incompleto es
+models.post, no app.servicios.modelo: `import app.servicios.modelo` a secas
+funcionaba, porque en ese orden models.post arranca y termina de una.
+
+Quien quiera el blueprint lo pide donde vive: `from app.servicios.vistas import
+servicios`.
 """

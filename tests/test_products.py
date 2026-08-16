@@ -186,7 +186,14 @@ def _imagen(nombre="producto.png", color="blue"):
 
 
 def _ruta_de_upload(app, nombre):
-    return os.path.join(app.root_path, "static", "uploads", nombre)
+    """La ruta de un archivo subido, tomada de la config que usa la app.
+
+    No se recalcula a mano (antes era os.path.join(app.root_path, "static",
+    "uploads", nombre)): si el test mira una carpeta distinta de la que escribe
+    la app, "el archivo no esta" deja de significar "se borro" y pasa a
+    significar "nunca lo buscamos donde estaba".
+    """
+    return os.path.join(app.config["UPLOAD_FOLDER"], nombre)
 
 
 # --- ABM: alta
