@@ -1677,7 +1677,11 @@ textarea.auth__input {
 
 /* La base de 20rem es el ancho minimo con el que el nombre y los chips se
    leen sin partirse: si no entra, wrapean las acciones y la identidad se
-   queda con la linea entera. */
+   queda con la linea entera. Medido arriba de 768px (que es donde vale este
+   regimen, el de las tres piezas en linea con wrap), la identidad no baja de
+   321px con ninguna combinacion de botones. De 768px para abajo el hero ya
+   esta en columna y la identidad ocupa el ancho de la tarjeta, que es menos
+   que eso y esta bien que lo sea: 246px a 320px de viewport. */
 .perfil-hero__identidad {
     flex: 1 1 20rem;
     padding-top: 1.25rem;
@@ -1743,8 +1747,10 @@ textarea.auth__input {
     font-style: italic;
 }
 
-/* margin-left: auto para que sigan pegadas a la derecha tanto cuando
-   comparten linea con la identidad como cuando bajan solas. */
+/* margin-left: auto es para cuando las acciones bajan solas a la segunda
+   linea: ahi las mantiene pegadas a la derecha. Cuando comparten linea con
+   la identidad no hace nada, porque el flex-grow de la identidad ya se comio
+   todo el espacio libre antes de que se repartan los margenes auto. */
 .perfil-hero__acciones {
     display: flex;
     flex-wrap: wrap;
