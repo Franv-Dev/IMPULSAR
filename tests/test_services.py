@@ -5,6 +5,7 @@ from decimal import Decimal
 import pytest
 
 from models.service import MAX_SERVICIOS_POR_POST, Rubros, Service
+from models.service_request import EstadosSolicitud, ServiceRequest
 from services.precios import parsear_precio
 
 
@@ -445,6 +446,255 @@ def test_los_servicios_no_reemplazan_al_catalogo_de_productos(
     assert "Destapaciones" in html
     assert "Qué vende" in html
     assert "Qué hace" in html
+
+
+# --- solicitudes de presupuesto
+
+@pytest.fixture
+def crear_solicitud(db):
+    """Fabrica de solicitudes de presupuesto."""
+
+    def _crear(service_id, cliente_id, descripcion="Se me tapó la pileta",
+               zona=None, foto=None, estado=EstadosSolicitud.PENDIENTE,
+               respuesta_precio=None, respuesta_mensaje=None):
+        solicitud = ServiceRequest(
+            service_id=service_id, cliente_id=cliente_id,
+            descripcion=descripcion, zona=zona, foto=foto, estado=estado,
+            respuesta_precio=(
+                Decimal(respuesta_precio) if respuesta_precio is not None else None
+            ),
+            respuesta_mensaje=respuesta_mensaje,
+        )
+        db.session.add(solicitud)
+        db.session.commit()
+        return solicitud
+
+    return _crear
+
+
+@pytest.fixture
+def servicio_y_cliente(crear_usuario, crear_post, crear_servicio, login):
+    """Un servicio de un emprendedor y un cliente logueado que no es el dueño."""
+
+    def _crear():
+        prestador = crear_usuario(username="prestador")
+        post = crear_post(prestador.id)
+        servicio = crear_servicio(post.id, titulo="Destapaciones")
+        cliente = crear_usuario(username="cliente")
+        login(cliente.id)
+        return prestador, servicio, cliente
+
+    return _crear
+
+
+def test_un_cliente_puede_pedir_presupuesto(client, servicio_y_cliente):
+    _prestador, servicio, cliente = servicio_y_cliente()
+
+    respuesta = client.post(f"/servicios/{servicio.id}/solicitar", data={
+        "descripcion": "Se me tapó la cocina", "zona": "Coquimbito",
+    })
+
+    assert respuesta.status_code == 302
+    solicitud = ServiceRequest.query.one()
+    assert solicitud.cliente_id == cliente.id
+    assert solicitud.service_id == servicio.id
+    assert solicitud.zona == "Coquimbito"
+    assert solicitud.estado == EstadosSolicitud.PENDIENTE
+    assert solicitud.responded_at is None
+
+
+def test_una_solicitud_sin_descripcion_no_se_guarda(client, servicio_y_cliente):
+    _prestador, servicio, _cliente = servicio_y_cliente()
+
+    respuesta = client.post(f"/servicios/{servicio.id}/solicitar", data={"descripcion": ""})
+
+    assert respuesta.status_code == 200  # vuelve al formulario
+    assert ServiceRequest.query.count() == 0
+
+
+def test_no_se_puede_pedir_presupuesto_dos_veces_sobre_lo_mismo(
+    client, servicio_y_cliente
+):
+    """El caso del doble click: sin esto quedan dos solicitudes iguales."""
+    _prestador, servicio, _cliente = servicio_y_cliente()
+    datos = {"descripcion": "Se me tapó la cocina"}
+
+    client.post(f"/servicios/{servicio.id}/solicitar", data=datos)
+    client.post(f"/servicios/{servicio.id}/solicitar", data=datos)
+
+    assert ServiceRequest.query.count() == 1
+
+
+def test_se_puede_volver_a_pedir_cuando_la_anterior_ya_no_esta_pendiente(
+    client, servicio_y_cliente, crear_solicitud
+):
+    """El freno es a las pendientes, no al cliente: el mismo problema puede
+    volver a pasar el año que viene."""
+    _prestador, servicio, cliente = servicio_y_cliente()
+    crear_solicitud(servicio.id, cliente.id, estado=EstadosSolicitud.CERRADA)
+
+    client.post(f"/servicios/{servicio.id}/solicitar", data={"descripcion": "Otra vez"})
+
+    assert ServiceRequest.query.count() == 2
+
+
+def test_el_dueño_no_se_pide_presupuesto_a_si_mismo(
+    client, crear_usuario, crear_post, crear_servicio, login
+):
+    prestador = crear_usuario(username="prestador")
+    post = crear_post(prestador.id)
+    servicio = crear_servicio(post.id)
+    login(prestador.id)
+
+    respuesta = client.post(f"/servicios/{servicio.id}/solicitar", data={
+        "descripcion": "Me pido a mí mismo",
+    })
+
+    assert respuesta.status_code == 302
+    assert ServiceRequest.query.count() == 0
+
+
+def test_no_se_puede_pedir_presupuesto_de_un_servicio_apagado(
+    client, crear_usuario, crear_post, crear_servicio, login
+):
+    """El link no se muestra, pero se puede escribir a mano."""
+    prestador = crear_usuario(username="prestador")
+    post = crear_post(prestador.id)
+    servicio = crear_servicio(post.id, disponible=False)
+    cliente = crear_usuario(username="cliente")
+    login(cliente.id)
+
+    respuesta = client.post(f"/servicios/{servicio.id}/solicitar", data={
+        "descripcion": "Hola",
+    })
+
+    assert respuesta.status_code == 302
+    assert ServiceRequest.query.count() == 0
+
+
+def test_pedir_presupuesto_sin_sesion_manda_al_login(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    prestador = crear_usuario(username="prestador")
+    servicio = crear_servicio(crear_post(prestador.id).id)
+
+    respuesta = client.get(f"/servicios/{servicio.id}/solicitar")
+
+    assert respuesta.status_code == 302
+    assert "/auth/login" in respuesta.headers["Location"]
+
+
+# --- privacidad de las solicitudes
+
+def test_el_cliente_ve_su_solicitud(client, servicio_y_cliente, crear_solicitud):
+    _prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id, descripcion="Se me tapó todo")
+
+    respuesta = client.get(f"/servicios/solicitudes/{solicitud.id}")
+
+    assert respuesta.status_code == 200
+    assert "Se me tapó todo" in respuesta.get_data(as_text=True)
+
+
+def test_el_prestador_ve_la_solicitud_que_recibio(
+    client, servicio_y_cliente, crear_solicitud, login
+):
+    prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id, descripcion="Se me tapó todo")
+    login(prestador.id)
+
+    respuesta = client.get(f"/servicios/solicitudes/{solicitud.id}")
+
+    assert respuesta.status_code == 200
+    assert "Se me tapó todo" in respuesta.get_data(as_text=True)
+
+
+def test_un_tercero_no_ve_la_solicitud(
+    client, servicio_y_cliente, crear_solicitud, crear_usuario, login
+):
+    """Ni el contenido ni un 200: se chequea sobre el HTML servido, no sobre
+    lo que se muestre en pantalla."""
+    _prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id, descripcion="Se me tapó todo")
+    curioso = crear_usuario(username="curioso")
+    login(curioso.id)
+
+    respuesta = client.get(f"/servicios/solicitudes/{solicitud.id}")
+
+    assert respuesta.status_code == 403
+    assert "Se me tapó todo" not in respuesta.get_data(as_text=True)
+
+
+def test_otro_emprendedor_tampoco_ve_la_solicitud(
+    client, servicio_y_cliente, crear_solicitud, crear_usuario, crear_post, login
+):
+    """Explicito porque es el caso que mas se presta a confusion: tener un
+    emprendimiento no da acceso a los pedidos de los demas."""
+    _prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id, descripcion="Se me tapó todo")
+    otro = crear_usuario(username="otro")
+    crear_post(otro.id, title="Otro emprendimiento")
+    login(otro.id)
+
+    respuesta = client.get(f"/servicios/solicitudes/{solicitud.id}")
+
+    assert respuesta.status_code == 403
+    assert "Se me tapó todo" not in respuesta.get_data(as_text=True)
+
+
+def test_sin_sesion_la_solicitud_no_se_ve(
+    client, servicio_y_cliente, crear_solicitud
+):
+    _prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id, descripcion="Se me tapó todo")
+    client.get("/auth/logout")
+
+    respuesta = client.get(f"/servicios/solicitudes/{solicitud.id}")
+
+    assert respuesta.status_code == 302
+    assert "Se me tapó todo" not in respuesta.get_data(as_text=True)
+
+
+# --- borrados en cascada de las solicitudes
+
+def test_borrar_el_servicio_se_lleva_sus_solicitudes(
+    db, servicio_y_cliente, crear_solicitud
+):
+    _prestador, servicio, cliente = servicio_y_cliente()
+    crear_solicitud(servicio.id, cliente.id)
+
+    db.session.delete(servicio)
+    db.session.commit()
+
+    assert ServiceRequest.query.count() == 0
+
+
+def test_borrar_el_cliente_se_lleva_sus_solicitudes(
+    db, servicio_y_cliente, crear_solicitud
+):
+    """La FK a users nace con ON DELETE CASCADE, a diferencia de las cinco
+    viejas que todavia traban el borrado de un usuario (ver B1)."""
+    _prestador, servicio, cliente = servicio_y_cliente()
+    crear_solicitud(servicio.id, cliente.id)
+
+    db.session.delete(cliente)
+    db.session.commit()
+
+    assert ServiceRequest.query.count() == 0
+
+
+def test_borrar_el_emprendimiento_se_lleva_servicios_y_solicitudes(
+    db, servicio_y_cliente, crear_solicitud
+):
+    _prestador, servicio, cliente = servicio_y_cliente()
+    crear_solicitud(servicio.id, cliente.id)
+    post = servicio.post
+
+    db.session.delete(post)
+    db.session.commit()
+
+    assert Service.query.count() == 0
+    assert ServiceRequest.query.count() == 0
 
 
 def test_servicios_esta_en_los_slugs_reservados():

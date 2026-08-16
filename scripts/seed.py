@@ -68,6 +68,8 @@ from models.post_image import PostImage  # noqa: E402
 from models.product import Product  # noqa: E402
 from models.report import Report  # noqa: E402
 from models.review import Review  # noqa: E402
+from models.service import Rubros, Service  # noqa: E402
+from models.service_request import EstadosSolicitud, ServiceRequest  # noqa: E402
 from models.user import Roles, User  # noqa: E402
 
 # Marcas que identifican lo que creo este script.
@@ -250,6 +252,44 @@ EVENTOS = [
      "Vinimos con los frascos del año pasado."),
 ]
 
+# emprendimiento -> servicios (titulo, rubro, descripcion, zona, precio o None)
+# El precio en None es el caso de "a presupuestar", que es la diferencia con
+# los productos: se cotiza contra el caso de cada cliente.
+SERVICIOS = {
+    "Bicicletería El Piñón": [
+        ("Service completo de bicicleta", Rubros.OTROS,
+         "Ajuste de cambios y frenos, centrado de ruedas y limpieza de transmisión.",
+         "Maipú y alrededores", "18000.00"),
+        ("Armado de rueda a medida", Rubros.OTROS,
+         "Rayos, llanta y maza a elección. Se cotiza según los materiales.",
+         "Maipú", None),
+    ],
+    "Reparación de Notebooks": [
+        ("Cambio de pantalla", Rubros.INFORMATICA,
+         "Traé el equipo o lo retiramos. El precio depende del modelo.",
+         "Todo el Gran Mendoza", None),
+        ("Limpieza y cambio de pasta térmica", Rubros.INFORMATICA,
+         "Para equipos que se apagan solos o andan muy calientes.",
+         "Todo el Gran Mendoza", "25000.00"),
+    ],
+}
+
+# (cliente, servicio, descripcion, zona, estado, precio de respuesta, mensaje)
+# Una de cada estado, para poder ver el panel del prestador con las tres.
+SOLICITUDES = [
+    ("Nicolas", "Cambio de pantalla",
+     "Se me rompió la pantalla de una Lenovo ideapad 3. ¿La reparan?",
+     None, EstadosSolicitud.PENDIENTE, None, None),
+    ("Camila", "Service completo de bicicleta",
+     "La bici hace ruido en los cambios y los frenos rozan. Es una rodado 29.",
+     "Coquimbito", EstadosSolicitud.RESPONDIDA, "18000.00",
+     "La dejamos como nueva. Traela un martes y te la entrego el jueves."),
+    ("Bruno", "Armado de rueda a medida",
+     "Quiero armar una rueda trasera para uso urbano, algo resistente.",
+     None, EstadosSolicitud.CERRADA, "62000.00",
+     "Con maza Shimano y llanta doble pared queda en ese precio."),
+]
+
 # (autor del review, emprendimiento, rating, comentario, respuesta del dueño)
 RESENIAS = [
     ("Nicolas", "Huerta La Semilla", 5,
@@ -376,6 +416,13 @@ def borrar(app):
     users sin ON DELETE CASCADE (favorites.user_id, messages.client_id,
     messages.sender_id, reports.reporter_id y reviews.user_id): borrar el
     usuario de una sin limpiar eso primero falla con IntegrityError.
+
+    service_requests.cliente_id SI tiene ON DELETE CASCADE, asi que no
+    necesitaria estar en esta lista para que el borrado no falle. Va igual, y
+    por la otra mitad de lo que hace esta funcion: las solicitudes que un
+    usuario REAL hizo sobre un servicio del seed tienen que irse con el seed,
+    y la unica forma de que se vayan por cascada seria borrando al usuario
+    real, que es justo lo que esta funcion no hace.
     """
     usuarios = _usuarios_de_seed()
     if not usuarios:
@@ -394,6 +441,19 @@ def borrar(app):
 
     def borrar_filas(modelo, condicion):
         modelo.query.filter(condicion).delete(synchronize_session=False)
+
+    # Las solicitudes van primero porque cuelgan de services, que cuelga de
+    # posts: si se borrara el post antes, la cascada del ORM ya se las habria
+    # llevado y este filtro no encontraria las del usuario real.
+    ids_servicios = [
+        fila[0] for fila in db.session.query(Service.id).filter(
+            Service.post_id.in_(ids_posts or [0])
+        )
+    ]
+    borrar_filas(ServiceRequest, db.or_(
+        ServiceRequest.cliente_id.in_(ids),
+        ServiceRequest.service_id.in_(ids_servicios or [0]),
+    ))
 
     borrar_filas(Report, db.or_(
         Report.reporter_id.in_(ids),
@@ -524,6 +584,32 @@ def cargar(app):
             ))
             total_productos += 1
 
+    servicios = {}
+    for titulo, lista in SERVICIOS.items():
+        for nombre, rubro, descripcion, zona, precio in lista:
+            servicio = Service(
+                post_id=posts[titulo].id, titulo=nombre, rubro=rubro,
+                descripcion=descripcion, zona_cobertura=zona,
+                precio_estimado=Decimal(precio) if precio else None,
+            )
+            db.session.add(servicio)
+            servicios[nombre] = servicio
+    db.session.flush()
+
+    for alias, nombre, descripcion, zona, estado, precio, mensaje in SOLICITUDES:
+        respondida = estado != EstadosSolicitud.PENDIENTE
+        db.session.add(ServiceRequest(
+            service_id=servicios[nombre].id,
+            cliente_id=usuarios[alias].id,
+            descripcion=descripcion,
+            zona=zona,
+            estado=estado,
+            respuesta_precio=Decimal(precio) if precio else None,
+            respuesta_mensaje=mensaje,
+            created_at=ahora - timedelta(days=3),
+            responded_at=ahora - timedelta(days=2) if respondida else None,
+        ))
+
     for titulo, nombre, dias, hora, descripcion in EVENTOS:
         db.session.add(Event(
             post_id=posts[titulo].id, titulo=nombre, descripcion=descripcion,
@@ -585,6 +671,8 @@ def cargar(app):
         "usuarios": len(usuarios),
         "emprendimientos": len(posts),
         "productos": total_productos,
+        "servicios": len(servicios),
+        "solicitudes": len(SOLICITUDES),
         "eventos": len(EVENTOS),
         "reseñas": len(RESENIAS),
         "mensajes": total_mensajes,

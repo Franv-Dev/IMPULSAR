@@ -15,18 +15,26 @@ va en la vista y no solo en el template: esconder un boton no es un permiso,
 cualquiera puede mandar el POST a mano.
 """
 
+import os
+
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
+    Blueprint, abort, current_app, flash, g, redirect, render_template, request, url_for
 )
 from sqlalchemy.orm import joinedload
 
 from db import db
 from models.post import Post
 from models.service import MAX_SERVICIOS_POR_POST, Rubros, Service
+from models.service_request import EstadosSolicitud, ServiceRequest
 from services.precios import parsear_precio, texto_para_formulario
+from services.uploads import borrar_de_disco, save_post_image
 from views.auth import login_required
 
 servicios = Blueprint("servicios", __name__, url_prefix="/servicios")
+
+
+def _upload_dir():
+    return os.path.join(current_app.root_path, "static", "uploads")
 
 
 def _servicio_propio(id):
@@ -255,3 +263,109 @@ def _cuantos_tiene(post_id):
     filas solo para contarlas.
     """
     return Service.query.filter_by(post_id=post_id).count()
+
+
+# ---------------------------------------------------------------- solicitudes
+
+def _solicitud_visible(id):
+    """La solicitud con ese id, si el usuario actual es parte de ella.
+
+    Solo la ven dos personas: el cliente que la hizo y el dueño del
+    emprendimiento del que cuelga el servicio. Ni otro emprendedor, ni un
+    admin.
+
+    Aca si va abort(403) y no el flash + redirect de _servicio_propio, que es
+    el mismo criterio que usa messages.conversation: no es "esto no es tuyo,
+    volve a tu panel" sino un limite de privacidad entre dos usuarios
+    cualesquiera, y mandarlo a una pagina propia con un cartel amable
+    confirmaria igual que la solicitud existe.
+    """
+    solicitud = ServiceRequest.query.get_or_404(id)
+    if g.user.id not in (solicitud.cliente_id, solicitud.servicio.post.author):
+        abort(403)
+    return solicitud
+
+
+@servicios.route("/<int:id>/solicitar", methods=("GET", "POST"))
+@login_required
+def solicitar(id):
+    """El cliente pide un presupuesto sobre un servicio."""
+    servicio = Service.query.get_or_404(id)
+
+    # El dueño no se pide presupuesto a si mismo.
+    if servicio.post.author == g.user.id:
+        flash("Es tu propio servicio: las solicitudes te llegan de los clientes.")
+        return redirect(url_for("blog.detail", id=servicio.post_id))
+
+    # Un servicio apagado no esta tomando trabajos. El visitante ni siquiera lo
+    # ve en el listado, pero el link se puede escribir a mano.
+    if not servicio.disponible:
+        flash("Ese servicio no está disponible por ahora.")
+        return redirect(url_for("blog.detail", id=servicio.post_id))
+
+    pendiente = _solicitud_pendiente_de(servicio.id, g.user.id)
+    if pendiente:
+        # Sin esto, un doble click en el boton deja dos solicitudes iguales, y
+        # nada impide mandar diez. Es el mismo problema que resuelve el UNIQUE
+        # de reviews; aca no puede ser un UNIQUE porque solo aplica al estado
+        # pendiente, y un unique parcial no es portable a MySQL.
+        flash("Ya tenés una solicitud pendiente para ese servicio.")
+        return redirect(url_for("servicios.solicitud", id=pendiente.id))
+
+    if request.method == "POST":
+        descripcion = (request.form.get("descripcion") or "").strip()
+        zona = (request.form.get("zona") or "").strip()
+
+        error = None
+        if not descripcion:
+            error = "Contale al prestador qué necesitás."
+
+        foto = None
+        if error is None:
+            # La foto se guarda al final: si algo de arriba fallaba, no tiene
+            # sentido escribir un archivo que despues nadie va a referenciar.
+            foto, error = save_post_image(request.files.get("foto"), _upload_dir())
+
+        if error:
+            borrar_de_disco(_upload_dir(), [foto])
+            flash(error)
+            return render_template(
+                "servicios/solicitar.html", servicio=servicio,
+                datos={"descripcion": descripcion, "zona": zona},
+            )
+
+        solicitud = ServiceRequest(
+            service_id=servicio.id, cliente_id=g.user.id,
+            descripcion=descripcion, zona=zona or None, foto=foto,
+            estado=EstadosSolicitud.PENDIENTE,
+        )
+        db.session.add(solicitud)
+        db.session.commit()
+        flash("Listo, le mandamos tu pedido. Te va a contestar por acá.")
+        return redirect(url_for("servicios.solicitud", id=solicitud.id))
+
+    return render_template(
+        "servicios/solicitar.html", servicio=servicio,
+        datos={"descripcion": "", "zona": ""},
+    )
+
+
+@servicios.route("/solicitudes/<int:id>")
+@login_required
+def solicitud(id):
+    """El detalle de una solicitud, para las dos partes."""
+    solicitud = _solicitud_visible(id)
+    return render_template(
+        "servicios/solicitud.html",
+        solicitud=solicitud,
+        es_prestador=(g.user.id == solicitud.servicio.post.author),
+    )
+
+
+def _solicitud_pendiente_de(service_id, cliente_id):
+    """La solicitud pendiente de ese cliente sobre ese servicio, si la hay."""
+    return ServiceRequest.query.filter_by(
+        service_id=service_id,
+        cliente_id=cliente_id,
+        estado=EstadosSolicitud.PENDIENTE,
+    ).first()

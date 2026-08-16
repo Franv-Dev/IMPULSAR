@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Pedir presupuesto – {{ servicio.titulo }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 640px;">
+        <div class="auth__card">
+            <h1 class="auth__title">Pedir presupuesto</h1>
+            <p class="auth__subtitle">
+                {{ servicio.titulo }} · {{ servicio.rubro_label }}
+                {%- if servicio.zona_cobertura %} · {{ servicio.zona_cobertura }}{% endif %}
+                <br>
+                {{ servicio.post.title }}
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="auth__form" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="auth__field">
+                    <label for="descripcion" class="auth__label">¿Qué necesitás?</label>
+                    <textarea name="descripcion" id="descripcion" class="auth__input"
+                              rows="5" required
+                              placeholder="Contale el problema con el mayor detalle que puedas.">{{ datos.descripcion }}</textarea>
+                </div>
+
+                <div class="auth__field">
+                    <label for="zona" class="auth__label">Zona (opcional)</label>
+                    <input type="text" name="zona" id="zona" class="auth__input"
+                           maxlength="120" value="{{ datos.zona }}"
+                           placeholder="Solo si es distinta de la que atiende">
+                </div>
+
+                <div class="auth__field">
+                    <label for="foto" class="auth__label">Foto (opcional)</label>
+                    <input type="file" name="foto" id="foto" class="auth__input"
+                           accept="image/png, image/jpeg, image/gif">
+                    <small>
+                        Una foto del problema ayuda a que el presupuesto sea más
+                        preciso. La ven el prestador y vos.
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    Enviar pedido
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                Volver a <a href="{{ url_for('blog.detail', id=servicio.post_id) }}">{{ servicio.post.title }}</a>.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}
