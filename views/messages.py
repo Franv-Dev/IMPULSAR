@@ -13,6 +13,8 @@ from db import db, utcnow
 from models.message import Message
 from models.post import Post
 from models.review import Review
+from models.service import Service
+from models.service_request import EstadosSolicitud, ServiceRequest
 from models.user import User
 from views.auth import login_required
 
@@ -128,11 +130,17 @@ def poll(post_id, client_id):
 @messages.route("/notificaciones")
 @login_required
 def notifications():
-    """Contador para el badge del navbar: mensajes sin leer + reseñas sin responder.
+    """Contador para el badge del navbar: mensajes sin leer, reseñas sin
+    responder y solicitudes de presupuesto pendientes.
 
     Reutiliza el mismo mecanismo de polling que ya usa el chat (ver
     static/js/chat.js), solo que este endpoint lo consulta static/js/main.js
     en todas las paginas, no solo dentro de una conversacion.
+
+    Las tres cosas son "algo que espera una respuesta tuya" y por eso van en un
+    solo contador. El endpoint queda en el blueprint de mensajes aunque ahora
+    cuente cosas de otros dos: moverlo cambiaria la URL que ya consulta el JS
+    de todas las paginas, y el nombre del blueprint no vale ese cambio.
     """
     mensajes_sin_leer = (
         db.session.query(func.count(Message.id))
@@ -152,8 +160,23 @@ def notifications():
         .scalar()
     ) or 0
 
+    # Las solicitudes que le pidieron al usuario y todavia no contesto. Se
+    # cuentan las pendientes y no las respondidas: una vez que contesto, la
+    # pelota esta del otro lado.
+    solicitudes_pendientes = (
+        db.session.query(func.count(ServiceRequest.id))
+        .join(Service, Service.id == ServiceRequest.service_id)
+        .join(Post, Post.id == Service.post_id)
+        .filter(
+            ServiceRequest.estado == EstadosSolicitud.PENDIENTE,
+            Post.author == g.user.id,
+        )
+        .scalar()
+    ) or 0
+
     return jsonify({
         "unread_messages": mensajes_sin_leer,
         "unanswered_reviews": resenias_sin_responder,
-        "total": mensajes_sin_leer + resenias_sin_responder,
+        "pending_service_requests": solicitudes_pendientes,
+        "total": mensajes_sin_leer + resenias_sin_responder + solicitudes_pendientes,
     }), 200

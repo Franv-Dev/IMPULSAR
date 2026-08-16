@@ -105,6 +105,9 @@
                                 Mensajes
                                 <span id="notif-badge" class="badge--notif" style="display:none;" aria-live="polite"></span>
                             </a>
+                            <a href="{{ url_for('servicios.solicitudes') }}" class="user-menu__item">
+                                Solicitudes
+                            </a>
                             {% if g.user.rol == 'admin' %}
                                 <a href="{{ url_for('admin.dashboard') }}" class="user-menu__item">
                                     Panel de administración

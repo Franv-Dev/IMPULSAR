@@ -55,8 +55,63 @@
                         <p class="card__description">{{ solicitud.respuesta_mensaje }}</p>
                     {% endif %}
                 {% endif %}
+
+                {# El formulario de respuesta es solo del prestador, y no
+                   aparece si ya esta cerrada: cerrada es el final. #}
+                {% if es_prestador and solicitud.estado != estados.CERRADA %}
+                    <h2 class="section__title" style="font-size:1rem; margin-top:1.25rem;">
+                        {{ "Corregir la respuesta" if solicitud.respuesta_mensaje else "Responder" }}
+                    </h2>
+                    <form method="post"
+                          action="{{ url_for('servicios.responder', id=solicitud.id) }}"
+                          class="auth__form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="auth__field">
+                            <label for="respuesta_precio" class="auth__label">
+                                Precio (opcional)
+                            </label>
+                            <input type="text" name="respuesta_precio" id="respuesta_precio"
+                                   class="auth__input" inputmode="decimal"
+                                   value="{{ solicitud.respuesta_precio | precio_form }}"
+                                   placeholder="1500 o 1500,50">
+                            <small>
+                                Si todavía no podés dar un precio, dejalo vacío y
+                                explicale por qué en el mensaje.
+                            </small>
+                        </div>
+
+                        <div class="auth__field">
+                            <label for="respuesta_mensaje" class="auth__label">Mensaje</label>
+                            <textarea name="respuesta_mensaje" id="respuesta_mensaje"
+                                      class="auth__input" rows="4" required>{{ solicitud.respuesta_mensaje or "" }}</textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn--primary auth__submit">
+                            Enviar respuesta
+                        </button>
+                    </form>
+                {% endif %}
+
+                {# La cierra cualquiera de los dos: no es un acuerdo, es
+                   archivar. #}
+                {% if solicitud.estado != estados.CERRADA %}
+                    <form method="post"
+                          action="{{ url_for('servicios.cerrar', id=solicitud.id) }}"
+                          class="form-inline" style="margin-top:1rem;"
+                          onsubmit="return confirm('¿Cerrar esta solicitud? No se puede reabrir.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn--ghost">
+                            Cerrar solicitud
+                        </button>
+                    </form>
+                {% endif %}
             </div>
         </article>
+
+        <p class="auth__footer" style="margin-top:1rem;">
+            Volver a <a href="{{ url_for('servicios.solicitudes') }}">mis solicitudes</a>.
+        </p>
     </div>
 </section>
 {% endblock %}

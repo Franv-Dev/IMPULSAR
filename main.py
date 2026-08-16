@@ -24,6 +24,7 @@ from db import db
 from services.eventos import formatear_fecha, mes_corto
 from services.formatting import render_biography
 from services.precios import formatear as formatear_precio
+from services.precios import texto_para_formulario as precio_para_formulario
 from services.uploads import MAX_IMAGE_BYTES
 
 # Blueprints
@@ -109,6 +110,11 @@ def _registrar_filtros_jinja(app):
     # Filtro y no property del modelo: como mostrar un precio es de la
     # vista, y asi lo usan igual el catalogo y el panel.
     app.jinja_env.filters["precio"] = formatear_precio
+    # El mismo precio pero como se precarga en un <input> ("1500.50"). Va como
+    # filtro porque hay un formulario que se arma sin pasar por una vista que
+    # prepare los datos: el de la respuesta a una solicitud, que vive adentro
+    # de la pagina de la solicitud (ver templates/servicios/solicitud.html).
+    app.jinja_env.filters["precio_form"] = precio_para_formulario
 
 
 def _registrar_manejadores_de_error(app):

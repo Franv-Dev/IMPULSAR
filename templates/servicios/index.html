@@ -13,11 +13,16 @@
                     Hasta {{ maximo }} servicios por emprendimiento.
                 </p>
             </div>
-            {% if posts %}
-                <a href="{{ url_for('servicios.nuevo') }}" class="btn btn--primary">
-                    + Agregar servicio
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <a href="{{ url_for('servicios.solicitudes') }}" class="btn btn--secondary">
+                    Solicitudes
                 </a>
-            {% endif %}
+                {% if posts %}
+                    <a href="{{ url_for('servicios.nuevo') }}" class="btn btn--primary">
+                        + Agregar servicio
+                    </a>
+                {% endif %}
+            </div>
         </div>
 
         {% with messages = get_flashed_messages() %}

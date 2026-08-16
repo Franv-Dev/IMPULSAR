@@ -22,7 +22,7 @@ from flask import (
 )
 from sqlalchemy.orm import joinedload
 
-from db import db
+from db import db, utcnow
 from models.post import Post
 from models.service import MAX_SERVICIOS_POR_POST, Rubros, Service
 from models.service_request import EstadosSolicitud, ServiceRequest
@@ -350,6 +350,46 @@ def solicitar(id):
     )
 
 
+@servicios.route("/solicitudes")
+@login_required
+def solicitudes():
+    """Las solicitudes del usuario, de los dos lados.
+
+    Una sola pagina con las recibidas (como prestador) y las enviadas (como
+    cliente), igual que messages.inbox lista las conversaciones sin importar
+    de que lado esta uno: la mitad de los usuarios va a ser las dos cosas, y
+    dos paginas separadas obligarian a acordarse de cual mirar.
+
+    Los joinedload evitan el N+1 de ir a buscar el servicio, el emprendimiento
+    y el cliente de a una fila por vez al pintar la lista.
+    """
+    recibidas = (
+        ServiceRequest.query
+        .join(Service, Service.id == ServiceRequest.service_id)
+        .join(Post, Post.id == Service.post_id)
+        .options(
+            joinedload(ServiceRequest.servicio).joinedload(Service.post),
+            joinedload(ServiceRequest.cliente),
+        )
+        .filter(Post.author == g.user.id)
+        .order_by(ServiceRequest.created_at.desc())
+        .all()
+    )
+    enviadas = (
+        ServiceRequest.query
+        .options(joinedload(ServiceRequest.servicio).joinedload(Service.post))
+        .filter(ServiceRequest.cliente_id == g.user.id)
+        .order_by(ServiceRequest.created_at.desc())
+        .all()
+    )
+    return render_template(
+        "servicios/solicitudes.html",
+        recibidas=recibidas,
+        enviadas=enviadas,
+        estados=EstadosSolicitud,
+    )
+
+
 @servicios.route("/solicitudes/<int:id>")
 @login_required
 def solicitud(id):
@@ -359,7 +399,78 @@ def solicitud(id):
         "servicios/solicitud.html",
         solicitud=solicitud,
         es_prestador=(g.user.id == solicitud.servicio.post.author),
+        estados=EstadosSolicitud,
     )
+
+
+@servicios.route("/solicitudes/<int:id>/responder", methods=("POST",))
+@login_required
+def responder(id):
+    """El prestador contesta con un precio y un mensaje.
+
+    Solo el prestador: el cliente es parte de la solicitud y la ve, pero
+    responderla es del otro lado. Por eso el chequeo propio y no solo
+    _solicitud_visible.
+    """
+    solicitud = _solicitud_visible(id)
+    if g.user.id != solicitud.servicio.post.author:
+        flash("La respuesta la escribe quien presta el servicio.")
+        return redirect(url_for("servicios.solicitud", id=id))
+
+    if solicitud.estado == EstadosSolicitud.CERRADA:
+        flash("Esa solicitud ya está cerrada.")
+        return redirect(url_for("servicios.solicitud", id=id))
+
+    mensaje = (request.form.get("respuesta_mensaje") or "").strip()
+    # obligatorio=False: se puede contestar sin precio ("pasame una foto",
+    # "no llego a esa zona"), pero no sin decir nada.
+    precio, error = parsear_precio(
+        request.form.get("respuesta_precio") or "", obligatorio=False
+    )
+    if error is None and not mensaje:
+        error = "Escribí una respuesta para el cliente."
+
+    if error:
+        flash(error)
+        return redirect(url_for("servicios.solicitud", id=id))
+
+    solicitud.respuesta_precio = precio
+    solicitud.respuesta_mensaje = mensaje
+    solicitud.estado = EstadosSolicitud.RESPONDIDA
+    solicitud.responded_at = utcnow()
+    db.session.commit()
+
+    flash("Respuesta enviada.")
+    return redirect(url_for("servicios.solicitud", id=id))
+
+
+@servicios.route("/solicitudes/<int:id>/cerrar", methods=("POST",))
+@login_required
+def cerrar(id):
+    """Cierra la solicitud. La puede cerrar cualquiera de las dos partes.
+
+    No es un acuerdo ni una aceptacion: no hay pago ni compromiso de por
+    medio, cerrar es archivar. Los dos lados tienen un motivo real para
+    hacerlo (el cliente resolvio el problema y no vuelve; el prestador tiene
+    que poder limpiar lo que quedo sin contestar), y ninguno de los dos
+    motivos es mas legitimo que el otro.
+
+    Solo POST, como todo lo que cambia algo: un GET no debe tener efectos
+    secundarios.
+    """
+    solicitud = _solicitud_visible(id)
+
+    if solicitud.estado == EstadosSolicitud.CERRADA:
+        # Ya estaba: no es un error, pero tampoco se vuelve a tocar la fila.
+        flash("Esa solicitud ya estaba cerrada.")
+    else:
+        # No vuelve atras a proposito: reabrir seria otro estado y otra
+        # discusion. Si hace falta seguir, se pide de nuevo.
+        solicitud.estado = EstadosSolicitud.CERRADA
+        db.session.commit()
+        flash("Solicitud cerrada.")
+
+    return redirect(url_for("servicios.solicitud", id=id))
 
 
 def _solicitud_pendiente_de(service_id, cliente_id):

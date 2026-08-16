@@ -655,6 +655,225 @@ def test_sin_sesion_la_solicitud_no_se_ve(
     assert "Se me tapó todo" not in respuesta.get_data(as_text=True)
 
 
+# --- responder y cerrar
+
+def test_el_prestador_responde_con_precio_y_mensaje(
+    client, servicio_y_cliente, crear_solicitud, login
+):
+    prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+    login(prestador.id)
+
+    client.post(f"/servicios/solicitudes/{solicitud.id}/responder", data={
+        "respuesta_precio": "25.000,50",
+        "respuesta_mensaje": "Puedo ir el martes a la mañana.",
+    })
+
+    db_solicitud = ServiceRequest.query.one()
+    assert db_solicitud.estado == EstadosSolicitud.RESPONDIDA
+    assert db_solicitud.respuesta_precio == Decimal("25000.50")
+    assert db_solicitud.respuesta_mensaje == "Puedo ir el martes a la mañana."
+    assert db_solicitud.responded_at is not None
+
+
+def test_se_puede_responder_sin_precio(
+    client, servicio_y_cliente, crear_solicitud, login
+):
+    """"Pasame una foto" o "no llego a esa zona" son respuestas validas."""
+    prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+    login(prestador.id)
+
+    client.post(f"/servicios/solicitudes/{solicitud.id}/responder", data={
+        "respuesta_precio": "", "respuesta_mensaje": "¿Me pasás una foto?",
+    })
+
+    db_solicitud = ServiceRequest.query.one()
+    assert db_solicitud.estado == EstadosSolicitud.RESPONDIDA
+    assert db_solicitud.respuesta_precio is None
+
+
+def test_no_se_puede_responder_sin_mensaje(
+    client, servicio_y_cliente, crear_solicitud, login
+):
+    """Sin precio si, sin decir nada no."""
+    prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+    login(prestador.id)
+
+    client.post(f"/servicios/solicitudes/{solicitud.id}/responder", data={
+        "respuesta_precio": "1500", "respuesta_mensaje": "   ",
+    })
+
+    assert ServiceRequest.query.one().estado == EstadosSolicitud.PENDIENTE
+
+
+def test_el_cliente_no_puede_responder_su_propia_solicitud(
+    client, servicio_y_cliente, crear_solicitud
+):
+    """Es parte de la solicitud y la ve, pero la respuesta es del otro lado."""
+    _prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+
+    client.post(f"/servicios/solicitudes/{solicitud.id}/responder", data={
+        "respuesta_mensaje": "Me contesto solo", "respuesta_precio": "1",
+    })
+
+    assert ServiceRequest.query.one().estado == EstadosSolicitud.PENDIENTE
+
+
+def test_un_tercero_no_puede_responder(
+    client, servicio_y_cliente, crear_solicitud, crear_usuario, login
+):
+    _prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+    curioso = crear_usuario(username="curioso")
+    login(curioso.id)
+
+    respuesta = client.post(f"/servicios/solicitudes/{solicitud.id}/responder", data={
+        "respuesta_mensaje": "Hola", "respuesta_precio": "1",
+    })
+
+    assert respuesta.status_code == 403
+    assert ServiceRequest.query.one().estado == EstadosSolicitud.PENDIENTE
+
+
+@pytest.mark.parametrize("quien", ["cliente", "prestador"])
+def test_la_cierra_cualquiera_de_las_dos_partes(
+    client, servicio_y_cliente, crear_solicitud, login, quien
+):
+    prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+    login(prestador.id if quien == "prestador" else cliente.id)
+
+    client.post(f"/servicios/solicitudes/{solicitud.id}/cerrar")
+
+    assert ServiceRequest.query.one().estado == EstadosSolicitud.CERRADA
+
+
+def test_un_tercero_no_puede_cerrarla(
+    client, servicio_y_cliente, crear_solicitud, crear_usuario, login
+):
+    _prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+    curioso = crear_usuario(username="curioso")
+    login(curioso.id)
+
+    respuesta = client.post(f"/servicios/solicitudes/{solicitud.id}/cerrar")
+
+    assert respuesta.status_code == 403
+    assert ServiceRequest.query.one().estado == EstadosSolicitud.PENDIENTE
+
+
+def test_una_solicitud_cerrada_ya_no_se_responde(
+    client, servicio_y_cliente, crear_solicitud, login
+):
+    """Cerrada es el final: no vuelve atras. Si hace falta seguir, se pide de
+    nuevo (y ahi el freno de la pendiente ya no aplica)."""
+    prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id, estado=EstadosSolicitud.CERRADA)
+    login(prestador.id)
+
+    client.post(f"/servicios/solicitudes/{solicitud.id}/responder", data={
+        "respuesta_mensaje": "Tarde", "respuesta_precio": "1500",
+    })
+
+    db_solicitud = ServiceRequest.query.one()
+    assert db_solicitud.estado == EstadosSolicitud.CERRADA
+    assert db_solicitud.respuesta_mensaje is None
+
+
+def test_responder_y_cerrar_no_se_disparan_con_un_get(
+    client, servicio_y_cliente, crear_solicitud, login
+):
+    prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+    login(prestador.id)
+
+    assert client.get(f"/servicios/solicitudes/{solicitud.id}/responder").status_code == 405
+    assert client.get(f"/servicios/solicitudes/{solicitud.id}/cerrar").status_code == 405
+    assert ServiceRequest.query.one().estado == EstadosSolicitud.PENDIENTE
+
+
+# --- panel de solicitudes
+
+def test_el_panel_muestra_las_recibidas_y_las_enviadas(
+    client, crear_usuario, crear_post, crear_servicio, crear_solicitud, login
+):
+    """Un usuario puede ser las dos cosas: presta un servicio y pide otro."""
+    yo = crear_usuario(username="yo")
+    mi_servicio = crear_servicio(crear_post(yo.id, title="Lo mío").id, titulo="Lo que hago")
+    otro = crear_usuario(username="otro")
+    servicio_ajeno = crear_servicio(
+        crear_post(otro.id, title="Lo de otro").id, titulo="Lo que hace el otro"
+    )
+    crear_solicitud(mi_servicio.id, otro.id, descripcion="Pedido que recibí")
+    crear_solicitud(servicio_ajeno.id, yo.id, descripcion="Pedido que hice")
+    login(yo.id)
+
+    html = client.get("/servicios/solicitudes").get_data(as_text=True)
+
+    assert "Pedido que recibí" in html
+    assert "Pedido que hice" in html
+
+
+def test_el_panel_no_muestra_solicitudes_de_terceros(
+    client, servicio_y_cliente, crear_solicitud, crear_usuario, login
+):
+    _prestador, servicio, cliente = servicio_y_cliente()
+    crear_solicitud(servicio.id, cliente.id, descripcion="Pedido ajeno")
+    curioso = crear_usuario(username="curioso")
+    login(curioso.id)
+
+    html = client.get("/servicios/solicitudes").get_data(as_text=True)
+
+    assert "Pedido ajeno" not in html
+
+
+# --- badge del navbar
+
+def test_el_badge_cuenta_las_solicitudes_pendientes(
+    client, servicio_y_cliente, crear_solicitud, login
+):
+    prestador, servicio, cliente = servicio_y_cliente()
+    crear_solicitud(servicio.id, cliente.id)
+    login(prestador.id)
+
+    datos = client.get("/mensajes/notificaciones").get_json()
+
+    assert datos["pending_service_requests"] == 1
+    assert datos["total"] == 1
+
+
+def test_el_badge_no_cuenta_las_ya_respondidas(
+    client, servicio_y_cliente, crear_solicitud, login
+):
+    """Una vez contestada, la pelota esta del otro lado."""
+    prestador, servicio, cliente = servicio_y_cliente()
+    crear_solicitud(servicio.id, cliente.id, estado=EstadosSolicitud.RESPONDIDA)
+    crear_solicitud(
+        servicio.id, cliente.id, descripcion="Otra", estado=EstadosSolicitud.CERRADA
+    )
+    login(prestador.id)
+
+    datos = client.get("/mensajes/notificaciones").get_json()
+
+    assert datos["pending_service_requests"] == 0
+    assert datos["total"] == 0
+
+
+def test_el_badge_no_le_cuenta_al_cliente_lo_que_pidio(
+    client, servicio_y_cliente, crear_solicitud
+):
+    """El contador es de lo que espera una respuesta TUYA."""
+    _prestador, servicio, cliente = servicio_y_cliente()
+    crear_solicitud(servicio.id, cliente.id)
+
+    datos = client.get("/mensajes/notificaciones").get_json()
+
+    assert datos["pending_service_requests"] == 0
+
+
 # --- borrados en cascada de las solicitudes
 
 def test_borrar_el_servicio_se_lleva_sus_solicitudes(
