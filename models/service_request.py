@@ -186,6 +186,15 @@ def _sincronizar_cupo_pendiente(mapper, connection, target):
     solicitud cambia de estado y se olvida de actualizarla, el freno de la
     pendiente unica se cae en silencio.
 
+    OJO, cubre los cambios que pasan por el ORM, que hoy son todos: los eventos
+    de mapper corren en el flush de una instancia, asi que un UPDATE masivo
+    (Query.update(), un DELETE en bloque, SQL crudo) no los dispara y dejaria
+    cupo_pendiente diciendo cualquier cosa. Hoy nadie hace eso sobre esta tabla;
+    quien vaya a hacerlo tiene que escribir cupo_pendiente en el mismo UPDATE.
+    Lo que no cambia es la garantia: la da el UNIQUE de la base, no este
+    listener, y un bulk update que deje la columna mal seria rechazado por la
+    base si genera un duplicado.
+
     El `or PENDIENTE` es porque los defaults de columna se aplican despues de
     este evento: una solicitud creada sin pasar `estado` todavia lo tiene en
     None aca, y su default es justamente "pendiente".

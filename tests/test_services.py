@@ -594,6 +594,35 @@ def test_responder_libera_el_cupo_para_un_pedido_nuevo(
     ).count() == 1
 
 
+def test_otra_violacion_de_integridad_no_se_disfraza_de_pendiente_duplicada(
+    client, db, servicio_y_cliente, monkeypatch
+):
+    """El INSERT puede fallar por otra cosa: aca el prestador borra el servicio
+    justo entre el chequeo y el INSERT, y lo que salta es la FK.
+
+    Ese error no puede terminar en "ya tenés una solicitud pendiente", que
+    ademas de ser mentira taparia el problema real sin dejar rastro.
+    """
+    import views.servicios as vista
+
+    _prestador, servicio, _cliente = servicio_y_cliente()
+    servicio_id = servicio.id
+
+    def _borrar_el_servicio_en_el_medio(service_id, cliente_id):
+        db.session.execute(
+            db.text("DELETE FROM services WHERE id = :id"), {"id": service_id}
+        )
+        return None
+
+    monkeypatch.setattr(vista, "_solicitud_pendiente_de", _borrar_el_servicio_en_el_medio)
+
+    with pytest.raises(IntegrityError):
+        client.post(f"/servicios/{servicio_id}/solicitar", data={"descripcion": "Hola"})
+
+    db.session.rollback()
+    assert ServiceRequest.query.count() == 0
+
+
 def test_dos_pedidos_simultaneos_dejan_una_sola_pendiente(tmp_path, monkeypatch):
     """La carrera de verdad, con dos hilos y una Barrier.
 

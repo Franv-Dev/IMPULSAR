@@ -35,11 +35,17 @@ def upgrade():
     conexion = op.get_bind()
 
     # Si la base ya tiene duplicados (son justamente los que dejo pasar el bug),
-    # el UNIQUE no se puede crear. Se conserva la mas vieja de cada grupo, que
-    # es la que el cliente vio y la que el prestador tiene en su lista, y las
-    # demas se cierran: no se borran porque pueden tener una foto y un texto que
-    # el cliente escribio, y "cerrada" ya significa "archivada, no hace falta
-    # contestarla".
+    # el UNIQUE no se puede crear. Se conserva la de id mas chico de cada grupo
+    # y las demas se cierran: no se borran porque pueden tener una foto y un
+    # texto que el cliente escribio, y "cerrada" ya significa "archivada, no
+    # hace falta contestarla".
+    #
+    # El criterio es MIN(id) y no MIN(created_at) a proposito, y no son lo mismo:
+    # el id lo pone la base al insertar, asi que siempre marca cual entro
+    # primero, mientras que created_at se puede escribir con cualquier fecha
+    # (scripts/seed.py, sin ir mas lejos, backdatea las solicitudes que carga).
+    # Para el caso que importa aca -- dos requests que se pisaron -- el que entro
+    # primero es el que el cliente vio y el que el prestador tiene en su lista.
     #
     # El SELECT anidado va envuelto en una subconsulta con alias porque MySQL no
     # deja leer en un UPDATE la misma tabla que esta actualizando si no hay una

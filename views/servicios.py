@@ -268,6 +268,28 @@ def _cuantos_tiene(post_id):
 
 # ---------------------------------------------------------------- solicitudes
 
+# Como se reconoce el choque contra el UNIQUE de la pendiente unica. Los dos
+# motores dicen algo distinto: MySQL nombra la constraint ("Duplicate entry
+# '1-2-1' for key 'uq_service_requests_pendiente'") y SQLite no la nombra, lista
+# las columnas ("UNIQUE constraint failed: service_requests.service_id, ..."),
+# asi que se buscan las dos formas. cupo_pendiente no participa de ninguna otra
+# constraint, asi que alcanza para distinguirla.
+_CONSTRAINT_PENDIENTE = "uq_service_requests_pendiente"
+_COLUMNA_PENDIENTE = "service_requests.cupo_pendiente"
+
+
+def _es_pendiente_duplicada(error):
+    """Si ese IntegrityError es el del UNIQUE de la pendiente unica.
+
+    Se mira antes de dar por hecho de que error se trata: un IntegrityError a
+    secas tambien lo levanta, por ejemplo, la FK del servicio si el prestador lo
+    borra justo en el medio, y ahi el cliente veria "ya tenes una solicitud
+    pendiente", que es mentira, y el error real se perderia sin dejar rastro.
+    """
+    texto = str(getattr(error, "orig", error))
+    return _CONSTRAINT_PENDIENTE in texto or _COLUMNA_PENDIENTE in texto
+
+
 def _solicitud_visible(id):
     """La solicitud con ese id, si el usuario actual es parte de ella.
 
@@ -346,13 +368,19 @@ def solicitar(id):
         db.session.add(solicitud)
         try:
             db.session.commit()
-        except IntegrityError:
+        except IntegrityError as error:
+            # La fila no entro, asi que la foto que se acaba de escribir no la
+            # referencia nadie: se limpia pase lo que pase con el error.
+            db.session.rollback()
+            borrar_de_disco(_upload_dir(), [foto])
+            if not _es_pendiente_duplicada(error):
+                # Cualquier otra violacion de integridad no es este caso y no
+                # se disfraza de este caso: sube y se ve como el error que es.
+                raise
             # Perdio la carrera: otro request identico llego junto con este y
             # el UNIQUE de la base lo rechazo. Para el usuario es exactamente
             # el mismo caso que atajo el chequeo de arriba, asi que termina
             # igual: en la solicitud que si quedo.
-            db.session.rollback()
-            borrar_de_disco(_upload_dir(), [foto])
             flash("Ya tenés una solicitud pendiente para ese servicio.")
             pendiente = _solicitud_pendiente_de(servicio.id, g.user.id)
             if pendiente:
