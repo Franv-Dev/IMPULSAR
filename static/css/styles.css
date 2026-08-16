@@ -1893,6 +1893,103 @@ a.perfil-dato:hover {
     color: var(--color-primary);
 }
 
+/* --- Responsive del perfil ---
+   Dos saltos, cada uno por lo que se rompe primero:
+
+   960px: la lateral fija de 320px deja de entrar al lado de la principal
+   (minmax(0,1fr) + 320px empieza a apretar las cards del catalogo a menos de
+   lo que miden), asi que baja abajo y todo pasa a una columna.
+
+   768px: el hero deja de poder ser tres columnas. Con el nombre en el medio,
+   una columna de ancho automatico a cada lado y un nombre largo sin espacios,
+   el titulo se parte letra por letra. Avatar arriba, identidad debajo y las
+   acciones al final, cada una en su fila. */
+
+@media (max-width: 960px) {
+    .perfil-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .perfil {
+        padding: 1.25rem 1rem 2.5rem;
+        gap: 1.25rem;
+    }
+
+    .perfil-hero__portada-img {
+        height: 150px;
+    }
+
+    .perfil-hero__cuerpo {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.75rem;
+        padding: 0 1.25rem 1.5rem;
+    }
+
+    .perfil-hero__avatar {
+        width: 88px;
+        height: 88px;
+        margin-top: -44px;
+    }
+
+    .perfil-hero__identidad,
+    .perfil-hero__acciones {
+        padding-top: 0;
+    }
+
+    .perfil-hero__nombre {
+        font-size: 1.5rem;
+    }
+
+    .perfil-hero__acciones {
+        justify-content: flex-start;
+    }
+
+    .perfil-card {
+        padding: 1.25rem;
+    }
+
+    /* Editar/Eliminar de cada evento se llevaban media fila y dejaban el titulo
+       y la descripcion en una columna de dos palabras de ancho: bajan a su
+       propia linea. Va acotado a .perfil y no a .eventos-lista en general
+       porque la cartelera de /eventos es otra vista y no es esta tanda. */
+    .perfil .eventos-lista__item {
+        flex-wrap: wrap;
+    }
+
+    /* base 0 y no auto: con auto el cuerpo pide su ancho de contenido, no entra
+       al lado del recuadro de la fecha y se lleva la fila entera el solo. */
+    .perfil .eventos-lista__cuerpo {
+        flex: 1 1 0;
+    }
+
+    .perfil .eventos-lista__acciones {
+        width: 100%;
+        justify-content: flex-start;
+        padding-left: calc(56px + 1rem);
+    }
+}
+
+/* La accion principal (WhatsApp, Seguir, Editar perfil) ocupa el ancho
+   completo, que es lo que se toca con el pulgar; las secundarias y el boton de
+   compartir se acomodan solos en la fila de abajo. */
+@media (max-width: 480px) {
+    .perfil-hero__acciones,
+    .perfil-hero__acciones form {
+        width: 100%;
+    }
+
+    .perfil-hero__acciones .btn--primary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .perfil-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 
 /*  Redes Sociales  */
 /* El contenedor propio del perfil ahora es .perfil-redes, en la tarjeta de
