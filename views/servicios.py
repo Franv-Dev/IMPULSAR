@@ -20,6 +20,7 @@ import os
 from flask import (
     Blueprint, abort, current_app, flash, g, redirect, render_template, request, url_for
 )
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 
 from db import db, utcnow
@@ -306,9 +307,12 @@ def solicitar(id):
     pendiente = _solicitud_pendiente_de(servicio.id, g.user.id)
     if pendiente:
         # Sin esto, un doble click en el boton deja dos solicitudes iguales, y
-        # nada impide mandar diez. Es el mismo problema que resuelve el UNIQUE
-        # de reviews; aca no puede ser un UNIQUE porque solo aplica al estado
-        # pendiente, y un unique parcial no es portable a MySQL.
+        # nada impide mandar diez. OJO: este chequeo es para mostrar un mensaje
+        # claro y llevarlo a la solicitud que ya tiene, no es el que garantiza
+        # la regla: entre este SELECT y el INSERT de mas abajo hay una ventana
+        # por la que pasan dos requests simultaneos. Lo que de verdad lo impide
+        # es el UNIQUE de la base (ver models/service_request.py), y su
+        # IntegrityError se maneja abajo.
         flash("Ya tenés una solicitud pendiente para ese servicio.")
         return redirect(url_for("servicios.solicitud", id=pendiente.id))
 
@@ -340,7 +344,24 @@ def solicitar(id):
             estado=EstadosSolicitud.PENDIENTE,
         )
         db.session.add(solicitud)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # Perdio la carrera: otro request identico llego junto con este y
+            # el UNIQUE de la base lo rechazo. Para el usuario es exactamente
+            # el mismo caso que atajo el chequeo de arriba, asi que termina
+            # igual: en la solicitud que si quedo.
+            db.session.rollback()
+            borrar_de_disco(_upload_dir(), [foto])
+            flash("Ya tenés una solicitud pendiente para ese servicio.")
+            pendiente = _solicitud_pendiente_de(servicio.id, g.user.id)
+            if pendiente:
+                return redirect(url_for("servicios.solicitud", id=pendiente.id))
+            # No deberia pasar (si el INSERT choco es porque la otra fila
+            # existe), pero si la otra parte se cerro en el medio no se lo deja
+            # sin ningun lado al que ir.
+            return redirect(url_for("blog.detail", id=servicio.post_id))
+
         flash("Listo, le mandamos tu pedido. Te va a contestar por acá.")
         return redirect(url_for("servicios.solicitud", id=solicitud.id))
 

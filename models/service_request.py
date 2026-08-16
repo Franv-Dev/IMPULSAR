@@ -49,9 +49,32 @@ class ServiceRequest(db.Model):
     es enumerable (el nombre lleva un uuid, ver services/uploads.py), pero si
     alguna vez hace falta que el archivo tambien sea privado hay que servirlo
     por una ruta propia con el mismo chequeo que la pagina.
+
+    UNA SOLA PENDIENTE: un cliente no puede tener dos solicitudes pendientes
+    sobre el mismo servicio. Eso lo garantiza la base y no la vista: chequear
+    antes de insertar deja una ventana entre el SELECT y el INSERT, y dos
+    requests que entran juntos (el doble click que manda dos POST, o dos
+    pestañas) pasan los dos el chequeo y guardan los dos. La vista igual
+    chequea antes, pero para dar un mensaje lindo, no para garantizar nada.
+
+    La constraint es UNIQUE(service_id, cliente_id, cupo_pendiente), donde
+    cupo_pendiente vale 1 mientras la solicitud esta pendiente y NULL cuando no
+    lo esta. En los dos motores (MySQL y SQLite) un UNIQUE ignora las filas con
+    NULL, asi que la regla termina aplicando solo a las pendientes: las
+    respondidas y las cerradas pueden repetirse todas las veces que haga falta.
+    Es la forma portable de escribir el "unique parcial" que MySQL no tiene.
     """
 
     __tablename__ = "service_requests"
+
+    __table_args__ = (
+        # Ver "UNA SOLA PENDIENTE" en el docstring: el que cierra de verdad la
+        # ventana entre el chequeo y el INSERT.
+        db.UniqueConstraint(
+            "service_id", "cliente_id", "cupo_pendiente",
+            name="uq_service_requests_pendiente",
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     # ondelete="CASCADE" y con nombre explicito, igual que el resto de las FK
@@ -96,6 +119,10 @@ class ServiceRequest(db.Model):
         server_default=EstadosSolicitud.PENDIENTE,
         index=True,
     )
+    # Vale 1 si estado == pendiente, y NULL si no. No se toca a mano en ningun
+    # lado: lo mantiene el listener de abajo, para que no pueda quedar
+    # desincronizado de `estado` (que es de donde sale su valor).
+    cupo_pendiente = db.Column(db.Integer, nullable=True)
     # La respuesta del prestador. Las dos columnas son nullable porque hasta
     # que conteste no existen; el precio ademas puede seguir siendo NULL
     # despues, si contesta "pasame una foto" o "no llego a esa zona".
@@ -147,3 +174,22 @@ class ServiceRequest(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "responded_at": self.responded_at.isoformat() if self.responded_at else None,
         }
+
+
+@db.event.listens_for(ServiceRequest, "before_insert")
+@db.event.listens_for(ServiceRequest, "before_update")
+def _sincronizar_cupo_pendiente(mapper, connection, target):
+    """Deriva cupo_pendiente de estado antes de cada INSERT y cada UPDATE.
+
+    Va aca y no en cada vista que cambia el estado: la columna solo existe para
+    sostener el UNIQUE, y si alguien agrega mañana otro lugar donde una
+    solicitud cambia de estado y se olvida de actualizarla, el freno de la
+    pendiente unica se cae en silencio.
+
+    El `or PENDIENTE` es porque los defaults de columna se aplican despues de
+    este evento: una solicitud creada sin pasar `estado` todavia lo tiene en
+    None aca, y su default es justamente "pendiente".
+    """
+    estado = target.estado or EstadosSolicitud.PENDIENTE
+    target.estado = estado
+    target.cupo_pendiente = 1 if estado == EstadosSolicitud.PENDIENTE else None

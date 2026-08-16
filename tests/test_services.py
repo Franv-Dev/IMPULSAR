@@ -1,11 +1,17 @@
 """Servicios de un emprendimiento: trabajos a presupuestar."""
 
+import threading
 from decimal import Decimal
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
+from db import db as _db
+from main import create_app
+from models.post import Post
 from models.service import MAX_SERVICIOS_POR_POST, Rubros, Service
 from models.service_request import EstadosSolicitud, ServiceRequest
+from models.user import User
 from services.precios import parsear_precio
 
 
@@ -536,6 +542,143 @@ def test_se_puede_volver_a_pedir_cuando_la_anterior_ya_no_esta_pendiente(
     client.post(f"/servicios/{servicio.id}/solicitar", data={"descripcion": "Otra vez"})
 
     assert ServiceRequest.query.count() == 2
+
+
+# --- una sola pendiente: la constraint, no el chequeo
+
+def test_la_base_rechaza_dos_pendientes_del_mismo_cliente_y_servicio(
+    db, servicio_y_cliente, crear_solicitud
+):
+    """El freno tiene que estar en la base y no solo en la vista: es lo unico
+    que no se puede saltear metiendo dos requests a la vez."""
+    _prestador, servicio, cliente = servicio_y_cliente()
+    crear_solicitud(servicio.id, cliente.id)
+
+    with pytest.raises(IntegrityError):
+        crear_solicitud(servicio.id, cliente.id, descripcion="La misma otra vez")
+
+    db.session.rollback()
+
+
+@pytest.mark.parametrize("estado", [EstadosSolicitud.RESPONDIDA, EstadosSolicitud.CERRADA])
+def test_la_constraint_no_toca_las_que_ya_no_estan_pendientes(
+    servicio_y_cliente, crear_solicitud, estado
+):
+    """El UNIQUE es sobre cupo_pendiente, que solo tiene valor mientras la
+    solicitud esta pendiente: de las otras puede haber todas las que sea."""
+    _prestador, servicio, cliente = servicio_y_cliente()
+    crear_solicitud(servicio.id, cliente.id, estado=estado)
+    crear_solicitud(servicio.id, cliente.id, descripcion="Otra", estado=estado)
+
+    assert ServiceRequest.query.count() == 2
+
+
+def test_responder_libera_el_cupo_para_un_pedido_nuevo(
+    client, servicio_y_cliente, crear_solicitud, login
+):
+    """El cupo lo mantiene el listener del modelo, asi que tiene que soltarse
+    solo cuando la solicitud cambia de estado, sin que nadie lo toque."""
+    prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+    login(prestador.id)
+    client.post(f"/servicios/solicitudes/{solicitud.id}/responder", data={
+        "respuesta_precio": "", "respuesta_mensaje": "Puedo el martes.",
+    })
+
+    login(cliente.id)
+    client.post(f"/servicios/{servicio.id}/solicitar", data={"descripcion": "Otra cosa"})
+
+    assert ServiceRequest.query.count() == 2
+    assert ServiceRequest.query.filter_by(
+        estado=EstadosSolicitud.PENDIENTE
+    ).count() == 1
+
+
+def test_dos_pedidos_simultaneos_dejan_una_sola_pendiente(tmp_path, monkeypatch):
+    """La carrera de verdad, con dos hilos y una Barrier.
+
+    Postear dos veces seguidas no prueba nada de esto: lo ataja el chequeo de
+    la vista. El bug esta en la ventana entre ese SELECT y el INSERT, asi que
+    la barrera se pone justo ahi, envolviendo _solicitud_pendiente_de: los dos
+    hilos ven "no hay ninguna pendiente" y recien despues insertan los dos.
+
+    Va sobre una base en un archivo y no sobre la de memoria de conftest,
+    porque en SQLite la base ":memory:" vive en una sola conexion y no hay dos
+    requests concurrentes que valgan.
+    """
+    import views.servicios as vista
+    from config import TestingConfig
+
+    monkeypatch.setattr(
+        TestingConfig, "SQLALCHEMY_DATABASE_URI",
+        f"sqlite:///{tmp_path / 'concurrencia.sqlite'}",
+    )
+    app = create_app("testing")
+
+    with app.app_context():
+        _db.create_all()
+        prestador = User(username="prestador", email="prestador@test.com", password="x")
+        cliente = User(username="cliente", email="cliente@test.com", password="x")
+        _db.session.add_all([prestador, cliente])
+        _db.session.commit()
+        post = Post(author=prestador.id, title="Lo mío", body="Plomería")
+        _db.session.add(post)
+        _db.session.commit()
+        servicio = Service(post_id=post.id, titulo="Destapaciones", rubro=Rubros.PLOMERIA)
+        _db.session.add(servicio)
+        _db.session.commit()
+        servicio_id, cliente_id = servicio.id, cliente.id
+
+    barrera = threading.Barrier(2, timeout=10)
+    chequeo_original = vista._solicitud_pendiente_de
+    # Solo se espera en el chequeo de la ida. El que pierde la carrera vuelve a
+    # preguntar por la pendiente al manejar el IntegrityError, y ahi ya no hay
+    # nadie del otro lado esperando.
+    ida = threading.local()
+
+    def _chequear_y_esperar(service_id, cliente_id_):
+        pendiente = chequeo_original(service_id, cliente_id_)
+        if not getattr(ida, "cumplida", False):
+            ida.cumplida = True
+            # Los dos hilos ya hicieron el SELECT; salen juntos a insertar.
+            barrera.wait()
+        return pendiente
+
+    monkeypatch.setattr(vista, "_solicitud_pendiente_de", _chequear_y_esperar)
+
+    respuestas = {}
+    fallas = {}
+
+    def pedir(numero):
+        try:
+            navegador = app.test_client()
+            with navegador.session_transaction() as sesion:
+                sesion["user_id"] = cliente_id
+            respuestas[numero] = navegador.post(
+                f"/servicios/{servicio_id}/solicitar",
+                data={"descripcion": f"Se me tapó todo ({numero})"},
+            )
+        except Exception as e:  # noqa: BLE001 - se reporta abajo, en el assert
+            fallas[numero] = e
+
+    hilos = [threading.Thread(target=pedir, args=(numero,)) for numero in (1, 2)]
+    for hilo in hilos:
+        hilo.start()
+    for hilo in hilos:
+        hilo.join(timeout=30)
+
+    assert not fallas, f"algun request exploto: {fallas}"
+    # Ninguno de los dos ve un error: el que pierde la carrera termina en la
+    # solicitud que si quedo, igual que si hubiera llegado un rato despues.
+    assert [r.status_code for r in respuestas.values()] == [302, 302]
+
+    with app.app_context():
+        assert ServiceRequest.query.filter_by(
+            service_id=servicio_id, cliente_id=cliente_id,
+            estado=EstadosSolicitud.PENDIENTE,
+        ).count() == 1
+        _db.session.remove()
+        _db.engine.dispose()
 
 
 def test_el_dueño_no_se_pide_presupuesto_a_si_mismo(
