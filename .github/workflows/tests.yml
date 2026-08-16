@@ -66,4 +66,4 @@ jobs:
           DATABASE_URL: sqlite:///ci_check.db
           SECRET_KEY: clave-de-ci
           JWT_SECRET_KEY: jwt-de-ci
-        run: flask --app main db upgrade
+        run: flask --app wsgi db upgrade

@@ -20,7 +20,8 @@ from sqlalchemy.exc import IntegrityError
 from services.geocoding import get_coordinates_from_address
 from services.ratings import query_posts_con_rating, serializar_con_rating
 from services.uploads import (
-    ALLOWED_EXTENSIONS, allowed_file, borrar_de_disco, save_post_image
+    ALLOWED_EXTENSIONS, allowed_file, borrar_de_disco, carpeta_uploads,
+    save_post_image
 )
 
 logger = logging.getLogger(__name__)
@@ -324,7 +325,7 @@ def create():
             error = f"Podés subir hasta {MAX_IMAGENES_POR_POST} fotos por emprendimiento."
 
         if error is None:
-            upload_dir = os.path.join(current_app.root_path, "static", "uploads")
+            upload_dir = carpeta_uploads()
             filename, image_error = save_post_image(file, upload_dir)
             if image_error:
                 error = image_error
@@ -395,7 +396,7 @@ def update(id):
         # Arranca en None para poder consultarla en el branch de error aunque
         # la validacion haya cortado antes de llegar a guardar la imagen.
         filename = None
-        upload_dir = os.path.join(current_app.root_path, "static", "uploads")
+        upload_dir = carpeta_uploads()
         if not title:
             error = "Se requiere un título."
 

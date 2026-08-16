@@ -15,10 +15,8 @@ va en la vista y no solo en el template: esconder un boton no es un permiso,
 cualquiera puede mandar el POST a mano.
 """
 
-import os
-
 from flask import (
-    Blueprint, abort, current_app, flash, g, redirect, render_template, request, url_for
+    Blueprint, abort, flash, g, redirect, render_template, request, url_for
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
@@ -28,14 +26,14 @@ from models.post import Post
 from models.service import MAX_SERVICIOS_POR_POST, Rubros, Service
 from models.service_request import EstadosSolicitud, ServiceRequest
 from services.precios import parsear_precio, texto_para_formulario
-from services.uploads import borrar_de_disco, save_post_image
+from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
 from views.auth import login_required
 
 servicios = Blueprint("servicios", __name__, url_prefix="/servicios")
 
 
 def _upload_dir():
-    return os.path.join(current_app.root_path, "static", "uploads")
+    return carpeta_uploads()
 
 
 def _servicio_propio(id):

@@ -1,13 +1,13 @@
+"""Paquete de vistas. A proposito no reexporta nada.
 
-from .auth import auth          
-from .blog import blog          
-from .posts_api import posts_api  
-from .profile import profile
+Antes este archivo importaba cuatro blueprints y definia un
+register_blueprints() que no usaba nadie: main.py los registra uno por uno. Eso
+tenia dos costos. Tocar cualquier cosa del paquete importaba media app en
+cadena, que es como aparecen los imports circulares; y el atributo del paquete
+quedaba pisado por el Blueprint, asi que `views.profile` era el blueprint y no
+el modulo, y un test que queria parchear el modulo tenia que ir por sys.modules
+para conseguirlo (ver tests/test_profile.py).
 
-
-def register_blueprints(app):
-
-    app.register_blueprint(auth)
-    app.register_blueprint(blog)
-    app.register_blueprint(posts_api)
-    app.register_blueprint(profile)
+Si alguna vez hace falta un registro centralizado, va en main.py o en la
+factory, no aca.
+"""

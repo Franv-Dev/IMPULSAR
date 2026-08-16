@@ -48,9 +48,18 @@ csrf = CSRFProtect()
 
 def create_app(config_name=None):
     """Crea y configura una instancia de la aplicacion."""
-    app = Flask(__name__)
-
     config_class = get_config(config_name)
+
+    # static/ y templates/ se pasan explicitos, con la ruta absoluta que calcula
+    # config.py desde la raiz del repo. Por defecto Flask los busca al lado del
+    # modulo que crea la app, asi que sin esto mudar este archivo a un paquete
+    # dejaria las plantillas y las imagenes subidas fuera de alcance.
+    app = Flask(
+        __name__,
+        static_folder=config_class.STATIC_FOLDER,
+        template_folder=config_class.TEMPLATES_FOLDER,
+    )
+
     app.config.from_object(config_class)
     config_class.init_app(app)
 

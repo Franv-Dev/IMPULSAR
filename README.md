@@ -136,15 +136,15 @@ CREATE DATABASE impulsar_db;
 
 ### 6️⃣ Aplicar migraciones
 ```bash
-flask --app main db upgrade
+flask --app wsgi db upgrade
 ```
 
 > No hace falta `flask db init`: la carpeta `migrations/` ya está en el repo.
-> Usá `flask --app main db migrate -m "descripción"` solo cuando cambies los modelos.
+> Usá `flask --app wsgi db migrate -m "descripción"` solo cuando cambies los modelos.
 
 ### 7️⃣ Ejecutar la aplicación
 ```bash
-flask --app main run
+flask --app wsgi run
 ```
 
 Abrí tu navegador en:  

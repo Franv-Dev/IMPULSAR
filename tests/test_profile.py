@@ -475,15 +475,12 @@ def test_editar_perfil_guarda_la_ubicacion_textual(client, db, crear_usuario, lo
 
 def test_la_ubicacion_textual_no_se_geocodifica(client, db, crear_usuario, login, monkeypatch):
     """Es texto libre: no toca address_street ni las coordenadas del mapa."""
-    # sys.modules y no "import views.profile": views/__init__.py reexporta el
-    # Blueprint con ese mismo nombre, asi que el atributo del paquete no es el modulo.
-    import sys
-    modulo = sys.modules["views.profile"]
+    import views.profile as vista
 
     def _explotar(*args, **kwargs):
         raise AssertionError("no se debe geocodificar la ubicación textual")
 
-    monkeypatch.setattr(modulo, "get_coordinates_from_address", _explotar)
+    monkeypatch.setattr(vista, "get_coordinates_from_address", _explotar)
 
     usuario = crear_usuario(username="tomy")
     login(usuario.id)

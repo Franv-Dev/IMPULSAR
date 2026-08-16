@@ -94,7 +94,9 @@ CENTRO = (-32.9833, -68.7833)
 # ------------------------------------------------------------------ imagenes
 
 def _carpeta_uploads(app):
-    return os.path.join(app.root_path, "static", "uploads")
+    # La misma carpeta que usa la app (config.UPLOAD_FOLDER); ver
+    # services/uploads.py carpeta_uploads().
+    return app.config["UPLOAD_FOLDER"]
 
 
 def _generar_imagen(carpeta, nombre, texto, color):

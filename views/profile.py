@@ -20,7 +20,7 @@ from services.geocoding import get_coordinates_from_address
 from services.horarios import DIAS, esta_abierto, formatear as formatear_hora, parsear_hora
 from services.ratings import query_posts_con_rating, serializar_con_rating
 from services.stats import estadisticas_de_usuario
-from services.uploads import save_post_image
+from services.uploads import carpeta_uploads, save_post_image
 
 profile = Blueprint("profile", __name__, url_prefix="/perfil")
 
@@ -290,7 +290,7 @@ def edit():
 
         # 1.b Foto de perfil (opcional, se conserva la anterior si no se sube otra)
         avatar_file = request.files.get("avatar")
-        upload_dir = os.path.join(current_app.root_path, "static", "uploads", "avatars")
+        upload_dir = carpeta_uploads("avatars")
         avatar_filename, avatar_error = save_post_image(avatar_file, upload_dir)
         if avatar_error:
             flash(avatar_error)
@@ -299,7 +299,7 @@ def edit():
 
         # 1.b.2 Imagen de portada (misma validacion/compresion que el avatar)
         cover_file = request.files.get("cover_image")
-        cover_dir = os.path.join(current_app.root_path, "static", "uploads", "covers")
+        cover_dir = carpeta_uploads("covers")
         cover_filename, cover_error = save_post_image(cover_file, cover_dir)
         if cover_error:
             flash(cover_error)

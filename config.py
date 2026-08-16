@@ -18,6 +18,35 @@ from services.uploads import MAX_IMAGE_BYTES
 load_dotenv()
 
 
+def _raiz_del_proyecto():
+    """La carpeta del repo, encontrada subiendo hasta dar con static/.
+
+    No se usa current_app.root_path (que es la carpeta del modulo que crea la
+    Flask) ni el directorio de este archivo: los dos dan por sentado donde vive
+    el codigo, y el codigo se va a mudar a un paquete. Lo que no se mueve es
+    static/ y las carpetas hermanas (migrations/, scripts/, tests/), asi que la
+    raiz se busca por ahi y el resultado no cambia aunque config.py termine tres
+    niveles mas adentro.
+    """
+    actual = os.path.dirname(os.path.abspath(__file__))
+    while True:
+        if os.path.isdir(os.path.join(actual, "static")):
+            return actual
+        padre = os.path.dirname(actual)
+        if padre == actual:
+            raise RuntimeError(
+                "No se encontro la raiz del proyecto: ninguna carpeta padre de "
+                f"{__file__} tiene un static/. Se puede fijar a mano con la "
+                "variable de entorno RAIZ_PROYECTO."
+            )
+        actual = padre
+
+
+# Se puede fijar a mano, que es lo que necesita un deploy donde el codigo y los
+# archivos subidos no viven juntos (un volumen montado aparte, por ejemplo).
+RAIZ_PROYECTO = os.getenv("RAIZ_PROYECTO") or _raiz_del_proyecto()
+
+
 def _build_database_uri():
     """Arma la URI de conexion a MySQL a partir de las variables de entorno.
 
@@ -45,6 +74,17 @@ class Config:
 
     SQLALCHEMY_DATABASE_URI = _build_database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Rutas absolutas, calculadas desde la raiz del repo y no desde donde vive
+    # el modulo que crea la app. Antes cada vista se armaba la suya con
+    # current_app.root_path (habia seis copias): si el codigo se muda a un
+    # paquete, root_path deja de ser la raiz y las imagenes ya subidas quedan
+    # colgadas. Se pasan explicitas a Flask en create_app().
+    STATIC_FOLDER = os.path.join(RAIZ_PROYECTO, "static")
+    TEMPLATES_FOLDER = os.path.join(RAIZ_PROYECTO, "templates")
+    # Donde se guardan las imagenes que suben los usuarios. Se lee con
+    # services.uploads.carpeta_uploads(), que es el unico lugar que la arma.
+    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER") or os.path.join(STATIC_FOLDER, "uploads")
 
     MAPTILER_KEY = os.getenv("MAPTILER_KEY")
 

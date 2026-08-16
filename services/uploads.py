@@ -9,6 +9,7 @@ import logging
 import os
 import uuid
 
+from flask import current_app
 from PIL import Image, ImageOps
 from werkzeug.utils import secure_filename
 
@@ -24,6 +25,20 @@ MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
 # redimensionan y comprimen antes de guardar para no llenar el disco.
 MAX_IMAGE_WIDTH = 1200
 JPEG_QUALITY = 85
+
+
+def carpeta_uploads(*subcarpetas):
+    """La carpeta donde se guardan las imagenes subidas, ya absoluta.
+
+    Es el unico lugar del proyecto que arma esa ruta. Antes cada vista la
+    componia con current_app.root_path (habia seis copias, y dos de ellas con
+    subcarpeta propia: avatars y covers): ademas de estar repetida, ataba la
+    ubicacion de los archivos a la ubicacion del codigo. Ahora sale de
+    UPLOAD_FOLDER, que se calcula una sola vez en config.py.
+
+    Las subcarpetas se pasan como argumentos: carpeta_uploads("avatars").
+    """
+    return os.path.join(current_app.config["UPLOAD_FOLDER"], *subcarpetas)
 
 
 def allowed_file(filename):

@@ -11,10 +11,8 @@ va en la vista y no solo en el template: esconder un boton no es un permiso,
 cualquiera puede mandar el POST a mano.
 """
 
-import os
-
 from flask import (
-    Blueprint, current_app, flash, g, redirect, render_template, request, url_for
+    Blueprint, flash, g, redirect, render_template, request, url_for
 )
 from sqlalchemy.orm import joinedload
 
@@ -22,14 +20,14 @@ from db import db
 from models.post import Post
 from models.product import MAX_PRODUCTOS_POR_POST, Product
 from services.precios import parsear_precio, texto_para_formulario
-from services.uploads import borrar_de_disco, save_post_image
+from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
 from views.auth import login_required
 
 products = Blueprint("products", __name__, url_prefix="/productos")
 
 
 def _upload_dir():
-    return os.path.join(current_app.root_path, "static", "uploads")
+    return carpeta_uploads()
 
 
 def _producto_propio(id):
