@@ -150,7 +150,8 @@ def test_el_perfil_muestra_el_indicador_y_la_tabla(client, db, crear_usuario):
     assert "Horarios de atención" in html
     assert "09:00" in html
     # Uno de los dos estados tiene que estar, segun la hora real del test.
-    assert ("Abierto ahora" in html) or ("estado-atencion--cerrado" in html)
+    # El indicador es el chip del hero del perfil (antes .estado-atencion).
+    assert ("Abierto ahora" in html) or ("perfil-chip--cerrado" in html)
 
 
 def test_un_perfil_sin_horarios_no_dice_cerrado(client, crear_usuario):
@@ -159,7 +160,8 @@ def test_un_perfil_sin_horarios_no_dice_cerrado(client, crear_usuario):
 
     html = client.get("/perfil/tomy").get_data(as_text=True)
 
-    assert "estado-atencion" not in html
+    assert "perfil-chip--cerrado" not in html
+    assert "Abierto ahora" not in html
 
 
 def test_los_horarios_se_borran_con_el_usuario(client, db, crear_usuario):

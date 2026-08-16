@@ -644,10 +644,6 @@ main {
 
 /* SEGUIR EMPRENDEDORES */
 
-.profile-siguiendo {
-    padding: 0 2rem 1rem;
-}
-
 .siguiendo-lista {
     list-style: none;
     display: flex;
@@ -681,29 +677,8 @@ main {
 }
 
 /* HORARIOS DE ATENCION */
-
-.estado-atencion {
-    display: inline-block;
-    margin: 0.35rem 0 0;
-    padding: 0.15rem 0.6rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.estado-atencion--abierto {
-    background-color: var(--color-success-bg);
-    color: var(--color-success-text);
-}
-
-.estado-atencion--cerrado {
-    background-color: var(--color-danger-bg);
-    color: var(--color-danger-text);
-}
-
-.profile-horarios {
-    padding: 0 2rem 1rem;
-}
+/* El estado "abierto ahora / cerrado" ya no vive aca: es un chip del hero del
+   perfil (.perfil-chip), junto con la ubicacion. */
 
 .horarios-lista {
     list-style: none;
@@ -762,10 +737,6 @@ main {
 }
 
 /* EVENTOS Y FERIAS */
-
-.profile-eventos {
-    padding: 0 2rem 1rem;
-}
 
 .eventos-lista {
     list-style: none;
@@ -866,16 +837,6 @@ main {
     color: var(--color-muted);
 }
 
-.eventos-pasados {
-    margin-top: 1rem;
-}
-
-.eventos-pasados__resumen {
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: var(--color-muted);
-}
-
 /* GALERIA DE FOTOS DEL EMPRENDIMIENTO */
 
 .galeria-grid {
@@ -916,56 +877,6 @@ main {
     object-fit: cover;
     border-radius: 6px;
     border: 1px solid var(--color-border);
-}
-
-.profile-location {
-    margin: 0.25rem 0 0;
-    font-size: 0.9rem;
-    color: var(--color-muted);
-}
-
-/* ESTADISTICAS DEL PERFIL (solo las ve el dueño) */
-
-.profile-stats {
-    padding: 0 2rem 1rem;
-}
-
-.profile-stats__title {
-    margin: 0 0 0.25rem;
-    font-size: 1.15rem;
-}
-
-.profile-stats__hint {
-    margin: 0 0 1rem;
-    font-size: 0.8rem;
-    color: var(--color-muted);
-}
-
-.profile-stats__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 1rem;
-}
-
-.stat-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    padding: 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    background-color: var(--color-surface);
-}
-
-.stat-card__value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--color-primary);
-}
-
-.stat-card__label {
-    font-size: 0.8rem;
-    color: var(--color-muted);
 }
 
 /* FOOTER */
@@ -1644,150 +1555,335 @@ textarea.auth__input {
 .back-link:hover {
     text-decoration: underline;
 }
-/* === Perfil === */
-.profile-container {
-    max-width: 900px;
-    margin: 2rem auto 3rem auto;
-    background-color: var(--color-surface);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-soft);
-}
+/* ==========================================================================
+   PERFIL
+   --------------------------------------------------------------------------
+   Jerarquia de la vista, de arriba abajo y de izquierda a derecha:
 
-/* === Cabecera (Portada y Avatar) === */
-.profile-header {
-    position: relative;
-    background-color: var(--color-bg); /* Color de fondo mientras carga la imagen */
-}
+     1. Hero: quien es, donde queda, si atiende ahora y como contactarlo.
+     2. Columna principal: lo que ofrece (el catalogo) y cuando (los eventos).
+        Para el dueño, arriba de todo, su panel privado de estadisticas.
+     3. Columna lateral: datos de consulta (contacto, horarios, ubicacion) y
+        lo plegado: la semana completa de horarios y "Sigo a".
 
-.cover-photo {
+   Antes era una sola columna angosta, y no por decision de diseño:
+   .profile-container tenia `max-width` + `margin: … auto` dentro del flex
+   column de <main>, y un item flex con margenes automaticos en el eje
+   transversal deja de estirarse y se encoge al contenido. El perfil terminaba
+   midiendo lo que midiera su texto (537px en un perfil, ~900 en otro, 465 en
+   un viewport de 390) y la grilla de emprendimientos nunca podia armar mas de
+   una columna. Por eso el ancho ahora sale de un `width: 100%` explicito y no
+   de un margen automatico.
+   ========================================================================== */
+
+.perfil {
     width: 100%;
-    height: 240px;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* --- 1. Hero: identidad --- */
+
+.perfil-hero {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.perfil-hero__portada {
+    background-color: var(--color-surface-alt);
+}
+
+.perfil-hero__portada-img {
+    display: block;
+    width: 100%;
+    height: 200px;
     object-fit: cover;
 }
 
-.profile-avatar {
-    position: absolute;
-    bottom: -60px; /* Mitad del avatar (120px) */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 120px;
+/* Avatar - identidad - acciones. El avatar pisa la portada con el margen
+   negativo, y las acciones quedan a la derecha en la misma linea que el
+   nombre: son lo segundo que se busca despues de saber de quien es el perfil. */
+.perfil-hero__cuerpo {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 1.5rem;
+    padding: 0 2rem 1.75rem;
+}
+
+.perfil-hero__avatar {
+    width: 112px;
+    height: 112px;
+    margin-top: -56px;
     border-radius: 50%;
-    border: 4px solid var(--color-surface);
     overflow: hidden;
+    border: 4px solid var(--color-surface);
+    background-color: var(--color-surface);
     box-shadow: var(--shadow-light);
 }
 
-.profile-avatar img {
+.perfil-hero__avatar img {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-/*  Cuerpo Principal (Info, Stats, Acciones) */
-.profile-body {
-    padding: 5rem 2rem 3rem; /* 4rem de padding-top + 1rem extra para el avatar */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+.perfil-hero__identidad {
+    padding-top: 1.25rem;
+    min-width: 0;
 }
 
-.profile-main {
-    max-width: 600px;
-    width: 100%;
-}
-
-/*  Info de Usuario  */
-.username {
+.perfil-hero__nombre {
+    margin: 0;
     font-family: "Poppins", system-ui, sans-serif;
-    font-size: 2.25rem;
+    font-size: 1.9rem;
     font-weight: 700;
-    color: var(--color-text);
-    margin: 0 0 0.25rem 0;
     line-height: 1.2;
-}
-
-.role {
-    font-size: 1.1rem;
-    color: var(--color-muted);
-    margin: 0 0 1rem 0;
-}
-
-.biography {
-    font-size: 1rem;
     color: var(--color-text);
-    line-height: 1.6;
-    margin: 0 0 1rem 0;
+    overflow-wrap: anywhere;
 }
 
-.biography--empty {
+.perfil-hero__rol {
+    margin: 0.15rem 0 0;
+    font-size: 0.95rem;
+    color: var(--color-muted);
+}
+
+.perfil-hero__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+/* Ubicacion y estado de atencion como chips en una sola fila: antes eran dos
+   parrafos sueltos, uno arriba del otro, cada uno con su propio estilo. */
+.perfil-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+}
+
+.perfil-chip--abierto {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+    font-weight: 600;
+}
+
+.perfil-chip--cerrado {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    font-weight: 600;
+}
+
+.perfil-hero__bio {
+    margin: 0.9rem 0 0;
+    max-width: 62ch;
+    line-height: 1.6;
+    color: var(--color-text-soft);
+}
+
+.perfil-hero__bio--vacia {
     color: var(--color-muted);
     font-style: italic;
 }
 
-.enlace-biografia {
-    color: var(--color-primary);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.95em;
-    transition: all 0.2s ease;
-}
-
-.enlace-biografia:hover {
-    color: var(--color-primary-hover);
-    text-decoration: underline;
-}
-
-/* --- Estadísticas --- */
-.profile-stats {
+.perfil-hero__acciones {
     display: flex;
-    justify-content: center;
-    gap: 3rem;
-    margin: 2rem 0;
-    font-size: 0.95rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding-top: 1.25rem;
 }
 
-.profile-stats div {
-    line-height: 1.4;
-    color: var(--color-muted);
+.perfil-hero__acciones form {
+    margin: 0;
 }
 
-.profile-stats span {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: 700;
+/* --- 2. Cuerpo: principal + lateral --- */
+
+.perfil-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+    gap: 1.5rem;
+}
+
+.perfil-layout__principal,
+.perfil-layout__lateral {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+}
+
+/* Cada seccion es una tarjeta cerrada, en vez de bloques apilados separados
+   solo por un borde superior: se ve donde empieza y termina cada cosa. */
+.perfil-card {
+    padding: 1.5rem;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+/* Lo que solo ve el dueño lleva un filo violeta: se distingue de un vistazo
+   que ese bloque no es parte del perfil publico. */
+.perfil-card--propia {
+    border-left: 3px solid var(--color-primary);
+}
+
+.perfil-card__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.1rem;
+}
+
+.perfil-card__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
     color: var(--color-text);
 }
 
-.profile-contact {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 1rem;
+/* Tarjetas sin fila de acciones (Contacto, Ubicacion): el titulo se separa
+   solo del contenido. */
+.perfil-card > .perfil-card__titulo {
+    margin-bottom: 0.9rem;
 }
 
-/* --- Botones de Acción --- */
-.profile-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin: 1.5rem 0;
+.perfil-badge {
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
-/* No .btn-outline o .btn-primary porque usamos las clases globales */
+
+.perfil-vacio {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+}
+
+.perfil-vacio a {
+    color: var(--color-primary);
+}
+
+/* Plegables (semana completa de horarios, eventos pasados, "Sigo a"): lo que
+   es de consulta no ocupa lugar hasta que alguien lo pide. */
+.perfil-plegable {
+    margin: 0;
+}
+
+.perfil-plegable__resumen {
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-primary);
+}
+
+.perfil-plegable[open] .perfil-plegable__resumen {
+    margin-bottom: 0.6rem;
+}
+
+/* --- Panel de estadisticas (solo el dueño) --- */
+
+.perfil-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+}
+
+.perfil-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.85rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-alt);
+}
+
+.perfil-stat__valor {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-primary);
+}
+
+.perfil-stat__label {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+/* --- Lateral: contacto, redes, mapa --- */
+
+.perfil-dato {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.92rem;
+    color: var(--color-text-soft);
+    text-decoration: none;
+}
+
+.perfil-dato:last-child {
+    margin-bottom: 0;
+}
+
+a.perfil-dato:hover {
+    color: var(--color-primary);
+}
+
+.perfil-redes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+}
+
+/* El mapa en la lateral es una referencia, no el contenido: mas bajo que el
+   de la ficha del emprendimiento, que si ocupa el ancho de la pagina. */
+.perfil-layout__lateral #map {
+    height: 200px;
+}
+
+/* El catalogo hereda .card/.cards-grid del resto del sitio; lo unico propio
+   es que el titulo entero sea el link, sin subrayado. */
+.perfil .card__title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.perfil .card__title a:hover {
+    color: var(--color-primary);
+}
 
 
 /*  Redes Sociales  */
-.profile-social {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1.25rem;
-    margin-top: 2.5rem; /* Más separación de las acciones */
-}
-
+/* El contenedor propio del perfil ahora es .perfil-redes, en la tarjeta de
+   contacto de la columna lateral; aca queda solo el boton en si. */
 .social-icon {
     width: 44px;
     height: 44px;
@@ -1823,8 +1919,12 @@ textarea.auth__input {
     background-color: #1877F2;
 }
 
-/* === Sección Emprendimientos === */
-/* Esta sección usa .section__header de tu styles.css, pero la separamos del cuerpo */
+/* Override global de .section__header que habia nacido para la seccion de
+   emprendimientos del perfil. El perfil ya no lo usa (arma sus tarjetas con
+   .perfil-card), pero se queda porque en el camino se lo comieron todas las
+   demas paginas: home, blog, eventos, mensajes y el panel de admin renderizan
+   sus cabeceras con este padding y este borde. Sacarlo es una tanda aparte,
+   con esas vistas a la vista. */
 .section__header {
     padding: 2rem 2rem 1.5rem;
     border-top: 1px solid var(--color-border);

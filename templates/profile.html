@@ -2,11 +2,16 @@
 {% block title %}Perfil de {{ user.username }}{% endblock %}
 
 {% block content %}
+{# Un solo chequeo de dueño para todo el template: antes se repetia
+   `g.user and g.user.id == user.id` en siete lugares, y cada uno era una
+   oportunidad de olvidarse la mitad de la condicion y filtrar datos privados.
+   El criterio de que es privado no cambia: vistas, estadisticas y "Sigo a"
+   siguen siendo del dueño (ver views/profile.py). #}
+{% set es_dueno = g.user and g.user.id == user.id %}
 
-<div class="profile-container">
-    {# Sin esto los avisos se pierden: varias acciones (guardar horarios, y
-       ahora publicar/editar/borrar un evento) terminan redirigiendo al perfil,
-       y este era de los pocos templates que no mostraba los flashes. #}
+<div class="perfil">
+    {# Sin esto los avisos se pierden: varias acciones (guardar horarios,
+       publicar/editar/borrar un evento) terminan redirigiendo al perfil. #}
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             <div class="auth__messages">
@@ -17,88 +22,87 @@
         {% endif %}
     {% endwith %}
 
-    <div class="profile-header">
-        {% if user.cover_image %}
-            <img src="{{ url_for('static', filename='uploads/covers/' ~ user.cover_image) }}" alt="Portada de {{ user.username }}" class="cover-photo">
-        {% else %}
-            <img src="{{ url_for('static', filename='icons/portada.jpg') }}" alt="Portada" class="cover-photo">
-        {% endif %}
-        <div class="profile-avatar">
-            {% if user.avatar %}
-                <img src="{{ url_for('static', filename='uploads/avatars/' ~ user.avatar) }}" alt="Avatar de {{ user.username }}">
+    {# ============================================================
+       1. IDENTIDAD — lo primero que ve el visitante: quien es, de
+       donde, si esta abierto y como contactarlo. Todo lo demas es
+       secundario y va abajo o al costado.
+       ============================================================ #}
+    <header class="perfil-hero">
+        <div class="perfil-hero__portada">
+            {% if user.cover_image %}
+                <img src="{{ url_for('static', filename='uploads/covers/' ~ user.cover_image) }}"
+                     alt="Portada de {{ user.username }}" class="perfil-hero__portada-img">
             {% else %}
-                <img src="{{ url_for('static', filename='icons/logo_perfil.png') }}" alt="Avatar">
+                <img src="{{ url_for('static', filename='icons/portada.jpg') }}"
+                     alt="" class="perfil-hero__portada-img">
             {% endif %}
         </div>
-    </div>
 
-    <div class="profile-body">
-        <div class="profile-main">
-            <h1 class="username">{{ user.username }}</h1>
-            <p class="role">{{ user.rol or 'Miembro de IMPULSAR' }}</p>
-            {% if user.location %}
-                <p class="profile-location">📍 {{ user.location }}</p>
-            {% endif %}
-
-            {# abierto_ahora es None cuando el usuario no cargo horarios: en ese
-               caso no se muestra nada, porque "Cerrado" seria mentira. #}
-            {% if abierto_ahora is not none %}
-                <p class="estado-atencion {{ 'estado-atencion--abierto' if abierto_ahora else 'estado-atencion--cerrado' }}">
-                    {{ "Abierto ahora" if abierto_ahora else "Cerrado" }}
-                </p>
-            {% endif %}
-            
-            {% if user.biography %}
-                <p class="biography">{{ user.biography | render_bio }}</p>
-            {% else %}
-                <p class="biography biography--empty">Aún no tienes biografía. ¡Contanos tu historia!</p>
-            {% endif %}
-            
-            {% if g.user and g.user.id == user.id %}
-            <a href="{{ url_for('profile.edit') }}" class="enlace-biografia">
-                {% if user.biography %}
-                    Editar biografía
+        <div class="perfil-hero__cuerpo">
+            <div class="perfil-hero__avatar">
+                {% if user.avatar %}
+                    <img src="{{ url_for('static', filename='uploads/avatars/' ~ user.avatar) }}"
+                         alt="Avatar de {{ user.username }}">
                 {% else %}
-                    Crear biografía
+                    <img src="{{ url_for('static', filename='icons/logo_perfil.png') }}" alt="">
                 {% endif %}
-            </a>
-            {% endif %}
+            </div>
 
-            {% if user.phone or user.whatsapp %}
-                <div class="profile-contact">
+            <div class="perfil-hero__identidad">
+                <h1 class="perfil-hero__nombre">{{ user.username }}</h1>
+                <p class="perfil-hero__rol">{{ user.rol or 'Miembro de IMPULSAR' }}</p>
+
+                <div class="perfil-hero__meta">
+                    {% if user.location %}
+                        <span class="perfil-chip">📍 {{ user.location }}</span>
+                    {% endif %}
+                    {# abierto_ahora es None cuando el usuario no cargo horarios: en
+                       ese caso no se muestra nada, porque "Cerrado" seria mentira. #}
+                    {% if abierto_ahora is not none %}
+                        <span class="perfil-chip {{ 'perfil-chip--abierto' if abierto_ahora else 'perfil-chip--cerrado' }}">
+                            {{ "Abierto ahora" if abierto_ahora else "Cerrado" }}
+                        </span>
+                    {% endif %}
+                </div>
+
+                {% if user.biography %}
+                    <p class="perfil-hero__bio">{{ user.biography | render_bio }}</p>
+                {% elif es_dueno %}
+                    {# Al visitante no se le muestra nada: un cartel de "no hay bio"
+                       ocupa el lugar de la bio sin decirle nada util. #}
+                    <p class="perfil-hero__bio perfil-hero__bio--vacia">
+                        Todavía no cargaste tu biografía.
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="perfil-hero__acciones">
+                {% if es_dueno %}
+                    <a href="{{ url_for('profile.edit') }}" class="btn btn--primary">Editar perfil</a>
+                {% else %}
                     {% if user.whatsapp %}
                         <a href="https://wa.me/{{ user.whatsapp|replace(' ', '')|replace('+', '')|replace('-', '') }}"
-                            class="btn btn--primary" target="_blank" rel="noopener noreferrer">
+                           class="btn btn--primary" target="_blank" rel="noopener noreferrer">
                             WhatsApp
                         </a>
                     {% endif %}
-                    {% if user.phone %}
-                        <a href="tel:{{ user.phone }}" class="btn btn--secondary">
-                            {{ user.phone }}
-                        </a>
+                    {# El boton de seguir solo aparece en perfiles ajenos y con sesion
+                       iniciada: no hay a quien atribuirle el seguimiento si no hay
+                       usuario, y nadie se sigue a si mismo. #}
+                    {% if g.user %}
+                        <form method="post" action="{{ url_for('profile.toggle_follow', slug=user.slug) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn {{ 'btn--secondary' if lo_sigo else 'btn--primary' }}"
+                                    aria-pressed="{{ 'true' if lo_sigo else 'false' }}">
+                                {{ "Dejar de seguir" if lo_sigo else "Seguir" }}
+                            </button>
+                        </form>
                     {% endif %}
-                </div>
-            {% endif %}
+                {% endif %}
 
-            <div class="profile-actions">
-                {% if g.user and g.user.id == user.id %}
-                    <a href="{{ url_for('profile.edit') }}" class="btn btn--secondary">Editar perfil</a>
-                {% endif %}
                 <a href="{{ url_for('profile.reviews', slug=user.slug) }}" class="btn btn--secondary">
-                    Ver reseñas recibidas
+                    Ver reseñas
                 </a>
-                {# El boton de seguir solo aparece en perfiles ajenos y con
-                   sesion iniciada: no hay a quien atribuirle el seguimiento
-                   si no hay usuario, y nadie se sigue a si mismo. #}
-                {% if g.user and g.user.id != user.id %}
-                    <form method="post" action="{{ url_for('profile.toggle_follow', slug=user.slug) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn {{ 'btn--secondary' if lo_sigo else 'btn--primary' }}"
-                                aria-pressed="{{ 'true' if lo_sigo else 'false' }}">
-                            {{ "Dejar de seguir" if lo_sigo else "Seguir" }}
-                        </button>
-                    </form>
-                {% endif %}
                 {# Fuera del chequeo de dueño: cualquiera puede compartir un perfil ajeno. #}
                 {% with share_url=url_for('profile.view_profile', slug=user.slug, _external=True),
                         share_title="Perfil de " ~ user.username %}
@@ -106,325 +110,347 @@
                 {% endwith %}
             </div>
         </div>
+    </header>
 
-        {% if user.twitter_url or user.instagram_url or user.facebook_url %}
-        <div class="profile-social">
-            {% if user.twitter_url %}
-                <a href="{{ user.twitter_url }}" class="social-icon twitter" target="_blank" rel="noopener noreferrer">
-                    <img src="{{ url_for('static', filename='icons/Twitter.png') }}" alt="Twitter">
-                </a>
-            {% endif %}
-            {% if user.instagram_url %}
-                <a href="{{ user.instagram_url }}" class="social-icon instagram" target="_blank" rel="noopener noreferrer">
-                    <img src="{{ url_for('static', filename='icons/Instagram.png') }}" alt="Instagram">
-                </a>
-            {% endif %}
-            {% if user.facebook_url %}
-                <a href="{{ user.facebook_url }}" class="social-icon facebook" target="_blank" rel="noopener noreferrer">
-                    <img src="{{ url_for('static', filename='icons/Facebook.png') }}" alt="Facebook">
-                </a>
-            {% endif %}
-        </div>
-        {% endif %}
-    </div>
+    {# ============================================================
+       2. CUERPO — dos columnas en desktop: a la izquierda lo que el
+       visitante viene a ver (lo que ofrece y cuando), a la derecha
+       los datos de referencia (contacto, horarios, ubicacion). En
+       mobile la lateral cae debajo de la principal.
+       ============================================================ #}
+    <div class="perfil-layout">
+        <div class="perfil-layout__principal">
 
-    {# "Sigo a" solo lo ve el dueño: la vista ni siquiera arma la lista cuando
-       mira otro, mismo criterio que las estadisticas. #}
-    {% if g.user and g.user.id == user.id %}
-        <section class="profile-siguiendo">
-            <h2 class="section__title">Sigo a</h2>
-            {% if siguiendo %}
-                <ul class="siguiendo-lista">
-                    {% for seguido in siguiendo %}
-                        <li class="siguiendo-lista__item">
-                            <a href="{{ url_for('profile.view_profile', slug=seguido.slug) }}">
-                                {% if seguido.avatar %}
-                                    <img src="{{ url_for('static', filename='uploads/avatars/' ~ seguido.avatar) }}"
-                                         alt="" class="siguiendo-lista__avatar">
+            {% if estadisticas %}
+                {# Panel del dueño: va primero porque es lo que el dueño entra a
+                   mirar, y no existe para el visitante (la vista ni las calcula). #}
+                <section class="perfil-card perfil-card--propia">
+                    <div class="perfil-card__header">
+                        <h2 class="perfil-card__titulo">Tus estadísticas</h2>
+                        <span class="perfil-badge">Privado</span>
+                    </div>
+                    <div class="perfil-stats">
+                        <div class="perfil-stat">
+                            <span class="perfil-stat__valor">{{ estadisticas.vistas }}</span>
+                            <span class="perfil-stat__label">Vistas</span>
+                        </div>
+                        <div class="perfil-stat">
+                            <span class="perfil-stat__valor">{{ estadisticas.favoritos }}</span>
+                            <span class="perfil-stat__label">Favoritos</span>
+                        </div>
+                        <div class="perfil-stat">
+                            <span class="perfil-stat__valor">{{ estadisticas.seguidores }}</span>
+                            <span class="perfil-stat__label">Seguidores</span>
+                        </div>
+                        <div class="perfil-stat">
+                            <span class="perfil-stat__valor">
+                                {% if estadisticas.promedio %}⭐ {{ estadisticas.promedio }}{% else %}—{% endif %}
+                            </span>
+                            <span class="perfil-stat__label">
+                                {% if estadisticas.promedio %}
+                                    Promedio ({{ estadisticas.resenias }} reseña{{ "s" if estadisticas.resenias != 1 else "" }})
                                 {% else %}
-                                    <img src="{{ url_for('static', filename='icons/logo_perfil.png') }}"
-                                         alt="" class="siguiendo-lista__avatar">
-                                {% endif %}
-                                {{ seguido.username }}
-                            </a>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p class="reviews-empty">Todavía no seguís a ningún emprendedor.</p>
-            {% endif %}
-        </section>
-    {% endif %}
-
-    {% if horarios or (g.user and g.user.id == user.id) %}
-        <section class="profile-horarios">
-            <div class="section__header" style="padding:0;">
-                <h2 class="section__title">Horarios de atención</h2>
-                {% if g.user and g.user.id == user.id %}
-                    <a href="{{ url_for('profile.horarios') }}" class="btn btn--secondary">
-                        {{ "Editar horarios" if horarios else "Cargar horarios" }}
-                    </a>
-                {% endif %}
-            </div>
-            {% if horarios %}
-                <ul class="horarios-lista">
-                    {% for horario in horarios %}
-                        <li class="horarios-lista__item">
-                            <span class="horarios-lista__dia">{{ etiquetas_dias[horario.dia_semana] }}</span>
-                            <span class="horarios-lista__rango">
-                                {% if horario.cerrado or not horario.abre %}
-                                    Cerrado
-                                {% else %}
-                                    {{ horario.abre.strftime("%H:%M") }} a {{ horario.cierra.strftime("%H:%M") }}
+                                    Sin reseñas todavía
                                 {% endif %}
                             </span>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p class="reviews-empty">Todavía no cargaste tus horarios de atención.</p>
+                        </div>
+                    </div>
+                </section>
             {% endif %}
-        </section>
-    {% endif %}
 
-    {# Los eventos son publicos: los ve cualquier visitante, a diferencia de las
-       estadisticas de mas abajo. La seccion aparece si hay algo que mostrar, o
-       si el dueño esta mirando (para que tenga desde donde publicar el primero). #}
-    {% if eventos_proximos or eventos_pasados or (g.user and g.user.id == user.id) %}
-        <section class="profile-eventos">
-            <div class="section__header" style="padding:0;">
-                <h2 class="section__title">Próximos eventos</h2>
-                {% if g.user and g.user.id == user.id %}
-                    <a href="{{ url_for('eventos.nuevo') }}" class="btn btn--secondary">Publicar evento</a>
-                {% endif %}
-            </div>
+            {# El catalogo es el contenido principal del perfil: sube arriba de
+               eventos, horarios y mapa, que antes lo empujaban fuera de pantalla. #}
+            <section class="perfil-card">
+                <div class="perfil-card__header">
+                    <h2 class="perfil-card__titulo">
+                        {% if es_dueno %}Mis emprendimientos{% else %}Emprendimientos{% endif %}
+                    </h2>
+                    {% if es_dueno %}
+                        <a href="{{ url_for('blog.my_posts') }}" class="btn btn--secondary">Gestionar</a>
+                    {% endif %}
+                </div>
 
-            {% if eventos_proximos %}
-                <ul class="eventos-lista">
-                    {% for evento in eventos_proximos %}
-                        <li class="eventos-lista__item">
-                            <div class="eventos-lista__fecha">
-                                <span class="eventos-lista__dia">{{ evento.fecha.day }}</span>
-                                <span class="eventos-lista__mes">{{ evento.fecha | mes_corto }}</span>
-                            </div>
-                            <div class="eventos-lista__cuerpo">
-                                <h3 class="eventos-lista__titulo">{{ evento.titulo }}</h3>
-                                <p class="eventos-lista__cuando">
-                                    {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora.strftime("%H:%M") }}{% endif %}
-                                </p>
-                                {% if evento.descripcion %}
-                                    <p class="eventos-lista__descripcion">{{ evento.descripcion }}</p>
+                {% if posts %}
+                    <div class="cards-grid">
+                        {% for item in posts %}
+                            {% set post = item.post %}
+                            <article class="card">
+                                {% if post.image %}
+                                    <a href="{{ url_for('blog.detail', id=post.id) }}" class="card__image-link">
+                                        <div class="card__image-wrapper">
+                                            <img
+                                                src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                                alt="Imagen de {{ post.title }}"
+                                                class="card__image"
+                                            >
+                                        </div>
+                                    </a>
                                 {% endif %}
-                                <p class="eventos-lista__post">
-                                    <a href="{{ url_for('blog.detail', id=evento.post.id) }}">{{ evento.post.title }}</a>
-                                </p>
-                            </div>
-                            {% if g.user and g.user.id == user.id %}
-                                <div class="eventos-lista__acciones">
-                                    <a href="{{ url_for('eventos.editar', id=evento.id) }}" class="btn btn--secondary">Editar</a>
-                                    {# POST y no un link: borrar no puede pasar por un GET. #}
-                                    <form method="post" action="{{ url_for('eventos.eliminar', id=evento.id) }}"
-                                          class="form-inline"
-                                          onsubmit="return confirm('¿Seguro que querés eliminar este evento?');">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn--ghost">Eliminar</button>
-                                    </form>
-                                </div>
-                            {% endif %}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% elif g.user and g.user.id == user.id %}
-                <p class="reviews-empty">Todavía no publicaste ningún evento.</p>
-            {% else %}
-                <p class="reviews-empty">No hay eventos anunciados por ahora.</p>
-            {% endif %}
-
-            {# Los que ya pasaron van aparte y cerrados, para que no se confundan
-               con los que todavia se pueden ir a ver. #}
-            {% if eventos_pasados %}
-                <details class="eventos-pasados">
-                    <summary class="eventos-pasados__resumen">Eventos que ya pasaron</summary>
-                    <ul class="eventos-lista eventos-lista--pasados">
-                        {% for evento in eventos_pasados %}
-                            <li class="eventos-lista__item">
-                                <div class="eventos-lista__cuerpo">
-                                    <h3 class="eventos-lista__titulo">{{ evento.titulo }}</h3>
-                                    <p class="eventos-lista__cuando">
-                                        {{ evento.fecha | fecha_evento }} · {{ evento.post.title }}
+                                <div class="card__body">
+                                    <h3 class="card__title">
+                                        <a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a>
+                                    </h3>
+                                    {% if item.avg_rating %}
+                                        <p class="card__rating">
+                                            ⭐ {{ item.avg_rating }} <span style="color:#9CA3AF;">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
+                                        </p>
+                                    {% else %}
+                                        <p class="card__rating" style="color:#9CA3AF;">Sin reseñas todavía</p>
+                                    {% endif %}
+                                    {% if es_dueno %}
+                                        <p class="card__views">
+                                            👁 {{ post.views_count }} vista{{ "s" if post.views_count != 1 else "" }}
+                                        </p>
+                                    {% endif %}
+                                    <p class="card__description">
+                                        {{ post.body[:120] }}{% if post.body|length > 120 %}...{% endif %}
                                     </p>
                                 </div>
-                                {% if g.user and g.user.id == user.id %}
-                                    <div class="eventos-lista__acciones">
-                                        <a href="{{ url_for('eventos.editar', id=evento.id) }}" class="btn btn--secondary">Editar</a>
-                                        <form method="post" action="{{ url_for('eventos.eliminar', id=evento.id) }}"
-                                              class="form-inline"
-                                              onsubmit="return confirm('¿Seguro que querés eliminar este evento?');">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn--ghost">Eliminar</button>
-                                        </form>
-                                    </div>
-                                {% endif %}
-                            </li>
+                            </article>
                         {% endfor %}
-                    </ul>
-                </details>
-            {% endif %}
-        </section>
-    {% endif %}
-
-    {% if estadisticas %}
-        <section class="profile-stats">
-            <h2 class="profile-stats__title">Tus estadísticas</h2>
-            <p class="profile-stats__hint">Solo vos podés ver estos datos.</p>
-            <div class="profile-stats__grid">
-                <div class="stat-card">
-                    <span class="stat-card__value">{{ estadisticas.vistas }}</span>
-                    <span class="stat-card__label">
-                        Vista{{ "s" if estadisticas.vistas != 1 else "" }} en total
-                    </span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-card__value">{{ estadisticas.favoritos }}</span>
-                    <span class="stat-card__label">
-                        Favorito{{ "s" if estadisticas.favoritos != 1 else "" }} recibido{{ "s" if estadisticas.favoritos != 1 else "" }}
-                    </span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-card__value">{{ estadisticas.seguidores }}</span>
-                    <span class="stat-card__label">
-                        Seguidor{{ "es" if estadisticas.seguidores != 1 else "" }}
-                    </span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-card__value">
-                        {% if estadisticas.promedio %}⭐ {{ estadisticas.promedio }}{% else %}—{% endif %}
-                    </span>
-                    <span class="stat-card__label">
-                        {% if estadisticas.promedio %}
-                            Promedio general ({{ estadisticas.resenias }} reseña{{ "s" if estadisticas.resenias != 1 else "" }})
+                    </div>
+                {% else %}
+                    <p class="perfil-vacio">
+                        {% if es_dueno %}
+                            Todavía no registraste ningún emprendimiento.
+                            <a href="{{ url_for('blog.create') }}">Creá el primero acá.</a>
                         {% else %}
-                            Sin reseñas todavía
+                            Este usuario todavía no registró ningún emprendimiento.
                         {% endif %}
-                    </span>
-                </div>
-            </div>
-        </section>
-    {% endif %}
+                    </p>
+                {% endif %}
+            </section>
 
-    <div class="section__header">
-        <div>
-            <h2 class="section__title">
-                {% if g.user and g.user.id == user.id %}Mis emprendimientos{% else %}Emprendimientos de {{ user.username }}{% endif %}
-            </h2>
+            {# Los eventos son publicos: los ve cualquier visitante, a diferencia de
+               las estadisticas. La seccion aparece si hay algo que mostrar, o si el
+               dueño esta mirando (para que tenga desde donde publicar el primero). #}
+            {% if eventos_proximos or eventos_pasados or es_dueno %}
+                <section class="perfil-card">
+                    <div class="perfil-card__header">
+                        <h2 class="perfil-card__titulo">Próximos eventos</h2>
+                        {% if es_dueno %}
+                            <a href="{{ url_for('eventos.nuevo') }}" class="btn btn--secondary">Publicar evento</a>
+                        {% endif %}
+                    </div>
+
+                    {% if eventos_proximos %}
+                        <ul class="eventos-lista">
+                            {% for evento in eventos_proximos %}
+                                <li class="eventos-lista__item">
+                                    <div class="eventos-lista__fecha">
+                                        <span class="eventos-lista__dia">{{ evento.fecha.day }}</span>
+                                        <span class="eventos-lista__mes">{{ evento.fecha | mes_corto }}</span>
+                                    </div>
+                                    <div class="eventos-lista__cuerpo">
+                                        <h3 class="eventos-lista__titulo">{{ evento.titulo }}</h3>
+                                        <p class="eventos-lista__cuando">
+                                            {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora.strftime("%H:%M") }}{% endif %}
+                                        </p>
+                                        {% if evento.descripcion %}
+                                            <p class="eventos-lista__descripcion">{{ evento.descripcion }}</p>
+                                        {% endif %}
+                                        <p class="eventos-lista__post">
+                                            <a href="{{ url_for('blog.detail', id=evento.post.id) }}">{{ evento.post.title }}</a>
+                                        </p>
+                                    </div>
+                                    {% if es_dueno %}
+                                        <div class="eventos-lista__acciones">
+                                            <a href="{{ url_for('eventos.editar', id=evento.id) }}" class="btn btn--secondary">Editar</a>
+                                            {# POST y no un link: borrar no puede pasar por un GET. #}
+                                            <form method="post" action="{{ url_for('eventos.eliminar', id=evento.id) }}"
+                                                  class="form-inline"
+                                                  onsubmit="return confirm('¿Seguro que querés eliminar este evento?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn--ghost">Eliminar</button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% elif es_dueno %}
+                        <p class="perfil-vacio">Todavía no publicaste ningún evento.</p>
+                    {% else %}
+                        <p class="perfil-vacio">No hay eventos anunciados por ahora.</p>
+                    {% endif %}
+
+                    {# Los que ya pasaron van aparte y cerrados, para que no se
+                       confundan con los que todavia se pueden ir a ver. #}
+                    {% if eventos_pasados %}
+                        <details class="perfil-plegable">
+                            <summary class="perfil-plegable__resumen">Eventos que ya pasaron</summary>
+                            <ul class="eventos-lista eventos-lista--pasados">
+                                {% for evento in eventos_pasados %}
+                                    <li class="eventos-lista__item">
+                                        <div class="eventos-lista__cuerpo">
+                                            <h3 class="eventos-lista__titulo">{{ evento.titulo }}</h3>
+                                            <p class="eventos-lista__cuando">
+                                                {{ evento.fecha | fecha_evento }} · {{ evento.post.title }}
+                                            </p>
+                                        </div>
+                                        {% if es_dueno %}
+                                            <div class="eventos-lista__acciones">
+                                                <a href="{{ url_for('eventos.editar', id=evento.id) }}" class="btn btn--secondary">Editar</a>
+                                                <form method="post" action="{{ url_for('eventos.eliminar', id=evento.id) }}"
+                                                      class="form-inline"
+                                                      onsubmit="return confirm('¿Seguro que querés eliminar este evento?');">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn--ghost">Eliminar</button>
+                                                </form>
+                                            </div>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </details>
+                    {% endif %}
+                </section>
+            {% endif %}
         </div>
-        {% if g.user and g.user.id == user.id %}
-            <div class="hero__actions">
-                <a href="{{ url_for('blog.my_posts') }}" class="btn btn--primary">
-                    Gestionar mis emprendimientos
-                </a>
-            </div>
-        {% endif %}
-    </div>
 
-    {% if posts %}
-        <div class="cards-grid" style="padding: 0 2rem 2rem;">
-            {% for item in posts %}
-                {% set post = item.post %}
-                <article class="card">
-                    {% if post.image %}
-                        <a href="{{ url_for('blog.detail', id=post.id) }}" class="card__image-link">
-                            <div class="card__image-wrapper">
-                                <img
-                                    src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
-                                    alt="Imagen de {{ post.title }}"
-                                    class="card__image"
-                                >
-                            </div>
+        <aside class="perfil-layout__lateral">
+            {% if user.phone or user.twitter_url or user.instagram_url or user.facebook_url %}
+                <section class="perfil-card">
+                    <h2 class="perfil-card__titulo">Contacto</h2>
+                    {% if user.phone %}
+                        <a href="tel:{{ user.phone }}" class="perfil-dato">
+                            <span class="perfil-dato__icono">📞</span>{{ user.phone }}
                         </a>
                     {% endif %}
-                    <div class="card__body">
-                        <h3 class="card__title">
-                            <a href="{{ url_for('blog.detail', id=post.id) }}" style="text-decoration:none; color:inherit;">
-                                {{ post.title }}
-                            </a>
-                        </h3>
-                        {% if item.avg_rating %}
-                            <p class="card__rating">
-                                ⭐ {{ item.avg_rating }} <span style="color:#9CA3AF;">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
-                            </p>
-                        {% else %}
-                            <p class="card__rating" style="color:#9CA3AF;">Sin reseñas todavía</p>
-                        {% endif %}
-                        {% if g.user and g.user.id == user.id %}
-                            <p class="card__views">
-                                👁 {{ post.views_count }} vista{{ "s" if post.views_count != 1 else "" }}
-                            </p>
-                        {% endif %}
-                        <p class="card__description">
-                            {{ post.body[:120] }}{% if post.body|length > 120 %}...{% endif %}
-                        </p>
-                    </div>
-                </article>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p class="reviews-empty" style="padding: 0 2rem 2rem;">
-            {% if g.user and g.user.id == user.id %}
-                Todavía no registraste ningún emprendimiento.
-                <a href="{{ url_for('blog.create') }}">Creá el primero acá.</a>
-            {% else %}
-                Este usuario todavía no registró ningún emprendimiento.
+                    {% if user.twitter_url or user.instagram_url or user.facebook_url %}
+                        <div class="perfil-redes">
+                            {% if user.twitter_url %}
+                                <a href="{{ user.twitter_url }}" class="social-icon twitter" target="_blank" rel="noopener noreferrer">
+                                    <img src="{{ url_for('static', filename='icons/Twitter.png') }}" alt="Twitter">
+                                </a>
+                            {% endif %}
+                            {% if user.instagram_url %}
+                                <a href="{{ user.instagram_url }}" class="social-icon instagram" target="_blank" rel="noopener noreferrer">
+                                    <img src="{{ url_for('static', filename='icons/Instagram.png') }}" alt="Instagram">
+                                </a>
+                            {% endif %}
+                            {% if user.facebook_url %}
+                                <a href="{{ user.facebook_url }}" class="social-icon facebook" target="_blank" rel="noopener noreferrer">
+                                    <img src="{{ url_for('static', filename='icons/Facebook.png') }}" alt="Facebook">
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </section>
             {% endif %}
-        </p>
-    {% endif %}
 
-    <section class="profile-map-section">
-        <h2>Ubicación</h2>
-        {% if user.address_street %}
-            <p class="card__location">{{ user.address_street }}</p>
-        {% endif %}
-        <div id="map"></div>
-    </section>
+            {% if horarios or es_dueno %}
+                <section class="perfil-card">
+                    <div class="perfil-card__header">
+                        <h2 class="perfil-card__titulo">Horarios de atención</h2>
+                        {% if es_dueno %}
+                            <a href="{{ url_for('profile.horarios') }}" class="btn btn--secondary">
+                                {{ "Editar" if horarios else "Cargar" }}
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% if horarios %}
+                        {# Plegado: el estado de ahora ya esta arriba, en el chip del
+                           hero. La grilla completa de siete dias es dato de consulta,
+                           no algo que tenga que ocupar media pantalla. #}
+                        <details class="perfil-plegable">
+                            <summary class="perfil-plegable__resumen">Ver la semana completa</summary>
+                            <ul class="horarios-lista">
+                                {% for horario in horarios %}
+                                    <li class="horarios-lista__item">
+                                        <span class="horarios-lista__dia">{{ etiquetas_dias[horario.dia_semana] }}</span>
+                                        <span class="horarios-lista__rango">
+                                            {% if horario.cerrado or not horario.abre %}
+                                                Cerrado
+                                            {% else %}
+                                                {{ horario.abre.strftime("%H:%M") }} a {{ horario.cierra.strftime("%H:%M") }}
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </details>
+                    {% else %}
+                        <p class="perfil-vacio">Todavía no cargaste tus horarios de atención.</p>
+                    {% endif %}
+                </section>
+            {% endif %}
+
+            {% if user.latitude and user.longitude %}
+                <section class="perfil-card">
+                    <h2 class="perfil-card__titulo">Ubicación</h2>
+                    {% if user.address_street %}
+                        <p class="perfil-dato">{{ user.address_street }}</p>
+                    {% endif %}
+                    <div id="map"></div>
+                </section>
+            {% endif %}
+
+            {# "Sigo a" solo lo ve el dueño: la vista ni siquiera arma la lista
+               cuando mira otro, mismo criterio que las estadisticas. Va plegado
+               porque es navegacion propia, no informacion del perfil. #}
+            {% if es_dueno %}
+                <section class="perfil-card perfil-card--propia">
+                    <details class="perfil-plegable">
+                        <summary class="perfil-plegable__resumen">Sigo a ({{ siguiendo|length }})</summary>
+                        {% if siguiendo %}
+                            <ul class="siguiendo-lista">
+                                {% for seguido in siguiendo %}
+                                    <li class="siguiendo-lista__item">
+                                        <a href="{{ url_for('profile.view_profile', slug=seguido.slug) }}">
+                                            {% if seguido.avatar %}
+                                                <img src="{{ url_for('static', filename='uploads/avatars/' ~ seguido.avatar) }}"
+                                                     alt="" class="siguiendo-lista__avatar">
+                                            {% else %}
+                                                <img src="{{ url_for('static', filename='icons/logo_perfil.png') }}"
+                                                     alt="" class="siguiendo-lista__avatar">
+                                            {% endif %}
+                                            {{ seguido.username }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="perfil-vacio">Todavía no seguís a ningún emprendedor.</p>
+                        {% endif %}
+                    </details>
+                </section>
+            {% endif %}
+        </aside>
+    </div>
 </div>
 
 {% endblock %}
 
 
 {% block scripts %}
+{# El mapa solo se pide cuando hay coordenadas: antes la seccion se renderizaba
+   siempre y el JS la escondia despues, asi que un perfil sin direccion igual
+   descargaba maplibre. #}
+{% if user.latitude and user.longitude %}
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const mapContainer = document.getElementById("map");
-        
-        // Verifica si el USUARIO tiene coordenadas
-        {% if user.latitude and user.longitude %}
-            if (mapContainer) {
-                const userLat = {{ user.latitude }};
-                const userLon = {{ user.longitude }};
+        if (!mapContainer) {
+            return;
+        }
 
-                const map = new maplibregl.Map({
-                    container: 'map',
-                    style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
-                    center: [userLon, userLat],
-                    zoom: 14,
-                    interactive: true
-                });
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
+            center: [{{ user.longitude }}, {{ user.latitude }}],
+            zoom: 14,
+            interactive: true
+        });
 
-                map.addControl(new maplibregl.NavigationControl());
+        map.addControl(new maplibregl.NavigationControl());
 
-                new maplibregl.Marker({ color: "var(--color-primary, #6C63FF)" })
-                    .setLngLat([userLon, userLat])
-                    .setPopup(new maplibregl.Popup().setText("{{ user.address_street or 'Ubicación' }}"))
-                    .addTo(map);
-            }
-        {% else %}
-            // Si el usuario no tiene ubicación, oculta toda la sección del mapa
-            const mapSection = document.querySelector(".profile-map-section");
-            if (mapSection) {
-                mapSection.style.display = "none";
-            }
-        {% endif %}
+        new maplibregl.Marker({ color: "var(--color-primary, #6C63FF)" })
+            .setLngLat([{{ user.longitude }}, {{ user.latitude }}])
+            .setPopup(new maplibregl.Popup().setText("{{ user.address_street or 'Ubicación' }}"))
+            .addTo(map);
     });
 </script>
+{% endif %}
 {% endblock %}
