@@ -40,7 +40,7 @@ SLUGS_RESERVADOS = frozenset({
     "admin", "api", "static", "auth", "blog", "mensajes", "perfil",
     "login", "logout", "register", "registro", "me",
     "sobre", "contacto", "terminos", "privacidad",
-    "favoritos", "mis-emprendimientos", "eventos",
+    "favoritos", "mis-emprendimientos", "eventos", "servicios",
     # nombres institucionales, para que no se los pueda usurpar
     "impulsar", "soporte", "ayuda", "root", "administrador",
 })

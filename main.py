@@ -36,6 +36,7 @@ from views.pages import pages
 from views.posts_api import posts_api
 from views.products import products
 from views.profile import profile
+from views.servicios import servicios
 
 # Extensiones. Se crean vacias aca y se enlazan a la app dentro de create_app,
 # que es lo que permite tener mas de una app conviviendo.
@@ -81,6 +82,7 @@ def _registrar_blueprints(app):
     app.register_blueprint(eventos)
     app.register_blueprint(posts_api)
     app.register_blueprint(products)
+    app.register_blueprint(servicios)
     app.register_blueprint(pages)
     app.register_blueprint(profile)
     app.register_blueprint(messages)

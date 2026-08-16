@@ -23,7 +23,7 @@ PRECIO_MAXIMO = Decimal("99999999.99")
 CENTAVOS = Decimal("0.01")
 
 
-def parsear_precio(texto):
+def parsear_precio(texto, obligatorio=True):
     """Convierte lo que escribio el usuario en un Decimal.
 
     Devuelve (precio, error): uno de los dos siempre es None.
@@ -32,10 +32,17 @@ def parsear_precio(texto):
     decimal ("1500,50") y con punto ("1500.50"), y tolera los puntos de miles
     ("1.500,50"). Sin esto, alguien que escribe la coma termina cargando un
     precio distinto del que quiso, sin ningun aviso.
+
+    Con obligatorio=False, el texto vacio deja de ser un error y devuelve
+    (None, None): es el caso de un servicio a presupuestar, que no tiene
+    precio fijo (ver models/service.py). Es un parametro y no una funcion
+    aparte para que el precio se lea igual en los dos casos: duplicar el
+    parseo seria duplicar tambien las reglas de la coma, el tope y los
+    decimales, y una copia se olvidaria de alguna.
     """
     texto = (texto or "").strip()
     if not texto:
-        return None, "Se requiere un precio."
+        return None, ("Se requiere un precio." if obligatorio else None)
 
     # Se saca el simbolo por si lo escribieron: "$1500" es un precio valido
     # para cualquiera que lo lea.
