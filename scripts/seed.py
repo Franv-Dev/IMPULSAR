@@ -367,29 +367,49 @@ def _usuarios_de_seed():
     return User.query.filter(User.email.like(f"%{EMAIL_SEED}")).all()
 
 
-def _archivos_de(ids_posts):
-    """Los nombres de archivo que referencian las filas de esos posts.
+def _archivos_de(ids_posts, ids_usuarios=()):
+    """Los nombres de archivo que referencian las filas que borra borrar().
 
     Se pregunta a la base en vez de barrer el directorio buscando el prefijo:
     static/uploads es una sola carpeta para todas las bases, asi que un glob
     de seed_* se lleva tambien las imagenes de otra base sembrada aparte. Los
-    nombres salen de las tres columnas que guardan uno: Post.image,
-    PostImage.filename y Product.foto.
-    """
-    if not ids_posts:
-        return []
+    nombres salen de las cuatro columnas que guardan uno: Post.image,
+    PostImage.filename, Product.foto y ServiceRequest.foto.
 
+    La foto de una solicitud es el unico caso que no cuelga de un post: borrar()
+    se lleva tambien las solicitudes que un usuario del seed hizo sobre un
+    servicio real, y esas cuelgan de un post ajeno. Por eso ademas de los posts
+    recibe los usuarios, con el mismo criterio con el que se borran las filas:
+    si el criterio de los dos lados no coincide, la fila se va y el archivo
+    queda huerfano en el disco para siempre.
+    """
     nombres = []
-    for post in Post.query.filter(Post.id.in_(ids_posts)):
-        nombres.append(post.image)
-    for (nombre,) in db.session.query(PostImage.filename).filter(
-        PostImage.post_id.in_(ids_posts)
-    ):
-        nombres.append(nombre)
-    for (nombre,) in db.session.query(Product.foto).filter(
-        Product.post_id.in_(ids_posts)
-    ):
-        nombres.append(nombre)
+
+    if ids_posts:
+        for post in Post.query.filter(Post.id.in_(ids_posts)):
+            nombres.append(post.image)
+        for (nombre,) in db.session.query(PostImage.filename).filter(
+            PostImage.post_id.in_(ids_posts)
+        ):
+            nombres.append(nombre)
+        for (nombre,) in db.session.query(Product.foto).filter(
+            Product.post_id.in_(ids_posts)
+        ):
+            nombres.append(nombre)
+
+    condiciones = []
+    if ids_posts:
+        condiciones.append(ServiceRequest.service_id.in_(
+            db.session.query(Service.id).filter(Service.post_id.in_(ids_posts))
+        ))
+    if ids_usuarios:
+        condiciones.append(ServiceRequest.cliente_id.in_(ids_usuarios))
+    if condiciones:
+        for (nombre,) in db.session.query(ServiceRequest.foto).filter(
+            db.or_(*condiciones)
+        ):
+            nombres.append(nombre)
+
     return [n for n in nombres if n]
 
 
@@ -437,7 +457,7 @@ def borrar(app):
 
     # Los nombres de archivo se juntan ANTES de borrar las filas: despues no
     # queda de donde sacarlos.
-    archivos = _archivos_de(ids_posts)
+    archivos = _archivos_de(ids_posts, ids)
 
     def borrar_filas(modelo, condicion):
         modelo.query.filter(condicion).delete(synchronize_session=False)
