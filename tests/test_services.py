@@ -6,11 +6,11 @@ from decimal import Decimal
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
+from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from db import db as _db
 from main import create_app
 from models.post import Post
-from models.service import MAX_SERVICIOS_POR_POST, Rubros, Service
-from models.service_request import EstadosSolicitud, ServiceRequest
 from models.user import User
 from services.precios import parsear_precio
 
@@ -144,7 +144,7 @@ def test_borrar_un_usuario_se_lleva_los_servicios_de_sus_emprendimientos(
 
 
 def test_el_tope_por_emprendimiento_es_el_mismo_que_el_de_productos():
-    """Mismo numero y mismo criterio (ver models/service.py). Queda fijado en
+    """Mismo numero y mismo criterio (ver app/servicios/modelo.py). Queda fijado en
     un test porque bajarlo de golpe romperia lo que ya este cargado."""
     from models.product import MAX_PRODUCTOS_POR_POST
 
@@ -364,10 +364,12 @@ def test_el_panel_no_muestra_los_servicios_de_otro(
 def test_el_tope_corta_el_alta(client, emprendedor_con_post, crear_servicio, monkeypatch):
     """Con el tope real habria que crear 50 filas; se baja a 2 para el test,
     que es lo que se esta probando (que el tope corte), no el numero."""
-    import views.servicios as vista
+    from app.servicios import reglas
 
     _usuario, post = emprendedor_con_post()
-    monkeypatch.setattr(vista, "MAX_SERVICIOS_POR_POST", 2)
+    # El tope lo decide reglas.hay_lugar, asi que el que manda es el nombre que
+    # ve ese modulo.
+    monkeypatch.setattr(reglas, "MAX_SERVICIOS_POR_POST", 2)
     crear_servicio(post.id, titulo="Uno")
     crear_servicio(post.id, titulo="Dos")
 
@@ -603,7 +605,7 @@ def test_otra_violacion_de_integridad_no_se_disfraza_de_pendiente_duplicada(
     Ese error no puede terminar en "ya tenés una solicitud pendiente", que
     ademas de ser mentira taparia el problema real sin dejar rastro.
     """
-    import views.servicios as vista
+    from app.servicios import vistas
 
     _prestador, servicio, _cliente = servicio_y_cliente()
     servicio_id = servicio.id
@@ -614,7 +616,7 @@ def test_otra_violacion_de_integridad_no_se_disfraza_de_pendiente_duplicada(
         )
         return None
 
-    monkeypatch.setattr(vista, "_solicitud_pendiente_de", _borrar_el_servicio_en_el_medio)
+    monkeypatch.setattr(vistas, "solicitud_pendiente_de", _borrar_el_servicio_en_el_medio)
 
     with pytest.raises(IntegrityError):
         client.post(f"/servicios/{servicio_id}/solicitar", data={"descripcion": "Hola"})
@@ -635,7 +637,7 @@ def test_dos_pedidos_simultaneos_dejan_una_sola_pendiente(tmp_path, monkeypatch)
     porque en SQLite la base ":memory:" vive en una sola conexion y no hay dos
     requests concurrentes que valgan.
     """
-    import views.servicios as vista
+    from app.servicios import vistas
     from config import TestingConfig
 
     monkeypatch.setattr(
@@ -659,7 +661,7 @@ def test_dos_pedidos_simultaneos_dejan_una_sola_pendiente(tmp_path, monkeypatch)
         servicio_id, cliente_id = servicio.id, cliente.id
 
     barrera = threading.Barrier(2, timeout=10)
-    chequeo_original = vista._solicitud_pendiente_de
+    chequeo_original = vistas.solicitud_pendiente_de
     # Solo se espera en el chequeo de la ida. El que pierde la carrera vuelve a
     # preguntar por la pendiente al manejar el IntegrityError, y ahi ya no hay
     # nadie del otro lado esperando.
@@ -673,7 +675,7 @@ def test_dos_pedidos_simultaneos_dejan_una_sola_pendiente(tmp_path, monkeypatch)
             barrera.wait()
         return pendiente
 
-    monkeypatch.setattr(vista, "_solicitud_pendiente_de", _chequear_y_esperar)
+    monkeypatch.setattr(vistas, "solicitud_pendiente_de", _chequear_y_esperar)
 
     respuestas = {}
     fallas = {}

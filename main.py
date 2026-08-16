@@ -7,7 +7,7 @@ memoria para los tests) sin duplicar el armado ni depender de variables
 globales.
 
 Como correrlo:
-    flask --app main run          (Flask detecta create_app automaticamente)
+    flask --app wsgi run          (ver wsgi.py, el entrypoint estable)
     python main.py                (equivalente, para desarrollo)
 """
 
@@ -27,7 +27,9 @@ from services.precios import formatear as formatear_precio
 from services.precios import texto_para_formulario as precio_para_formulario
 from services.uploads import MAX_IMAGE_BYTES
 
-# Blueprints
+# Blueprints. Los dominios ya migrados a app/ exponen el suyo en su __init__;
+# los que todavia no, siguen en views/.
+from app.servicios.vistas import servicios
 from views.admin import admin
 from views.auth import api_login, api_register, auth
 from views.blog import blog
@@ -37,7 +39,6 @@ from views.pages import pages
 from views.posts_api import posts_api
 from views.products import products
 from views.profile import profile
-from views.servicios import servicios
 
 # Extensiones. Se crean vacias aca y se enlazan a la app dentro de create_app,
 # que es lo que permite tener mas de una app conviviendo.
@@ -122,7 +123,7 @@ def _registrar_filtros_jinja(app):
     # El mismo precio pero como se precarga en un <input> ("1500.50"). Va como
     # filtro porque hay un formulario que se arma sin pasar por una vista que
     # prepare los datos: el de la respuesta a una solicitud, que vive adentro
-    # de la pagina de la solicitud (ver templates/servicios/solicitud.html).
+    # de la pagina de la solicitud (ver app/servicios/templates/).
     app.jinja_env.filters["precio_form"] = precio_para_formulario
 
 

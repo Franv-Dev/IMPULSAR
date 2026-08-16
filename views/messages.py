@@ -13,8 +13,8 @@ from db import db, utcnow
 from models.message import Message
 from models.post import Post
 from models.review import Review
-from models.service import Service
-from models.service_request import EstadosSolicitud, ServiceRequest
+from app.servicios.modelo import Service
+from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from models.user import User
 from views.auth import login_required
 

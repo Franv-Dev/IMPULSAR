@@ -35,7 +35,7 @@ def parsear_precio(texto, obligatorio=True):
 
     Con obligatorio=False, el texto vacio deja de ser un error y devuelve
     (None, None): es el caso de un servicio a presupuestar, que no tiene
-    precio fijo (ver models/service.py). Es un parametro y no una funcion
+    precio fijo (ver app/servicios/modelo.py). Es un parametro y no una funcion
     aparte para que el precio se lea igual en los dos casos: duplicar el
     parseo seria duplicar tambien las reglas de la coma, el tope y los
     decimales, y una copia se olvidaria de alguna.

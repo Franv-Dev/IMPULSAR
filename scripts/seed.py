@@ -68,8 +68,8 @@ from models.post_image import PostImage  # noqa: E402
 from models.product import Product  # noqa: E402
 from models.report import Report  # noqa: E402
 from models.review import Review  # noqa: E402
-from models.service import Rubros, Service  # noqa: E402
-from models.service_request import EstadosSolicitud, ServiceRequest  # noqa: E402
+from app.servicios.modelo import Rubros, Service  # noqa: E402
+from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest  # noqa: E402
 from models.user import Roles, User  # noqa: E402
 
 # Marcas que identifican lo que creo este script.

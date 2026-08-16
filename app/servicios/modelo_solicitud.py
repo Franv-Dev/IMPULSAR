@@ -40,7 +40,7 @@ class ServiceRequest(db.Model):
     PRIVACIDAD: una solicitud la ven dos personas, el cliente que la hizo y el
     dueño del emprendimiento del que cuelga el servicio. Nadie mas, ni otro
     emprendedor ni un admin. Eso se hace cumplir en las vistas (ver
-    views/servicios.py), que es donde se resuelve tambien la de las
+    app/servicios/reglas.py y vistas.py), que es donde se resuelve tambien la de las
     estadisticas del perfil.
 
     OJO con la foto: la privacidad es de la PAGINA, no del archivo. La imagen

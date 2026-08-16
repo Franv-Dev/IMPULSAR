@@ -18,7 +18,7 @@ class Product(db.Model):
     lista de precios adentro de la descripcion del emprendimiento.
 
     Decia "un producto o servicio", y dejo de ser cierto cuando aparecio
-    models/service.py: un servicio es un trabajo a presupuestar, con zona de
+    app/servicios/modelo.py: un servicio es un trabajo a presupuestar, con zona de
     cobertura, precio opcional y solicitudes de presupuesto. Un trabajo con
     precio cerrado ("service de bici, $8000") sigue entrando aca, pero como
     producto: lo que define esta tabla es el precio fijo, no la cosa vendida.

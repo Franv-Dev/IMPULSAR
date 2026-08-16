@@ -15,7 +15,7 @@ que la regla se escribe con una columna auxiliar: cupo_pendiente vale 1 mientras
 la solicitud esta pendiente y NULL cuando no lo esta, y el UNIQUE es sobre
 (service_id, cliente_id, cupo_pendiente). Los dos motores ignoran las filas con
 NULL en un UNIQUE, asi que solo quedan comparadas las pendientes. La columna la
-mantiene un listener del modelo (ver models/service_request.py).
+mantiene un listener del modelo (ver app/servicios/modelo_solicitud.py).
 """
 from alembic import op
 import sqlalchemy as sa

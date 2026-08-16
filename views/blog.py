@@ -9,7 +9,7 @@ from models.post import Categorias, MAX_IMAGENES_POR_POST, Post
 from models.post_image import PostImage
 from models.product import Product
 from models.report import Report
-from models.service import Service
+from app.servicios.modelo import Service
 from models.user import User
 from views.auth import login_required
 from db import db, utcnow

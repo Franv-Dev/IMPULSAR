@@ -6,9 +6,9 @@ from db import db, utcnow
 # Post revienta al configurar el mapper. Es seguro porque models/product.py no
 # importa nada de aca (apunta a "posts.id" por nombre), asi que no hay ciclo.
 from models.product import Product  # noqa: F401
-# Lo mismo para la relacion `servicios`: models/service.py tampoco importa nada
-# de aca (apunta a "posts.id" por nombre), asi que no hay ciclo.
-from models.service import Service  # noqa: F401
+# Lo mismo para la relacion `servicios`: app/servicios/modelo.py tampoco
+# importa nada de aca (apunta a "posts.id" por nombre), asi que no hay ciclo.
+from app.servicios.modelo import Service  # noqa: F401
 
 
 class Categorias:

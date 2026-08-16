@@ -69,7 +69,7 @@ class Service(db.Model):
       ("a presupuestar") mientras que Product.precio es NOT NULL,
     - un servicio se presta en una zona, un producto no,
     - un servicio se pide con una solicitud de presupuesto (ver
-      models/service_request.py), un producto no tiene ese flujo.
+      modelo_solicitud.py), un producto no tiene ese flujo.
 
     Ojo con la palabra "servicio", que en este proyecto nombra tres cosas
     distintas: Categorias.SERVICIOS es el rubro del EMPRENDIMIENTO entero
