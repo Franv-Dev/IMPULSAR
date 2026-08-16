@@ -6,6 +6,9 @@ from db import db, utcnow
 # Post revienta al configurar el mapper. Es seguro porque models/product.py no
 # importa nada de aca (apunta a "posts.id" por nombre), asi que no hay ciclo.
 from models.product import Product  # noqa: F401
+# Lo mismo para la relacion `servicios`: models/service.py tampoco importa nada
+# de aca (apunta a "posts.id" por nombre), asi que no hay ciclo.
+from models.service import Service  # noqa: F401
 
 
 class Categorias:
@@ -127,6 +130,16 @@ class Post(db.Model):
         backref="post",
         cascade="all, delete-orphan",
         order_by="Product.nombre",
+    )
+
+    # Mismo criterio que productos, incluido el orden alfabetico. Van aparte y
+    # no mezclados con los productos: un servicio se presenta distinto (zona,
+    # precio opcional) y se pide con una solicitud de presupuesto.
+    servicios = db.relationship(
+        "Service",
+        backref="post",
+        cascade="all, delete-orphan",
+        order_by="Service.titulo",
     )
 
     #coordenadas 
