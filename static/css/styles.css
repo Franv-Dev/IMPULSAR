@@ -630,6 +630,19 @@ main {
     font-weight: 600;
 }
 
+/* La cantidad de reseñas al lado del puntaje, y la card que todavia no tiene
+   ninguna: texto secundario, no el dato principal de la linea. Estaban con un
+   color inline (#9CA3AF) que no existia en modo oscuro. */
+.card__rating-count {
+    font-weight: 400;
+    color: var(--color-muted);
+}
+
+.card__rating--vacio {
+    font-weight: 400;
+    color: var(--color-muted);
+}
+
 .card__views {
     margin: 0 0 0.5rem;
     font-size: 0.8rem;
