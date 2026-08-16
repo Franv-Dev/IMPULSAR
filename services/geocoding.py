@@ -1,6 +1,6 @@
 """Geocodificacion de direcciones con la API de MapTiler.
 
-Antes esta logica estaba duplicada en views/blog.py y views/profile.py, con
+Antes esta logica estaba duplicada en views/blog.py y app/perfil/vistas.py, con
 la diferencia de que la version de blog acotaba la busqueda a Mendoza y la de
 profile no. Se unifica aca usando el criterio mas preciso para las dos, que es
 el que corresponde: IMPULSAR es una plataforma de emprendimientos locales.

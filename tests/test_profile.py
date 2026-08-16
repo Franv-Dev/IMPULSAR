@@ -475,12 +475,12 @@ def test_editar_perfil_guarda_la_ubicacion_textual(client, db, crear_usuario, lo
 
 def test_la_ubicacion_textual_no_se_geocodifica(client, db, crear_usuario, login, monkeypatch):
     """Es texto libre: no toca address_street ni las coordenadas del mapa."""
-    import views.profile as vista
+    from app.perfil import vistas
 
     def _explotar(*args, **kwargs):
         raise AssertionError("no se debe geocodificar la ubicación textual")
 
-    monkeypatch.setattr(vista, "get_coordinates_from_address", _explotar)
+    monkeypatch.setattr(vistas, "get_coordinates_from_address", _explotar)
 
     usuario = crear_usuario(username="tomy")
     login(usuario.id)
@@ -499,11 +499,10 @@ def test_la_ubicacion_textual_no_se_geocodifica(client, db, crear_usuario, login
 def test_la_ubicacion_textual_y_la_direccion_del_mapa_conviven(
     client, db, crear_usuario, login, monkeypatch
 ):
-    import sys
+    from app.perfil import vistas
 
     monkeypatch.setattr(
-        sys.modules["views.profile"], "get_coordinates_from_address",
-        lambda *a, **k: (-32.9, -68.8),
+        vistas, "get_coordinates_from_address", lambda *a, **k: (-32.9, -68.8)
     )
 
     usuario = crear_usuario(username="tomy")

@@ -29,6 +29,7 @@ from services.uploads import MAX_IMAGE_BYTES
 
 # Blueprints. Los dominios ya migrados a app/ exponen el suyo en su __init__;
 # los que todavia no, siguen en views/.
+from app.perfil.vistas import profile
 from app.servicios.vistas import servicios
 from views.admin import admin
 from views.auth import api_login, api_register, auth
@@ -38,7 +39,6 @@ from views.messages import messages
 from views.pages import pages
 from views.posts_api import posts_api
 from views.products import products
-from views.profile import profile
 
 # Extensiones. Se crean vacias aca y se enlazan a la app dentro de create_app,
 # que es lo que permite tener mas de una app conviviendo.

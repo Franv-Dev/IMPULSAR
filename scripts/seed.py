@@ -60,8 +60,8 @@ from db import db, utcnow  # noqa: E402
 from main import create_app  # noqa: E402
 from models.event import Event  # noqa: E402
 from models.favorite import Favorite  # noqa: E402
-from models.follow import Follow  # noqa: E402
-from models.horario import Horario  # noqa: E402
+from app.perfil.modelo_follow import Follow  # noqa: E402
+from app.perfil.modelo_horario import Horario  # noqa: E402
 from models.message import Message  # noqa: E402
 from models.post import Categorias, Post  # noqa: E402
 from models.post_image import PostImage  # noqa: E402

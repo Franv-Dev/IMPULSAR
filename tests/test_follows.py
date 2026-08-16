@@ -1,6 +1,6 @@
 """Tests del sistema de seguir emprendedores."""
 
-from models.follow import Follow
+from app.perfil.modelo_follow import Follow
 from models.user import User
 
 

@@ -30,7 +30,7 @@ LARGO_MAXIMO_SLUG = 60
 # dia de mañana el perfil pasa a colgar de la raiz, y ademas evitan que alguien
 # se registre como "admin" o "soporte" para hacerse pasar por el sitio.
 SLUGS_RESERVADOS = frozenset({
-    # rutas reales bajo /perfil/ (ver views/profile.py). Cada vez que se suma
+    # rutas reales bajo /perfil/ (ver app/perfil/vistas.py). Cada vez que se suma
     # una ruta estatica ahi hay que sumarla aca: Werkzeug le da prioridad sobre
     # /perfil/<slug>, asi que el usuario que se llame igual queda sin perfil.
     "edit", "create_bio", "horarios",

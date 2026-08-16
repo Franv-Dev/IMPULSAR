@@ -4,7 +4,7 @@ from datetime import datetime, time, timedelta, timezone
 
 import pytest
 
-from models.horario import Horario
+from app.perfil.modelo_horario import Horario
 from services.horarios import ZONA_ARGENTINA, esta_abierto, parsear_hora
 
 
