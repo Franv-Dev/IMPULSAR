@@ -371,6 +371,82 @@ def test_el_tope_corta_el_alta(client, emprendedor_con_post, crear_servicio, mon
     assert Service.query.count() == 2
 
 
+# --- listado publico en el detalle del emprendimiento
+
+def test_el_visitante_ve_los_servicios_disponibles(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", zona_cobertura="Maipú")
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Destapaciones" in html
+    assert "Maipú" in html
+
+
+def test_un_servicio_no_disponible_no_le_llega_al_visitante(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """El filtro va en la consulta y no en el template: si se filtrara al
+    mostrar, el titulo igual viajaria en el HTML y se leeria en el fuente."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Servicio apagado", disponible=False)
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Servicio apagado" not in html
+
+
+def test_el_dueño_si_ve_sus_servicios_apagados(
+    client, crear_usuario, crear_post, crear_servicio, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Servicio apagado", disponible=False)
+    login(autor.id)
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Servicio apagado" in html
+
+
+def test_un_servicio_sin_precio_se_muestra_a_presupuestar(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Instalación de termotanque")
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "A presupuestar" in html
+
+
+def test_los_servicios_no_reemplazan_al_catalogo_de_productos(
+    client, crear_usuario, crear_post, crear_servicio, db
+):
+    """Las dos secciones conviven: la de productos no se toco."""
+    from decimal import Decimal as D
+
+    from models.product import Product
+
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    db.session.add(Product(post_id=post.id, nombre="Caño de PVC", precio=D("1500.00")))
+    db.session.commit()
+    crear_servicio(post.id, titulo="Destapaciones")
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Caño de PVC" in html
+    assert "Destapaciones" in html
+    assert "Qué vende" in html
+    assert "Qué hace" in html
+
+
 def test_servicios_esta_en_los_slugs_reservados():
     """/servicios es una ruta de primer nivel: un usuario con ese slug no la
     tapa hoy (el perfil vive bajo /perfil/), pero se reserva igual, con el

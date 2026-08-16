@@ -11,11 +11,17 @@ MAX_PRODUCTOS_POR_POST = 50
 
 
 class Product(db.Model):
-    """Un producto o servicio del catalogo de un emprendimiento.
+    """Un item con precio fijo del catalogo de un emprendimiento.
 
     Es catalogo y no tienda: no hay stock, ni variantes, ni carrito, ni pago.
     Es "esto vendo y a cuanto", para que el emprendedor no tenga que meter la
     lista de precios adentro de la descripcion del emprendimiento.
+
+    Decia "un producto o servicio", y dejo de ser cierto cuando aparecio
+    models/service.py: un servicio es un trabajo a presupuestar, con zona de
+    cobertura, precio opcional y solicitudes de presupuesto. Un trabajo con
+    precio cerrado ("service de bici, $8000") sigue entrando aca, pero como
+    producto: lo que define esta tabla es el precio fijo, no la cosa vendida.
 
     Cuelga del emprendimiento (Post) y no del usuario, igual que los eventos:
     alguien puede tener una panaderia y una huerta, y cada una tiene lo suyo.

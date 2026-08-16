@@ -9,6 +9,7 @@ from models.post import Categorias, MAX_IMAGENES_POR_POST, Post
 from models.post_image import PostImage
 from models.product import Product
 from models.report import Report
+from models.service import Service
 from models.user import User
 from views.auth import login_required
 from db import db, utcnow
@@ -219,6 +220,15 @@ def detail(id):
         consulta_productos = consulta_productos.filter_by(disponible=True)
     productos = consulta_productos.order_by(Product.nombre).all()
 
+    # Los servicios van aparte del catalogo y con el mismo criterio: los no
+    # disponibles los ve solo el dueño, y el filtro va en la consulta por lo
+    # mismo que arriba (filtrando en el template, los datos igual viajan al
+    # HTML y cualquiera los lee en el codigo fuente).
+    consulta_servicios = Service.query.filter_by(post_id=id)
+    if not es_dueño:
+        consulta_servicios = consulta_servicios.filter_by(disponible=True)
+    servicios = consulta_servicios.order_by(Service.titulo).all()
+
     reviews = (
         Review.query
         .filter_by(post_id=id)
@@ -256,6 +266,7 @@ def detail(id):
             mi_review=mi_review,
             is_favorite=is_favorite,
             productos=productos,
+            servicios=servicios,
             es_dueño=es_dueño,
             MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
