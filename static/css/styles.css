@@ -1638,16 +1638,26 @@ textarea.auth__input {
 
 /* Avatar - identidad - acciones. El avatar pisa la portada con el margen
    negativo, y las acciones quedan a la derecha en la misma linea que el
-   nombre: son lo segundo que se busca despues de saber de quien es el perfil. */
+   nombre: son lo segundo que se busca despues de saber de quien es el perfil.
+
+   Flex con wrap y no una grilla de tres columnas: la grilla le daba a las
+   acciones su ancho de contenido siempre, y la columna del medio se comia
+   todo el faltante. Un perfil ajeno con cuatro botones (WhatsApp, Seguir,
+   Ver reseñas y compartir) pide 377px de acciones, asi que a 769px la
+   identidad quedaba en 118px y partia el nombre; recien se normalizaba
+   pasados los 1000px, y el ancho exacto dependia de cuantos botones
+   hubiera. Aca las acciones bajan solas a la linea de abajo cuando la
+   identidad no entra en su base de 20rem, sin numeros atados al caso. */
 .perfil-hero__cuerpo {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: start;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
     gap: 1.5rem;
     padding: 0 2rem 1.75rem;
 }
 
 .perfil-hero__avatar {
+    flex: 0 0 auto;
     width: 112px;
     height: 112px;
     margin-top: -56px;
@@ -1665,7 +1675,11 @@ textarea.auth__input {
     object-fit: cover;
 }
 
+/* La base de 20rem es el ancho minimo con el que el nombre y los chips se
+   leen sin partirse: si no entra, wrapean las acciones y la identidad se
+   queda con la linea entera. */
 .perfil-hero__identidad {
+    flex: 1 1 20rem;
     padding-top: 1.25rem;
     min-width: 0;
 }
@@ -1729,6 +1743,8 @@ textarea.auth__input {
     font-style: italic;
 }
 
+/* margin-left: auto para que sigan pegadas a la derecha tanto cuando
+   comparten linea con la identidad como cuando bajan solas. */
 .perfil-hero__acciones {
     display: flex;
     flex-wrap: wrap;
@@ -1736,6 +1752,7 @@ textarea.auth__input {
     justify-content: flex-end;
     gap: 0.6rem;
     padding-top: 1.25rem;
+    margin-left: auto;
 }
 
 .perfil-hero__acciones form {
@@ -1916,10 +1933,11 @@ a.perfil-dato:hover {
    (minmax(0,1fr) + 320px empieza a apretar las cards del catalogo a menos de
    lo que miden), asi que baja abajo y todo pasa a una columna.
 
-   768px: el hero deja de poder ser tres columnas. Con el nombre en el medio,
-   una columna de ancho automatico a cada lado y un nombre largo sin espacios,
-   el titulo se parte letra por letra. Avatar arriba, identidad debajo y las
-   acciones al final, cada una en su fila. */
+   768px: el hero pasa a una sola columna (avatar arriba, identidad debajo y
+   las acciones al final). Que las acciones bajen de linea antes que eso no
+   depende de este salto: lo resuelve el wrap del propio .perfil-hero__cuerpo,
+   que las manda abajo apenas la identidad no entra en 20rem. Este breakpoint
+   es el otro paso, el de apilar tambien el avatar y arrancar de la izquierda. */
 
 @media (max-width: 960px) {
     .perfil-layout {
@@ -1938,9 +1956,15 @@ a.perfil-dato:hover {
     }
 
     .perfil-hero__cuerpo {
-        grid-template-columns: minmax(0, 1fr);
+        flex-direction: column;
         gap: 0.75rem;
         padding: 0 1.25rem 1.5rem;
+    }
+
+    /* En columna la base de 20rem no aplica: cada bloque ocupa el ancho. */
+    .perfil-hero__identidad {
+        flex: 0 0 auto;
+        align-self: stretch;
     }
 
     .perfil-hero__avatar {
@@ -1960,6 +1984,7 @@ a.perfil-dato:hover {
 
     .perfil-hero__acciones {
         justify-content: flex-start;
+        margin-left: 0;
     }
 
     .perfil-card {
@@ -1983,6 +2008,13 @@ a.perfil-dato:hover {
     .perfil .eventos-lista__acciones {
         width: 100%;
         justify-content: flex-start;
+    }
+
+    /* La sangria alinea los botones con el texto, salteando el recuadro de la
+       fecha. Va atada a que ese recuadro exista de verdad (el ~ lo exige):
+       los eventos pasados no lo llevan, y con la sangria suelta quedaban
+       corridos 72px contra nada. */
+    .perfil .eventos-lista__fecha ~ .eventos-lista__acciones {
         padding-left: calc(56px + 1rem);
     }
 }
