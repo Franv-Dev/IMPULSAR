@@ -172,6 +172,9 @@ main {
     justify-content: space-between;
     gap: 1.5rem;
     min-height: 64px;
+    /* Referencia para centrar los links respecto al navbar entero (ver
+       .navbar__links). */
+    position: relative;
 }
 
 /* Logo */
@@ -214,11 +217,34 @@ main {
     align-items: center;
     gap: 1.5rem;
     font-size: 0.9rem;
-    /* El navbar reparte el sobrante con space-between. Al quedar tres links en
-       vez de cinco, ese sobrante se colaba entre el logo y el menu y los links
-       quedaban flotando en el medio; con el margen automatico el aire se junta
-       todo de un lado y los links siguen pegados al logo. */
-    margin-right: auto;
+}
+
+/* El menu centrado es solo del navbar en una fila. Va en su propio media query
+   en vez de deshacerse mas abajo junto al resto de lo mobile porque ese bloque
+   anima con "transition: all": si el centrado se cancelara ahi, el menu cruzaria
+   el navbar deslizandose cada vez que se pasa el breakpoint. El corte es el
+   mismo 768px de la hamburguesa y tiene que seguirlo: hasta ahi hay una fila
+   donde centrar, despues el menu es un desplegable. */
+@media (min-width: 769px) {
+    /* Centrado respecto al navbar entero, no al hueco que queda entre el logo y
+       el bloque de usuario: ese hueco no esta centrado, asi que cualquier
+       reparto dentro del flujo (space-between, margin auto, un 1fr por lado)
+       correria el menu segun cuanto ocupen los costados. Fuera del flujo y
+       anclado al 50%, el centro es el del navbar y no se mueve cuando cambia el
+       ancho del nombre de usuario. */
+    .navbar__links {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* Con los links fuera del flujo quedan en la fila logo, acciones y switch de
+       tema: el space-between del contenedor dejaria las acciones en el medio,
+       encima del menu centrado. El margen automatico junta todo el aire despues
+       del logo y las manda al extremo derecho. */
+    .navbar__actions {
+        margin-left: auto;
+    }
 }
 
 .navbar__link {
@@ -977,9 +1003,6 @@ main {
         align-items: flex-start; /* Alineamos a la izquierda */
         padding: 0;
         gap: 0; /* Reseteamos gaps */
-        /* Aca los links son una fila entera del menu desplegable: el margen
-           automatico que los pega al logo en desktop no corresponde. */
-        margin-right: 0;
 
         /* Transición */
         transition: all 0.3s ease-in-out;
