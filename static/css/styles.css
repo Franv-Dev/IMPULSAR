@@ -219,13 +219,28 @@ main {
     font-size: 0.9rem;
 }
 
-/* El menu centrado es solo del navbar en una fila. Va en su propio media query
-   en vez de deshacerse mas abajo junto al resto de lo mobile porque ese bloque
-   anima con "transition: all": si el centrado se cancelara ahi, el menu cruzaria
-   el navbar deslizandose cada vez que se pasa el breakpoint. El corte es el
-   mismo 768px de la hamburguesa y tiene que seguirlo: hasta ahi hay una fila
-   donde centrar, despues el menu es un desplegable. */
-@media (min-width: 769px) {
+/* El centrado es un caso particular del navbar: solo vale cuando el menu entra
+   en el medio sin pisar los costados. Va en su propio media query, y no como un
+   undo dentro del bloque mobile, porque es una regla de escritorio y le
+   corresponde vivir con la regla que la establece.
+
+   El corte no es el de la hamburguesa (768px) sino mas arriba, y sale de una
+   cuenta, no de una preferencia. El menu esta fuera del flujo: no reserva
+   espacio, asi que nadie lo empuja y hay que garantizar el lugar a mano. Con el
+   menu de 257px centrado, a cada lado quedan (C - 257) / 2 menos el gap de
+   24px, y ahi tienen que entrar el logo (138px) de un lado y las acciones mas
+   el switch de tema (+24px de gap, +34px) del otro. Despeja en
+   C >= 421 + 2 * acciones, y el caso mas ancho es el del usuario anonimo
+   ("Acceder" + "Registrarse", 228px), que pide C >= 877, es decir 925px de
+   viewport contando el padding de 24px del container. 960px deja margen para
+   que un cambio de fuente o de copy no lo desborde de callado.
+
+   El otro lado de la cuenta es el ancho del bloque de usuario, que no se acota
+   solo: por eso .navbar__user-name esta limitado con ellipsis. Sin ese tope un
+   username largo empuja las acciones sobre el menu y lo tapa a cualquier ancho,
+   porque el container corta en 1120px y estirar la ventana ya no agranda el
+   navbar. Las dos piezas van juntas: el breakpoint asume el tope. */
+@media (min-width: 960px) {
     /* Centrado respecto al navbar entero, no al hueco que queda entre el logo y
        el bloque de usuario: ese hueco no esta centrado, asi que cualquier
        reparto dentro del flujo (space-between, margin auto, un 1fr por lado)
@@ -1266,6 +1281,17 @@ textarea.auth__input {
 .navbar__user-name {
     font-size: 0.9rem;
     font-weight: 500;
+    /* El username llega hasta 50 caracteres (MAX_USERNAME_LENGTH), y sin tope
+       arrastra todo el bloque de acciones hacia el centro hasta tapar el menu.
+       No se arregla con la ventana: el container corta en 1120px, asi que a
+       partir de ahi agrandar la pantalla no da mas lugar. Con el tope, el bloque
+       de usuario nunca supera al de "Acceder / Registrarse", que es el ancho que
+       asume el breakpoint del centrado. El nombre completo sigue estando en el
+       perfil. */
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .navbar__user-caret {
