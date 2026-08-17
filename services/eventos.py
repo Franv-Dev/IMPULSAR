@@ -13,7 +13,7 @@ pantalla y vigente en la otra.
 from datetime import datetime
 
 from models.event import Event
-from models.post import Post
+from app.blog.modelo_post import Post
 from services.horarios import ZONA_ARGENTINA
 
 

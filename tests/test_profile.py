@@ -5,8 +5,8 @@ import io
 from PIL import Image
 from werkzeug.datastructures import FileStorage
 
-from models.favorite import Favorite
-from models.review import Review
+from app.blog.modelo_favorito import Favorite
+from app.blog.modelo_resenia import Review
 from models.user import User
 
 

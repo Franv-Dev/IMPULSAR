@@ -8,9 +8,9 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from sqlalchemy import func
 
 from db import db, utcnow
-from models.post import Post
-from models.report import Report
-from models.review import Review
+from app.blog.modelo_post import Post
+from app.blog.modelo_reporte import Report
+from app.blog.modelo_resenia import Review
 from models.user import Roles, User
 from views.auth import admin_required
 

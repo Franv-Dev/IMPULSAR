@@ -92,7 +92,7 @@ class ServiceRequest(db.Model):
     # cinco FK viejas que apuntan a users (favorites.user_id, messages.client_id,
     # messages.sender_id, reports.reporter_id y reviews.user_id) no lo tienen, y
     # por eso hoy no se puede borrar un usuario que dejo actividad en un
-    # emprendimiento ajeno (ver el comentario largo de models/post.py). Esta
+    # emprendimiento ajeno (ver el comentario largo de app/blog/modelo_post.py). Esta
     # tabla no repite esa deuda: borrar un usuario se lleva sus solicitudes.
     cliente_id = db.Column(
         db.Integer,

@@ -10,7 +10,7 @@ from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from db import db as _db
 from main import create_app
-from models.post import Post
+from app.blog.modelo_post import Post
 from models.user import User
 from services.precios import parsear_precio
 

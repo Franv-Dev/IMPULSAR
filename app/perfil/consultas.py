@@ -20,9 +20,9 @@ from sqlalchemy.orm import joinedload
 from app.perfil.modelo_follow import Follow
 from db import db
 from models.event import Event
-from models.favorite import Favorite
-from models.post import Post
-from models.review import Review
+from app.blog.modelo_favorito import Favorite
+from app.blog.modelo_post import Post
+from app.blog.modelo_resenia import Review
 from models.user import User
 from services.eventos import eventos_de_usuario, pasados, proximos
 from services.ratings import query_posts_con_rating

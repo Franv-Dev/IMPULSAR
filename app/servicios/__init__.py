@@ -18,13 +18,14 @@ al lado: la primera version de este archivo hacia `from app.servicios.vistas
 import servicios`, y con eso la app no arrancaba.
 
 El ciclo, en el orden en que pasa de verdad (se reproduce con `import
-models.post`, o con cualquier cosa que lo importe, como main): models.post
-empieza a ejecutarse y en su linea 11 pide app.servicios.modelo; para eso Python
+app.blog.modelo_post`, que entonces era models.post, o con cualquier cosa que lo
+importe, como main): el modulo de Post empieza a ejecutarse y pide
+app.servicios.modelo para poder resolver su relacion `servicios`; para eso Python
 corre primero este __init__, que importaba vistas, que importa consultas, que
-importa models.post... y models.post esta a medio ejecutar, todavia sin
-definir la clase Post, asi que el import falla ahi. El modulo incompleto es
-models.post, no app.servicios.modelo: `import app.servicios.modelo` a secas
-funcionaba, porque en ese orden models.post arranca y termina de una.
+importa el modulo de Post... y ese esta a medio ejecutar, todavia sin definir la
+clase Post, asi que el import falla ahi. El modulo incompleto es el de Post, no
+app.servicios.modelo: `import app.servicios.modelo` a secas funcionaba, porque
+en ese orden el de Post arranca y termina de una.
 
 Quien quiera el blueprint lo pide donde vive: `from app.servicios.vistas import
 servicios`.

@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app, g, jsonify, request
 
-from models.post import Categorias, Post
+from app.blog.modelo_post import Categorias, Post
 
 posts_api = Blueprint("posts_api", __name__, url_prefix="/api/posts")
 

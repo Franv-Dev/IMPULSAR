@@ -4,10 +4,10 @@ import re
 
 import pytest
 
-from models.post import Categorias, Post
-from models.review import Review
+from app.blog.modelo_post import Categorias, Post
+from app.blog.modelo_resenia import Review
 from models.user import User
-from views.blog import get_post
+from app.blog.vistas import get_post
 
 
 # ------------------------------------------------------------------ unitarios
@@ -786,7 +786,7 @@ def test_no_se_pueden_subir_mas_de_cinco_fotos(client, db, crear_usuario, login)
 
 
 def test_las_fotos_que_ya_estaban_cuentan_para_el_limite(client, db, crear_usuario, crear_post, login):
-    from models.post_image import PostImage
+    from app.blog.modelo_imagen import PostImage
 
     autor = crear_usuario(username="autor")
     post = crear_post(autor.id, title="Panadería")
@@ -816,7 +816,7 @@ def test_las_fotos_que_ya_estaban_cuentan_para_el_limite(client, db, crear_usuar
 
 
 def test_el_detalle_muestra_todas_las_fotos(client, db, crear_usuario, crear_post):
-    from models.post_image import PostImage
+    from app.blog.modelo_imagen import PostImage
 
     autor = crear_usuario(username="autor")
     post = crear_post(autor.id, title="Panadería")
@@ -832,7 +832,7 @@ def test_el_detalle_muestra_todas_las_fotos(client, db, crear_usuario, crear_pos
 
 def test_borrar_un_emprendimiento_borra_sus_fotos(client, db, crear_usuario, crear_post, login):
     """El bug de FK RESTRICT que ya aparecio en reports, favorites y messages."""
-    from models.post_image import PostImage
+    from app.blog.modelo_imagen import PostImage
 
     autor = crear_usuario(username="autor")
     post = crear_post(autor.id)
@@ -950,8 +950,8 @@ def test_borrar_un_usuario_borra_sus_emprendimientos_y_lo_que_cuelga(
     import datetime
 
     from models.event import Event
-    from models.favorite import Favorite
-    from models.post_image import PostImage
+    from app.blog.modelo_favorito import Favorite
+    from app.blog.modelo_imagen import PostImage
 
     autor = crear_usuario(username="autor")
     cliente = crear_usuario(username="cliente")

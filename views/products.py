@@ -17,7 +17,7 @@ from flask import (
 from sqlalchemy.orm import joinedload
 
 from db import db
-from models.post import Post
+from app.blog.modelo_post import Post
 from models.product import MAX_PRODUCTOS_POR_POST, Product
 from services.precios import parsear_precio, texto_para_formulario
 from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image

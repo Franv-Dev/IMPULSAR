@@ -11,8 +11,8 @@ from sqlalchemy.orm import joinedload
 
 from db import db, utcnow
 from models.message import Message
-from models.post import Post
-from models.review import Review
+from app.blog.modelo_post import Post
+from app.blog.modelo_resenia import Review
 from app.servicios.modelo import Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from models.user import User

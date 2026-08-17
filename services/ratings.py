@@ -9,8 +9,8 @@ ademas evita que las tres copias se desincronicen si cambia la logica.
 from sqlalchemy import func
 
 from db import db
-from models.post import Post
-from models.review import Review
+from app.blog.modelo_post import Post
+from app.blog.modelo_resenia import Review
 
 
 def query_posts_con_rating(query=None):

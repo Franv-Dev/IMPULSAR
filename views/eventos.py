@@ -15,7 +15,7 @@ from sqlalchemy.orm import joinedload
 
 from db import db
 from models.event import Event
-from models.post import Post
+from app.blog.modelo_post import Post
 from services.eventos import parsear_fecha, proximos
 from services.horarios import formatear as formatear_hora, parsear_hora
 from views.auth import login_required

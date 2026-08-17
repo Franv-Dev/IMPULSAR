@@ -14,7 +14,7 @@ from werkzeug.security import generate_password_hash
 
 from db import db as _db
 from main import create_app
-from models.post import Post
+from app.blog.modelo_post import Post
 from models.user import Roles, User
 
 

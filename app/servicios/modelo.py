@@ -11,7 +11,7 @@ class Rubros:
     catalogo posible todavia (son barrios, distritos y "toda la ciudad"), asi
     que ahi si va texto libre.
 
-    Mismo formato que Categorias en models/post.py y Roles en models/user.py:
+    Mismo formato que Categorias en app/blog/modelo_post.py y Roles en models/user.py:
     los strings viven en un solo lugar y las etiquetas para mostrar tambien.
     """
 

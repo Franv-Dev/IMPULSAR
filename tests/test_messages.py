@@ -1,8 +1,8 @@
 """Tests del chat simple entre cliente y emprendedor."""
 
 from models.message import Message
-from models.post import Post
-from models.review import Review
+from app.blog.modelo_post import Post
+from app.blog.modelo_resenia import Review
 
 
 def test_el_cliente_puede_iniciar_una_conversacion(client, db, crear_usuario, crear_post, login):

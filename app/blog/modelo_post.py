@@ -40,7 +40,7 @@ class Categorias:
 
 
 # Cuantas fotos puede tener un emprendimiento contando la principal
-# (Post.image). Las que sobran van en post_images (ver models/post_image.py).
+# (Post.image). Las que sobran van en post_images (ver modelo_imagen.py).
 MAX_IMAGENES_POR_POST = 5
 
 

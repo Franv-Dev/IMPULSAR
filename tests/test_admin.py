@@ -1,6 +1,6 @@
 """Tests del panel de administrador: acceso, metricas, baneo y moderacion."""
 
-from models.post import Post
+from app.blog.modelo_post import Post
 from models.user import Roles, User
 
 

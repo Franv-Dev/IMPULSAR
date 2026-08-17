@@ -27,13 +27,15 @@ from services.precios import formatear as formatear_precio
 from services.precios import texto_para_formulario as precio_para_formulario
 from services.uploads import MAX_IMAGE_BYTES
 
-# Blueprints. Los dominios ya migrados a app/ exponen el suyo en su __init__;
-# los que todavia no, siguen en views/.
+# Blueprints. Los dominios ya migrados a app/ exponen el suyo en vistas.py, que
+# es de donde se pide: ninguno reexporta desde su __init__, para no meter las
+# vistas en el medio de cada import de sus modelos (ver app/blog/__init__.py).
+# Los que todavia no se migraron siguen en views/.
+from app.blog.vistas import blog
 from app.perfil.vistas import profile
 from app.servicios.vistas import servicios
 from views.admin import admin
 from views.auth import api_login, api_register, auth
-from views.blog import blog
 from views.eventos import eventos
 from views.messages import messages
 from views.pages import pages

@@ -16,10 +16,9 @@ User NO vive aca, y no es un olvido: es el modelo de la identidad, lo usan auth,
 admin, mensajeria y medio proyecto, y el perfil es una de las cosas que se le
 cuelgan, no su dueño. Le corresponde al dominio de cuentas, cuando exista.
 
-No reexporta nada, ni el blueprint. Es la regla dura del proyecto mientras
-models/post.py siga en la raiz importando modelos de app/: reexportar aca hace
-que importar un modelo del paquete arrastre las vistas, que importan consultas,
-que importan models.post, que esta a medio ejecutar. El caso completo esta en
-app/servicios/__init__.py, donde se pago. El blueprint se pide donde vive:
-`from app.perfil.vistas import profile`.
+No reexporta nada, ni el blueprint. Es la regla dura del proyecto: reexportar
+aca hace que importar un modelo del paquete arrastre las vistas, que importan
+consultas, que importan el modelo que estaba a medio ejecutar. El caso completo
+esta en app/servicios/__init__.py, donde se pago. El blueprint se pide donde
+vive: `from app.perfil.vistas import profile`.
 """

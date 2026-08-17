@@ -1,8 +1,8 @@
 """Tests de reportes de contenido inapropiado y su integracion con el panel de admin."""
 
-from models.post import Post
-from models.report import Report
-from models.review import Review
+from app.blog.modelo_post import Post
+from app.blog.modelo_reporte import Report
+from app.blog.modelo_resenia import Review
 from models.user import Roles
 
 
@@ -310,7 +310,7 @@ def test_eliminar_un_post_reportado_no_deja_huerfano_al_borrarlo_en_cascada(
     client, db, crear_usuario, crear_post, login
 ):
     """La resenia se borra en cascada junto con el post (comportamiento previo,
-    ver models/review.py); el reporte sobre esa resenia tiene que seguirla."""
+    ver app/blog/modelo_resenia.py); el reporte sobre esa resenia tiene que seguirla."""
     autor = crear_usuario(username="autor")
     cliente = crear_usuario(username="cliente")
     denunciante = crear_usuario(username="denunciante")

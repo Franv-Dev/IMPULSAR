@@ -15,7 +15,7 @@ from sqlalchemy.orm import joinedload
 from app.servicios.modelo import Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from db import db
-from models.post import Post
+from app.blog.modelo_post import Post
 
 
 def servicio_por_id_o_404(id):

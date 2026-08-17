@@ -1,7 +1,7 @@
 """Tests de favoritos: marcar/desmarcar emprendimientos y "Mis favoritos"."""
 
-from models.favorite import Favorite
-from models.post import Post
+from app.blog.modelo_favorito import Favorite
+from app.blog.modelo_post import Post
 
 
 def test_marcar_como_favorito(client, db, crear_usuario, crear_post, login):
