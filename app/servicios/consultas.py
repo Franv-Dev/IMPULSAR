@@ -38,6 +38,46 @@ def servicios_de(user_id):
     )
 
 
+def buscar_servicios(rubro, zona, pagina, por_pagina):
+    """La busqueda publica de servicios, ya paginada.
+
+    Filtra siempre disponible=True, que es el mismo criterio con el que
+    servicios_de(post_id, solo_disponibles) arma el catalogo publico de un
+    emprendimiento y con el que vistas.solicitar() rechaza pedir presupuesto
+    sobre uno apagado: un servicio apagado no esta tomando trabajos, asi que no
+    tiene por que aparecer en una busqueda.
+
+    El rubro filtra exacto porque es catalogo fijo (ver Rubros en modelo.py) y
+    esta indexado justamente para esta consulta; la zona filtra con ilike
+    porque es texto libre a proposito ("Maipu y alrededores", "toda la ciudad")
+    y no hay catalogo contra el cual comparar.
+
+    Ordena por emprendimiento y titulo, igual que servicios_de(user_id): Service
+    no tiene coordenadas, asi que no hay distancia real que calcular como en
+    buscar_posts() del blog.
+    """
+    consulta = (
+        Service.query
+        .join(Post, Post.id == Service.post_id)
+        # Sin esto, pintar el nombre del emprendimiento en cada tarjeta dispara
+        # un SELECT por fila (problema N+1).
+        .options(joinedload(Service.post))
+        .filter(Service.disponible.is_(True))
+    )
+
+    if rubro:
+        consulta = consulta.filter(Service.rubro == rubro)
+
+    if zona:
+        consulta = consulta.filter(Service.zona_cobertura.ilike(f"%{zona}%"))
+
+    return (
+        consulta
+        .order_by(Post.title, Service.titulo)
+        .paginate(page=pagina, per_page=por_pagina, error_out=False)
+    )
+
+
 def emprendimientos_de(user_id):
     return Post.query.filter_by(author=user_id).order_by(Post.title).all()
 

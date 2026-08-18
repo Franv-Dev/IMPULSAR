@@ -456,6 +456,118 @@ def test_los_servicios_no_reemplazan_al_catalogo_de_productos(
     assert "Qué hace" in html
 
 
+# --- busqueda publica por rubro y zona
+
+def test_la_busqueda_no_pide_login(client, crear_usuario, crear_post, crear_servicio):
+    """Encontrar un plomero tiene que poder hacerlo cualquiera, tenga cuenta o no."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones")
+
+    respuesta = client.get("/servicios/buscar")
+
+    assert respuesta.status_code == 200
+    assert "Destapaciones" in respuesta.get_data(as_text=True)
+
+
+def test_la_busqueda_filtra_por_rubro(client, crear_usuario, crear_post, crear_servicio):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", rubro=Rubros.PLOMERIA)
+    crear_servicio(post.id, titulo="Cambio de tablero", rubro=Rubros.ELECTRICIDAD)
+
+    html = client.get(f"/servicios/buscar?rubro={Rubros.PLOMERIA}").get_data(as_text=True)
+
+    assert "Destapaciones" in html
+    assert "Cambio de tablero" not in html
+
+
+def test_la_busqueda_filtra_la_zona_sin_importar_mayusculas(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """zona_cobertura es texto libre a proposito, asi que el filtro es ilike."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", zona_cobertura="Maipu y alrededores")
+    crear_servicio(post.id, titulo="Cambio de tablero", zona_cobertura="Godoy Cruz")
+
+    html = client.get("/servicios/buscar?zona=maipu").get_data(as_text=True)
+
+    assert "Destapaciones" in html
+    assert "Cambio de tablero" not in html
+
+
+def test_la_busqueda_no_muestra_los_servicios_apagados(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """Mismo criterio que el catalogo del emprendimiento: un servicio apagado no
+    esta tomando trabajos, y el filtro va en la consulta y no en el template."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Servicio apagado", disponible=False)
+
+    html = client.get("/servicios/buscar").get_data(as_text=True)
+
+    assert "Servicio apagado" not in html
+
+
+def test_un_rubro_que_no_existe_no_filtra_en_vez_de_romper(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """Criterio permisivo, el mismo que usa el listado de emprendimientos con su
+    categoria: la URL se escribe a mano y no por eso se corta con un 400."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones")
+
+    respuesta = client.get("/servicios/buscar?rubro=inventado")
+
+    assert respuesta.status_code == 200
+    assert "Destapaciones" in respuesta.get_data(as_text=True)
+
+
+def test_la_busqueda_muestra_el_emprendimiento_que_lo_ofrece(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Plomería Central")
+    crear_servicio(post.id, titulo="Destapaciones")
+
+    html = client.get("/servicios/buscar").get_data(as_text=True)
+
+    assert "Plomería Central" in html
+    assert f'href="/blog/{post.id}"' in html
+
+
+def test_la_busqueda_pagina(client, crear_usuario, crear_post, crear_servicio, app):
+    """No trae todo con .all(): se rompe solo cuando el listado crece."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    por_pagina = app.config["POSTS_POR_PAGINA"]
+    for numero in range(por_pagina + 1):
+        crear_servicio(post.id, titulo=f"Trabajo {numero:02d}")
+
+    primera = client.get("/servicios/buscar").get_data(as_text=True)
+    segunda = client.get("/servicios/buscar?page=2").get_data(as_text=True)
+
+    assert f"Trabajo {por_pagina:02d}" not in primera
+    assert f"Trabajo {por_pagina:02d}" in segunda
+
+
+def test_la_paginacion_no_pierde_los_filtros(
+    client, crear_usuario, crear_post, crear_servicio, app
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    for numero in range(app.config["POSTS_POR_PAGINA"] + 1):
+        crear_servicio(post.id, titulo=f"Trabajo {numero:02d}", rubro=Rubros.PLOMERIA)
+
+    html = client.get(f"/servicios/buscar?rubro={Rubros.PLOMERIA}").get_data(as_text=True)
+
+    assert f"rubro={Rubros.PLOMERIA}" in html
+    assert "page=2" in html
+
+
 # --- solicitudes de presupuesto
 
 @pytest.fixture

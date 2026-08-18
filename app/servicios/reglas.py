@@ -6,7 +6,7 @@ separacion es la que hace que las reglas se puedan leer (y probar) sin levantar
 un request.
 """
 
-from app.servicios.modelo import MAX_SERVICIOS_POR_POST
+from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros
 from app.servicios.modelo_solicitud import EstadosSolicitud
 
 
@@ -39,6 +39,16 @@ def es_el_prestador(solicitud, user_id):
 def hay_lugar(cuantos_tiene):
     """Si entra un servicio mas en ese emprendimiento."""
     return cuantos_tiene < MAX_SERVICIOS_POR_POST
+
+
+def rubro_valido(rubro):
+    """Si es uno de los rubros del catalogo.
+
+    Mismo criterio que blog.reglas.categoria_valida: el rubro llega de un
+    <select>, pero la URL se escribe a mano. Un rubro que no existe no filtra
+    nada en vez de cortar con un 400.
+    """
+    return rubro in Rubros.TODOS
 
 
 def esta_cerrada(solicitud):

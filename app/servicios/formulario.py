@@ -57,6 +57,21 @@ def leer_servicio():
     return datos, valores, error
 
 
+def leer_busqueda():
+    """Los filtros de la busqueda publica, tal como vinieron en la URL.
+
+    Devuelve (rubro, zona, pagina). El rubro se devuelve aunque no exista: la
+    consulta no filtra por el (eso lo decide reglas.rubro_valido), pero el
+    formulario se repinta con lo que el usuario tenia, igual que hace el
+    listado de emprendimientos con su categoria.
+    """
+    return (
+        (request.args.get("rubro") or "").strip(),
+        (request.args.get("zona") or "").strip(),
+        request.args.get("page", 1, type=int),
+    )
+
+
 def leer_solicitud():
     """Lo que el cliente escribe al pedir un presupuesto (sin la foto).
 

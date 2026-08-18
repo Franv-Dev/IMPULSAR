@@ -16,7 +16,8 @@ carpeta global de la app).
 """
 
 from flask import (
-    Blueprint, abort, flash, g, redirect, render_template, request, url_for
+    Blueprint, abort, current_app, flash, g, redirect, render_template, request,
+    url_for
 )
 from sqlalchemy.exc import IntegrityError
 
@@ -60,6 +61,34 @@ def _solicitud_visible(id):
     if not reglas.es_parte_de_la_solicitud(solicitud, g.user.id):
         abort(403)
     return solicitud
+
+
+# ------------------------------------------------------------ busqueda publica
+
+@servicios.route("/buscar")
+def buscar():
+    """La busqueda publica de servicios por rubro y zona.
+
+    Sin @login_required a proposito, y es la unica ruta del blueprint que no lo
+    lleva: encontrar "un plomero en Maipu" tiene que poder hacerlo cualquiera,
+    incluso sin cuenta. Pedir el presupuesto si necesita estar logueado, pero
+    eso ya lo resuelve solicitar().
+    """
+    rubro, zona, pagina = formulario.leer_busqueda()
+    return render_template(
+        "servicios/buscar.html",
+        paginacion=consultas.buscar_servicios(
+            # Un rubro que no existe no filtra nada, pero se le devuelve igual
+            # al template para repintar el <select> con lo que el usuario tenia.
+            rubro=rubro if reglas.rubro_valido(rubro) else None,
+            zona=zona,
+            pagina=pagina,
+            por_pagina=current_app.config["POSTS_POR_PAGINA"],
+        ),
+        rubros=Rubros.ETIQUETAS,
+        rubro_actual=rubro,
+        zona_actual=zona,
+    )
 
 
 # ----------------------------------------------------------------------- ABM
