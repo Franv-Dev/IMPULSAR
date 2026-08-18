@@ -126,8 +126,12 @@ def downgrade():
     # resolved_at igual que el panel: si no, esta condicion empieza a barrer
     # filas que no le corresponden.
     #
-    # El UPDATE va despues de soltar la constraint y no antes: asi los
-    # duplicados que vuelven a pendientes no tienen contra que chocar.
+    # El UPDATE va despues de soltar la columna y no antes. No es por el UNIQUE:
+    # el UPDATE solo toca resolved, nunca clave_pendiente, asi que en ningun
+    # orden podria chocar contra el. Es para no dejar un estado transitorio en el
+    # que la fila ya volvio a resolved = 0 pero sigue con clave_pendiente en NULL,
+    # que es el valor de los resueltos y ya no le corresponde. Soltando primero la
+    # columna, ese estado ni existe.
     with op.batch_alter_table('reports', schema=None) as batch_op:
         batch_op.drop_constraint('uq_reports_pendiente', type_='unique')
         batch_op.drop_column('clave_pendiente')
