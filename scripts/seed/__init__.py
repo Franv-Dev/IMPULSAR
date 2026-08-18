@@ -8,6 +8,10 @@ PREFIJO_IMAGEN), asi que `--reset` y `--borrar` saben exactamente que sacar.
     python -m scripts.seed --reset    # borra los de antes y vuelve a cargar
     python -m scripts.seed --borrar   # solo borra
 
+Se corre desde la raiz del proyecto: es lo que hace importable tanto a
+`scripts` como a la app (db, main, models). Desde otro directorio corta antes
+de empezar, con "No module named 'scripts'".
+
 QUE BORRA EXACTAMENTE --borrar (y --reset antes de recargar)
 
 No es solo "lo que creo el seed". Borra los usuarios de seed, sus
@@ -49,10 +53,3 @@ COMO ESTA DIVIDIDO
 - carga.py    cargar(), que escribe todo lo de datos.py en la base.
 - __main__.py las guardas de host y el parseo de argumentos.
 """
-
-import os
-import sys
-
-# El paquete vive en scripts/, asi que la raiz del proyecto no esta en el path
-# cuando se lo invoca desde otro lado.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
