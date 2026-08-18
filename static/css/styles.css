@@ -1380,6 +1380,22 @@ textarea.auth__input {
     .navbar__user-toggle {
         padding: 0.35rem 0.5rem;
     }
+
+    /* Aca el tope de 9rem se puede soltar, y es el unico lado donde se puede.
+       Lo que ese tope protege (ver .navbar__user-name) es el menu centrado, que
+       esta fuera del flujo y por eso no empuja a nadie: un nombre largo se le
+       encima. Pero el centrado solo existe de 960px para arriba. En mobile el
+       bloque de acciones es una columna de ancho completo dentro del desplegable,
+       asi que el nombre tiene toda la fila para el y no hay nada a lo que
+       encimarse.
+
+       Sigue habiendo tope, en vw y no en rem, porque el username llega a 50
+       caracteres (MAX_USERNAME_LENGTH): asi el ellipsis se mantiene y el corte
+       acompaña al ancho real del telefono en vez de asumir uno. Deja lugar para
+       el avatar y el caret en cualquier pantalla. */
+    .navbar__user-name {
+        max-width: 60vw;
+    }
 }
 .about {
     max-width: 720px;
