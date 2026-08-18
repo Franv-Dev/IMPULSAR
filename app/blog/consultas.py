@@ -191,7 +191,7 @@ def hay_reporte_pendiente(reporter_id, tipo, target_id):
     siempre un NULL, y tanto MySQL como SQLite eximen del UNIQUE a las filas
     con NULL. La constraint existiria y no frenaria nada.
 
-    La via que si funciona es la misma que usa _es_pendiente_duplicada() de
+    La via que si funciona es la misma que usa es_pendiente_duplicada() de
     app/servicios: una columna centinela que colapse las dos FK en un solo
     valor, `clave_pendiente` = "p<post_id>" o "r<review_id>" mientras el reporte
     esta sin resolver y NULL cuando se resuelve, con UNIQUE (reporter_id,
