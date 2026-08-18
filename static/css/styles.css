@@ -21,7 +21,17 @@
 :root {
     color-scheme: light;
 
-    --color-primary: #6C63FF;
+    /* Era #6C63FF, que contra --color-on-primary (blanco) daba 4.32:1, abajo
+       del minimo AA de 4.5:1 para texto normal: el texto de todo .btn--primary
+       en modo claro. Se oscurecio lo justo para pasar -- este da 4.77:1 -- en
+       vez de mover el blanco, que ademas de tener que cambiar a un gris habria
+       tocado tambien el avatar y los iconos.
+       Los numeros salen de la formula de WCAG ((L1+0.05)/(L2+0.05) sobre la
+       luminancia relativa), no de mirarlo. El modo oscuro ya cumplia (6.9:1) y
+       no se toco. */
+    --color-primary: #665DF1;
+    /* Sigue siendo mas oscuro que el normal, asi que el hover se nota igual
+       que antes: 5.39:1 contra blanco, 1.13:1 contra el normal. */
     --color-primary-hover: #5C55E6;
     --color-primary-soft: #E3E0FF;
     /* Texto/iconos que van encima del violeta solido (botones, avatar). */
