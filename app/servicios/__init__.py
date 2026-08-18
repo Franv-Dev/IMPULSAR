@@ -1,16 +1,20 @@
 """Servicios de un emprendimiento y las solicitudes de presupuesto sobre ellos.
 
-Los dos flujos viven en el mismo paquete porque son la misma feature vista de
-los dos lados: el prestador carga lo que hace, el cliente pide presupuesto
-sobre eso. Comparten el blueprint, el prefijo /servicios y los templates.
+Los flujos viven en el mismo paquete porque son la misma feature vista desde
+varios lados: el prestador carga lo que hace, el cliente pide presupuesto sobre
+eso, y un admin verifica las credenciales del prestador para ese servicio.
+Comparten el blueprint, el prefijo /servicios y los templates. La unica parte
+que no vive aca son las rutas del admin, que estan en views/admin.py con el
+resto del panel (y le piden las consultas a este paquete).
 
-    vistas.py             las rutas (HTTP: request, flash, redirect, render)
-    reglas.py             las decisiones de negocio, sin saber que existe HTTP
-    consultas.py          todo lo que le pregunta a la base
-    formulario.py         parseo y validacion de lo que manda el navegador
-    modelo.py             Service
-    modelo_solicitud.py   ServiceRequest
-    templates/servicios/  las plantillas del blueprint
+    vistas.py               las rutas (HTTP: request, flash, redirect, render)
+    reglas.py               las decisiones de negocio, sin saber que existe HTTP
+    consultas.py            todo lo que le pregunta a la base
+    formulario.py           parseo y validacion de lo que manda el navegador
+    modelo.py               Service
+    modelo_solicitud.py     ServiceRequest
+    modelo_verificacion.py  VerificationRequest
+    templates/servicios/    las plantillas del blueprint
 
 No reexporta nada, por la misma razon que app/__init__.py y que el
 views/__init__.py que se limpio en el paso anterior, y esta vez con la prueba

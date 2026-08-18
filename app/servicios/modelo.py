@@ -114,6 +114,16 @@ class Service(db.Model):
     # "No estoy tomando trabajos por ahora" sin tener que borrar el servicio.
     # Los no disponibles los ve solo el dueño.
     disponible = db.Column(db.Boolean, nullable=False, default=True, server_default="1")
+    # Que un admin miro la matricula o el certificado y le cierra. Lo escribe
+    # SOLO el admin (ver views/admin.py): si lo pudiera marcar el dueño del
+    # servicio, la verificacion no significaria nada, seria un checkbox mas del
+    # formulario de alta. Por eso no aparece en formulario.leer_servicio() ni
+    # entra en los `valores` con los que nuevo()/editar() escriben la fila.
+    #
+    # Va en Service y no en User a proposito: la habilitacion es por oficio.
+    # Un electricista puede tener matricula de electricidad y no de gas, y un
+    # solo flag en el usuario diria que las dos estan verificadas.
+    verificado = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     def __repr__(self):
@@ -140,4 +150,5 @@ class Service(db.Model):
                 str(self.precio_estimado) if self.precio_estimado is not None else None
             ),
             "disponible": self.disponible,
+            "verificado": self.verificado,
         }
