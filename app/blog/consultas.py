@@ -178,30 +178,11 @@ def hay_reporte_pendiente(reporter_id, tipo, target_id):
     No tiene sentido dejar que el mismo usuario apile reportes sobre el mismo
     objetivo: uno sin resolver ya alcanza para que el admin lo vea.
 
-    POR QUE EL CHEQUEO VIVE EN LA APLICACION Y NO EN LA BASE. Hoy no hay ningun
-    UNIQUE contra el cual chocar, asi que esta consulta es toda la garantia que
-    hay, y no alcanza: entre este SELECT y el INSERT queda una ventana, y dos
-    POST simultaneos (el doble click, dos pestañas) pasan los dos y guardan los
-    dos reportes pendientes. Es el mismo TOCTOU que en app/servicios cierra el
-    UNIQUE de la pendiente unica; aca sigue abierto.
-
-    El obstaculo NO es que no se pueda escribir el UNIQUE: el problema es que
-    post_id y review_id son excluyentes (un reporte apunta a un post o a una
-    resenia, nunca a los dos), asi que cualquier tupla que los incluya lleva
-    siempre un NULL, y tanto MySQL como SQLite eximen del UNIQUE a las filas
-    con NULL. La constraint existiria y no frenaria nada.
-
-    La via que si funciona es la misma que usa es_pendiente_duplicada() de
-    app/servicios: una columna centinela que colapse las dos FK en un solo
-    valor, `clave_pendiente` = "p<post_id>" o "r<review_id>" mientras el reporte
-    esta sin resolver y NULL cuando se resuelve, con UNIQUE (reporter_id,
-    clave_pendiente) y un event listener before_insert/before_update que la
-    derive del estado, igual que _sincronizar_cupo_pendiente(). Asi el NULL pasa
-    a ser deliberado (exime a las resueltas, que si pueden repetirse) en vez de
-    accidental.
-
-    No esta implementado: es un cambio funcional con migracion propia y va en su
-    tanda. Queda anotado, no tocado.
+    NO ES LA GARANTIA. Entre este SELECT y el INSERT queda una ventana, y dos
+    POST simultaneos (el doble click, dos pestañas) pasarian los dos. Lo que de
+    verdad lo impide es el UNIQUE (reporter_id, clave_pendiente) de la base;
+    esta consulta esta para pintar el formulario y dar un mensaje claro antes
+    de llegar a chocar. El por que de la columna centinela, en modelo_reporte.py.
     """
     filtro_objetivo = (
         {"post_id": target_id} if tipo == "post" else {"review_id": target_id}

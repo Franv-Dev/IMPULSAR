@@ -60,6 +60,31 @@ def puede_reportar(objetivo, tipo, user_id):
     return objetivo.user_id != user_id
 
 
+# Como se reconoce el choque contra el UNIQUE del reporte pendiente unico. Los
+# dos motores dicen algo distinto: MySQL nombra la constraint ("Duplicate entry
+# '3-p7' for key 'uq_reports_pendiente'") y SQLite no la nombra, lista las
+# columnas ("UNIQUE constraint failed: reports.reporter_id, ..."), asi que se
+# buscan las dos formas. clave_pendiente no participa de ninguna otra
+# constraint, asi que alcanza para distinguirla.
+_CONSTRAINT_REPORTE_PENDIENTE = "uq_reports_pendiente"
+_COLUMNA_REPORTE_PENDIENTE = "reports.clave_pendiente"
+
+
+def es_reporte_duplicado(error):
+    """Si ese IntegrityError es el del UNIQUE del reporte pendiente unico.
+
+    Se mira antes de dar por hecho de que error se trata: un IntegrityError a
+    secas tambien lo levanta, por ejemplo, la FK del post si el autor lo borra
+    justo en el medio, y ahi el usuario veria "ya tenes un reporte pendiente",
+    que es mentira, y el error real se perderia sin dejar rastro.
+    """
+    texto = str(getattr(error, "orig", error))
+    return (
+        _CONSTRAINT_REPORTE_PENDIENTE in texto
+        or _COLUMNA_REPORTE_PENDIENTE in texto
+    )
+
+
 def entran_las_fotos(cuantas_pide, ya_ocupados=0):
     """Si esas fotos entran en lo que le queda libre al emprendimiento."""
     return cuantas_pide + ya_ocupados <= MAX_IMAGENES_POR_POST

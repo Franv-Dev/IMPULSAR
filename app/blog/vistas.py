@@ -530,11 +530,12 @@ def report(tipo, target_id):
         flash(mensaje_propio)
         return redirect(volver)
 
-    # Un solo reporte pendiente por usuario y objetivo. El chequeo vive en la
-    # aplicacion y no en la base porque hoy no hay UNIQUE que lo sostenga (el
-    # por que, y la via viable, en consultas.hay_reporte_pendiente): se calcula
-    # aca para el GET, que pinta el formulario, y el POST vuelve a mirar esta
-    # misma variable, asi que dos envios simultaneos pasan los dos.
+    # Un solo reporte pendiente por usuario y objetivo. OJO: este chequeo es
+    # para pintar el formulario y dar un mensaje claro, no es el que garantiza
+    # la regla: entre este SELECT y el INSERT de mas abajo hay una ventana por
+    # la que pasan dos requests simultaneos. Lo que de verdad lo impide es el
+    # UNIQUE de la base (ver modelo_reporte.py), y su IntegrityError se maneja
+    # abajo.
     ya_reportado = consultas.hay_reporte_pendiente(g.user.id, tipo, target_id)
 
     if request.method == "POST":
@@ -546,12 +547,26 @@ def report(tipo, target_id):
         if error:
             flash(error)
         else:
-            consultas.guardar(Report(
-                reporter_id=g.user.id,
-                post_id=target_id if tipo == "post" else None,
-                review_id=target_id if tipo == "review" else None,
-                reason=motivo,
-            ))
+            try:
+                consultas.guardar(Report(
+                    reporter_id=g.user.id,
+                    post_id=target_id if tipo == "post" else None,
+                    review_id=target_id if tipo == "review" else None,
+                    reason=motivo,
+                ))
+            except IntegrityError as choque:
+                consultas.descartar()
+                if not reglas.es_reporte_duplicado(choque):
+                    # Cualquier otra violacion de integridad no es este caso y
+                    # no se disfraza de este caso: sube y se ve como el error
+                    # que es.
+                    raise
+                # Perdio la carrera: otro envio identico llego junto con este y
+                # el UNIQUE de la base lo rechazo. Para el usuario es el mismo
+                # caso que atajo el chequeo de arriba, asi que termina igual.
+                flash("Ya tenés un reporte pendiente sobre esto. El equipo lo va a revisar.")
+                return redirect(volver)
+
             flash("Gracias, revisaremos tu reporte.")
             return redirect(volver)
 
