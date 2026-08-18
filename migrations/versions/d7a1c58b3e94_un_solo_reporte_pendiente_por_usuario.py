@@ -53,7 +53,8 @@ def upgrade():
     #
     # resolved_at queda en NULL en los que se cierran aca: no se sabe cuando se
     # resolvieron porque no se resolvieron, se archivaron. El panel de admin lo
-    # muestra vacio, que es mas honesto que inventar una fecha.
+    # muestra vacio, que es mas honesto que inventar una fecha. Ese NULL ademas
+    # es lo que los deja identificables: ver el downgrade.
     #
     # COALESCE porque post_id y review_id son excluyentes: agrupar por los dos
     # con NULL de por medio no junta nada en MySQL. El prefijo 'p'/'r' evita que
@@ -111,8 +112,26 @@ def upgrade():
 
 
 def downgrade():
-    # Los reportes que esta migracion dio por resueltos no vuelven a pendientes:
-    # no hay forma de distinguirlos de los que el admin resolvio de verdad.
+    # Los reportes que esta migracion archivo si se pueden distinguir de los que
+    # el admin resolvio de verdad, y por lo tanto vuelven a pendientes.
+    #
+    # La marca es resolved_at: el unico lugar de la app que resuelve un reporte
+    # es views/admin.py, y escribe resolved y resolved_at en la misma operacion.
+    # Las dos columnas nacieron juntas (c24e5fc659b9), asi que tampoco hay una
+    # epoca vieja en la que una se llenara sin la otra. El upgrade de aca arriba
+    # es lo unico que pone resolved = 1 dejando la fecha vacia, con lo cual
+    # (resolved = 1 AND resolved_at IS NULL) son exactamente sus filas.
+    #
+    # Si alguna vez aparece otro lugar que resuelva reportes, tiene que escribir
+    # resolved_at igual que el panel: si no, esta condicion empieza a barrer
+    # filas que no le corresponden.
+    #
+    # El UPDATE va despues de soltar la constraint y no antes: asi los
+    # duplicados que vuelven a pendientes no tienen contra que chocar.
     with op.batch_alter_table('reports', schema=None) as batch_op:
         batch_op.drop_constraint('uq_reports_pendiente', type_='unique')
         batch_op.drop_column('clave_pendiente')
+
+    op.get_bind().execute(sa.text(
+        "UPDATE reports SET resolved = 0 WHERE resolved = 1 AND resolved_at IS NULL"
+    ))

@@ -395,6 +395,10 @@ def test_un_post_y_una_resenia_con_el_mismo_id_no_se_pisan(db, crear_usuario, cr
     db.session.add(review)
     db.session.commit()
 
+    # La premisa del test. Sin esto, si algun dia los fixtures cambian el orden
+    # de creacion y los ids dejan de coincidir, el test pasa sin probar nada.
+    assert post.id == review.id
+
     _reporte(db, denunciante.id, post_id=post.id)
     _reporte(db, denunciante.id, review_id=review.id)
 
