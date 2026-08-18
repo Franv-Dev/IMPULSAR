@@ -1610,3 +1610,244 @@ def test_sin_verificar_no_sale_el_sello_en_la_busqueda(
 
     assert "Instalación de gas" in html
     assert "Verificado" not in html
+
+
+# --- las fotos privadas: quien puede bajar el archivo
+
+@pytest.fixture
+def foto_en_disco(app, tmp_path):
+    """Escribe un archivo en la carpeta de uploads y devuelve su nombre.
+
+    La carpeta va a tmp_path para no ensuciar static/uploads del repo, igual
+    que uploads_temporales.
+    """
+    app.config["UPLOAD_FOLDER"] = str(tmp_path)
+
+    def _crear(nombre="doc.png", contenido=b"contenido-secreto"):
+        (tmp_path / nombre).write_bytes(contenido)
+        return nombre
+
+    return _crear
+
+
+@pytest.fixture
+def solicitud_con_foto(crear_usuario, crear_post, crear_servicio, crear_solicitud,
+                       foto_en_disco):
+    """Una solicitud con foto, y las dos personas que pueden verla.
+
+    Devuelve (solicitud, prestador, cliente). Sin login: cada test se loguea
+    como quien quiera probar.
+    """
+    prestador = crear_usuario(username="prestador")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(prestador.id)
+    servicio = crear_servicio(post.id)
+    solicitud = crear_solicitud(servicio.id, cliente.id, foto=foto_en_disco())
+    return solicitud, prestador, cliente
+
+
+@pytest.fixture
+def verificacion_con_foto(crear_usuario, crear_post, crear_servicio,
+                          crear_verificacion, foto_en_disco):
+    """Un pedido de verificacion con foto y el dueño del servicio.
+
+    Devuelve (verificacion, dueño).
+    """
+    dueño = crear_usuario(username="prestador")
+    post = crear_post(dueño.id)
+    servicio = crear_servicio(post.id)
+    verificacion = crear_verificacion(servicio.id, foto=foto_en_disco())
+    return verificacion, dueño
+
+
+# --- foto de una solicitud de presupuesto: solo las dos partes
+
+def test_el_cliente_baja_la_foto_de_su_solicitud(client, solicitud_con_foto, login):
+    solicitud, _prestador, cliente = solicitud_con_foto
+    login(cliente.id)
+
+    respuesta = client.get(f"/servicios/solicitudes/{solicitud.id}/foto")
+
+    assert respuesta.status_code == 200
+    assert respuesta.data == b"contenido-secreto"
+
+
+def test_el_prestador_baja_la_foto_de_la_solicitud_que_recibio(
+    client, solicitud_con_foto, login
+):
+    solicitud, prestador, _cliente = solicitud_con_foto
+    login(prestador.id)
+
+    assert client.get(f"/servicios/solicitudes/{solicitud.id}/foto").status_code == 200
+
+
+def test_un_tercero_no_baja_la_foto_de_una_solicitud_ajena(
+    client, solicitud_con_foto, crear_usuario, login
+):
+    solicitud, _prestador, _cliente = solicitud_con_foto
+    curioso = crear_usuario(username="curioso")
+    login(curioso.id)
+
+    assert client.get(f"/servicios/solicitudes/{solicitud.id}/foto").status_code == 403
+
+
+def test_un_admin_tampoco_baja_la_foto_de_una_solicitud(
+    client, solicitud_con_foto, crear_usuario, login
+):
+    """La unica privacidad del proyecto donde el admin no entra: una solicitud
+    de presupuesto es entre dos personas y punto (ver modelo_solicitud.py)."""
+    solicitud, _prestador, _cliente = solicitud_con_foto
+    jefa = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(jefa.id)
+
+    assert client.get(f"/servicios/solicitudes/{solicitud.id}/foto").status_code == 403
+
+
+def test_un_anonimo_no_baja_la_foto_de_una_solicitud(client, solicitud_con_foto):
+    """302 al login y no 403, que es lo que hace login_required en el resto de
+    las rutas privadas del blueprint."""
+    solicitud, _prestador, _cliente = solicitud_con_foto
+
+    respuesta = client.get(f"/servicios/solicitudes/{solicitud.id}/foto")
+
+    assert respuesta.status_code == 302
+    assert "/auth/login" in respuesta.headers["Location"]
+
+
+def test_la_foto_de_la_solicitud_ya_no_se_pinta_contra_static(
+    client, solicitud_con_foto, login
+):
+    """El control que ata el fix al template: si alguien vuelve a poner
+    url_for("static", ...), las rutas nuevas siguen pasando sus tests pero la
+    foto queda publica otra vez."""
+    solicitud, _prestador, cliente = solicitud_con_foto
+    login(cliente.id)
+
+    html = client.get(f"/servicios/solicitudes/{solicitud.id}").get_data(as_text=True)
+
+    assert f"/servicios/solicitudes/{solicitud.id}/foto" in html
+    assert "/static/uploads/" not in html
+
+
+# --- foto de una verificacion: el dueño del servicio y los admins
+
+def test_el_dueño_baja_la_foto_de_su_verificacion(client, verificacion_con_foto, login):
+    verificacion, dueño = verificacion_con_foto
+    login(dueño.id)
+
+    respuesta = client.get(f"/servicios/verificaciones/{verificacion.id}/foto")
+
+    assert respuesta.status_code == 200
+    assert respuesta.data == b"contenido-secreto"
+
+
+def test_el_admin_baja_la_foto_de_una_verificacion(
+    client, verificacion_con_foto, crear_usuario, login
+):
+    """Aca si entra el admin, al reves que en la solicitud: la verificacion
+    existe justamente para que un admin la mire."""
+    verificacion, _dueño = verificacion_con_foto
+    jefa = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(jefa.id)
+
+    assert client.get(
+        f"/servicios/verificaciones/{verificacion.id}/foto"
+    ).status_code == 200
+
+
+def test_otro_emprendedor_no_baja_la_foto_de_una_verificacion_ajena(
+    client, verificacion_con_foto, crear_usuario, login
+):
+    """Es una matricula con nombre y numero real: no la ve un colega."""
+    verificacion, _dueño = verificacion_con_foto
+    colega = crear_usuario(username="colega")
+    login(colega.id)
+
+    assert client.get(
+        f"/servicios/verificaciones/{verificacion.id}/foto"
+    ).status_code == 403
+
+
+def test_un_anonimo_no_baja_la_foto_de_una_verificacion(client, verificacion_con_foto):
+    verificacion, _dueño = verificacion_con_foto
+
+    respuesta = client.get(f"/servicios/verificaciones/{verificacion.id}/foto")
+
+    assert respuesta.status_code == 302
+    assert "/auth/login" in respuesta.headers["Location"]
+
+
+def test_la_cola_del_admin_ya_no_linkea_a_static(
+    client, verificacion_con_foto, crear_usuario, login
+):
+    verificacion, _dueño = verificacion_con_foto
+    jefa = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(jefa.id)
+
+    html = client.get("/admin/verificaciones").get_data(as_text=True)
+
+    assert f"/servicios/verificaciones/{verificacion.id}/foto" in html
+    assert "/static/uploads/" not in html
+
+
+# --- archivo que no esta, y nombres que se quieren salir de la carpeta
+
+def test_una_solicitud_sin_foto_da_404(
+    client, crear_usuario, crear_post, crear_servicio, crear_solicitud, login
+):
+    """Sin foto no hay archivo que servir, pero la solicitud existe: 404 y no
+    un 500 ni un archivo vacio."""
+    prestador = crear_usuario(username="prestador")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(prestador.id)
+    servicio = crear_servicio(post.id)
+    solicitud = crear_solicitud(servicio.id, cliente.id, foto=None)
+    login(cliente.id)
+
+    assert client.get(f"/servicios/solicitudes/{solicitud.id}/foto").status_code == 404
+
+
+def test_una_foto_borrada_del_disco_da_404(
+    client, crear_usuario, crear_post, crear_servicio, crear_solicitud, login,
+    foto_en_disco
+):
+    """La fila apunta a un archivo que ya no esta: pasa, y no es un error del
+    servidor."""
+    foto_en_disco()  # deja la carpeta de uploads apuntando a tmp_path
+    prestador = crear_usuario(username="prestador")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(prestador.id)
+    servicio = crear_servicio(post.id)
+    solicitud = crear_solicitud(servicio.id, cliente.id, foto="no-existe.png")
+    login(cliente.id)
+
+    assert client.get(f"/servicios/solicitudes/{solicitud.id}/foto").status_code == 404
+
+
+def test_un_nombre_que_se_sale_de_la_carpeta_no_sirve_el_archivo(
+    client, db, tmp_path, app, crear_usuario, crear_post, crear_servicio,
+    crear_solicitud, login
+):
+    """El nombre sale de una columna, no de la URL, asi que el traversal solo
+    entra si esa columna quedo envenenada. send_from_directory tiene que
+    rechazarlo igual: es la razon de usarlo en vez de send_file.
+
+    El archivo objetivo se crea de verdad, afuera de la carpeta de uploads: sin
+    eso el test pasaria por "no existe" en vez de por "no se permite salir".
+    """
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    app.config["UPLOAD_FOLDER"] = str(uploads)
+    (tmp_path / "secreto.txt").write_bytes(b"esto no se puede servir")
+
+    prestador = crear_usuario(username="prestador")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(prestador.id)
+    servicio = crear_servicio(post.id)
+    solicitud = crear_solicitud(servicio.id, cliente.id, foto="../secreto.txt")
+    login(cliente.id)
+
+    respuesta = client.get(f"/servicios/solicitudes/{solicitud.id}/foto")
+
+    assert respuesta.status_code == 404
+    assert b"esto no se puede servir" not in respuesta.data
