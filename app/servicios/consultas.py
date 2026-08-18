@@ -14,6 +14,7 @@ from sqlalchemy.orm import joinedload
 
 from app.servicios.modelo import Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
+from app.servicios.modelo_verificacion import EstadosVerificacion, VerificationRequest
 from db import db
 from app.blog.modelo_post import Post
 
@@ -126,6 +127,66 @@ def solicitudes_enviadas_por(user_id):
         .all()
     )
 
+
+# ------------------------------------------------- verificacion de credenciales
+
+def verificacion_por_id_o_404(id):
+    return VerificationRequest.query.get_or_404(id)
+
+
+def verificacion_pendiente_de(service_id):
+    """El pedido de verificacion sin resolver de ese servicio, si lo hay."""
+    return VerificationRequest.query.filter_by(
+        service_id=service_id,
+        estado=EstadosVerificacion.PENDIENTE,
+    ).first()
+
+
+def ultima_verificacion_de(service_id):
+    """El ultimo pedido de ese servicio, resuelto o no, para mostrarle al dueño.
+
+    Mas nuevo primero: lo que le interesa al prestador es en que quedo el
+    ultimo intento (y el motivo, si se lo rechazaron), no el historial.
+    """
+    return (
+        VerificationRequest.query
+        .filter_by(service_id=service_id)
+        .order_by(VerificationRequest.created_at.desc(), VerificationRequest.id.desc())
+        .first()
+    )
+
+
+def verificaciones_pendientes():
+    """La cola del admin, mas viejas primero: se atiende por orden de llegada.
+
+    Al reves que reportes(), que ordena por fecha descendente. Un reporte lo que
+    necesita es que el admin vea rapido lo ultimo que se denuncio; aca del otro
+    lado hay alguien esperando una respuesta desde que la mando, y dejar las
+    viejas al final es lo que hace que una se quede sin atender para siempre.
+
+    Los joinedload traen el servicio y su emprendimiento en la misma consulta:
+    la tabla del panel muestra los dos por fila, y sin ellos eso es un SELECT
+    por pedido (problema N+1).
+    """
+    return (
+        VerificationRequest.query
+        .options(joinedload(VerificationRequest.servicio).joinedload(Service.post))
+        .filter(VerificationRequest.estado == EstadosVerificacion.PENDIENTE)
+        .order_by(VerificationRequest.created_at.asc())
+        .all()
+    )
+
+
+def cuantas_verificaciones_pendientes():
+    """Para el contador del dashboard. Un COUNT y no len() del listado."""
+    return (
+        VerificationRequest.query
+        .filter(VerificationRequest.estado == EstadosVerificacion.PENDIENTE)
+        .count()
+    )
+
+
+# ------------------------------------------------------------------ escritura
 
 def guardar(fila=None):
     """Confirma la transaccion, agregando la fila nueva si se pasa una.

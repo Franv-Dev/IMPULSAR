@@ -8,6 +8,7 @@ un request.
 
 from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros
 from app.servicios.modelo_solicitud import EstadosSolicitud
+from app.servicios.modelo_verificacion import EstadosVerificacion
 
 
 def es_de(servicio, user_id):
@@ -55,6 +56,11 @@ def esta_cerrada(solicitud):
     return solicitud.estado == EstadosSolicitud.CERRADA
 
 
+def esta_verificacion_pendiente(verificacion):
+    """Si ese pedido de verificacion todavia lo tiene que mirar un admin."""
+    return verificacion.estado == EstadosVerificacion.PENDIENTE
+
+
 # Como se reconoce el choque contra el UNIQUE de la pendiente unica. Los dos
 # motores dicen algo distinto: MySQL nombra la constraint ("Duplicate entry
 # '1-2-1' for key 'uq_service_requests_pendiente'") y SQLite no la nombra, lista
@@ -75,3 +81,21 @@ def es_pendiente_duplicada(error):
     """
     texto = str(getattr(error, "orig", error))
     return _CONSTRAINT_PENDIENTE in texto or _COLUMNA_PENDIENTE in texto
+
+
+# Lo mismo para el UNIQUE de la verificacion pendiente. Son constantes aparte y
+# no una funcion generica con la tabla por parametro porque el nombre de la
+# tabla es justamente lo que distingue un choque del otro: las dos columnas se
+# llaman cupo_pendiente, y SQLite las nombra con el prefijo de su tabla.
+_CONSTRAINT_VERIFICACION = "uq_verification_requests_pendiente"
+_COLUMNA_VERIFICACION = "verification_requests.cupo_pendiente"
+
+
+def es_verificacion_duplicada(error):
+    """Si ese IntegrityError es el del UNIQUE de la verificacion pendiente.
+
+    Mismo criterio que es_pendiente_duplicada, y por el mismo motivo: cualquier
+    otra violacion de integridad no es este caso y no se disfraza de este caso.
+    """
+    texto = str(getattr(error, "orig", error))
+    return _CONSTRAINT_VERIFICACION in texto or _COLUMNA_VERIFICACION in texto

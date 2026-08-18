@@ -24,6 +24,7 @@ from sqlalchemy.exc import IntegrityError
 from app.servicios import consultas, formulario, reglas
 from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
+from app.servicios.modelo_verificacion import EstadosVerificacion, VerificationRequest
 from db import utcnow
 from services.precios import texto_para_formulario
 from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
@@ -410,3 +411,85 @@ def cerrar(id):
         flash("Solicitud cerrada.")
 
     return redirect(url_for("servicios.solicitud", id=id))
+
+
+# ------------------------------------------------- verificacion de credenciales
+
+# Mismo motivo que solicitud_pendiente_de: se llama por este nombre para que un
+# test de concurrencia pueda parchearlo y meter la barrera que reproduce la
+# carrera entre el SELECT y el INSERT.
+verificacion_pendiente_de = consultas.verificacion_pendiente_de
+
+
+@servicios.route("/<int:id>/verificar", methods=("GET", "POST"))
+@login_required
+def verificar(id):
+    """El prestador sube su matricula o certificado para que un admin la mire.
+
+    Solo el dueño del servicio, con el mismo _servicio_propio que el resto del
+    ABM: si esto lo pudiera pedir cualquiera, un tercero llenaria la cola del
+    admin con documentos de servicios que no son suyos.
+
+    Lo unico que se escribe aca es la foto. El estado, el motivo y el
+    Service.verificado del otro lado los escribe el admin y nadie mas (ver
+    views/admin.py): si el dueño pudiera marcarlo, la verificacion no
+    significaria nada.
+    """
+    servicio, rechazo = _servicio_propio(id)
+    if rechazo:
+        return rechazo
+
+    pendiente = verificacion_pendiente_de(servicio.id)
+    if pendiente:
+        # Igual que en solicitar(): esto es para mostrar un mensaje claro, no es
+        # lo que garantiza la regla. Entre este SELECT y el INSERT de mas abajo
+        # hay una ventana por la que pasan dos requests simultaneos, y lo que
+        # de verdad la cierra es el UNIQUE de la base (ver
+        # modelo_verificacion.py), cuyo IntegrityError se maneja abajo.
+        return render_template(
+            "servicios/verificar.html", servicio=servicio, pendiente=pendiente,
+            ultima=pendiente, estados=EstadosVerificacion,
+        )
+
+    ultima = consultas.ultima_verificacion_de(servicio.id)
+
+    if request.method == "POST":
+        foto, error = save_post_image(request.files.get("foto"), carpeta_uploads())
+        if error is None and not foto:
+            # save_post_image devuelve (None, None) cuando no vino ningun
+            # archivo, que para el resto del proyecto no es un error. Aca si:
+            # sin el documento no hay nada que revisar.
+            error = "Subí una foto de tu matrícula o certificado."
+
+        if error:
+            borrar_de_disco(carpeta_uploads(), [foto])
+            flash(error)
+            return render_template(
+                "servicios/verificar.html", servicio=servicio,
+                pendiente=None, ultima=ultima, estados=EstadosVerificacion,
+            )
+
+        verificacion = VerificationRequest(service_id=servicio.id, foto=foto)
+        try:
+            consultas.guardar(verificacion)
+        except IntegrityError as choque:
+            # La fila no entro, asi que la foto que se acaba de escribir no la
+            # referencia nadie: se limpia pase lo que pase con el error.
+            consultas.descartar()
+            borrar_de_disco(carpeta_uploads(), [foto])
+            if not reglas.es_verificacion_duplicada(choque):
+                # Cualquier otra violacion de integridad no es este caso y no se
+                # disfraza de este caso: sube y se ve como el error que es.
+                raise
+            # Perdio la carrera contra un request identico. Para el usuario es
+            # exactamente el mismo caso que atajo el chequeo de arriba.
+            flash("Ya tenés un pedido de verificación esperando revisión.")
+            return redirect(url_for("servicios.verificar", id=servicio.id))
+
+        flash("Listo, mandamos tu documentación. Un administrador la va a revisar.")
+        return redirect(url_for("servicios.verificar", id=servicio.id))
+
+    return render_template(
+        "servicios/verificar.html", servicio=servicio, pendiente=None,
+        ultima=ultima, estados=EstadosVerificacion,
+    )
