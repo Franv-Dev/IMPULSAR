@@ -41,6 +41,12 @@
                     <span class="admin-metric__label">Reportes pendientes</span>
                 </div>
             {% endif %}
+            {% if "verificaciones_pendientes" in metricas %}
+                <div class="admin-metric admin-metric--alert">
+                    <span class="admin-metric__value">{{ metricas.verificaciones_pendientes }}</span>
+                    <span class="admin-metric__label">Verificaciones pendientes</span>
+                </div>
+            {% endif %}
         </div>
 
         <div class="admin-links">
@@ -48,6 +54,9 @@
             <a href="{{ url_for('admin.emprendimientos') }}" class="btn btn--secondary">Moderar emprendimientos</a>
             {% if "reportes_pendientes" in metricas %}
                 <a href="{{ url_for('admin.reportes') }}" class="btn btn--secondary">Ver reportes</a>
+            {% endif %}
+            {% if "verificaciones_pendientes" in metricas %}
+                <a href="{{ url_for('admin.verificaciones') }}" class="btn btn--secondary">Ver verificaciones</a>
             {% endif %}
         </div>
     </div>

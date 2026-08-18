@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Verificaciones – Admin – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Verificaciones pendientes</h2>
+                <p class="section__subtitle">
+                    {{ verificaciones|length }} pedidos sin revisar, más viejos primero.
+                </p>
+            </div>
+            <a href="{{ url_for('admin.dashboard') }}" class="section__link">← Volver al panel</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if verificaciones %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Servicio</th>
+                            <th>Rubro</th>
+                            <th>Emprendimiento</th>
+                            <th>Documento</th>
+                            <th>Fecha</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in verificaciones %}
+                            <tr>
+                                <td>{{ v.servicio.titulo }}</td>
+                                <td>{{ v.servicio.rubro_label }}</td>
+                                <td>
+                                    <a href="{{ url_for('blog.detail', id=v.servicio.post_id) }}">
+                                        {{ v.servicio.post.title }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if v.foto %}
+                                        <a href="{{ url_for('static', filename='uploads/' ~ v.foto) }}"
+                                           target="_blank" rel="noopener">
+                                            Ver documento
+                                        </a>
+                                    {% else %}
+                                        <span style="color:var(--color-muted);">Sin foto</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ v.created_at.strftime("%d/%m/%Y") if v.created_at else "" }}</td>
+                                <td>
+                                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:flex-start;">
+                                        <form method="post"
+                                              action="{{ url_for('admin.aprobar_verificacion', verificacion_id=v.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn--secondary"
+                                                    style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                                Aprobar
+                                            </button>
+                                        </form>
+                                        {# El motivo viaja en el mismo POST que el rechazo: si
+                                           fuera otra pantalla, el prestador se quedaria sin
+                                           saber que corregir cada vez que el admin tiene apuro. #}
+                                        <form method="post"
+                                              action="{{ url_for('admin.rechazar_verificacion', verificacion_id=v.id) }}"
+                                              style="display:flex; gap:0.35rem; flex-wrap:wrap; align-items:flex-start;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            {# aria-label y no un <label> visualmente
+                                               escondido: el proyecto no tiene una
+                                               utilidad para eso, y agregarla por un
+                                               textarea seria inventar una convencion. #}
+                                            <textarea name="motivo_rechazo"
+                                                      rows="1" class="auth__input"
+                                                      style="min-width:180px;"
+                                                      aria-label="Motivo del rechazo"
+                                                      placeholder="Motivo (opcional)"></textarea>
+                                            <button type="submit" class="btn btn--ghost"
+                                                    style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                                Rechazar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="reviews-empty">No hay verificaciones pendientes.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
