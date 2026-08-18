@@ -50,7 +50,11 @@
                                 </td>
                                 <td>
                                     {% if v.foto %}
-                                        <a href="{{ url_for('static', filename='uploads/' ~ v.foto) }}"
+                                        {# Por la ruta del blueprint y no por /static: es
+                                           una matricula con nombre y numero real, y ahi
+                                           lleva el chequeo de permiso (ver
+                                           servicios.foto_de_verificacion). #}
+                                        <a href="{{ url_for('servicios.foto_de_verificacion', id=v.id) }}"
                                            target="_blank" rel="noopener">
                                             Ver documento
                                         </a>

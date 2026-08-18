@@ -39,7 +39,10 @@
                 {% endif %}
 
                 {% if solicitud.foto %}
-                    <img src="{{ url_for('static', filename='uploads/' ~ solicitud.foto) }}"
+                    {# Por la ruta del blueprint y no por /static: el archivo lleva el
+                       mismo chequeo de permiso que esta pagina (ver
+                       servicios.foto_de_solicitud). #}
+                    <img src="{{ url_for('servicios.foto_de_solicitud', id=solicitud.id) }}"
                          alt="Foto del pedido"
                          style="max-width:100%; border-radius:8px; margin-top:0.75rem;">
                 {% endif %}

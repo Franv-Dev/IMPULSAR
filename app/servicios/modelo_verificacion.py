@@ -44,14 +44,18 @@ class VerificationRequest(db.Model):
     los escribe unicamente el admin (ver views/admin.py). Si el dueño pudiera
     tocar cualquiera de esas cosas, la verificacion no significaria nada.
 
-    OJO con la foto, mismo caso que ServiceRequest y con mas motivo: la
-    privacidad es de la PAGINA, no del archivo. La imagen se guarda en
-    static/uploads como todas las demas y Flask la sirve sin ningun chequeo de
-    permiso, asi que quien tenga la URL la ve sin sesion. No es enumerable (el
-    nombre lleva un uuid, ver services/uploads.py), pero aca lo que se sube es
-    un documento con nombre y numero de matricula, que es mas sensible que la
-    foto de una canilla rota. Si alguna vez se sirven los uploads por una ruta
-    propia con chequeo de permiso, esta es la primera que hay que mudar.
+    LA FOTO TAMBIEN ES PRIVADA, mismo caso que ServiceRequest y con mas motivo,
+    porque lo que se sube es un documento con nombre y numero de matricula.
+    Hasta que existio servicios.foto_de_verificacion se servia por
+    /static/uploads sin ningun chequeo y quien tuviera la URL la veia sin
+    sesion; hoy sale por una ruta del blueprint que aplica
+    reglas.puede_ver_la_verificacion (el dueño del servicio y los admins).
+
+    Lo que sigue valiendo: el archivo esta en la misma carpeta que el resto de
+    los uploads, que si son publicos. Lo unico que lo protege es que nadie
+    publica su URL directa, asi que un template que arme
+    url_for("static", filename="uploads/" ~ verificacion.foto) vuelve a abrirlo
+    sin que falle nada.
 
     UNA SOLA PENDIENTE por servicio: una sin resolver ya alcanza para que el
     admin la vea, y sin el freno un doble click deja dos filas identicas en la

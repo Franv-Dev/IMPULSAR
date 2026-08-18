@@ -43,12 +43,17 @@ class ServiceRequest(db.Model):
     app/servicios/reglas.py y vistas.py), que es donde se resuelve tambien la de las
     estadisticas del perfil.
 
-    OJO con la foto: la privacidad es de la PAGINA, no del archivo. La imagen
-    se guarda en static/uploads como todas las demas y Flask la sirve sin
-    ningun chequeo de permiso, asi que quien tenga la URL la ve sin sesion. No
-    es enumerable (el nombre lleva un uuid, ver services/uploads.py), pero si
-    alguna vez hace falta que el archivo tambien sea privado hay que servirlo
-    por una ruta propia con el mismo chequeo que la pagina.
+    LA FOTO TAMBIEN ES PRIVADA, y no siempre lo fue: hasta que existio
+    servicios.foto_de_solicitud, la imagen se servia por /static/uploads como
+    todas las demas y Flask no chequeaba nada, con lo cual quien tuviera la URL
+    la veia sin sesion. Hoy sale por una ruta del blueprint que aplica el mismo
+    reglas.es_parte_de_la_solicitud que la pagina.
+
+    Lo que sigue valiendo: el archivo esta en la misma carpeta que el resto de
+    los uploads, que si son publicos. Lo unico que lo protege es que nadie
+    publica su URL directa, asi que un template que arme
+    url_for("static", filename="uploads/" ~ solicitud.foto) vuelve a abrirlo
+    sin que falle nada.
 
     UNA SOLA PENDIENTE: un cliente no puede tener dos solicitudes pendientes
     sobre el mismo servicio. Eso lo garantiza la base y no la vista: chequear
