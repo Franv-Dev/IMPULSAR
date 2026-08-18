@@ -77,13 +77,27 @@
                                 </a>
                             </p>
 
-                            <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                <a href="{{ url_for('servicios.solicitar', id=servicio.id) }}"
-                                   class="btn btn--primary"
-                                   style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                    Pedir presupuesto
-                                </a>
-                            </div>
+                            {# El boton se gatea y no se muestra igual para redirigir
+                               despues: solicitar() tiene @login_required sin next, asi
+                               que el visitante caeria en el login y perderia el
+                               servicio que estaba mirando. Mismo criterio que
+                               blog/detail.html con "Escribirle al emprendedor" y con el
+                               formulario de reseña: se dice de entrada que hace falta
+                               sesion, con el link para iniciarla. #}
+                            {% if g.user %}
+                                <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                    <a href="{{ url_for('servicios.solicitar', id=servicio.id) }}"
+                                       class="btn btn--primary"
+                                       style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                        Pedir presupuesto
+                                    </a>
+                                </div>
+                            {% else %}
+                                <p class="card__description" style="margin-top:0.75rem;">
+                                    Tenés que <a href="{{ url_for('auth.login') }}">iniciar sesión</a>
+                                    para pedir un presupuesto.
+                                </p>
+                            {% endif %}
                         </div>
                     </article>
                 {% endfor %}

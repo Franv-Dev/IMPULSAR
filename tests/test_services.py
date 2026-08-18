@@ -539,6 +539,39 @@ def test_la_busqueda_muestra_el_emprendimiento_que_lo_ofrece(
     assert f'href="/blog/{post.id}"' in html
 
 
+def test_el_visitante_sin_sesion_no_ve_el_boton_de_presupuesto(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """solicitar() tiene @login_required y no vuelve al servicio despues del
+    login: mostrar el boton igual mandaria al visitante a una pantalla de la que
+    no puede volver a lo que estaba mirando. Mismo criterio que blog/detail.html
+    con "Escribirle al emprendedor" y con el formulario de reseña."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id, titulo="Destapaciones")
+
+    html = client.get("/servicios/buscar").get_data(as_text=True)
+
+    assert "Destapaciones" in html
+    assert f"/servicios/{servicio.id}/solicitar" not in html
+    assert "iniciar sesión" in html
+
+
+def test_el_visitante_logueado_si_ve_el_boton_de_presupuesto(
+    client, crear_usuario, crear_post, crear_servicio, login
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id, titulo="Destapaciones")
+    login(cliente.id)
+
+    html = client.get("/servicios/buscar").get_data(as_text=True)
+
+    assert f"/servicios/{servicio.id}/solicitar" in html
+    assert "Pedir presupuesto" in html
+
+
 def test_la_busqueda_pagina(client, crear_usuario, crear_post, crear_servicio, app):
     """No trae todo con .all(): se rompe solo cuando el listado crece."""
     autor = crear_usuario(username="autor")
