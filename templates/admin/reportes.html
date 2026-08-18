@@ -48,7 +48,7 @@
                                             Reseña de {{ r.review.user.username if r.review.user else 'usuario borrado' }}
                                         </a>
                                     {% else %}
-                                        <span style="color:#9CA3AF;">Contenido eliminado</span>
+                                        <span class="text-muted">Contenido eliminado</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ r.reporter.username if r.reporter else '—' }}</td>

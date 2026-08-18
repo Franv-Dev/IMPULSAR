@@ -2517,3 +2517,13 @@ a.perfil-dato:hover {
     color: var(--color-danger-strong);
     text-decoration: underline;
 }
+
+
+/* === Utilidades de texto ===
+   Una sola, y existe por un motivo puntual: siete templates escribian
+   style="color:#9CA3AF" a mano. Ese gris es fijo, asi que en modo oscuro
+   quedaba con el contraste de otro tema; --color-muted si cambia en los dos.
+   Ver la REGLA del encabezado de esta hoja. */
+.text-muted {
+    color: var(--color-muted);
+}

@@ -59,10 +59,10 @@
 
                             {% if item.avg_rating %}
                                 <p class="card__rating">
-                                    ⭐ {{ item.avg_rating }} <span style="color:#9CA3AF;">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
+                                    ⭐ {{ item.avg_rating }} <span class="text-muted">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
                                 </p>
                             {% else %}
-                                <p class="card__rating" style="color:#9CA3AF;">Sin reseñas todavía</p>
+                                <p class="card__rating text-muted">Sin reseñas todavía</p>
                             {% endif %}
 
                             <p class="card__description">
