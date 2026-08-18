@@ -17,9 +17,18 @@ logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
-# Tamanio maximo por imagen. Flask corta antes con MAX_CONTENT_LENGTH, pero
-# dejamos el valor aca tambien para que el servicio sea autocontenido.
-MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
+# Tope duro de subida, la ultima red de seguridad y no el control de tamanio de
+# todos los dias. Flask lo usa como MAX_CONTENT_LENGTH (ver config.py) y corta
+# la request antes de que llegue a este modulo, con lo cual una foto que lo pasa
+# no llega nunca a _guardar_comprimida.
+#
+# Por eso son 15 MB y no 5: con 5 MB, la foto de cualquier celular moderno
+# rebotaba con "la imagen es demasiado grande" en vez de pasar por la
+# compresion que ya existia justamente para eso. El emprendedor no tiene como
+# achicar una foto antes de subirla, y el disco no se llenaba igual, porque lo
+# que se guarda es la version redimensionada a MAX_IMAGE_WIDTH. Lo unico que
+# sigue frenando este numero es lo que tardaria demasiado en procesarse.
+MAX_IMAGE_BYTES = 15 * 1024 * 1024  # 15 MB
 
 # Un emprendedor sube fotos de 8 MB desde el celular sin darse cuenta: se
 # redimensionan y comprimen antes de guardar para no llenar el disco.

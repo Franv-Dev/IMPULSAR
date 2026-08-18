@@ -132,6 +132,13 @@ def _registrar_filtros_jinja(app):
 def _registrar_manejadores_de_error(app):
     @app.errorhandler(RequestEntityTooLarge)
     def manejar_archivo_muy_grande(e):
+        # Sigue haciendo falta, pero ahora es el caso raro y no el de todos los
+        # dias: desde que MAX_IMAGE_BYTES son 15 MB, una foto de celular entra y
+        # la comprime save_post_image. Aca caen las que ni con eso entran.
+        #
+        # El texto no cambia porque sigue siendo exacto: dice cual es el maximo y
+        # lo saca de la constante, asi que no se desincroniza si el numero se
+        # vuelve a mover.
         limite_mb = MAX_IMAGE_BYTES // (1024 * 1024)
         flash(f"La imagen es demasiado grande. El máximo permitido es {limite_mb} MB.")
         return redirect(request.referrer or url_for("index")), 303

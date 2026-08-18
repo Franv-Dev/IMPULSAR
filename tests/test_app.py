@@ -112,4 +112,13 @@ def test_pagina_404_personalizada(client):
 
 
 def test_el_limite_de_subida_esta_configurado(app):
-    assert app.config["MAX_CONTENT_LENGTH"] == 5 * 1024 * 1024
+    """El tope duro, que es el que aplica Flask antes de que corra la app.
+
+    Se compara contra la constante y no contra un numero escrito de nuevo: si
+    se compara contra 15 * 1024 * 1024, el test pasa a afirmar cuanto vale la
+    constante en vez de que config.py la use, que es lo que importa aca.
+    """
+    from services.uploads import MAX_IMAGE_BYTES
+
+    assert app.config["MAX_CONTENT_LENGTH"] == MAX_IMAGE_BYTES
+    assert MAX_IMAGE_BYTES == 15 * 1024 * 1024
