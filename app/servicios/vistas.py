@@ -17,7 +17,7 @@ carpeta global de la app).
 
 from flask import (
     Blueprint, abort, current_app, flash, g, redirect, render_template, request,
-    url_for
+    send_from_directory, url_for
 )
 from sqlalchemy.exc import IntegrityError
 
@@ -27,6 +27,7 @@ from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from app.servicios.modelo_verificacion import EstadosVerificacion, VerificationRequest
 from db import utcnow
 from services.precios import texto_para_formulario
+from models.user import Roles
 from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
 from views.auth import login_required
 
@@ -62,6 +63,36 @@ def _solicitud_visible(id):
     if not reglas.es_parte_de_la_solicitud(solicitud, g.user.id):
         abort(403)
     return solicitud
+
+
+def _servir_foto_privada(nombre):
+    """Devuelve un archivo de static/uploads, pero solo despues de un chequeo.
+
+    Existe porque las fotos de este dominio son las unicas de todo el proyecto
+    que no son publicas: la de una solicitud de presupuesto y la de un pedido
+    de verificacion (una matricula con nombre y numero real). El resto de lo
+    que vive en static/uploads -- avatares, portadas, fotos de emprendimientos
+    y de productos -- se sigue sirviendo directo por Flask, y esta bien: es
+    material de vitrina que tiene que verse sin sesion.
+
+    Quien puede ver que lo decide cada ruta antes de llamar aca; esto es solo
+    la entrega del archivo.
+
+    send_from_directory y no send_file con la ruta armada a mano: send_file
+    abriria cualquier cosa que se le pase, y esto recibe un nombre que sale de
+    una columna de la base. Si esa columna alguna vez contiene "../../algo"
+    (hoy no puede: los nombres se arman con uuid + secure_filename), Flask lo
+    rechaza en vez de servir un archivo de afuera de la carpeta.
+
+    Sin foto o con el archivo borrado del disco es un 404 y no un 500: que la
+    fila apunte a algo que ya no esta es un caso posible, no un error del
+    servidor.
+    """
+    if not nombre:
+        abort(404)
+    # send_from_directory ya levanta NotFound si el archivo no existe o si el
+    # nombre se sale de la carpeta, asi que no hay que chequearlo por separado.
+    return send_from_directory(carpeta_uploads(), nombre)
 
 
 # ------------------------------------------------------------ busqueda publica
@@ -356,6 +387,20 @@ def solicitud(id):
     )
 
 
+@servicios.route("/solicitudes/<int:id>/foto")
+@login_required
+def foto_de_solicitud(id):
+    """La foto que subio el cliente, con el mismo permiso que la pagina.
+
+    Reusa _solicitud_visible, que es exactamente el chequeo de solicitud(): sin
+    eso serian dos criterios que hay que acordarse de mover juntos, y el que se
+    olvide deja el archivo abierto aunque la pagina siga cerrada. La ven las
+    dos partes y nadie mas, ni otro emprendedor ni un admin (ver
+    modelo_solicitud.py).
+    """
+    return _servir_foto_privada(_solicitud_visible(id).foto)
+
+
 @servicios.route("/solicitudes/<int:id>/responder", methods=("POST",))
 @login_required
 def responder(id):
@@ -493,3 +538,24 @@ def verificar(id):
         "servicios/verificar.html", servicio=servicio, pendiente=None,
         ultima=ultima, estados=EstadosVerificacion,
     )
+
+
+@servicios.route("/verificaciones/<int:id>/foto")
+@login_required
+def foto_de_verificacion(id):
+    """El documento del pedido, con el mismo permiso que la cola del admin.
+
+    La ruta vive en este blueprint y no en views/admin.py aunque el admin sea
+    el que mas la usa: el permiso no es "ser admin" sino "ser admin O el dueño
+    del servicio" (ver reglas.puede_ver_la_verificacion), y colgarla de
+    @admin_required dejaria al prestador sin poder ver lo que el mismo mando.
+    """
+    verificacion = consultas.verificacion_por_id_o_404(id)
+    if not reglas.puede_ver_la_verificacion(
+        verificacion, g.user.id, g.user.rol == Roles.ADMIN
+    ):
+        # abort(403) y no flash + redirect, mismo criterio que
+        # _solicitud_visible: es un limite de privacidad entre personas, no un
+        # "esto no es tuyo, volve a tu panel".
+        abort(403)
+    return _servir_foto_privada(verificacion.foto)

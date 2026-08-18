@@ -56,6 +56,25 @@ def esta_cerrada(solicitud):
     return solicitud.estado == EstadosSolicitud.CERRADA
 
 
+def puede_ver_la_verificacion(verificacion, user_id, es_admin):
+    """Quien puede mirar el documento de un pedido de verificacion.
+
+    El dueño del emprendimiento del servicio (mando su propia matricula) y
+    cualquier admin (es el que la tiene que revisar). Es el mismo criterio con
+    el que views/admin.py arma la cola, escrito una sola vez para que la pagina
+    y el archivo no puedan separarse.
+
+    Aca si entra el admin, al reves que en es_parte_de_la_solicitud: una
+    solicitud de presupuesto es privada entre dos usuarios y el admin no pinta
+    nada, pero una verificacion existe justamente para que un admin la mire.
+
+    es_admin viene como bool y no se deduce del user_id adentro para no traer
+    el modelo de usuarios ni una consulta a este modulo, que no sabe de HTTP ni
+    de sesiones: quien llama ya tiene el usuario en la mano.
+    """
+    return es_admin or verificacion.servicio.post.author == user_id
+
+
 def esta_verificacion_pendiente(verificacion):
     """Si ese pedido de verificacion todavia lo tiene que mirar un admin."""
     return verificacion.estado == EstadosVerificacion.PENDIENTE
