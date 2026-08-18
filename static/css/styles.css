@@ -651,6 +651,15 @@ main {
     color: var(--color-text-soft);
 }
 
+/* El sello de "credenciales verificadas por un admin". Verde y no violeta para
+   que no se confunda con el badge de rubro, que es el que lleva el primario.
+   Usa los tokens de exito que ya existen en los dos temas: nada de colores
+   nuevos (ver la REGLA del encabezado de esta hoja). */
+.badge--verificado {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
 /* Formularios que deben comportarse como un boton dentro de una fila
    (por ejemplo el de eliminar, que es un form POST y no un link). */
 .form-inline {

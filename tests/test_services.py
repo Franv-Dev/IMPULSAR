@@ -8,10 +8,13 @@ from sqlalchemy.exc import IntegrityError
 
 from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
+from app.servicios.modelo_verificacion import (
+    EstadosVerificacion, VerificationRequest,
+)
 from db import db as _db
 from main import create_app
 from app.blog.modelo_post import Post
-from models.user import User
+from models.user import Roles, User
 from services.precios import parsear_precio
 
 
@@ -1242,3 +1245,368 @@ def test_servicios_esta_en_los_slugs_reservados():
     from services.slugs import SLUGS_RESERVADOS
 
     assert "servicios" in SLUGS_RESERVADOS
+
+
+# --- verificacion de credenciales
+
+@pytest.fixture
+def uploads_temporales(app, tmp_path):
+    """Manda los uploads del test a una carpeta descartable.
+
+    Sin esto, subir el documento en un test escribe en static/uploads del repo
+    y deja el archivo ahi despues de que el test termina.
+    """
+    app.config["UPLOAD_FOLDER"] = str(tmp_path)
+    return tmp_path
+
+
+def _documento(nombre="matricula.png"):
+    """Un archivo de imagen valido, listo para subir en un multipart."""
+    import io
+
+    from PIL import Image
+    from werkzeug.datastructures import FileStorage
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (10, 10), "green").save(buffer, format="PNG")
+    buffer.seek(0)
+    return FileStorage(stream=buffer, filename=nombre, content_type="image/png")
+
+
+@pytest.fixture
+def crear_verificacion(db):
+    """Fabrica de pedidos de verificacion."""
+
+    def _crear(service_id, estado=EstadosVerificacion.PENDIENTE, foto="doc.png",
+               motivo_rechazo=None):
+        verificacion = VerificationRequest(
+            service_id=service_id, foto=foto, estado=estado,
+            motivo_rechazo=motivo_rechazo,
+        )
+        db.session.add(verificacion)
+        db.session.commit()
+        return verificacion
+
+    return _crear
+
+
+def test_un_servicio_nace_sin_verificar(db, crear_usuario, crear_post, crear_servicio):
+    """El sello no es un default: alguien lo tiene que mirar."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    db.session.expire_all()
+
+    assert db.session.get(Service, servicio.id).verificado is False
+
+
+def test_el_dueño_no_puede_marcarse_verificado_desde_el_formulario(
+    db, client, emprendedor_con_post, crear_servicio
+):
+    """Si el dueño pudiera marcarlo, el sello no significaria nada. El campo no
+    entra por formulario.leer_servicio(), asi que mandarlo a mano no hace nada."""
+    _usuario, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id, titulo="Instalaciones de gas")
+
+    client.post(f"/servicios/{servicio.id}/editar", data={
+        "post_id": post.id, "titulo": "Instalaciones de gas",
+        "rubro": Rubros.GAS, "descripcion": "", "zona_cobertura": "",
+        "precio_estimado": "", "disponible": "on", "verificado": "on",
+    })
+
+    db.session.refresh(servicio)
+    assert servicio.verificado is False
+
+
+def test_pedir_verificacion_guarda_el_pedido_con_la_foto(
+    db, client, emprendedor_con_post, crear_servicio, uploads_temporales
+):
+    _usuario, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id)
+
+    client.post(
+        f"/servicios/{servicio.id}/verificar",
+        data={"foto": _documento()},
+        content_type="multipart/form-data",
+    )
+
+    pedido = VerificationRequest.query.one()
+    assert pedido.service_id == servicio.id
+    assert pedido.estado == EstadosVerificacion.PENDIENTE
+    assert pedido.foto
+    assert (uploads_temporales / pedido.foto).exists()
+    # El pedido no verifica nada por si solo: eso lo decide el admin.
+    db.session.refresh(servicio)
+    assert servicio.verificado is False
+
+
+def test_pedir_verificacion_sin_foto_no_guarda_nada(
+    client, emprendedor_con_post, crear_servicio, uploads_temporales
+):
+    """save_post_image devuelve (None, None) sin archivo, que para el resto del
+    proyecto no es un error. Aca si: sin documento no hay nada que revisar."""
+    _usuario, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id)
+
+    respuesta = client.post(
+        f"/servicios/{servicio.id}/verificar",
+        data={}, content_type="multipart/form-data",
+    )
+
+    assert VerificationRequest.query.count() == 0
+    assert "matrícula" in respuesta.get_data(as_text=True)
+
+
+def test_no_se_puede_pedir_verificacion_de_un_servicio_ajeno(
+    client, crear_usuario, crear_post, crear_servicio, login, uploads_temporales
+):
+    """Sin esto, un tercero llena la cola del admin con documentos de servicios
+    que no son suyos. Mismo _servicio_propio que el resto del ABM."""
+    autor = crear_usuario(username="autor")
+    intruso = crear_usuario(username="intruso")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    login(intruso.id)
+
+    client.post(
+        f"/servicios/{servicio.id}/verificar",
+        data={"foto": _documento()},
+        content_type="multipart/form-data",
+    )
+
+    assert VerificationRequest.query.count() == 0
+
+
+def test_no_se_puede_pedir_verificacion_dos_veces(
+    client, emprendedor_con_post, crear_servicio, crear_verificacion,
+    uploads_temporales
+):
+    """Ya hay una esperando: se muestra eso en vez del formulario."""
+    _usuario, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id)
+    crear_verificacion(servicio.id)
+
+    client.post(
+        f"/servicios/{servicio.id}/verificar",
+        data={"foto": _documento()},
+        content_type="multipart/form-data",
+    )
+
+    assert VerificationRequest.query.count() == 1
+
+
+def test_la_base_frena_la_segunda_pendiente_aunque_la_vista_no_mire(
+    db, crear_usuario, crear_post, crear_servicio, crear_verificacion
+):
+    """El freno de verdad es el UNIQUE, no el chequeo de la vista: entre el
+    SELECT y el INSERT hay una ventana por la que pasan dos requests juntos."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    crear_verificacion(servicio.id)
+
+    db.session.add(VerificationRequest(service_id=servicio.id, foto="otra.png"))
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()
+
+
+def test_despues_de_un_rechazo_se_puede_volver_a_pedir(
+    db, crear_usuario, crear_post, crear_servicio, crear_verificacion
+):
+    """Justamente por esto la constraint lleva la columna centinela y no es un
+    UNIQUE(service_id) a secas, que prohibiria el segundo intento para siempre."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    crear_verificacion(servicio.id, estado=EstadosVerificacion.RECHAZADA)
+
+    db.session.add(VerificationRequest(service_id=servicio.id, foto="segunda.png"))
+    db.session.commit()
+
+    assert VerificationRequest.query.count() == 2
+
+
+def test_resolver_un_pedido_libera_el_cupo(
+    db, crear_usuario, crear_post, crear_servicio, crear_verificacion
+):
+    """cupo_pendiente lo mantiene el listener, no las vistas."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    verificacion = crear_verificacion(servicio.id)
+
+    assert verificacion.cupo_pendiente == 1
+
+    verificacion.estado = EstadosVerificacion.APROBADA
+    db.session.commit()
+
+    assert verificacion.cupo_pendiente is None
+
+
+def test_borrar_un_servicio_se_lleva_sus_verificaciones(
+    db, crear_usuario, crear_post, crear_servicio, crear_verificacion
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    crear_verificacion(servicio.id)
+
+    db.session.delete(servicio)
+    db.session.commit()
+
+    assert VerificationRequest.query.count() == 0
+
+
+# --- verificacion: el lado del admin
+
+def test_un_usuario_comun_no_ve_la_cola_de_verificaciones(client, crear_usuario, login):
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    assert client.get("/admin/verificaciones").status_code == 403
+
+
+def test_el_admin_aprueba_y_el_servicio_queda_verificado(
+    db, client, crear_usuario, crear_post, crear_servicio, crear_verificacion, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    verificacion = crear_verificacion(servicio.id)
+    login(admin.id)
+
+    client.post(f"/admin/verificaciones/{verificacion.id}/aprobar")
+
+    db.session.refresh(servicio)
+    db.session.refresh(verificacion)
+    assert servicio.verificado is True
+    assert verificacion.estado == EstadosVerificacion.APROBADA
+    assert verificacion.resuelto_at is not None
+
+
+def test_el_admin_rechaza_con_motivo_y_no_toca_el_sello(
+    db, client, crear_usuario, crear_post, crear_servicio, crear_verificacion, login
+):
+    """Un rechazo puede ser que la foto salio movida: no verifica, pero tampoco
+    saca un sello que ya estaba."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    verificacion = crear_verificacion(servicio.id)
+    login(admin.id)
+
+    client.post(
+        f"/admin/verificaciones/{verificacion.id}/rechazar",
+        data={"motivo_rechazo": "La foto no se lee."},
+    )
+
+    db.session.refresh(servicio)
+    db.session.refresh(verificacion)
+    assert servicio.verificado is False
+    assert verificacion.estado == EstadosVerificacion.RECHAZADA
+    assert verificacion.motivo_rechazo == "La foto no se lee."
+
+
+def test_rechazar_sin_motivo_deja_la_columna_en_null(
+    db, client, crear_usuario, crear_post, crear_servicio, crear_verificacion, login
+):
+    """None y no cadena vacia: la columna es nullable justamente para poder
+    distinguir que el admin no dijo por que."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    verificacion = crear_verificacion(servicio.id)
+    login(admin.id)
+
+    client.post(f"/admin/verificaciones/{verificacion.id}/rechazar", data={})
+
+    db.session.refresh(verificacion)
+    assert verificacion.motivo_rechazo is None
+
+
+def test_un_pedido_ya_resuelto_no_se_vuelve_a_resolver(
+    db, client, crear_usuario, crear_post, crear_servicio, crear_verificacion, login
+):
+    """El segundo POST (otro admin, o la misma pestaña abierta dos veces) no
+    tiene que dar vuelta la decision del primero."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    verificacion = crear_verificacion(servicio.id, estado=EstadosVerificacion.RECHAZADA)
+    login(admin.id)
+
+    client.post(f"/admin/verificaciones/{verificacion.id}/aprobar")
+
+    db.session.refresh(servicio)
+    db.session.refresh(verificacion)
+    assert servicio.verificado is False
+    assert verificacion.estado == EstadosVerificacion.RECHAZADA
+
+
+def test_la_cola_del_admin_solo_trae_las_pendientes(
+    client, crear_usuario, crear_post, crear_servicio, crear_verificacion, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    pendiente = crear_servicio(post.id, titulo="Instalación de gas")
+    resuelto = crear_servicio(post.id, titulo="Cambio de tablero")
+    crear_verificacion(pendiente.id)
+    crear_verificacion(resuelto.id, estado=EstadosVerificacion.APROBADA)
+    login(admin.id)
+
+    html = client.get("/admin/verificaciones").get_data(as_text=True)
+
+    assert "Instalación de gas" in html
+    assert "Cambio de tablero" not in html
+
+
+def test_el_dashboard_cuenta_las_verificaciones_pendientes(
+    client, crear_usuario, crear_post, crear_servicio, crear_verificacion, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    crear_verificacion(servicio.id)
+    login(admin.id)
+
+    html = client.get("/admin/").get_data(as_text=True)
+
+    assert "Verificaciones pendientes" in html
+    assert "/admin/verificaciones" in html
+
+
+# --- verificacion: el sello en la busqueda publica
+
+def test_el_sello_sale_en_la_busqueda_si_el_servicio_esta_verificado(
+    db, client, crear_usuario, crear_post, crear_servicio
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id, titulo="Instalación de gas")
+    servicio.verificado = True
+    db.session.commit()
+
+    html = client.get("/servicios/buscar").get_data(as_text=True)
+
+    assert "Instalación de gas" in html
+    assert "Verificado" in html
+
+
+def test_sin_verificar_no_sale_el_sello_en_la_busqueda(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Instalación de gas")
+
+    html = client.get("/servicios/buscar").get_data(as_text=True)
+
+    assert "Instalación de gas" in html
+    assert "Verificado" not in html

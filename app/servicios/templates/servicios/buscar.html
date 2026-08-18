@@ -58,6 +58,15 @@
                         <div class="card__body">
                             <div class="card__tags">
                                 <span class="badge badge--category">{{ servicio.rubro_label }}</span>
+                                {# El sello lo pone un admin despues de mirar la
+                                   matricula, nunca el dueño del servicio (ver
+                                   Service.verificado). #}
+                                {% if servicio.verificado %}
+                                    <span class="badge badge--verificado"
+                                          title="Un administrador revisó la matrícula o el certificado de este servicio.">
+                                        ✓ Verificado
+                                    </span>
+                                {% endif %}
                             </div>
                             <h3 class="card__title">{{ servicio.titulo }}</h3>
                             <p class="card__price" style="font-weight:600;">
