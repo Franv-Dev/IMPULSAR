@@ -50,8 +50,14 @@ JPEG_QUALITY = 85
 # no frena nada por si solo.
 #
 # 50 Mpx cubre de sobra lo que sacan las camaras y los celulares de verdad (un
-# sensor de 50 MP da 8660x5773) y deja el pico de RAM en unos 150 MB por
+# sensor de 50 MP da 8660x5773) y deja el pico de RAM en unos 200 MB por
 # imagen, que dura lo que tarda el resize a 1200 px de ancho.
+#
+# Ese numero esta medido, no estimado. La cuenta ingenua (ancho * alto * 3 = 150
+# MB) cuenta solo el decode y se queda corta: el pipeline tiene mas de un raster
+# vivo a la vez. Con exif_transpose copiando el raster entero -- como estaba
+# hasta que se le paso in_place=True, ver _guardar_comprimida -- el pico real
+# eran ~375 MB.
 MAX_IMAGE_PIXELS = 50 * 1000 * 1000
 
 # El default de Pillow tambien se baja al mismo numero, para que su freno duro
@@ -175,8 +181,18 @@ def _guardar_comprimida(stream, destino):
     """
     imagen = Image.open(stream)
     formato = (imagen.format or "JPEG").upper()
-    imagen = ImageOps.exif_transpose(imagen)
+    # in_place=True y por eso SIN asignar: asi rota sobre el mismo raster en vez
+    # de generar una copia entera antes de que el resize lo achique, que es de
+    # donde salia la mitad del pico de RAM (ver MAX_IMAGE_PIXELS). Ojo que en
+    # ese modo la funcion devuelve None: `imagen = ImageOps.exif_transpose(...)`
+    # con in_place dejaria imagen en None y todo lo de abajo explota.
+    ImageOps.exif_transpose(imagen, in_place=True)
 
+    # El resize va DESPUES de la rotacion y no al reves. Si la foto viene
+    # vertical con un EXIF que la marca para rotar a horizontal, hasta que la
+    # rotacion se aplica el ancho y el alto estan cruzados, y redimensionar ahi
+    # ataria MAX_IMAGE_WIDTH a la dimension equivocada: la foto terminaria con
+    # 1200 px de alto y el ancho que saliera.
     if imagen.width > MAX_IMAGE_WIDTH:
         nueva_altura = round(imagen.height * MAX_IMAGE_WIDTH / imagen.width)
         imagen = imagen.resize((MAX_IMAGE_WIDTH, nueva_altura), Image.LANCZOS)

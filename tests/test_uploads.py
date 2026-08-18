@@ -4,7 +4,7 @@ import io
 import os
 
 import pytest
-from PIL import Image
+from PIL import Image, ImageOps
 from werkzeug.datastructures import FileStorage
 
 from services import uploads
@@ -203,3 +203,82 @@ def test_el_freno_duro_de_pillow_quedo_atado_a_nuestra_constante():
     """Sin esto, el freno de Pillow seguiria en su default de 89.5 Mpx y la
     franja donde solo avisa llegaria hasta 179 Mpx."""
     assert Image.MAX_IMAGE_PIXELS == uploads.MAX_IMAGE_PIXELS
+
+
+# --- orientacion EXIF
+
+def _foto_con_exif_rotada(ancho, alto, nombre="vertical.jpg"):
+    """Una foto guardada vertical que el EXIF marca para mostrar horizontal.
+
+    Es el caso tipico del celular: el sensor graba siempre igual y la
+    orientacion real viaja en el metadato 274, que el navegador ignora. Cada
+    cuadrante lleva un color distinto para poder verificar despues que la
+    rotacion se aplico a los pixeles y no solo al tamanio.
+    """
+    imagen = Image.new("RGB", (ancho, alto))
+    colores = ((255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0))
+    for indice, color in enumerate(colores):
+        izquierda = (indice % 2) * (ancho // 2)
+        arriba = (indice // 2) * (alto // 2)
+        imagen.paste(color, (izquierda, arriba, izquierda + ancho // 2, arriba + alto // 2))
+
+    exif = imagen.getexif()
+    exif[274] = 6  # "rotar para que se vea horizontal"
+
+    buffer = io.BytesIO()
+    imagen.save(buffer, format="JPEG", quality=95, exif=exif)
+    buffer.seek(0)
+    return FileStorage(stream=buffer, filename=nombre, content_type="image/jpeg"), imagen
+
+
+def test_una_foto_vertical_con_exif_horizontal_se_rota_y_recien_ahi_se_achica(upload_dir):
+    """El orden importa: exif_transpose primero, resize despues.
+
+    La foto se guarda 800x2000 (vertical) y el EXIF la marca para verse
+    2000x800 (horizontal). Si el resize corriera antes de la rotacion, miraria
+    un ancho de 800, no entraria en el `if` de MAX_IMAGE_WIDTH y la imagen se
+    guardaria sin achicar; con el orden correcto, el ancho a mirar es 2000 y
+    termina en 1200.
+
+    Tambien cubre que exif_transpose se llame con in_place=True y SIN asignar
+    el resultado: en ese modo devuelve None, asi que la version con asignacion
+    reventaria en la primera linea que toque `imagen`.
+    """
+    archivo, original = _foto_con_exif_rotada(800, 2000)
+
+    filename, error = save_post_image(archivo, upload_dir)
+
+    assert error is None
+
+    with Image.open(os.path.join(upload_dir, filename)) as guardada:
+        # 2000x800 rotada, achicada contra el ancho de verdad.
+        assert guardada.size == (MAX_IMAGE_WIDTH, 480)
+
+        # Y la rotacion se aplico a los pixeles, no solo a las dimensiones: el
+        # cuadrante de arriba a la izquierda de la imagen ya rotada tiene que
+        # ser el mismo que calcula Pillow por su cuenta sobre el original.
+        esperada = ImageOps.exif_transpose(original)
+        assert _color_dominante(guardada) == _color_dominante(esperada)
+
+
+def _color_dominante(imagen):
+    """El color del cuadrante de arriba a la izquierda, redondeado.
+
+    Se muestrea bien adentro del cuadrante para no caer en el borde entre dos
+    colores, que el JPEG difumina.
+    """
+    ancho, alto = imagen.size
+    pixel = imagen.convert("RGB").getpixel((ancho // 4, alto // 4))
+    return tuple(round(canal / 64) for canal in pixel)
+
+
+def test_exif_transpose_in_place_devuelve_none(upload_dir):
+    """El detalle que hace que el fix sea de una palabra y no de una linea.
+
+    Si alguien "prolija" el codigo poniendo `imagen = ImageOps.exif_transpose(
+    imagen, in_place=True)`, imagen queda en None y _guardar_comprimida explota.
+    Este test fija el porque, para que el comentario no sea la unica defensa.
+    """
+    imagen = Image.new("RGB", (10, 20))
+
+    assert ImageOps.exif_transpose(imagen, in_place=True) is None
