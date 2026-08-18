@@ -35,6 +35,39 @@ MAX_IMAGE_BYTES = 15 * 1024 * 1024  # 15 MB
 MAX_IMAGE_WIDTH = 1200
 JPEG_QUALITY = 85
 
+# Cuantos pixeles puede tener una imagen, que es un limite distinto del de
+# bytes y no se deduce de el: el peso del archivo es la imagen COMPRIMIDA, y la
+# que se descomprime en RAM ocupa ancho * alto * 3 bytes sin importar cuanto
+# pesaba. Un PNG de un color solido de menos de 1 MB puede descomprimir a
+# cientos de MB, asi que sin este tope subir el limite de bytes a 15 MB seria
+# abrirle mas puerta a eso.
+#
+# Pillow trae su propio freno (Image.MAX_IMAGE_PIXELS, 89.5 Mpx por default)
+# pero no alcanza tal cual: entre una y dos veces ese valor solo emite un
+# DecompressionBombWarning y sigue de largo, asi que el techo real del default
+# son 179 Mpx, o sea medio giga en RAM para decodificar una foto. Por eso el
+# numero se fija aca y ademas se chequea a mano en save_post_image: el warning
+# no frena nada por si solo.
+#
+# 50 Mpx cubre de sobra lo que sacan las camaras y los celulares de verdad (un
+# sensor de 50 MP da 8660x5773) y deja el pico de RAM en unos 150 MB por
+# imagen, que dura lo que tarda el resize a 1200 px de ancho.
+MAX_IMAGE_PIXELS = 50 * 1000 * 1000
+
+# El default de Pillow tambien se baja al mismo numero, para que su freno duro
+# (el que si corta, a 2x) quede en 100 Mpx en vez de 179. Es global del modulo
+# Image y por eso se hace una sola vez, al importar: el chequeo explicito de
+# save_post_image es el que da el mensaje bueno, y esto es lo que ataja el caso
+# donde la imagen es tan grande que ni conviene llegar a medirla.
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
+
+# El mensaje sale por los dos caminos que rechazan por dimensiones (el freno de
+# Pillow y el chequeo propio), asi que vive en un solo lado: para el que sube la
+# foto los dos casos son el mismo problema.
+MENSAJE_DEMASIADOS_PIXELES = (
+    "Esa imagen tiene demasiados píxeles. Probá con una foto de cámara o celular normal."
+)
+
 
 def carpeta_uploads(*subcarpetas):
     """La carpeta donde se guardan las imagenes subidas, ya absoluta.
@@ -72,11 +105,33 @@ def save_post_image(file, upload_dir):
     # La extension se puede falsificar facil: un .exe renombrado a .jpg pasaria
     # el chequeo de arriba. Pillow intenta abrir el archivo de verdad, asi que
     # solo pasan archivos que realmente son imagenes.
+    #
+    # Las dimensiones se leen aca, del mismo open: estan en el encabezado, asi
+    # que saberlas no cuesta decodificar nada. Recien despues se decide si vale
+    # la pena hacerlo.
     try:
-        Image.open(file.stream).verify()
+        imagen = Image.open(file.stream)
+        ancho, alto = imagen.size
+        imagen.verify()
+    except Image.DecompressionBombError:
+        # Tan grande que Pillow corto sin llegar a abrirla (ver MAX_IMAGE_PIXELS).
+        logger.warning(
+            "Se rechazo una imagen con dimensiones desmedidas: %s", file.filename
+        )
+        return None, MENSAJE_DEMASIADOS_PIXELES
     except Exception:
         logger.warning("Se rechazo un archivo que no es una imagen valida: %s", file.filename)
         return None, "El archivo no parece ser una imagen valida."
+
+    # El chequeo propio, que es el que de verdad frena la franja donde Pillow
+    # solo avisa: entre MAX_IMAGE_PIXELS y el doble, DecompressionBombWarning no
+    # corta nada y la imagen se decodificaria igual.
+    if ancho * alto > MAX_IMAGE_PIXELS:
+        logger.warning(
+            "Se rechazo una imagen de %sx%s px (tope %s): %s",
+            ancho, alto, MAX_IMAGE_PIXELS, file.filename,
+        )
+        return None, MENSAJE_DEMASIADOS_PIXELES
 
     # verify() consume el stream, hay que volver al principio antes de leerlo
     # de nuevo para procesar la imagen.
