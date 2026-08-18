@@ -75,6 +75,13 @@
         Eventos
     </a>
 
+    {# Solo la busqueda publica se marca activa, y no todo el blueprint: el
+       resto de /servicios es privado (el panel del dueño y sus solicitudes) y
+       se entra desde el menu de usuario, no desde aca. #}
+    <a href="{{ url_for('servicios.buscar') }}" class="navbar__link {% if request.endpoint == 'servicios.buscar' %}navbar__link--active{% endif %}">
+        Servicios
+    </a>
+
     {# "Sobre IMPULSAR" y "Contacto" viven en el footer: son paginas
        institucionales, se leen una vez y no compiten con Inicio,
        Emprendimientos y Eventos, que son la navegacion de todos los dias. #}
