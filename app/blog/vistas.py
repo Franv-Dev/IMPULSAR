@@ -14,10 +14,12 @@ template_folder, con lo cual las plantillas del dominio viajan con el codigo del
 dominio (base.html y los partials siguen saliendo de la carpeta global de la
 app).
 
-Las dos funciones de galeria (_guardar_galeria y _borrar_de_disco) no son
-rutas y tampoco entran en ninguna de las otras tres capas: escriben y borran
-archivos en disco. Estan aca por ser el unico lugar desde donde se las llama;
-el comentario largo esta sobre la funcion.
+_guardar_galeria() no es una ruta y tampoco entra limpia en ninguna de las
+otras tres capas: escribe archivos en disco y ademas deja filas pendientes en
+la sesion (cuelga PostImage de post.imagenes, y el autoflush las empuja en la
+primera consulta que venga despues, por eso los dos branches de error llaman a
+consultas.descartar()). Esta aca por ser el unico lugar desde donde se la
+llama; el comentario largo esta sobre la funcion.
 """
 
 from flask import (
@@ -100,22 +102,12 @@ def _guardar_galeria(post, archivos, upload_dir, ya_ocupados):
     for numero, archivo in enumerate(archivos, start=ya_ocupados):
         filename, error = save_post_image(archivo, upload_dir)
         if error:
-            _borrar_de_disco(upload_dir, escritos)
+            borrar_de_disco(upload_dir, escritos)
             return error
         if filename:
             escritos.append(filename)
             post.imagenes.append(PostImage(filename=filename, posicion=numero))
     return None
-
-
-def _borrar_de_disco(upload_dir, nombres):
-    """Borra archivos que quedaron escritos por un intento que fallo.
-
-    La implementacion se mudo a services/uploads.py cuando el catalogo de
-    productos necesito lo mismo. Se mantiene el nombre local porque es el que
-    usan las llamadas de este modulo.
-    """
-    borrar_de_disco(upload_dir, nombres)
 
 
 # ------------------------------------------------------------ rutas publicas
@@ -267,7 +259,7 @@ def create():
                 consultas.descartar()
                 # La galeria ya borro lo suyo; falta la principal, que se
                 # escribio antes y se queda sin post que la referencie.
-                _borrar_de_disco(upload_dir, [filename])
+                borrar_de_disco(upload_dir, [filename])
                 flash(galeria_error)
                 return render_template("blog/create.html", categorias=Categorias.ETIQUETAS)
 
@@ -333,7 +325,7 @@ def update(id):
             consultas.descartar()
             # Y lo que ya se habia escrito en disco: la edicion no se guardo,
             # asi que la imagen principal nueva no la referencia nadie.
-            _borrar_de_disco(upload_dir, [filename])
+            borrar_de_disco(upload_dir, [filename])
             flash(error)
         else:
             # Solo geocodificamos si la direccion cambio.
@@ -538,6 +530,11 @@ def report(tipo, target_id):
         flash(mensaje_propio)
         return redirect(volver)
 
+    # Un solo reporte pendiente por usuario y objetivo. El chequeo vive en la
+    # aplicacion y no en la base porque hoy no hay UNIQUE que lo sostenga (el
+    # por que, y la via viable, en consultas.hay_reporte_pendiente): se calcula
+    # aca para el GET, que pinta el formulario, y el POST vuelve a mirar esta
+    # misma variable, asi que dos envios simultaneos pasan los dos.
     ya_reportado = consultas.hay_reporte_pendiente(g.user.id, tipo, target_id)
 
     if request.method == "POST":

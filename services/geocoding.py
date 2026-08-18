@@ -1,9 +1,10 @@
 """Geocodificacion de direcciones con la API de MapTiler.
 
-Antes esta logica estaba duplicada en views/blog.py y app/perfil/vistas.py, con
-la diferencia de que la version de blog acotaba la busqueda a Mendoza y la de
-profile no. Se unifica aca usando el criterio mas preciso para las dos, que es
-el que corresponde: IMPULSAR es una plataforma de emprendimientos locales.
+Antes esta logica estaba duplicada en la vista del blog (hoy app/blog/vistas.py)
+y en la del perfil (app/perfil/vistas.py), con la diferencia de que la version
+del blog acotaba la busqueda a Mendoza y la del perfil no. Se unifica aca usando
+el criterio mas preciso para las dos, que es el que corresponde: IMPULSAR es una
+plataforma de emprendimientos locales.
 """
 
 import logging

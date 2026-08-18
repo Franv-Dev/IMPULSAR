@@ -1,9 +1,9 @@
 """Catalogo de productos de los emprendimientos.
 
-El ABM vive aca y no en views/blog.py por lo mismo que el de eventos: es su
+El ABM quedo aca y no adentro del blog por lo mismo que el de eventos: es su
 propia entidad, con su propio formulario y su propio panel, y meterlo adentro
-de blog.py solo haria mas grande un archivo que ya es el mas grande del
-proyecto.
+de la vista del blog solo hacia mas grande un archivo que ya era el mas grande
+del proyecto (hoy ese dominio vive en app/blog/).
 
 Un producto pertenece a un emprendimiento (Post), no a un usuario, asi que el
 permiso siempre se resuelve mirando el dueño de ese emprendimiento. El chequeo

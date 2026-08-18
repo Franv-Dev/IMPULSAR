@@ -1,7 +1,7 @@
 """Eventos y ferias de los emprendimientos.
 
-El ABM vive aca junto con la cartelera publica en vez de colgar de views/blog.py
-porque /eventos es una ruta de primer nivel: partirlo dejaria la cartelera en un
+El ABM vive aca junto con la cartelera publica en vez de colgar del blog porque
+/eventos es una ruta de primer nivel: partirlo dejaria la cartelera en un
 archivo y el alta en otro sin ninguna ganancia.
 
 Un evento pertenece a un emprendimiento (Post), no a un usuario, asi que el
