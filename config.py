@@ -85,6 +85,20 @@ class Config:
     # Donde se guardan las imagenes que suben los usuarios. Se lee con
     # services.uploads.carpeta_uploads(), que es el unico lugar que la arma.
     UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER") or os.path.join(STATIC_FOLDER, "uploads")
+    # Donde van las subidas que NO son publicas: hoy la foto de una solicitud de
+    # presupuesto y el documento de un pedido de verificacion (una matricula con
+    # nombre y numero real). Se leen con services.uploads.carpeta_privada().
+    #
+    # HERMANA de static/ y no una subcarpeta de UPLOAD_FOLDER, que es lo que
+    # parecia natural: Flask sirve static_folder RECURSIVAMENTE, asi que
+    # static/uploads/privado/doc.png se bajaria por /static/uploads/privado/doc.png
+    # sin pasar por ninguna vista. La proteccion de estas dos fotos ya esta en el
+    # codigo (ver app/servicios/vistas.py), y esto es la segunda capa: que el
+    # archivo tampoco este donde un nginx puesto adelante, o un listado de
+    # directorio, lo puedan alcanzar sin preguntarle nada a la app.
+    PRIVATE_UPLOAD_FOLDER = os.getenv("PRIVATE_UPLOAD_FOLDER") or os.path.join(
+        RAIZ_PROYECTO, "uploads_privados"
+    )
 
     MAPTILER_KEY = os.getenv("MAPTILER_KEY")
 

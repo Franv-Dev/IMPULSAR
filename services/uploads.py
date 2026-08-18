@@ -89,6 +89,24 @@ def carpeta_uploads(*subcarpetas):
     return os.path.join(current_app.config["UPLOAD_FOLDER"], *subcarpetas)
 
 
+def carpeta_privada(*subcarpetas):
+    """La carpeta de las subidas que no son publicas, ya absoluta.
+
+    Es a PRIVATE_UPLOAD_FOLDER lo que carpeta_uploads() es a UPLOAD_FOLDER, y
+    existe separada por una razon concreta y no por prolijidad: carpeta_uploads
+    ("privado") habria dado static/uploads/privado, y Flask sirve su
+    static_folder recursivamente, con lo cual el archivo se bajaria por
+    /static/uploads/privado/<nombre> sin pasar por ninguna vista ni por ningun
+    chequeo. La carpeta que devuelve esta cuelga de la raiz del repo, afuera de
+    static/.
+
+    Que el permiso se chequee igual en las vistas no la hace redundante: son dos
+    capas. La del codigo cubre a quien pide la URL de la ruta Flask; esta cubre
+    el dia que un nginx sirva static/ directo sin preguntarle nada a la app.
+    """
+    return os.path.join(current_app.config["PRIVATE_UPLOAD_FOLDER"], *subcarpetas)
+
+
 def allowed_file(filename):
     """Verifica si el archivo tiene una extension permitida."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS

@@ -40,6 +40,10 @@ instance/
 # --- Archivos subidos por usuarios (no versionar contenido, sí la carpeta) ---
 static/uploads/*
 !static/uploads/.gitkeep
+# Las subidas privadas (fotos de solicitudes y matrículas de verificación) viven
+# afuera de static/ a propósito: ver PRIVATE_UPLOAD_FOLDER en config.py.
+uploads_privados/*
+!uploads_privados/.gitkeep
 
 # --- Editores / IDEs ---
 .vscode/
