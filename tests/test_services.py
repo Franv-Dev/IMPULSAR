@@ -1,5 +1,6 @@
 """Servicios de un emprendimiento: trabajos a presupuestar."""
 
+import os
 import threading
 from decimal import Decimal
 
@@ -1253,11 +1254,16 @@ def test_servicios_esta_en_los_slugs_reservados():
 def uploads_temporales(app, tmp_path):
     """Manda los uploads del test a una carpeta descartable.
 
-    Sin esto, subir el documento en un test escribe en static/uploads del repo
+    Sin esto, subir el documento en un test escribe en la carpeta real del repo
     y deja el archivo ahi despues de que el test termina.
+
+    Se apuntan las DOS carpetas: el documento de verificacion va a la privada
+    (ver PRIVATE_UPLOAD_FOLDER), pero dejar la publica sin redirigir haria que
+    cualquier test que suba otra cosa siga ensuciando static/uploads.
     """
-    app.config["UPLOAD_FOLDER"] = str(tmp_path)
-    return tmp_path
+    app.config["UPLOAD_FOLDER"] = str(tmp_path / "publico")
+    app.config["PRIVATE_UPLOAD_FOLDER"] = str(tmp_path / "privado")
+    return tmp_path / "privado"
 
 
 def _documento(nombre="matricula.png"):
@@ -1618,10 +1624,10 @@ def test_sin_verificar_no_sale_el_sello_en_la_busqueda(
 def foto_en_disco(app, tmp_path):
     """Escribe un archivo en la carpeta de uploads y devuelve su nombre.
 
-    La carpeta va a tmp_path para no ensuciar static/uploads del repo, igual
-    que uploads_temporales.
+    Escribe en la carpeta PRIVADA, que es de donde leen las dos rutas: si
+    escribiera en static/uploads, los tests darian 404 aunque el archivo exista.
     """
-    app.config["UPLOAD_FOLDER"] = str(tmp_path)
+    app.config["PRIVATE_UPLOAD_FOLDER"] = str(tmp_path)
 
     def _crear(nombre="doc.png", contenido=b"contenido-secreto"):
         (tmp_path / nombre).write_bytes(contenido)
@@ -1835,9 +1841,9 @@ def test_un_nombre_que_se_sale_de_la_carpeta_no_sirve_el_archivo(
     El archivo objetivo se crea de verdad, afuera de la carpeta de uploads: sin
     eso el test pasaria por "no existe" en vez de por "no se permite salir".
     """
-    uploads = tmp_path / "uploads"
-    uploads.mkdir()
-    app.config["UPLOAD_FOLDER"] = str(uploads)
+    privada = tmp_path / "privados"
+    privada.mkdir()
+    app.config["PRIVATE_UPLOAD_FOLDER"] = str(privada)
     (tmp_path / "secreto.txt").write_bytes(b"esto no se puede servir")
 
     prestador = crear_usuario(username="prestador")
@@ -1851,3 +1857,82 @@ def test_un_nombre_que_se_sale_de_la_carpeta_no_sirve_el_archivo(
 
     assert respuesta.status_code == 404
     assert b"esto no se puede servir" not in respuesta.data
+
+
+# --- la carpeta privada no se alcanza por /static/
+
+def test_la_carpeta_privada_no_cuelga_de_static(app):
+    """El requisito estructural, antes que cualquier URL concreta.
+
+    Flask sirve su static_folder RECURSIVAMENTE, asi que alcanza con que la
+    carpeta privada este adentro para que todo lo que tenga se pueda bajar por
+    /static/... sin pasar por ninguna vista. Por eso el chequeo es de rutas y no
+    de un GET puntual: cubre cualquier nombre de archivo, no el que se le ocurra
+    al test.
+    """
+    privada = os.path.abspath(app.config["PRIVATE_UPLOAD_FOLDER"])
+    estatica = os.path.abspath(app.static_folder)
+
+    assert os.path.commonpath([privada, estatica]) != estatica
+    # Y tampoco adentro de UPLOAD_FOLDER, que es la trampa del medio:
+    # static/uploads/privado tambien se serviria por /static/uploads/privado/...
+    publica = os.path.abspath(app.config["UPLOAD_FOLDER"])
+    assert os.path.commonpath([privada, publica]) != publica
+
+
+def test_ninguna_ruta_estatica_llega_a_la_carpeta_privada(app, client, tmp_path):
+    """El control negativo pedido, por URL y sobre un archivo que existe.
+
+    Se escribe un archivo de verdad en la carpeta privada y se intenta bajarlo
+    por todas las formas en que se sirve algo estatico en esta app: la ruta
+    /static/ del propio Flask y la de cada blueprint que traiga carpeta estatica
+    propia. Ninguna lo tiene que entregar.
+
+    El archivo se crea de verdad a proposito: si no existiera, todas las URLs
+    darian 404 igual y el test pasaria sin probar nada.
+    """
+    privada = tmp_path / "privados"
+    privada.mkdir()
+    app.config["PRIVATE_UPLOAD_FOLDER"] = str(privada)
+    (privada / "matricula.png").write_bytes(b"documento-secreto")
+
+    # Todas las carpetas estaticas registradas: la de la app y la de cada
+    # blueprint. Si mañana alguien agrega un blueprint con static_folder propio
+    # apuntando a la carpeta privada, este test lo agarra.
+    prefijos = [app.static_url_path or "/static"]
+    for blueprint in app.blueprints.values():
+        if blueprint.static_folder:
+            prefijos.append(
+                (blueprint.url_prefix or "") + (blueprint.static_url_path or "/static")
+            )
+
+    intentos = []
+    for prefijo in prefijos:
+        intentos += [
+            f"{prefijo}/matricula.png",
+            f"{prefijo}/privados/matricula.png",
+            f"{prefijo}/uploads/privados/matricula.png",
+            f"{prefijo}/../privados/matricula.png",
+            f"{prefijo}/..%2fprivados%2fmatricula.png",
+        ]
+
+    for url in intentos:
+        respuesta = client.get(url)
+        assert respuesta.status_code != 200, f"{url} entrego el archivo"
+        assert b"documento-secreto" not in respuesta.data, f"{url} filtro el contenido"
+
+
+def test_el_upload_publico_si_se_sigue_bajando_por_static(app, client, tmp_path):
+    """El control positivo del anterior: sin esto, "no se puede bajar" podria
+    ser que /static/ no sirve nada, y el test de arriba pasaria por el motivo
+    equivocado. El resto de los uploads tiene que seguir publico."""
+    publica = tmp_path / "publicos"
+    publica.mkdir()
+    app.config["UPLOAD_FOLDER"] = str(publica)
+    (publica / "portada.png").write_bytes(b"foto-de-vitrina")
+
+    # static_folder de la app apunta a static/ del repo, asi que se prueba con
+    # un archivo que si vive ahi: el que la app sirve de verdad.
+    respuesta = client.get("/static/css/styles.css")
+
+    assert respuesta.status_code == 200

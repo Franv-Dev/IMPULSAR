@@ -28,7 +28,7 @@ from app.servicios.modelo_verificacion import EstadosVerificacion, VerificationR
 from db import utcnow
 from services.precios import texto_para_formulario
 from models.user import Roles
-from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
+from services.uploads import borrar_de_disco, carpeta_privada, save_post_image
 from views.auth import login_required
 
 servicios = Blueprint(
@@ -73,10 +73,18 @@ def _servir_foto_privada(nombre):
     de verificacion (una matricula con nombre y numero real). El resto de lo
     que vive en static/uploads -- avatares, portadas, fotos de emprendimientos
     y de productos -- se sigue sirviendo directo por Flask, y esta bien: es
-    material de vitrina que tiene que verse sin sesion.
+    material de vitrina que tiene que verse sin sesion. Por eso son estas dos
+    las que se mudaron de carpeta y no todas.
 
     Quien puede ver que lo decide cada ruta antes de llamar aca; esto es solo
     la entrega del archivo.
+
+    Y no salen de static/uploads sino de carpeta_privada(), que cuelga de la
+    raiz del repo y no de static/. Eso es la segunda capa: el chequeo de permiso
+    de arriba cubre a quien pide esta URL, y la ubicacion cubre el dia que un
+    nginx sirva static/ directo sin preguntarle nada a la app. Flask sirve su
+    static_folder recursivamente, asi que una subcarpeta de uploads/ no habria
+    alcanzado.
 
     send_from_directory y no send_file con la ruta armada a mano: send_file
     abriria cualquier cosa que se le pase, y esto recibe un nombre que sale de
@@ -92,7 +100,7 @@ def _servir_foto_privada(nombre):
         abort(404)
     # send_from_directory ya levanta NotFound si el archivo no existe o si el
     # nombre se sale de la carpeta, asi que no hay que chequearlo por separado.
-    return send_from_directory(carpeta_uploads(), nombre)
+    return send_from_directory(carpeta_privada(), nombre)
 
 
 # ------------------------------------------------------------ busqueda publica
@@ -309,10 +317,10 @@ def solicitar(id):
         if error is None:
             # La foto se guarda al final: si algo de arriba fallaba, no tiene
             # sentido escribir un archivo que despues nadie va a referenciar.
-            foto, error = save_post_image(request.files.get("foto"), carpeta_uploads())
+            foto, error = save_post_image(request.files.get("foto"), carpeta_privada())
 
         if error:
-            borrar_de_disco(carpeta_uploads(), [foto])
+            borrar_de_disco(carpeta_privada(), [foto])
             flash(error)
             return render_template(
                 "servicios/solicitar.html", servicio=servicio, datos=datos,
@@ -329,7 +337,7 @@ def solicitar(id):
             # La fila no entro, asi que la foto que se acaba de escribir no la
             # referencia nadie: se limpia pase lo que pase con el error.
             consultas.descartar()
-            borrar_de_disco(carpeta_uploads(), [foto])
+            borrar_de_disco(carpeta_privada(), [foto])
             if not reglas.es_pendiente_duplicada(choque):
                 # Cualquier otra violacion de integridad no es este caso y no
                 # se disfraza de este caso: sube y se ve como el error que es.
@@ -499,7 +507,7 @@ def verificar(id):
     ultima = consultas.ultima_verificacion_de(servicio.id)
 
     if request.method == "POST":
-        foto, error = save_post_image(request.files.get("foto"), carpeta_uploads())
+        foto, error = save_post_image(request.files.get("foto"), carpeta_privada())
         if error is None and not foto:
             # save_post_image devuelve (None, None) cuando no vino ningun
             # archivo, que para el resto del proyecto no es un error. Aca si:
@@ -507,7 +515,7 @@ def verificar(id):
             error = "Subí una foto de tu matrícula o certificado."
 
         if error:
-            borrar_de_disco(carpeta_uploads(), [foto])
+            borrar_de_disco(carpeta_privada(), [foto])
             flash(error)
             return render_template(
                 "servicios/verificar.html", servicio=servicio,
@@ -521,7 +529,7 @@ def verificar(id):
             # La fila no entro, asi que la foto que se acaba de escribir no la
             # referencia nadie: se limpia pase lo que pase con el error.
             consultas.descartar()
-            borrar_de_disco(carpeta_uploads(), [foto])
+            borrar_de_disco(carpeta_privada(), [foto])
             if not reglas.es_verificacion_duplicada(choque):
                 # Cualquier otra violacion de integridad no es este caso y no se
                 # disfraza de este caso: sube y se ve como el error que es.
