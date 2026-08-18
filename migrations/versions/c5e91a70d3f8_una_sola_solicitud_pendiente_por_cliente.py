@@ -43,7 +43,7 @@ def upgrade():
     # El criterio es MIN(id) y no MIN(created_at) a proposito, y no son lo mismo:
     # el id lo pone la base al insertar, asi que siempre marca cual entro
     # primero, mientras que created_at se puede escribir con cualquier fecha
-    # (scripts/seed.py, sin ir mas lejos, backdatea las solicitudes que carga).
+    # (scripts/seed/, sin ir mas lejos, backdatea las solicitudes que carga).
     # Para el caso que importa aca -- dos requests que se pisaron -- el que entro
     # primero es el que el cliente vio y el que el prestador tiene en su lista.
     #

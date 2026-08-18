@@ -48,7 +48,7 @@ def upgrade():
     # El criterio es MIN(id) y no MIN(created) a proposito, y no son lo mismo:
     # el id lo pone la base al insertar, asi que siempre marca cual entro
     # primero, mientras que created se puede escribir con cualquier fecha
-    # (scripts/seed.py backdatea lo que carga). El que entro primero es el que
+    # (scripts/seed/ backdatea lo que carga). El que entro primero es el que
     # el admin ya tiene en su lista.
     #
     # resolved_at queda en NULL en los que se cierran aca: no se sabe cuando se
