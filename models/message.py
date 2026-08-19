@@ -15,12 +15,32 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     # ondelete="CASCADE": sin esto, MySQL usa RESTRICT por default y borrar un
     # post con al menos un mensaje falla con IntegrityError (mismo bug que se
-    # arreglo en Report, ver migracion d09128dd029c). client_id/sender_id
-    # quedan sin cascada: no hay borrado de usuarios implementado hoy, asi que
-    # ese caso no puede darse todavia.
+    # arreglo en Report, ver migracion d09128dd029c).
     post_id = db.Column(db.Integer, db.ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True)
-    client_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    # Las dos de abajo tambien cascadean (b2b97d078fb2), y la diferencia de que
+    # se lleva cada una no esta en la constraint sino en que el hilo se
+    # identifica por (post_id, client_id):
+    #
+    #   - borrar al cliente de la conversacion se lleva todas las filas donde
+    #     es client_id, o sea el hilo entero, incluidos los mensajes que
+    #     escribio el emprendedor del otro lado. Un hilo sin el cliente que lo
+    #     abrio no es una conversacion, es media.
+    #   - borrar a alguien que solo participo como sender_id se lleva unicamente
+    #     los mensajes que escribio, porque son contenido suyo, y la
+    #     conversacion sigue en pie.
+    #
+    # Si la misma persona es las dos cosas en una fila, la fila se borra una
+    # sola vez; si se borran los dos lados, el orden no importa.
+    client_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE", name="fk_messages_client_id_users"),
+        nullable=False, index=True,
+    )
+    sender_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE", name="fk_messages_sender_id_users"),
+        nullable=False,
+    )
 
     body = db.Column(db.Text, nullable=False)
     created = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)

@@ -44,7 +44,13 @@ class Report(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    reporter_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    # ondelete="CASCADE": la denuncia se va con quien la hizo (ver b2b97d078fb2).
+    # Si estaba pendiente, desaparece de la cola del admin sin resolver.
+    reporter_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE", name="fk_reports_reporter_id_users"),
+        nullable=False, index=True,
+    )
     # ondelete="CASCADE": sin esto, MySQL usa RESTRICT por default y borrar un
     # post o resenia que alguna vez se reporto (aunque el reporte ya este
     # resuelto) falla con IntegrityError. El reporte no tiene sentido sin su

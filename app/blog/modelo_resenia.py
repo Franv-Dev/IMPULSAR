@@ -14,7 +14,15 @@ class Review(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    # ondelete="CASCADE": la resenia se va con quien la escribio, aunque sea
+    # sobre un emprendimiento ajeno. Es la decision tomada para b2b97d078fb2:
+    # dejarla huerfana pediria hacer la columna nullable y que todo el codigo
+    # que muestra el autor sepa vivir sin el.
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE", name="fk_reviews_user_id_users"),
+        nullable=False,
+    )
 
     rating = db.Column(db.Integer, nullable=False)  # 1 a 5
     comment = db.Column(db.Text, nullable=True)

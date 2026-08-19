@@ -13,7 +13,14 @@ class Favorite(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    # ondelete="CASCADE": el favorito es una marca privada de ese usuario sobre
+    # contenido ajeno, no le sirve a nadie mas. Sin esto, borrar un usuario que
+    # marco un solo favorito fallaba con IntegrityError (ver b2b97d078fb2).
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE", name="fk_favorites_user_id_users"),
+        nullable=False, index=True,
+    )
     # ondelete="CASCADE": sin esto, MySQL usa RESTRICT por default y borrar un
     # post con al menos un favorito falla con IntegrityError (mismo bug que
     # se arreglo en Report, ver migracion d09128dd029c).
