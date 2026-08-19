@@ -535,6 +535,31 @@ def test_la_busqueda_no_trata_el_porcentaje_de_la_zona_como_comodin(
     assert "Destapaciones" not in html
 
 
+def test_la_busqueda_no_trata_la_barra_invertida_de_la_zona_como_escape(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    r"""El tercer caracter especial, el que se olvida: la barra del escape.
+
+    Si _escapar_like deja de escapar la barra, los dos tests de arriba siguen
+    pasando: ellos solo miran % y _. Pero al declarar escape="\" en el ilike(),
+    la barra deja de ser un caracter comun DENTRO del patron, asi que una zona
+    escrita con barra ("Maipu\centro") deja de encontrarse a si misma.
+
+    (Que se escape PRIMERO lo cubre el test del guion bajo: con la barra al
+    final, _escapar_like duplica las barras que acaban de agregar los otros dos
+    reemplazos y ese test se cae.)
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", zona_cobertura=r"Maipu\centro")
+    crear_servicio(post.id, titulo="Cambio de tablero", zona_cobertura="Maipu centro")
+
+    html = client.get("/servicios/buscar?zona=Maipu%5Ccentro").get_data(as_text=True)
+
+    assert "Destapaciones" in html
+    assert "Cambio de tablero" not in html
+
+
 def test_la_busqueda_no_muestra_los_servicios_apagados(
     client, crear_usuario, crear_post, crear_servicio
 ):
