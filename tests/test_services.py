@@ -1460,6 +1460,63 @@ def test_no_se_puede_pedir_verificacion_dos_veces(
     assert VerificationRequest.query.count() == 1
 
 
+def test_el_dueno_ve_la_foto_que_mando_mientras_el_pedido_espera(
+    client, emprendedor_con_post, crear_servicio, crear_verificacion
+):
+    """Antes solo decia "mandaste tu documentacion": el dueño no tenia forma de
+    ver cual foto era, ni de darse cuenta de que habia subido la equivocada."""
+    _, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id)
+    verificacion = crear_verificacion(servicio.id)
+
+    html = client.get(f"/servicios/{servicio.id}/verificar").get_data(as_text=True)
+
+    assert f"/servicios/verificaciones/{verificacion.id}/foto" in html
+    # Por la ruta protegida del blueprint y NO por /static/uploads, que serviria
+    # el documento a cualquiera que adivine el nombre del archivo.
+    assert "/static/uploads/" not in html
+
+
+def test_el_dueno_ve_la_foto_del_pedido_que_le_rechazaron(
+    client, emprendedor_con_post, crear_servicio, crear_verificacion
+):
+    """El otro momento en que sirve verla: para entender el motivo antes de
+    rehacer el pedido."""
+    _, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id)
+    verificacion = crear_verificacion(
+        servicio.id, estado=EstadosVerificacion.RECHAZADA,
+        motivo_rechazo="No se lee el numero de matricula",
+    )
+
+    html = client.get(f"/servicios/{servicio.id}/verificar").get_data(as_text=True)
+
+    assert f"/servicios/verificaciones/{verificacion.id}/foto" in html
+    assert "/static/uploads/" not in html
+
+
+def test_un_tercero_no_llega_a_la_pagina_que_muestra_la_foto(
+    client, crear_usuario, crear_post, crear_servicio, crear_verificacion, login
+):
+    """El link no se dibuja para quien no es dueño porque la pagina entera no se
+    dibuja: _servicio_propio redirige antes de renderizar. La ruta de la foto
+    chequea igual por su cuenta, pero esto cubre que no se filtre ni el id."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    verificacion = crear_verificacion(servicio.id)
+
+    intruso = crear_usuario(username="intruso")
+    login(intruso.id)
+    respuesta = client.get(f"/servicios/{servicio.id}/verificar")
+
+    assert respuesta.status_code == 302
+    html = client.get(
+        f"/servicios/{servicio.id}/verificar", follow_redirects=True
+    ).get_data(as_text=True)
+    assert f"/servicios/verificaciones/{verificacion.id}/foto" not in html
+
+
 def test_la_base_frena_la_segunda_pendiente_aunque_la_vista_no_mire(
     db, crear_usuario, crear_post, crear_servicio, crear_verificacion
 ):
