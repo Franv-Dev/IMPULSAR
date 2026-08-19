@@ -79,9 +79,18 @@ def _cargar(app, escritas):
     os.makedirs(carpeta, exist_ok=True)
 
     def generar(nombre, texto, color):
-        """_generar_imagen, anotando lo que quedo en disco (ver cargar())."""
-        escritas.append(_generar_imagen(carpeta, nombre, texto, color))
-        return escritas[-1]
+        """_generar_imagen, anotando lo que pudo quedar en disco (ver cargar()).
+
+        Se anota ANTES de generar y no despues: si la excepcion sale de adentro
+        de _generar_imagen -- el imagen.save() cortado a mitad por disco lleno o
+        por permisos -- el archivo ya puede existir a medio escribir, y anotando
+        despues ese nombre no se registraba nunca y el archivo quedaba huerfano.
+        Anotar de mas no cuesta nada: borrar_de_disco ignora en silencio los
+        nombres que no llegaron a existir.
+        """
+        escritas.append(nombre)
+        return _generar_imagen(carpeta, nombre, texto, color)
+
     ahora = utcnow()
     hoy = date.today()
 

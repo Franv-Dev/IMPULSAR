@@ -57,3 +57,37 @@ def test_si_la_carga_falla_no_deja_imagenes_huerfanas(
 
     assert _imagenes_de_seed(app) == set()
     assert User.query.count() == 0
+
+
+def test_si_falla_generando_una_imagen_tampoco_queda_la_de_esa_vuelta(
+    app, carpeta_de_esta_carga, monkeypatch
+):
+    """El caso del medio: la excepcion sale de adentro de _generar_imagen.
+
+    No es lo mismo que fallar entre dos imagenes. Si el imagen.save() se corta
+    a mitad -- disco lleno, permisos -- el archivo ya existe en disco pero
+    _generar_imagen nunca vuelve, asi que hasta que el nombre se anoto DESPUES
+    de generar, esa imagen no quedaba registrada en ningun lado y la limpieza
+    pasaba de largo justo por la unica que si habia que borrar.
+    """
+    from scripts.seed import carga
+
+    real = carga._generar_imagen
+    cuantas = []
+
+    def cortar_a_mitad(carpeta, nombre, texto, color):
+        cuantas.append(nombre)
+        if len(cuantas) < 3:
+            return real(carpeta, nombre, texto, color)
+        # Lo que deja un save() interrumpido: el archivo abierto y a medio
+        # escribir, y la excepcion saliendo antes del return.
+        (carpeta_de_esta_carga / nombre).write_bytes(b"\x89PNG a medio escri")
+        raise OSError("No space left on device")
+
+    monkeypatch.setattr(carga, "_generar_imagen", cortar_a_mitad)
+
+    with pytest.raises(OSError):
+        cargar(app)
+
+    assert _imagenes_de_seed(app) == set()
+    assert User.query.count() == 0
