@@ -39,6 +39,21 @@ def servicios_de(user_id):
     )
 
 
+def _escapar_like(texto):
+    """Neutraliza los comodines de LIKE que vengan escritos en la busqueda.
+
+    En un patron LIKE/ILIKE, % es "cualquier cosa" y _ es "cualquier caracter":
+    buscar la zona "Maipu_centro" traia tambien "Maipu centro" y "MaipuXcentro",
+    y buscar "%" traia todo. No es un agujero de seguridad (el valor viaja como
+    parametro, no concatenado al SQL), pero devuelve de mas.
+
+    La barra invertida se escapa primero, si no se duplicaria la que agregan
+    los dos reemplazos de abajo. El caracter de escape se pasa aparte, en el
+    argumento escape= del ilike().
+    """
+    return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 def buscar_servicios(rubro, zona, pagina, por_pagina):
     """La busqueda publica de servicios, ya paginada.
 
@@ -70,7 +85,9 @@ def buscar_servicios(rubro, zona, pagina, por_pagina):
         consulta = consulta.filter(Service.rubro == rubro)
 
     if zona:
-        consulta = consulta.filter(Service.zona_cobertura.ilike(f"%{zona}%"))
+        consulta = consulta.filter(
+            Service.zona_cobertura.ilike(f"%{_escapar_like(zona)}%", escape="\\")
+        )
 
     return (
         consulta

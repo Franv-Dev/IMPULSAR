@@ -502,6 +502,39 @@ def test_la_busqueda_filtra_la_zona_sin_importar_mayusculas(
     assert "Cambio de tablero" not in html
 
 
+def test_la_busqueda_no_trata_el_guion_bajo_de_la_zona_como_comodin(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """En un patron LIKE, _ significa "cualquier caracter".
+
+    Sin escaparlo, buscar la zona "Maipu_centro" traia tambien "Maipu centro" y
+    cualquier otra que solo se pareciera. El que escribe en el buscador espera
+    que el guion bajo sea un guion bajo.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", zona_cobertura="Maipu_centro")
+    crear_servicio(post.id, titulo="Cambio de tablero", zona_cobertura="Maipu centro")
+
+    html = client.get("/servicios/buscar?zona=Maipu_centro").get_data(as_text=True)
+
+    assert "Destapaciones" in html
+    assert "Cambio de tablero" not in html
+
+
+def test_la_busqueda_no_trata_el_porcentaje_de_la_zona_como_comodin(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """El otro comodin: sin escapar, buscar "%" devolvia todo el catalogo."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", zona_cobertura="Godoy Cruz")
+
+    html = client.get("/servicios/buscar?zona=%25").get_data(as_text=True)
+
+    assert "Destapaciones" not in html
+
+
 def test_la_busqueda_no_muestra_los_servicios_apagados(
     client, crear_usuario, crear_post, crear_servicio
 ):
