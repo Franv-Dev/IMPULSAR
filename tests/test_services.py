@@ -12,6 +12,7 @@ from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from app.servicios.modelo_verificacion import (
     EstadosVerificacion, VerificationRequest,
 )
+from config import Config
 from db import db as _db
 from main import create_app
 from app.blog.modelo_post import Post
@@ -1861,7 +1862,7 @@ def test_un_nombre_que_se_sale_de_la_carpeta_no_sirve_el_archivo(
 
 # --- la carpeta privada no se alcanza por /static/
 
-def test_la_carpeta_privada_no_cuelga_de_static(app):
+def test_la_carpeta_privada_no_cuelga_de_static():
     """El requisito estructural, antes que cualquier URL concreta.
 
     Flask sirve su static_folder RECURSIVAMENTE, asi que alcanza con que la
@@ -1869,14 +1870,19 @@ def test_la_carpeta_privada_no_cuelga_de_static(app):
     /static/... sin pasar por ninguna vista. Por eso el chequeo es de rutas y no
     de un GET puntual: cubre cualquier nombre de archivo, no el que se le ocurra
     al test.
+
+    Mira config.Config y no app.config a proposito: en la corrida de tests las
+    dos carpetas estan redirigidas a un temporal (ver carpetas_de_subida en
+    conftest.py), donde la relacion se cumple sola y el test pasaria sin probar
+    nada. Lo que hay que proteger es la config con la que arranca el servidor.
     """
-    privada = os.path.abspath(app.config["PRIVATE_UPLOAD_FOLDER"])
-    estatica = os.path.abspath(app.static_folder)
+    privada = os.path.abspath(Config.PRIVATE_UPLOAD_FOLDER)
+    estatica = os.path.abspath(Config.STATIC_FOLDER)
 
     assert os.path.commonpath([privada, estatica]) != estatica
     # Y tampoco adentro de UPLOAD_FOLDER, que es la trampa del medio:
     # static/uploads/privado tambien se serviria por /static/uploads/privado/...
-    publica = os.path.abspath(app.config["UPLOAD_FOLDER"])
+    publica = os.path.abspath(Config.UPLOAD_FOLDER)
     assert os.path.commonpath([privada, publica]) != publica
 
 
