@@ -38,6 +38,8 @@ from scripts.seed.datos import (
     SERVICIOS,
     SOLICITUDES,
 )
+from services.uploads import borrar_de_disco
+
 from scripts.seed.imagenes import (
     _carpeta_uploads,
     _generar_imagen,
@@ -47,11 +49,39 @@ from scripts.seed.imagenes import (
 
 
 def cargar(app):
+    """Carga todo, o no deja nada: ni filas ni archivos.
+
+    Las imagenes se escriben a disco a medida que se arman las filas, mucho
+    antes del commit del final. Si algo falla en el medio -- un IntegrityError
+    contra un username ya tomado, por ejemplo -- la transaccion se deshace
+    sola, pero los PNG ya escritos quedan en static/uploads sin ninguna fila
+    que los referencie, y borrar() tampoco los encuentra despues porque busca
+    los nombres que estan en la base.
+
+    Por eso se lleva la lista de lo que se escribio y se limpia a mano. El
+    rollback explicito va primero para no dejar la sesion a medio camino para
+    el que atrape la excepcion mas arriba.
+    """
+    escritas = []
+    try:
+        return _cargar(app, escritas)
+    except Exception:
+        db.session.rollback()
+        borrar_de_disco(_carpeta_uploads(app), escritas)
+        raise
+
+
+def _cargar(app, escritas):
     # Semilla fija: dos corridas del script dan el mismo resultado, asi no
     # cambia lo que ves cada vez que se recarga la base.
     azar = random.Random(1985)
     carpeta = _carpeta_uploads(app)
     os.makedirs(carpeta, exist_ok=True)
+
+    def generar(nombre, texto, color):
+        """_generar_imagen, anotando lo que quedo en disco (ver cargar())."""
+        escritas.append(_generar_imagen(carpeta, nombre, texto, color))
+        return escritas[-1]
     ahora = utcnow()
     hoy = date.today()
 
@@ -98,8 +128,8 @@ def cargar(app):
             address_street=direccion,
             latitude=CENTRO[0] + azar.uniform(-0.035, 0.035),
             longitude=CENTRO[1] + azar.uniform(-0.035, 0.035),
-            image=_generar_imagen(
-                carpeta, _nombre_de_imagen(f"post_{numero}"), _iniciales(titulo), color
+            image=generar(
+                _nombre_de_imagen(f"post_{numero}"), _iniciales(titulo), color
             ),
         )
         post.views_count = azar.randint(4, 190)
@@ -110,8 +140,8 @@ def cargar(app):
         if numero < 4:
             for extra in range(2):
                 post.imagenes.append(PostImage(
-                    filename=_generar_imagen(
-                        carpeta, _nombre_de_imagen(f"post_{numero}_{extra}"),
+                    filename=generar(
+                        _nombre_de_imagen(f"post_{numero}_{extra}"),
                         _iniciales(titulo), tuple(min(255, c + 45 * (extra + 1)) for c in color),
                     ),
                     posicion=extra,
@@ -131,8 +161,8 @@ def cargar(app):
                 disponible=disponible,
                 # Foto solo en los dos primeros de cada catalogo, para ver las
                 # dos variantes de tarjeta (con imagen y sin).
-                foto=_generar_imagen(
-                    carpeta, _nombre_de_imagen(f"prod_{numero}_{indice}"),
+                foto=generar(
+                    _nombre_de_imagen(f"prod_{numero}_{indice}"),
                     _iniciales(nombre),
                     tuple(min(255, c + 25) for c in colores[titulo]),
                 ) if indice < 2 else None,
