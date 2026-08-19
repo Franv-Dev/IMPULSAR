@@ -316,6 +316,12 @@ main {
     justify-content: center;
     width: 34px;
     height: 34px;
+    /* Es un circulo de 34px, no una pieza elastica: sin esto el flex lo encoge
+       cuando la fila no entra y el boton queda deformado (se lo vio en 24px)
+       en vez de que se note que falta lugar. Que no ceda es lo que hace que el
+       ancho que pide el navbar sea el de verdad, que es de donde sale el
+       breakpoint de mas abajo. */
+    flex-shrink: 0;
     padding: 0;
     border: 1px solid var(--color-border);
     border-radius: 999px;
@@ -1017,7 +1023,30 @@ main {
 }
 
 /* === INICIO DE CAMBIOS RESPONSIVE === */
-@media (max-width: 768px) {
+
+/* El navbar corta mas arriba que el resto del responsive, y por eso tiene su
+   propio media query en vez de compartir el de 768px de aca abajo.
+
+   La cuenta, medida en Chromium: logo 138px + menu 344px + acciones 229px +
+   switch de tema 34px, mas tres gaps de 24px y los 48px de padding del
+   container, dan 865px. El caso que manda es el del visitante anonimo, donde
+   las acciones son dos botones ("Acceder" + "Registrarse") y ocupan 229px
+   contra los 133px del bloque de usuario logueado: por eso el problema se veia
+   sin sesion y no con ella.
+
+   Con la hamburguesa cortando en 768px, esa fila se mostraba desde 769px sin
+   lugar donde ponerla. De 841px para abajo desbordaba el viewport y le metia
+   scroll horizontal a toda la pagina; entre 841px y 864px no desbordaba pero
+   se comia el padding del container hasta pegar el switch al borde.
+
+   Se redondea a 879px y no a 865px por lo mismo que el breakpoint de 960px
+   redondea su cuenta: un cambio de copy en los botones o de fuente no tiene
+   que volver a abrir el agujero de callado.
+
+   Ojo que el numero de arriba (960px) mide otra cosa y no se toca: es a partir
+   de donde el menu se puede centrar respecto al navbar entero sin pisar los
+   costados. Entre 880px y 959px el menu va en el flujo, como siempre. */
+@media (max-width: 879px) {
     .navbar__content {
         flex-wrap: wrap; /* Permite que los items bajen */
     }
@@ -1097,7 +1126,9 @@ main {
         padding: 0.5rem 0;
         gap: 0;
     }
+}
 
+@media (max-width: 768px) {
     .hero {
         padding: 2.5rem 0 2rem;
     }
