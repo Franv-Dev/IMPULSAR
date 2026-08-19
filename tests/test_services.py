@@ -1961,17 +1961,12 @@ def test_ninguna_ruta_estatica_llega_a_la_carpeta_privada(app, client, tmp_path)
         assert b"documento-secreto" not in respuesta.data, f"{url} filtro el contenido"
 
 
-def test_el_upload_publico_si_se_sigue_bajando_por_static(app, client, tmp_path):
+def test_el_upload_publico_si_se_sigue_bajando_por_static(client):
     """El control positivo del anterior: sin esto, "no se puede bajar" podria
     ser que /static/ no sirve nada, y el test de arriba pasaria por el motivo
-    equivocado. El resto de los uploads tiene que seguir publico."""
-    publica = tmp_path / "publicos"
-    publica.mkdir()
-    app.config["UPLOAD_FOLDER"] = str(publica)
-    (publica / "portada.png").write_bytes(b"foto-de-vitrina")
-
+    equivocado. El resto de static/ tiene que seguir publico."""
     # static_folder de la app apunta a static/ del repo, asi que se prueba con
-    # un archivo que si vive ahi: el que la app sirve de verdad.
+    # un archivo que vive ahi de verdad y no con uno inventado en un temporal.
     respuesta = client.get("/static/css/styles.css")
 
     assert respuesta.status_code == 200
