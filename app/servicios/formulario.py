@@ -60,14 +60,20 @@ def leer_servicio():
 def leer_busqueda():
     """Los filtros de la busqueda publica, tal como vinieron en la URL.
 
-    Devuelve (rubro, zona, pagina). El rubro se devuelve aunque no exista: la
-    consulta no filtra por el (eso lo decide reglas.rubro_valido), pero el
-    formulario se repinta con lo que el usuario tenia, igual que hace el
-    listado de emprendimientos con su categoria.
+    Devuelve (rubro, zona, solo_verificados, pagina). El rubro se devuelve
+    aunque no exista: la consulta no filtra por el (eso lo decide
+    reglas.rubro_valido), pero el formulario se repinta con lo que el usuario
+    tenia, igual que hace el listado de emprendimientos con su categoria.
+
+    solo_verificados se lee por presencia y no por valor, igual que el
+    "disponible" de leer_servicio(): un checkbox destildado no manda nada, y
+    tildado manda "on". Preguntar por el valor obligaria a decidir que hacer con
+    "0", "false" y demas, que nadie manda desde este formulario.
     """
     return (
         (request.args.get("rubro") or "").strip(),
         (request.args.get("zona") or "").strip(),
+        request.args.get("verificados") is not None,
         request.args.get("page", 1, type=int),
     )
 

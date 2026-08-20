@@ -47,6 +47,14 @@
                     value="{{ zona_actual }}"
                 >
             </div>
+            {# Sin value: un checkbox destildado no manda el parametro y uno
+               tildado manda "on", que es lo unico que leer_busqueda() mira. Asi
+               la URL de una busqueda sin el filtro queda igual que antes. #}
+            <label class="search__check">
+                <input type="checkbox" name="verificados" value="on"
+                       {% if solo_verificados_actual %}checked{% endif %}>
+                Solo verificados
+            </label>
             <button type="submit" class="btn btn--primary search__button">Buscar</button>
         </form>
 
@@ -116,7 +124,7 @@
         {% else %}
             <div class="emprendimientos__empty" style="margin-top:1rem;">
                 <p>
-                    {% if rubro_actual or zona_actual %}
+                    {% if rubro_actual or zona_actual or solo_verificados_actual %}
                         No encontramos servicios con esos filtros. Probá con otro rubro
                         o escribí la zona de otra forma.
                     {% else %}

@@ -54,7 +54,7 @@ def _escapar_like(texto):
     return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
-def buscar_servicios(rubro, zona, pagina, por_pagina):
+def buscar_servicios(rubro, zona, solo_verificados, pagina, por_pagina):
     """La busqueda publica de servicios, ya paginada.
 
     Filtra siempre disponible=True, que es el mismo criterio con el que
@@ -67,6 +67,13 @@ def buscar_servicios(rubro, zona, pagina, por_pagina):
     esta indexado justamente para esta consulta; la zona filtra con ilike
     porque es texto libre a proposito ("Maipu y alrededores", "toda la ciudad")
     y no hay catalogo contra el cual comparar.
+
+    solo_verificados es opt-in y filtra exacto por Service.verificado, que lo
+    pone un admin despues de mirar la matricula y nunca el dueño del servicio.
+    Va como filtro y no como orden a proposito: quien lo tilda esta diciendo que
+    no le sirve un prestador sin credencial revisada, no que prefiere verlos
+    primero. Sin tildar, la busqueda devuelve verificados y no verificados
+    mezclados, que es lo que hacia antes de que existiera este filtro.
 
     Ordena por emprendimiento y titulo, igual que servicios_de(user_id): Service
     no tiene coordenadas, asi que no hay distancia real que calcular como en
@@ -88,6 +95,9 @@ def buscar_servicios(rubro, zona, pagina, por_pagina):
         consulta = consulta.filter(
             Service.zona_cobertura.ilike(f"%{_escapar_like(zona)}%", escape="\\")
         )
+
+    if solo_verificados:
+        consulta = consulta.filter(Service.verificado.is_(True))
 
     return (
         consulta

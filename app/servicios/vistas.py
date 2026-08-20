@@ -114,7 +114,7 @@ def buscar():
     incluso sin cuenta. Pedir el presupuesto si necesita estar logueado, pero
     eso ya lo resuelve solicitar().
     """
-    rubro, zona, pagina = formulario.leer_busqueda()
+    rubro, zona, solo_verificados, pagina = formulario.leer_busqueda()
     return render_template(
         "servicios/buscar.html",
         paginacion=consultas.buscar_servicios(
@@ -122,12 +122,14 @@ def buscar():
             # al template para repintar el <select> con lo que el usuario tenia.
             rubro=rubro if reglas.rubro_valido(rubro) else None,
             zona=zona,
+            solo_verificados=solo_verificados,
             pagina=pagina,
             por_pagina=current_app.config["POSTS_POR_PAGINA"],
         ),
         rubros=Rubros.ETIQUETAS,
         rubro_actual=rubro,
         zona_actual=zona,
+        solo_verificados_actual=solo_verificados,
     )
 
 

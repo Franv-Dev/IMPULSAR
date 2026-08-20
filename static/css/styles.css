@@ -563,6 +563,25 @@ main {
     white-space: nowrap;
 }
 
+/* El checkbox "solo verificados" del buscador de servicios. No usa
+   .search__group: ese estira con flex:1 para repartir el ancho entre el select
+   y el input de texto, y aca al reves conviene que ocupe lo justo, para no
+   comerle lugar a la zona. */
+.search__check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.search__check input {
+    cursor: pointer;
+}
+
 /* SECCIONES GENERALES */
 
 .section {

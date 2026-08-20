@@ -26,7 +26,7 @@ def crear_servicio(db):
 
     def _crear(post_id, titulo="Destapaciones", rubro=Rubros.PLOMERIA,
                descripcion=None, zona_cobertura=None, precio_estimado=None,
-               disponible=True):
+               disponible=True, verificado=False):
         servicio = Service(
             post_id=post_id,
             titulo=titulo,
@@ -37,6 +37,9 @@ def crear_servicio(db):
                 Decimal(precio_estimado) if precio_estimado is not None else None
             ),
             disponible=disponible,
+            # Por defecto no verificado, que es como nace un servicio: el sello
+            # lo pone un admin (ver Service.verificado).
+            verificado=verificado,
         )
         db.session.add(servicio)
         db.session.commit()
@@ -661,6 +664,148 @@ def test_la_paginacion_no_pierde_los_filtros(
     html = client.get(f"/servicios/buscar?rubro={Rubros.PLOMERIA}").get_data(as_text=True)
 
     assert f"rubro={Rubros.PLOMERIA}" in html
+    assert "page=2" in html
+
+
+# --- filtro "solo verificados"
+
+def test_el_filtro_de_verificados_deja_solo_los_verificados(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """El caso principal: con el filtro activo y habiendo verificados, se ven
+    esos y ninguno mas."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", verificado=True)
+    crear_servicio(post.id, titulo="Cambio de tablero", verificado=False)
+
+    html = client.get("/servicios/buscar?verificados=on").get_data(as_text=True)
+
+    assert "Destapaciones" in html
+    assert "Cambio de tablero" not in html
+
+
+def test_sin_el_filtro_se_siguen_viendo_los_dos(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """El control negativo: sin tildar, la busqueda devuelve lo mismo que antes
+    de que este filtro existiera."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", verificado=True)
+    crear_servicio(post.id, titulo="Cambio de tablero", verificado=False)
+
+    html = client.get("/servicios/buscar").get_data(as_text=True)
+
+    assert "Destapaciones" in html
+    assert "Cambio de tablero" in html
+
+
+def test_el_filtro_de_verificados_sin_ninguno_cae_en_el_vacio_de_siempre(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """0 resultados con el filtro activo no es un caso especial: usa el mismo
+    mensaje de "no encontramos con esos filtros" que rubro y zona, y no el de
+    "todavia no hay servicios publicados", que es el de catalogo vacio."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Cambio de tablero", verificado=False)
+
+    respuesta = client.get("/servicios/buscar?verificados=on")
+    html = respuesta.get_data(as_text=True)
+
+    assert respuesta.status_code == 200
+    assert "Cambio de tablero" not in html
+    assert "No encontramos servicios con esos filtros" in html
+    assert "Todavía no hay servicios publicados" not in html
+
+
+def test_el_vacio_sin_ningun_filtro_sigue_siendo_el_de_catalogo_vacio(client):
+    """La otra mitad del anterior: sin filtros y sin servicios, el mensaje tiene
+    que seguir siendo el de siempre. Sin esto, meter el filtro nuevo en la
+    condicion del template podria cambiar este caso sin que se note."""
+    html = client.get("/servicios/buscar").get_data(as_text=True)
+
+    assert "Todavía no hay servicios publicados" in html
+    assert "No encontramos servicios con esos filtros" not in html
+
+
+def test_el_filtro_de_verificados_se_combina_con_rubro_y_zona(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """Los tres a la vez se cruzan con AND: hay que fallar por cada uno de los
+    tres motivos por separado y pasar solo el que cumple los tres."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="El que cumple todo", rubro=Rubros.PLOMERIA,
+                   zona_cobertura="Maipu y alrededores", verificado=True)
+    # Cae por el rubro.
+    crear_servicio(post.id, titulo="Otro rubro", rubro=Rubros.ELECTRICIDAD,
+                   zona_cobertura="Maipu y alrededores", verificado=True)
+    # Cae por la zona.
+    crear_servicio(post.id, titulo="Otra zona", rubro=Rubros.PLOMERIA,
+                   zona_cobertura="Godoy Cruz", verificado=True)
+    # Cae por no estar verificado.
+    crear_servicio(post.id, titulo="Sin verificar", rubro=Rubros.PLOMERIA,
+                   zona_cobertura="Maipu y alrededores", verificado=False)
+
+    html = client.get(
+        f"/servicios/buscar?rubro={Rubros.PLOMERIA}&zona=maipu&verificados=on"
+    ).get_data(as_text=True)
+
+    assert "El que cumple todo" in html
+    assert "Otro rubro" not in html
+    assert "Otra zona" not in html
+    assert "Sin verificar" not in html
+
+
+def test_el_filtro_de_verificados_no_pisa_el_de_disponible(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """disponible=True se filtra siempre, tambien con el filtro nuevo activo: un
+    servicio apagado no aparece por estar verificado."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Apagado pero verificado",
+                   verificado=True, disponible=False)
+
+    html = client.get("/servicios/buscar?verificados=on").get_data(as_text=True)
+
+    assert "Apagado pero verificado" not in html
+
+
+def test_el_checkbox_de_verificados_queda_tildado_al_repintar(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """Igual que el <select> del rubro y el input de zona: el formulario se
+    repinta con lo que el usuario tenia puesto."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", verificado=True)
+
+    con = client.get("/servicios/buscar?verificados=on").get_data(as_text=True)
+    sin = client.get("/servicios/buscar").get_data(as_text=True)
+
+    assert 'name="verificados"' in con and "checked" in con
+    assert 'name="verificados"' in sin
+    # Sin el filtro, el unico checkbox de la pagina no puede venir tildado.
+    assert "checked" not in sin
+
+
+def test_la_paginacion_no_pierde_el_filtro_de_verificados(
+    client, crear_usuario, crear_post, crear_servicio, app
+):
+    """El parametro viaja por querystring justamente para esto: _paginacion.html
+    reemite request.args menos "page", asi que el filtro sobrevive al pasar de
+    pagina sin que haya que tocar el partial."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    for numero in range(app.config["POSTS_POR_PAGINA"] + 1):
+        crear_servicio(post.id, titulo=f"Trabajo {numero:02d}", verificado=True)
+
+    html = client.get("/servicios/buscar?verificados=on").get_data(as_text=True)
+
+    assert "verificados=on" in html
     assert "page=2" in html
 
 
