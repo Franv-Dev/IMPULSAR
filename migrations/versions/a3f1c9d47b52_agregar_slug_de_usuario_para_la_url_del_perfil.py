@@ -52,6 +52,21 @@ def _sin_foreign_keys_en_sqlite():
         return
 
     bind.exec_driver_sql('PRAGMA foreign_keys=OFF')
+
+    # El OFF se relee para confirmar que agarro. En SQLite un PRAGMA es un
+    # no-op SILENCIOSO si ya hay una transaccion abierta: no tira error, no
+    # avisa, simplemente no apaga nada. Sin este chequeo el sintoma aparece
+    # recien mas adelante, como un "FOREIGN KEY constraint failed" sobre un
+    # DROP TABLE que no explica por que las FK seguian prendidas. Mejor
+    # explotar aca, donde el mensaje dice cual es el problema real.
+    if bind.exec_driver_sql('PRAGMA foreign_keys').scalar():
+        raise RuntimeError(
+            "PRAGMA foreign_keys sigue en ON despues del OFF: hay una "
+            "transaccion abierta antes de este punto y el pragma quedo en "
+            "no-op. Este bloque tiene que abrirse antes de cualquier DML de "
+            "la migracion."
+        )
+
     try:
         yield
     finally:
