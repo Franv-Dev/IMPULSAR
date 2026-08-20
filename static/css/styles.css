@@ -1406,8 +1406,15 @@ textarea.auth__input {
     line-height: 1.3;
 }
 
-/* Responsive: en mobile, que no rompa el layout */
-@media (max-width: 768px) {
+/* Responsive: en mobile, que no rompa el layout.
+
+   879px y no 768px: el corte del navbar es el de la hamburguesa, que se mudo a
+   879 en 6bcb310 cuando se midio que la fila de escritorio pide 865px. Estas
+   dos reglas se habian quedado en el 768 viejo, asi que entre 769 y 879 el
+   bloque de usuario ya estaba dentro del desplegable pero seguia con los
+   valores de escritorio. El 768 que queda mas arriba en el archivo es otro
+   bloque, el del hero, el buscador y el footer, que si corta ahi a proposito. */
+@media (max-width: 879px) {
     .navbar__user-toggle {
         padding: 0.35rem 0.5rem;
     }
