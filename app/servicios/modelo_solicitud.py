@@ -93,12 +93,12 @@ class ServiceRequest(db.Model):
         ),
         nullable=False, index=True,
     )
-    # CASCADE tambien aca, y esto si es una diferencia con lo que hay: las
-    # cinco FK viejas que apuntan a users (favorites.user_id, messages.client_id,
-    # messages.sender_id, reports.reporter_id y reviews.user_id) no lo tienen, y
-    # por eso hoy no se puede borrar un usuario que dejo actividad en un
-    # emprendimiento ajeno (ver el comentario largo de app/blog/modelo_post.py). Esta
-    # tabla no repite esa deuda: borrar un usuario se lleva sus solicitudes.
+    # CASCADE tambien aca: borrar un usuario se lleva sus solicitudes. Cuando
+    # se escribio esta tabla era la excepcion -- las cinco FK viejas a users
+    # (favorites.user_id, messages.client_id, messages.sender_id,
+    # reports.reporter_id y reviews.user_id) estaban en NO ACTION y por eso no
+    # se podia borrar un usuario con actividad ajena. Desde b2b97d078fb2 es la
+    # regla y esta tabla ya no es un caso aparte.
     cliente_id = db.Column(
         db.Integer,
         db.ForeignKey(

@@ -81,20 +81,20 @@ class Post(db.Model):
     # author en NULL cuando se borra un User desde la sesion, y la columna es
     # NOT NULL (mismo caso que imagenes y eventos aca abajo).
     #
-    # Sin passive_deletes a proposito, al reves que el resto: aca conviene que
-    # el ORM baje post por post, porque asi corren tambien las cascadas del
-    # ORM de cada Post (reviews, imagenes, eventos). La que importa es
-    # reviews.post_id, que todavia no tiene ON DELETE CASCADE en la base: si
-    # dejaramos que borre solo el motor, un usuario con un emprendimiento
-    # resenado volveria a fallar con IntegrityError.
+    # Sin passive_deletes: el ORM baja post por post y corre tambien las
+    # cascadas del ORM de cada Post (resenias, imagenes, eventos, productos,
+    # servicios). Hoy es redundante y nada mas -- todas las FK que apuntan a
+    # posts tienen ON DELETE CASCADE, incluida reviews.post_id desde
+    # c1f4a90b6e35 -- asi que el motor haria el mismo trabajo solo. Se deja
+    # porque mantiene la sesion coherente con la base sin tener que expirar
+    # objetos a mano, no porque el borrado dependa de eso.
     #
-    # Ojo, esto no alcanza para borrar cualquier usuario. Quedan 5 FK que
-    # apuntan a users sin CASCADE (favorites.user_id, messages.client_id,
-    # messages.sender_id, reports.reporter_id y reviews.user_id), y ninguna
-    # tiene cascada del ORM, asi que borrar un usuario que dejo una resenia,
-    # un favorito, un mensaje o un reporte en un emprendimiento ajeno sigue
-    # fallando, con passive_deletes o sin el. Queda pendiente a proposito: que
-    # se hace con eso es una decision de producto, no de esquema.
+    # Y ya alcanza para borrar cualquier usuario, tambien a nivel base: las 5
+    # FK que apuntaban a users sin CASCADE (favorites.user_id,
+    # messages.client_id, messages.sender_id, reports.reporter_id y
+    # reviews.user_id) lo tienen desde b2b97d078fb2. Un usuario que dejo una
+    # resenia, un favorito, un mensaje o un reporte en un emprendimiento ajeno
+    # se borra y esa actividad se va con el.
     author_user = db.relationship(
         "User",
         backref=db.backref("posts", cascade="all, delete-orphan"),

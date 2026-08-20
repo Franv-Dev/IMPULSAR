@@ -88,17 +88,18 @@ def _borrar_archivos(app, nombres):
 def borrar(app):
     """Saca todo lo que dejo este script, y nada mas.
 
-    El orden es a mano y no por cascada porque hay cinco FK que apuntan a
-    users sin ON DELETE CASCADE (favorites.user_id, messages.client_id,
-    messages.sender_id, reports.reporter_id y reviews.user_id): borrar el
-    usuario de una sin limpiar eso primero falla con IntegrityError.
+    El orden es a mano y no por cascada, pero ya no porque haga falta: desde
+    b2b97d078fb2 y c1f4a90b6e35 todas las FK a users y a posts tienen ON DELETE
+    CASCADE, asi que borrar los usuarios de seed arrastraria esto solo, tanto
+    lo que dejaron ellos como lo que usuarios REALES dejaron sobre contenido
+    del seed (eso ultimo se va por la cascada del post, no la del usuario).
 
-    service_requests.cliente_id SI tiene ON DELETE CASCADE, asi que no
-    necesitaria estar en esta lista para que el borrado no falle. Va igual, y
-    por la otra mitad de lo que hace esta funcion: las solicitudes que un
-    usuario REAL hizo sobre un servicio del seed tienen que irse con el seed,
-    y la unica forma de que se vayan por cascada seria borrando al usuario
-    real, que es justo lo que esta funcion no hace.
+    Se mantiene explicito igual, por dos razones. Una, que este script tiene
+    que decir exactamente que toca: es la unica forma de revisar que no se
+    lleve nada de un usuario real que no sea actividad sobre el seed. Y dos,
+    que las filas hacen falta como filas -- los nombres de los archivos a
+    borrar salen de ellas (ver _archivos_de), y una cascada del motor no
+    devuelve que borro.
     """
     usuarios = _usuarios_de_seed()
     if not usuarios:

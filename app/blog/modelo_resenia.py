@@ -13,7 +13,15 @@ class Review(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey("posts.id"), nullable=False)
+    # ondelete="CASCADE" (c1f4a90b6e35): la resenia no tiene sentido sin el
+    # emprendimiento resenado. Era la ultima FK a posts que no lo tenia; que la
+    # app no fallara por eso era casualidad del cascade del ORM de mas abajo,
+    # que borra las resenias antes de que el motor mire la FK.
+    post_id = db.Column(
+        db.Integer,
+        db.ForeignKey("posts.id", ondelete="CASCADE", name="fk_reviews_post_id_posts"),
+        nullable=False,
+    )
     # ondelete="CASCADE": la resenia se va con quien la escribio, aunque sea
     # sobre un emprendimiento ajeno. Es la decision tomada para b2b97d078fb2:
     # dejarla huerfana pediria hacer la columna nullable y que todo el codigo

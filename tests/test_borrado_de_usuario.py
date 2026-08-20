@@ -8,11 +8,15 @@ users desde esas tablas estaban en NO ACTION.
 
 Todos los tests borran con db.session.delete() y hacen commit: la cascada la
 aplica la base, no el ORM, asi que si la constraint no esta el commit explota.
+
+Los del final son del otro lado del grafo, reviews.post_id (c1f4a90b6e35): la
+unica FK a posts que habia quedado sin CASCADE y que este lote dejo a la vista.
 """
 
 import datetime
 
 import pytest
+import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 
 from app.blog.modelo_favorito import Favorite
@@ -313,3 +317,103 @@ def test_un_evento_viejo_no_bloquea_el_borrado(db, crear_usuario, crear_post):
 
     assert Post.query.count() == 0
     assert Event.query.count() == 0
+
+
+# ------------------------------------------- reviews.post_id (c1f4a90b6e35)
+
+def test_borrar_al_autor_se_lleva_las_resenias_que_le_dejaron(
+    db, crear_usuario, crear_post
+):
+    """El complemento de test_borrar_un_usuario_se_lleva_sus_resenias: aca la
+    resenia es de otro y el que se va es el AUTOR del emprendimiento. La
+    resenia tiene que irse con el post, no quedar apuntando a un post que ya no
+    esta ni frenar el borrado."""
+    autor = crear_usuario(username="autor")
+    critico = crear_usuario(username="critico")
+    post = crear_post(autor.id)
+    db.session.add(Review(post_id=post.id, user_id=critico.id, rating=2, comment="Meh"))
+    db.session.commit()
+    critico_id = critico.id
+
+    db.session.delete(db.session.get(User, autor.id))
+    db.session.commit()
+
+    assert Post.query.count() == 0
+    assert Review.query.count() == 0
+    # El que la escribio sigue existiendo: se fue la resenia, no la persona.
+    assert db.session.get(User, critico_id) is not None
+
+
+def test_borrar_al_autor_por_sql_crudo_tambien_se_lleva_la_resenia_ajena(
+    db, crear_usuario, crear_post
+):
+    """El mismo caso pero sin pasar por la sesion, que es donde se veia el bug.
+
+    db.session.delete(user) hace que el ORM baje post por post y borre las
+    resenias con DELETE propios (Post.reviews tiene cascade="all,
+    delete-orphan"), asi que el test de arriba pasa aunque la FK este en NO
+    ACTION: el motor nunca llega a evaluarla. Con un DELETE crudo no hay ORM en
+    el medio y la cascada la tiene que hacer la base o nada.
+    """
+    autor = crear_usuario(username="autor")
+    critico = crear_usuario(username="critico")
+    post = crear_post(autor.id)
+    db.session.add(Review(post_id=post.id, user_id=critico.id, rating=5, comment="Top"))
+    db.session.commit()
+    autor_id, critico_id = autor.id, critico.id
+
+    db.session.execute(sa.text("DELETE FROM users WHERE id = :id"), {"id": autor_id})
+    db.session.commit()
+
+    # Contado por SQL y no por el ORM: la sesion todavia tiene los objetos
+    # viejos en su identity map y responderia con lo que ya no esta.
+    contar = lambda tabla: db.session.execute(
+        sa.text(f"SELECT COUNT(*) FROM {tabla}")
+    ).scalar()
+    assert contar("posts") == 0
+    assert contar("reviews") == 0
+    assert contar("users") == 1  # queda el critico
+
+
+def test_reviews_post_id_declara_cascade_en_el_esquema(db):
+    """Igual que test_las_cinco_fk_declaran_cascade_en_el_esquema pero para la
+    FK a posts: el comportamiento de arriba se puede conseguir por el camino
+    del ORM, la declaracion no."""
+    columna = db.metadata.tables["reviews"].c["post_id"]
+    fks = [fk for fk in columna.foreign_keys if fk.column.table.name == "posts"]
+    assert fks, "reviews.post_id ya no apunta a posts"
+    for fk in fks:
+        assert fk.ondelete == "CASCADE", "reviews.post_id sin CASCADE"
+
+
+def test_borrar_los_dos_lados_de_un_hilo_ajeno_al_post(db, crear_usuario, crear_post):
+    """La asimetria de messages sin que la tape la cascada del post.
+
+    test_borrar_los_dos_lados_de_una_conversacion_no_depende_del_orden borra al
+    cliente y al dueño, pero el dueño se lleva el post y el post se lleva los
+    mensajes por posts.author, asi que no prueba que las dos FK a users
+    convivan: probaria lo mismo sin ninguna de las dos. Aca el dueño del
+    emprendimiento no se toca y los dos que se borran son terceros, uno como
+    client_id y otro solo como sender_id.
+    """
+    duenio = crear_usuario(username="duenio")
+    cliente = crear_usuario(username="cliente")
+    tercero = crear_usuario(username="tercero")
+    post = crear_post(duenio.id)
+    db.session.add_all([
+        _mensaje(post.id, cliente.id, cliente.id, "¿hacen envios?"),
+        _mensaje(post.id, cliente.id, tercero.id, "yo tambien pregunto"),
+        _mensaje(post.id, cliente.id, duenio.id, "si, hasta las 18"),
+    ])
+    db.session.commit()
+    post_id, duenio_id = post.id, duenio.id
+
+    db.session.delete(db.session.get(User, cliente.id))
+    db.session.delete(db.session.get(User, tercero.id))
+    db.session.commit()
+
+    # Las tres: dos por sender_id y la del dueño por client_id.
+    assert Message.query.count() == 0
+    # Y lo que no era de ellos sigue en pie.
+    assert db.session.get(Post, post_id) is not None
+    assert db.session.get(User, duenio_id) is not None
