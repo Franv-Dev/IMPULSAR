@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar evento" if evento else "Nuevo evento" }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 640px;">
+        <div class="auth__card">
+            <h1 class="auth__title">{{ "Editar evento" if evento else "Nuevo evento" }}</h1>
+            <p class="auth__subtitle">
+                Una feria, una pop-up, un taller. Solo la información con su fecha:
+                no se reservan lugares. La fecha y la hora son de Argentina.
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="auth__form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="auth__field">
+                    <label for="post_id" class="auth__label">Emprendimiento</label>
+                    <select name="post_id" id="post_id" class="auth__input" required>
+                        {% for post in posts %}
+                            <option value="{{ post.id }}"
+                                    {% if datos.post_id == post.id %}selected{% endif %}>
+                                {{ post.title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="auth__field">
+                    <label for="titulo" class="auth__label">Título</label>
+                    <input type="text" name="titulo" id="titulo" class="auth__input"
+                           maxlength="120" required value="{{ datos.titulo }}">
+                </div>
+
+                <div class="auth__field">
+                    <label for="descripcion" class="auth__label">Descripción corta (opcional)</label>
+                    <textarea name="descripcion" id="descripcion" class="auth__input"
+                              rows="3" maxlength="300">{{ datos.descripcion }}</textarea>
+                </div>
+
+                <div class="auth__field">
+                    <label for="fecha" class="auth__label">Fecha</label>
+                    <input type="date" name="fecha" id="fecha" class="auth__input"
+                           required value="{{ datos.fecha }}">
+                </div>
+
+                <div class="auth__field">
+                    <label for="hora" class="auth__label">Hora (opcional)</label>
+                    <input type="time" name="hora" id="hora" class="auth__input"
+                           value="{{ datos.hora }}">
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    {{ "Guardar cambios" if evento else "Publicar evento" }}
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                Volver a <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}">mi perfil</a>.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

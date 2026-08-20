@@ -1,0 +1,27 @@
+{# Boton de compartir. El click lo maneja static/js/share.js (Web Share API en
+   mobile, o copiar el link al portapapeles).
+
+   Por default comparte el emprendimiento del contexto ("post"), que es el caso
+   de las tarjetas y el detalle. Para compartir otra cosa (el perfil, por
+   ejemplo) se pasan share_url y share_title:
+
+     {% with share_url=..., share_title=... %}
+         {% include "partials/_compartir_boton.html" %}
+     {% endwith %}
+#}
+{# Un |default(...) no sirve acá: Jinja evalúa el argumento del filtro siempre,
+   así que armar la URL del post reventaria en el perfil, donde no hay post. #}
+{% if share_url is defined %}
+    {% set _share_url = share_url %}
+    {% set _share_title = share_title %}
+{% else %}
+    {% set _share_url = url_for('blog.detail', id=post.id, _external=True) %}
+    {% set _share_title = post.title %}
+{% endif %}
+<button type="button" class="share-btn"
+    data-share-url="{{ _share_url }}"
+    data-share-title="{{ _share_title }}"
+    aria-label="Compartir {{ _share_title }}"
+    title="Compartir">
+    🔗
+</button>

@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Editar emprendimiento – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="auth">
+    <div class="container auth__container">
+        <div class="auth__card">
+            <h1 class="auth__title">Editar emprendimiento</h1>
+            <p class="auth__subtitle">
+                Actualizá la información de tu emprendimiento.
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="auth__form" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="auth__field">
+                    <label for="title" class="auth__label">Nombre del emprendimiento</label>
+                    <input
+                        id="title"
+                        name="title"
+                        type="text"
+                        class="auth__input"
+                        value="{{ post.title }}"
+                        required
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="body" class="auth__label">Descripción</label>
+                    <textarea
+                        id="body"
+                        name="body"
+                        rows="5"
+                        class="auth__input"
+                        required
+                    >{{ post.body }}</textarea>
+                </div>
+
+                <div class="auth__field">
+                    <label for="category" class="auth__label">Categoría</label>
+                    <select id="category" name="category" class="auth__input">
+                        {% for valor, etiqueta in categorias.items() %}
+                            <option value="{{ valor }}" {% if valor == post.category %}selected{% endif %}>
+                                {{ etiqueta }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="auth__field">
+                    <label class="auth__label">Imagen actual</label>
+                    {% if post.image %}
+                        <img
+                            src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                            alt="Imagen actual"
+                            style="max-width: 200px; border-radius: 8px; display:block; margin-bottom:0.5rem;"
+                        >
+                    {% else %}
+                        <p class="auth__hint">Este emprendimiento no tiene imagen cargada.</p>
+                    {% endif %}
+                </div>
+
+                <div class="auth__field">
+                    <label for="image" class="auth__label">Reemplazar imagen (opcional)</label>
+                    <input
+                        id="image"
+                        name="image"
+                        type="file"
+                        class="auth__input"
+                        accept=".png,.jpg,.jpeg,.gif"
+                    >
+                    <small class="auth__hint">
+                        Si seleccionás una nueva imagen, se reemplazará la anterior.
+                    </small>
+                </div>
+
+                <div class="auth__field">
+                    <label class="auth__label">Galería</label>
+                    {% if post.imagenes %}
+                        <div class="galeria-miniaturas">
+                            {% for imagen in post.imagenes %}
+                                <img src="{{ url_for('static', filename='uploads/' ~ imagen.filename) }}"
+                                     alt="Foto de {{ post.title }}" class="galeria-miniatura">
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <input
+                        id="galeria"
+                        name="galeria"
+                        type="file"
+                        multiple
+                        class="auth__input"
+                        accept=".png,.jpg,.jpeg,.gif"
+                    >
+                    <small class="auth__hint">
+                        {% if post.lugares_de_imagen_libres %}
+                            Podés sumar {{ post.lugares_de_imagen_libres }} foto{{ "s" if post.lugares_de_imagen_libres != 1 else "" }} más. Las nuevas se agregan a las que ya están.
+                        {% else %}
+                            Ya llegaste al máximo de 5 fotos.
+                        {% endif %}
+                    </small>
+                </div>
+
+                <div class="auth__field">
+                    <label for="address_street" class="auth__label">Dirección Completa (opcional)</label>
+                    <input
+                        type="text"
+                        id="address_street"
+                        name="address_street"
+                        class="auth__input"
+                        placeholder="Ej: Calle, Nº, Distrito, Provincia (Ej: Av. San Martín 123, Maipú, Mendoza)"
+                        value="{{ post.address_street or '' }}"
+                    >
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Ingresá la dirección completa para el mapa: Calle, Nº, Distrito y Provincia.
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    Guardar cambios
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                Volver a
+                <a href="{{ url_for('blog.my_posts') }}">mis emprendimientos</a>.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

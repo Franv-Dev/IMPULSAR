@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Editar perfil – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="auth">
+    <div class="container auth__container">
+        <div class="auth__card">
+            <h1 class="auth__title">Editar mi perfil</h1>
+            <p class="auth__subtitle">
+                Actualizá tu biografía y tu ubicación.
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="auth__form" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="auth__field">
+                    <label for="avatar" class="auth__label">Foto de perfil</label>
+                    <input
+                        type="file"
+                        id="avatar"
+                        name="avatar"
+                        class="auth__input"
+                        accept="image/png, image/jpeg, image/gif"
+                    >
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Si no subís una nueva, se conserva la actual.
+                    </small>
+                </div>
+
+                <div class="auth__field">
+                    <label for="cover_image" class="auth__label">Imagen de portada</label>
+                    <input
+                        type="file"
+                        id="cover_image"
+                        name="cover_image"
+                        class="auth__input"
+                        accept="image/png, image/jpeg, image/gif"
+                    >
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Se muestra ancha arriba de tu perfil. Si no subís una nueva, se conserva la actual.
+                    </small>
+                </div>
+
+                <div class="auth__field">
+                    <label for="biography" class="auth__label">Biografía</label>
+                    <textarea
+                        id="biography"
+                        name="biography"
+                        class="auth__input"
+                        placeholder="Aquí es donde tu historia brilla..."
+                        rows="6"
+                    >{{ user.biography or '' }}</textarea>
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Podés usar **negrita**, [texto](https://link.com) y renglones nuevos.
+                    </small>
+                </div>
+
+                <div class="auth__field">
+                    <label for="phone" class="auth__label">Teléfono (opcional)</label>
+                    <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        class="auth__input"
+                        placeholder="Ej: 261 555-1234"
+                        value="{{ user.phone or '' }}"
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="whatsapp" class="auth__label">WhatsApp (opcional)</label>
+                    <input
+                        type="tel"
+                        id="whatsapp"
+                        name="whatsapp"
+                        class="auth__input"
+                        placeholder="Ej: 5492615551234 (con código de país, sin espacios)"
+                        value="{{ user.whatsapp or '' }}"
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="instagram_url" class="auth__label">Instagram (opcional)</label>
+                    <input
+                        type="url"
+                        id="instagram_url"
+                        name="instagram_url"
+                        class="auth__input"
+                        placeholder="https://instagram.com/tu-usuario"
+                        value="{{ user.instagram_url or '' }}"
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="facebook_url" class="auth__label">Facebook (opcional)</label>
+                    <input
+                        type="url"
+                        id="facebook_url"
+                        name="facebook_url"
+                        class="auth__input"
+                        placeholder="https://facebook.com/tu-pagina"
+                        value="{{ user.facebook_url or '' }}"
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="twitter_url" class="auth__label">Twitter / X (opcional)</label>
+                    <input
+                        type="url"
+                        id="twitter_url"
+                        name="twitter_url"
+                        class="auth__input"
+                        placeholder="https://twitter.com/tu-usuario"
+                        value="{{ user.twitter_url or '' }}"
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="location" class="auth__label">Ciudad y provincia (opcional)</label>
+                    <input
+                        type="text"
+                        id="location"
+                        name="location"
+                        class="auth__input"
+                        placeholder="Ej: Maipú, Mendoza"
+                        value="{{ user.location or '' }}"
+                    >
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Solo se muestra como texto en tu perfil. No mueve el mapa:
+                        para eso está la dirección de acá abajo.
+                    </small>
+                </div>
+
+                <div class="auth__field">
+                    <label for="address_street" class="auth__label">Dirección para el mapa (opcional)</label>
+                    <input
+                        type="text"
+                        id="address_street"
+                        name="address_street"
+                        class="auth__input"
+                        placeholder="Ej: Calle, Nº, Distrito, Provincia (Ej: Av. San Martín 123, Maipú, Mendoza)"
+                        value="{{ user.address_street or '' }}"
+                    >
+                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                        Ingresá la dirección completa para el mapa: Calle, Nº, Distrito y Provincia.
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    Guardar cambios
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                Volver a
+                <a href="{{ url_for('profile.view_profile', slug=user.slug) }}">mi perfil</a>.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Emprendimientos – Admin – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Moderar emprendimientos</h2>
+                <p class="section__subtitle">{{ paginacion.total }} emprendimientos en total.</p>
+            </div>
+            <a href="{{ url_for('admin.dashboard') }}" class="section__link">← Volver al panel</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="admin-table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Autor</th>
+                        <th>Categoría</th>
+                        <th>Creado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in paginacion.items %}
+                        <tr>
+                            <td><a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a></td>
+                            <td>
+                                {% if post.author_user %}
+                                    <a href="{{ url_for('profile.view_profile', slug=post.author_user.slug) }}">{{ post.author_user.username }}</a>
+                                {% endif %}
+                            </td>
+                            <td>{{ post.category_label }}</td>
+                            <td>{{ post.created.strftime("%d/%m/%Y") if post.created else "" }}</td>
+                            <td>
+                                <form method="post" action="{{ url_for('admin.delete_post', post_id=post.id) }}"
+                                    onsubmit="return confirm('¿Seguro que querés eliminar «{{ post.title }}»? Esta acción no se puede deshacer.');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn--ghost" style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include "partials/_paginacion.html" %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Mensajes – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 700px;">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Mensajes</h2>
+                <p class="section__subtitle">
+                    Conversaciones sobre emprendimientos, como cliente o como emprendedor.
+                </p>
+            </div>
+        </div>
+
+        {% if conversaciones %}
+            <div class="chat-inbox">
+                {% for m in conversaciones %}
+                    {% set soy_cliente = g.user.id == m.client_id %}
+                    {% set otra_parte = m.post.author_user if soy_cliente else m.client %}
+                    <a class="chat-inbox__item"
+                        href="{{ url_for('messages.conversation', post_id=m.post_id, client_id=m.client_id) }}">
+                        <div class="chat-inbox__info">
+                            <strong>{{ m.post.title }}</strong>
+                            <span class="chat-inbox__with">con {{ otra_parte.username }}</span>
+                        </div>
+                        <p class="chat-inbox__preview">
+                            {{ m.body[:80] }}{% if m.body|length > 80 %}...{% endif %}
+                        </p>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="reviews-empty">Todavía no tenés conversaciones.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

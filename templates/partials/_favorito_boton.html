@@ -1,0 +1,11 @@
+{# Boton de favorito (toggle). Requiere "post" e "is_favorite" en el contexto,
+   y que g.user exista (solo un usuario logueado puede tener favoritos). #}
+<form method="post" action="{{ url_for('blog.toggle_favorite', id=post.id) }}" class="favorite-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="favorite-btn {% if is_favorite %}favorite-btn--active{% endif %}"
+        aria-pressed="{{ 'true' if is_favorite else 'false' }}"
+        aria-label="{% if is_favorite %}Quitar de favoritos{% else %}Agregar a favoritos{% endif %}"
+        title="{% if is_favorite %}Quitar de favoritos{% else %}Agregar a favoritos{% endif %}">
+        {% if is_favorite %}♥{% else %}♡{% endif %}
+    </button>
+</form>

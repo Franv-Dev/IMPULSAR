@@ -1,29 +1,87 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block header %}
+{% block title %}Registrarse – IMPULSAR{% endblock %}
 
-    <h2>{% block title %} Registrar Usuario{% endblock %} </h2>
+{% block content %}
+<section class="auth">
+    <div class="container auth__container">
+        <div class="auth__card">
+            <h1 class="auth__title">Crear cuenta</h1>
+            <p class="auth__subtitle">
+                Registrá tu usuario para empezar a impulsar tu emprendimiento.
+            </p>
 
-{% endblock %}
+            {# Mensajes flash (errores, avisos) #}
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
 
-{% block content%}
-<div class="form-container">
-<div class="register">
-    <form method="POST">
-        <label for="username">Nombre de usuario</label>
-        <input type="text" name="username" id="username" required>
-        <label for="password">Contraseña</label>
-        <input type="password" name="password" id="password" required>
-        <label for="rol">ROL</label>
-        <select id="rol" name="rol">
-            <option value="client">cliente</option>
-            <option value="enterprising">Emprendedor</option>
-        </select>
-        <label for="email">Email</label>
-        <input type="email" name="email" id="email" required>
-        <input type="submit" value="Registrar">
-    </form>
-</div>
-</div>
+            <form method="post" class="auth__form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="auth__field">
+                    <label for="username" class="auth__label">Usuario</label>
+                    <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        class="auth__input"
+                        placeholder="Elegí un nombre de usuario"
+                        required
+                    >
+                </div>
 
+                <div class="auth__field">
+                    <label for="email" class="auth__label">Email</label>
+                    <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        class="auth__input"
+                        placeholder="tucorreo@ejemplo.com"
+                        required
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="password" class="auth__label">Contraseña</label>
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        class="auth__input"
+                        placeholder="Mínimo 8 caracteres"
+                        minlength="8"
+                        required
+                    >
+                </div>
+
+                <div class="auth__field">
+                    <label for="rol" class="auth__label">Rol</label>
+                    <select id="rol" name="rol" class="auth__input">
+                        <option value="usuario">Usuario</option>
+                        <option value="emprendedor">Emprendedor</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    Crear cuenta
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                ¿Ya tenés una cuenta?
+                <a href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+            </p>
+        </div>
+    </div>
+</section>
 {% endblock %}

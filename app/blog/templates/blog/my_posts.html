@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Mis emprendimientos – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Mis emprendimientos</h2>
+                <p class="section__subtitle">
+                    Acá podés ver y gestionar los emprendimientos asociados a tu cuenta.
+                </p>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <a href="{{ url_for('products.index') }}" class="btn btn--secondary">
+                    Mis productos
+                </a>
+                <a href="{{ url_for('servicios.index') }}" class="btn btn--secondary">
+                    Mis servicios
+                </a>
+                <a href="{{ url_for('blog.create') }}" class="btn btn--primary">
+                    + Crear nuevo emprendimiento
+                </a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if posts %}
+            <div class="cards-grid">
+                {% for post in posts %}
+                    <article class="card">
+                        {% if post.image %}
+                            <a href="{{ url_for('blog.detail', id=post.id) }}" class="card__image-link">
+                                <div class="card__image-wrapper">
+                                    <img
+                                        src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                        alt="Imagen de {{ post.title }}"
+                                        class="card__image"
+                                    >
+                                </div>
+                            </a>
+                        {% endif %}
+                        <div class="card__body">
+                            <div class="card__tags">
+                                <span class="badge badge--category">Mi emprendimiento</span>
+                            </div>
+                            <h3 class="card__title">
+                                <a href="{{ url_for('blog.detail', id=post.id) }}" style="text-decoration:none; color:inherit;">
+                                    {{ post.title }}
+                                </a>
+                            </h3>   
+                            <p class="card__location">
+                                {{ g.user.username}}
+                            </p>
+                            <p class="card__views">
+                                👁 {{ post.views_count }} vista{{ "s" if post.views_count != 1 else "" }}
+                            </p>
+                            <p class="card__description">
+                                {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
+                            </p>
+
+                            <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <a href="{{ url_for('blog.update', id=post.id) }}"
+                                    class="btn btn--secondary"
+                                    style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                    Editar
+                                </a>
+                                <form method="post"
+                                    action="{{ url_for('blog.delete', id=post.id) }}"
+                                    class="form-inline"
+                                    onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit"
+                                        class="btn btn--ghost"
+                                        style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            {% include "partials/_paginacion.html" %}
+        {% else %}
+            <div class="emprendimientos__empty" style="margin-top:1rem;">
+                <p>
+                    Todavía no registraste ningún emprendimiento.
+                    <a href="{{ url_for('blog.create') }}">Creá el primero acá.</a>
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

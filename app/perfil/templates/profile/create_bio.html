@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Tu Historia{% endblock %}
+
+{% block content %}
+    <section class="auth">
+    <div class="container auth__container">
+        <div class="auth__card">
+        <h1 class="auth__title">Tu historia, tu emprendimiento</h1>
+        <p class="auth__subtitle">Dejá que tu perfil cobre vida. Contanos sobre vos o el viaje de tu emprendimiento.</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="auth__messages">
+                {% for message in messages %}
+                <div class="auth__alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('profile.create') }}" class="auth__form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="auth__field">
+            <label for="body" class="auth__label">Biografía</label>
+            <textarea
+                id="body"
+                name="body"
+                class="auth__input"
+                placeholder="Aquí es donde tu historia brilla. Describí brevemente quién sos y qué hace tu emprendimiento."
+                required
+                rows="6"
+            ></textarea>
+            <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
+                Podés usar **negrita**, [texto](https://link.com) y renglones nuevos.
+            </small>
+            </div>
+
+            <button type="submit" class="btn btn--primary auth__submit">
+            Guardar Biografía
+            </button>
+        </form>
+        </div>
+    </div>
+    </section>
+{% endblock %}

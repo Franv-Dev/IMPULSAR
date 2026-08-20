@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Verificar {{ servicio.titulo }} – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Verificar credenciales</h2>
+                <p class="section__subtitle">
+                    {{ servicio.titulo }} — {{ servicio.rubro_label }}
+                </p>
+            </div>
+            <a href="{{ url_for('servicios.index') }}" class="section__link">← Volver a mis servicios</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if servicio.verificado %}
+            <p class="review-form-info">
+                <span class="badge badge--verificado">✓ Verificado</span>
+                Este servicio ya está verificado: el sello se muestra en la búsqueda pública.
+            </p>
+        {% endif %}
+
+        {% if pendiente %}
+            {# Ya hay un pedido esperando: se muestra eso en vez del formulario,
+               mismo criterio que solicitar() con la solicitud pendiente. #}
+            <p class="review-form-info">
+                Mandaste tu documentación
+                {% if pendiente.created_at %}el {{ pendiente.created_at.strftime("%d/%m/%Y") }}{% endif %}
+                y un administrador la va a revisar. Cuando haya una respuesta la vas a ver acá.
+            </p>
+            {% if pendiente.foto %}
+                {# Por la ruta del blueprint y no por /static: el documento no es
+                   publico y sale de carpeta_privada(), que ni siquiera cuelga de
+                   static/. El permiso lo chequea la ruta (ver
+                   servicios.foto_de_verificacion) y ademas esta pagina entera ya
+                   pasa por _servicio_propio, asi que este link solo se dibuja
+                   para el dueño. #}
+                <img src="{{ url_for('servicios.foto_de_verificacion', id=pendiente.id) }}"
+                     alt="La documentación que mandaste"
+                     style="max-width:100%; border-radius:8px; margin-top:0.75rem;">
+            {% endif %}
+        {% else %}
+            {% if ultima and ultima.estado == estados.RECHAZADA %}
+                <div class="auth__alert" style="margin-bottom:1rem;">
+                    Tu último pedido no fue aprobado.
+                    {% if ultima.motivo_rechazo %}
+                        Motivo: {{ ultima.motivo_rechazo }}
+                    {% endif %}
+                    Podés corregirlo y volver a mandarlo.
+                </div>
+                {% if ultima.foto %}
+                    {# La misma ruta protegida que arriba: ver que se mando ayuda
+                       a entender el motivo del rechazo antes de rehacerlo. #}
+                    <img src="{{ url_for('servicios.foto_de_verificacion', id=ultima.id) }}"
+                         alt="La documentación que no fue aprobada"
+                         style="max-width:100%; border-radius:8px; margin-bottom:1rem;">
+                {% endif %}
+            {% endif %}
+
+            <p class="section__subtitle">
+                Subí una foto de tu matrícula, certificado o habilitación para este
+                servicio. La verificación es por servicio y no por persona: si ofrecés
+                varios oficios, cada uno lleva su propia documentación.
+            </p>
+
+            <form method="post" enctype="multipart/form-data" class="auth__form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="auth__field">
+                    <label for="foto" class="auth__label">Foto del documento</label>
+                    <input type="file" name="foto" id="foto" accept="image/*" class="auth__input">
+                </div>
+                <button type="submit" class="btn btn--primary">Pedir verificación</button>
+            </form>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

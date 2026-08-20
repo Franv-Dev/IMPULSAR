@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar servicio" if servicio else "Nuevo servicio" }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 640px;">
+        <div class="auth__card">
+            <h1 class="auth__title">{{ "Editar servicio" if servicio else "Nuevo servicio" }}</h1>
+            <p class="auth__subtitle">
+                Un trabajo que ofrecés. Se muestra en la página de tu
+                emprendimiento y los clientes te piden presupuesto desde ahí.
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="auth__form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="auth__field">
+                    <label for="post_id" class="auth__label">Emprendimiento</label>
+                    <select name="post_id" id="post_id" class="auth__input" required>
+                        {% for post in posts %}
+                            <option value="{{ post.id }}"
+                                    {% if datos.post_id == post.id %}selected{% endif %}>
+                                {{ post.title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="auth__field">
+                    <label for="titulo" class="auth__label">Título</label>
+                    <input type="text" name="titulo" id="titulo" class="auth__input"
+                           maxlength="120" required value="{{ datos.titulo }}"
+                           placeholder="Destapación de cañerías">
+                </div>
+
+                <div class="auth__field">
+                    <label for="rubro" class="auth__label">Rubro</label>
+                    <select name="rubro" id="rubro" class="auth__input" required>
+                        {% for valor in rubros.TODOS %}
+                            <option value="{{ valor }}"
+                                    {% if datos.rubro == valor %}selected{% endif %}>
+                                {{ rubros.ETIQUETAS[valor] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small>
+                        Con esto te van a poder encontrar los que busquen por rubro.
+                    </small>
+                </div>
+
+                <div class="auth__field">
+                    <label for="descripcion" class="auth__label">Descripción corta (opcional)</label>
+                    <textarea name="descripcion" id="descripcion" class="auth__input"
+                              rows="3" maxlength="300">{{ datos.descripcion }}</textarea>
+                </div>
+
+                <div class="auth__field">
+                    <label for="zona_cobertura" class="auth__label">Zona de cobertura (opcional)</label>
+                    <input type="text" name="zona_cobertura" id="zona_cobertura"
+                           class="auth__input" maxlength="120"
+                           value="{{ datos.zona_cobertura }}"
+                           placeholder="Maipú y alrededores">
+                </div>
+
+                <div class="auth__field">
+                    <label for="precio_estimado" class="auth__label">Precio estimado (opcional)</label>
+                    <input type="text" name="precio_estimado" id="precio_estimado"
+                           class="auth__input" inputmode="decimal"
+                           value="{{ datos.precio_estimado }}"
+                           placeholder="1500 o 1500,50">
+                    <small>
+                        Si lo dejás vacío, el servicio se muestra como
+                        "A presupuestar".
+                    </small>
+                </div>
+
+                <div class="auth__field">
+                    <label class="auth__label" for="disponible">
+                        <input type="checkbox" name="disponible" id="disponible"
+                               {% if datos.disponible %}checked{% endif %}>
+                        Disponible
+                    </label>
+                    <small>
+                        Si lo destildás, el servicio queda visible solo para vos,
+                        sin que tengas que borrarlo.
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    {{ "Guardar cambios" if servicio else "Agregar servicio" }}
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                Volver a <a href="{{ url_for('servicios.index') }}">mis servicios</a>.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

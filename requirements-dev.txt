@@ -1,0 +1,6 @@
+# Dependencias solo para desarrollo y testing.
+# Instalar con: pip install -r requirements-dev.txt
+
+-r requirements.txt
+
+pytest==9.1.1

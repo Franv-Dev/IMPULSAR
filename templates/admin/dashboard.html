@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de administración – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Panel de administración</h2>
+                <p class="section__subtitle">Métricas básicas de la plataforma.</p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="admin-metrics">
+            <div class="admin-metric">
+                <span class="admin-metric__value">{{ metricas.usuarios }}</span>
+                <span class="admin-metric__label">Usuarios</span>
+            </div>
+            <div class="admin-metric">
+                <span class="admin-metric__value">{{ metricas.posts }}</span>
+                <span class="admin-metric__label">Emprendimientos</span>
+            </div>
+            <div class="admin-metric">
+                <span class="admin-metric__value">{{ metricas.resenias }}</span>
+                <span class="admin-metric__label">Reseñas</span>
+            </div>
+            {% if "reportes_pendientes" in metricas %}
+                <div class="admin-metric admin-metric--alert">
+                    <span class="admin-metric__value">{{ metricas.reportes_pendientes }}</span>
+                    <span class="admin-metric__label">Reportes pendientes</span>
+                </div>
+            {% endif %}
+            {% if "verificaciones_pendientes" in metricas %}
+                <div class="admin-metric admin-metric--alert">
+                    <span class="admin-metric__value">{{ metricas.verificaciones_pendientes }}</span>
+                    <span class="admin-metric__label">Verificaciones pendientes</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="admin-links">
+            <a href="{{ url_for('admin.usuarios') }}" class="btn btn--secondary">Gestionar usuarios</a>
+            <a href="{{ url_for('admin.emprendimientos') }}" class="btn btn--secondary">Moderar emprendimientos</a>
+            {% if "reportes_pendientes" in metricas %}
+                <a href="{{ url_for('admin.reportes') }}" class="btn btn--secondary">Ver reportes</a>
+            {% endif %}
+            {% if "verificaciones_pendientes" in metricas %}
+                <a href="{{ url_for('admin.verificaciones') }}" class="btn btn--secondary">Ver verificaciones</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

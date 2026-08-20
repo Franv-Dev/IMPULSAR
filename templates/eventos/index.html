@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Eventos y ferias – IMPULSAR{% endblock %}
+{% block meta_description %}Ferias, pop-ups y talleres de los emprendimientos de IMPULSAR.{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Eventos y ferias</h2>
+                <p class="section__subtitle">
+                    Todo lo que están anunciando los emprendimientos de IMPULSAR.
+                </p>
+            </div>
+            <a href="{{ url_for('blog.index') }}" class="section__link">Ver emprendimientos</a>
+        </div>
+
+        {% if paginacion.items %}
+            <ul class="eventos-lista eventos-lista--cartelera">
+                {% for evento in paginacion.items %}
+                    <li class="eventos-lista__item">
+                        <div class="eventos-lista__fecha">
+                            <span class="eventos-lista__dia">{{ evento.fecha.day }}</span>
+                            <span class="eventos-lista__mes">{{ evento.fecha | mes_corto }}</span>
+                        </div>
+                        <div class="eventos-lista__cuerpo">
+                            <h3 class="eventos-lista__titulo">
+                                <a href="{{ url_for('blog.detail', id=evento.post.id) }}">{{ evento.titulo }}</a>
+                            </h3>
+                            <p class="eventos-lista__cuando">
+                                {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora.strftime("%H:%M") }}{% endif %}
+                            </p>
+                            {% if evento.descripcion %}
+                                <p class="eventos-lista__descripcion">{{ evento.descripcion }}</p>
+                            {% endif %}
+                            {# El link al perfil de quien lo publico, que es de
+                               donde sale el resto de sus datos de contacto. #}
+                            <p class="eventos-lista__post">
+                                Publicado por
+                                <a href="{{ url_for('profile.view_profile', slug=evento.post.author_user.slug) }}">
+                                    {{ evento.post.author_user.username }}
+                                </a>
+                                · {{ evento.post.title }}
+                            </p>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            {% include "partials/_paginacion.html" %}
+        {% else %}
+            <div class="emprendimientos__empty" style="margin-top:1rem;">
+                <p>No hay eventos anunciados por ahora.</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

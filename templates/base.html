@@ -2,44 +2,185 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <title>{% block title %}IMPULSAR – Impulsá tu emprendimiento local{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="{{url_for('static',filename='imag/user.ico')}}" type="img/x-icon">
-    <title>{% block title %}{% endblock %}Impulsar </title>
-    <link rel="stylesheet" href="{{url_for('static',filename='css/styles.css')}}">
-</head>
+    <meta name="description" content="{% block meta_description %}Centralizá la información de tu emprendimiento local, mostrate a nuevos clientes y conectate con el ecosistema emprendedor de tu ciudad.{% endblock %}">
 
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/logo_impulsar.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/logo_impulsar.png') }}">
+
+    {# Open Graph / Twitter Card: sin esto, compartir un link de IMPULSAR no muestra ni icono ni preview. #}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="IMPULSAR">
+    <meta property="og:title" content="{% block og_title %}IMPULSAR – Impulsá tu emprendimiento local{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Centralizá la información de tu emprendimiento local, mostrate a nuevos clientes y conectate con el ecosistema emprendedor de tu ciudad.{% endblock %}">
+    <meta property="og:image" content="{{ url_for('static', filename='icons/logo_impulsar.png', _external=True) }}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta name="twitter:card" content="summary_large_image">
+
+    {# Tema claro/oscuro: esto tiene que correr ANTES de que cargue styles.css.
+       Si se resolviera el tema recien en main.js (al final del <body>), el
+       navegador ya habria pintado la pagina en claro y se veria un parpadeo
+       claro->oscuro en cada carga. Es inline y sin dependencias por lo mismo:
+       un <script src> seria una request mas antes del primer pintado. Va
+       arriba de los <link> a hosts externos (Google Fonts, unpkg) para que
+       resolver el tema no quede detras de una request de terceros.
+
+       Primera visita (nada en localStorage) => manda el sistema operativo.
+       Una vez que el usuario toca el switch, esa eleccion explicita pisa al
+       sistema para siempre, hasta que borre localStorage. #}
+    <script>
+        (function () {
+            var guardado = null;
+            try {
+                guardado = window.localStorage.getItem("impulsar-tema");
+            } catch (e) {
+                /* localStorage puede tirar en modo privado o con cookies
+                   bloqueadas: lo tratamos como "no hay eleccion guardada" y
+                   seguimos al sistema, igual que temaGuardado() en main.js.
+                   Si aca cayeramos a claro, la pagina arrancaria en claro y
+                   saltaria a oscuro al primer change del SO. */
+            }
+            var tema = (guardado === "dark" || guardado === "light")
+                ? guardado
+                : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            document.documentElement.setAttribute("data-theme", tema);
+        })();
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+</head>
 <body>
-    <header class="header">
-        <div class="nav">
-            <div>
-            <a href="{{url_for('blog.index')}}">
-                <h1>Impulsar</h1>
-            </a>
+    <header class="navbar">
+        <div class="container navbar__content">
+            <div class="navbar__logo">
+                <a href="{{ url_for('index') }}">
+                    <img src="{{ url_for('static', filename='icons/logo_impulsar.png') }}" alt="IMPULSAR" class="navbar__logo-image">
+                </a>
             </div>
-            <nav>
+<nav class="navbar__links" id="navbar-links">
+
+    <a href="{{ url_for('index') }}" class="navbar__link {% if request.endpoint == 'index' %}navbar__link--active{% endif %}">
+        Inicio
+    </a>
+
+    <a href="{{ url_for('blog.index') }}" class="navbar__link {% if request.endpoint and request.endpoint.startswith('blog.') %}navbar__link--active{% endif %}">
+        Emprendimientos
+    </a>
+
+    <a href="{{ url_for('eventos.index') }}" class="navbar__link {% if request.endpoint and request.endpoint.startswith('eventos.') %}navbar__link--active{% endif %}">
+        Eventos
+    </a>
+
+    {# Solo la busqueda publica se marca activa, y no todo el blueprint: el
+       resto de /servicios es privado (el panel del dueño y sus solicitudes) y
+       se entra desde el menu de usuario, no desde aca. #}
+    <a href="{{ url_for('servicios.buscar') }}" class="navbar__link {% if request.endpoint == 'servicios.buscar' %}navbar__link--active{% endif %}">
+        Servicios
+    </a>
+
+    {# "Sobre IMPULSAR" y "Contacto" viven en el footer: son paginas
+       institucionales, se leen una vez y no compiten con Inicio,
+       Emprendimientos y Eventos, que son la navegacion de todos los dias. #}
+
+</nav>
+
+            <div class="navbar__actions">
                 {% if g.user %}
-                <img src="{{url_for('static',filename='imag/user.ico')}}" alt="">
-                <span>{{ g.user.username}}</span>
-                <a href="{{url_for('auth.logout')}}">cerrar Sesión</a>
+                    <div class="navbar__user">
+                        <button type="button" class="navbar__user-toggle" aria-label="Menú de usuario" aria-haspopup="true" aria-expanded="false" aria-controls="user-menu">
+                            <div class="navbar__avatar">
+                                {{ g.user.username[0]|upper }}
+                            </div>
+                            <span class="navbar__user-name">
+                                {{ g.user.username }}
+                            </span>
+                            <span class="navbar__user-caret">▾</span>
+                        </button>
+
+                        <div class="user-menu" id="user-menu">
+                            <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}" class="user-menu__item">
+                                Ver perfil
+                            </a>
+                            <a href="{{ url_for('blog.my_favorites') }}" class="user-menu__item">
+                                Mis favoritos
+                            </a>
+                            <a href="{{ url_for('messages.inbox') }}" class="user-menu__item">
+                                Mensajes
+                                <span id="notif-badge" class="badge--notif" style="display:none;" aria-live="polite"></span>
+                            </a>
+                            <a href="{{ url_for('servicios.solicitudes') }}" class="user-menu__item">
+                                Solicitudes
+                            </a>
+                            {% if g.user.rol == 'admin' %}
+                                <a href="{{ url_for('admin.dashboard') }}" class="user-menu__item">
+                                    Panel de administración
+                                </a>
+                            {% endif %}
+                            <a href="{{ url_for('auth.logout') }}" class="user-menu__item user-menu__item--danger">
+                                Salir
+                            </a>
+                        </div>
+                    </div>
                 {% else %}
-                <a href="{{url_for('auth.register')}}"> Registrar Usuario </a>
-                <a href="{{url_for('auth.login')}}">Iniciar Sesión</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn--ghost">Acceder</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Registrarse</a>
                 {% endif %}
-            </nav>
+            </div>
+
+
+            {# Va fuera de .navbar__actions a proposito: en mobile ese contenedor
+               se colapsa dentro del menu hamburguesa, y el switch de tema tiene
+               que quedar visible en todas las páginas y tamaños. #}
+            <button type="button"
+                    class="theme-toggle"
+                    id="theme-toggle"
+                    aria-label="Cambiar entre modo claro y oscuro"
+                    title="Cambiar entre modo claro y oscuro"
+                    aria-pressed="false">
+                {# Los dos iconos van siempre en el HTML y el CSS muestra el que
+                   corresponde segun data-theme. Si lo eligiera el JS, el icono
+                   parpadearia igual que parpadeaba la pagina. #}
+                <span class="theme-toggle__icon theme-toggle__icon--light" aria-hidden="true">🌙</span>
+                <span class="theme-toggle__icon theme-toggle__icon--dark" aria-hidden="true">☀️</span>
+            </button>
+
+            <button type="button" class="navbar__toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navbar-links">
+                ☰
+            </button>
         </div>
-    
     </header>
 
-    <section>
-        <div class="content">
-        <header> {% block header %}{% endblock %} </header>
-        
-        {% for message in get_flashed_messages() %}
-        <div class="flash"> {{message}} </div>
-        {% endfor %}
-
+    <main>
         {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container footer__content">
+            <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
+            <nav class="footer__links" aria-label="Enlaces del pie">
+                <a href="{{ url_for('pages.about') }}"
+                   class="footer__link {% if request.endpoint == 'pages.about' %}footer__link--active{% endif %}">
+                    Sobre IMPULSAR
+                </a>
+                <a href="{{ url_for('pages.contact') }}"
+                   class="footer__link {% if request.endpoint == 'pages.contact' %}footer__link--active{% endif %}">
+                    Contacto
+                </a>
+                <a href="{{ url_for('pages.terms') }}" class="footer__link">Términos</a>
+                <a href="{{ url_for('pages.privacy') }}" class="footer__link">Privacidad</a>
+            </nav>
         </div>
-    </section>
+    </footer>
+
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/share.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+
 </body>
 </html>

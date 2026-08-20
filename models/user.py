@@ -1,19 +1,175 @@
-from db import db
+from db import db, utcnow
+from services.slugs import generar_slug, slug_disponible
+from services.validation import normalizar_username
+
+
+class Roles:
+    """Roles validos del sistema.
+
+    Estan aca para no repetir los strings sueltos por el codigo: si se escribe
+    "Usuario" en un lado y "usuario" en otro, cualquier chequeo de permisos
+    falla en silencio.
+    """
+
+    USUARIO = "usuario"
+    EMPRENDEDOR = "emprendedor"
+    ADMIN = "admin"
+
+    TODOS = (USUARIO, EMPRENDEDOR, ADMIN)
+
 
 class User(db.Model):
     __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50))
-    password = db.Column(db.Text)
-    rol = db.Column(db.String(50))
-    email = db.Column(db.String(50))
 
-    def __init__(self,username,password,rol,email):
+    id = db.Column(db.Integer, primary_key=True)
+    # unique a nivel de base de datos: validarlo solo en Python tiene una
+    # condicion de carrera (dos registros simultaneos pasan los dos el chequeo).
+    # index ademas acelera los filter_by(username=...) del login.
+    username = db.Column(db.String(50), unique=True, index=True, nullable=False)
+    # Version URL-safe del username: es lo que viaja en /perfil/<slug>. Va
+    # separada del username para que este pueda tener mayusculas, tildes o
+    # espacios sin romper la URL. unique+index por lo mismo que username: la
+    # ruta lo usa en cada filter_by y dos slugs iguales harian ambigua la URL.
+    slug = db.Column(db.String(60), unique=True, index=True, nullable=False)
+    password = db.Column(db.Text, nullable=False)
+    rol = db.Column(db.String(50), nullable=False, default=Roles.USUARIO)
+    email = db.Column(db.String(120), unique=True, index=True, nullable=False)
+    biography = db.Column(db.Text, default="Biografía")
+    avatar = db.Column(db.String(100), nullable=True)
+    cover_image = db.Column(db.String(100), nullable=True)
+
+    # Un admin banea cuentas desde el panel; un usuario baneado no puede
+    # iniciar sesion (ver views/auth.py login() y api_login()).
+    is_banned = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
+
+    # Datos de contacto publico del emprendedor. Todos opcionales: no todos
+    # los usuarios son emprendedores ni quieren publicar su telefono.
+    phone = db.Column(db.String(30), nullable=True)
+    whatsapp = db.Column(db.String(30), nullable=True)
+    instagram_url = db.Column(db.String(255), nullable=True)
+    facebook_url = db.Column(db.String(255), nullable=True)
+    twitter_url = db.Column(db.String(255), nullable=True)
+
+    # Texto libre ("Maipú, Mendoza") que el emprendedor escribe para que se vea
+    # en su perfil. NO se geocodifica ni tiene nada que ver con address_street,
+    # que es la direccion exacta del emprendimiento y es la que mueve el mapa:
+    # son dos campos distintos y se editan por separado.
+    location = db.Column(db.String(120), nullable=True)
+
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    address_street = db.Column(db.String(255), nullable=True)
+
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+
+    def __init__(self, username, password, email, rol=Roles.USUARIO,
+                 biography="Biografía", latitude=None, longitude=None,
+                 address_street=None, location=None, avatar=None, cover_image=None, phone=None,
+                 whatsapp=None, instagram_url=None, facebook_url=None, twitter_url=None,
+                 slug=None):
         self.username = username
+        # Se calcula solo al crear el usuario y no se recalcula despues: el
+        # slug es parte de una URL publica, y regenerarlo dejaria muertos los
+        # links que ya circulan.
+        self.slug = slug or self.generar_slug_unico(username)
         self.password = password
-        self.rol = rol
-        self.email = email
-    
-    def __repr__(self):#devuelve Informacion:String
+        # Se normaliza al guardar para que "Admin", "ADMIN" y "admin" sean lo
+        # mismo y los chequeos de permisos no dependan de como se escribio.
+        self.rol = (rol or Roles.USUARIO).strip().lower()
+        self.email = (email or "").strip().lower()
+        self.biography = biography
+        self.avatar = avatar
+        self.cover_image = cover_image
+        self.phone = phone
+        self.whatsapp = whatsapp
+        self.instagram_url = instagram_url
+        self.facebook_url = facebook_url
+        self.twitter_url = twitter_url
+        self.location = location
+        self.latitude = latitude
+        self.longitude = longitude
+        self.address_street = address_street
+
+    @staticmethod
+    def existe_username_equivalente(username):
+        """True si ya hay un username que la base consideraria el mismo.
+
+        Son dos chequeos y no uno, porque ninguno cubre al otro:
+
+        - El exacto (filter_by) es el unico que no depende de como quedo el
+          slug del usuario que ya existe.
+        - El normalizado agarra los equivalentes que la collation de MySQL
+          considera iguales ("Panadería" / "panaderia"), que el exacto deja
+          pasar.
+        """
+        username = (username or "").strip()
+        if not username:
+            return False
+
+        # Chequeo exacto. Va aparte del normalizado a proposito: el de abajo
+        # busca por prefijo de slug asumiendo que un username genera un slug
+        # que empieza con su propia base, y eso no se cumple cuando la base es
+        # numerica, porque slug_disponible antepone "usuario-" en vez de
+        # sufijar ("123." -> slug "usuario-123", base "123"). Sin esta linea,
+        # registrar "123." dos veces no lo detectaba el chequeo y terminaba en
+        # el IntegrityError, con el mensaje generico en vez del especifico.
+        if User.query.filter_by(username=username).first():
+            return True
+
+        objetivo = normalizar_username(username)
+        if not objetivo:
+            return False
+
+        # Chequeo normalizado. Se busca por slug en vez de recorrer la tabla
+        # entera: dos usernames que solo difieren en mayusculas o tildes
+        # generan el mismo slug base, asi que los candidatos caen todos bajo
+        # ese prefijo, que esta indexado. El patron sale de generar_slug, que
+        # solo devuelve [a-z0-9-], asi que no puede meter comodines en el LIKE.
+        base = generar_slug(username)
+        candidatos = User.query.filter(User.slug.like(f"{base}%")).all()
+        return any(normalizar_username(c.username) == objetivo for c in candidatos)
+
+    @staticmethod
+    def generar_slug_unico(username):
+        """Slug libre para ese username, resolviendo colisiones con -2, -3, etc.
+
+        Dos usuarios distintos pueden dar el mismo slug base ("Pan Casero" y
+        "pan-casero"), asi que no alcanza con normalizar: hay que chequear
+        contra los que ya existen.
+        """
+        return slug_disponible(
+            generar_slug(username),
+            lambda candidato: User.query.filter_by(slug=candidato).first() is not None,
+        )
+
+    def __repr__(self):
+        # Para debugging/logs
         return f"User:{self.username}"
-        
+
+    # Método para devolver el usuario como JSON
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "slug": self.slug,
+            "email": self.email,
+            "rol": self.rol,
+            "is_banned": self.is_banned,
+            "biography": self.biography,
+            "avatar": self.avatar,
+            "cover_image": self.cover_image,
+            "phone": self.phone,
+            "whatsapp": self.whatsapp,
+            "instagram_url": self.instagram_url,
+            "facebook_url": self.facebook_url,
+            "twitter_url": self.twitter_url,
+            "location": self.location,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "address_street": self.address_street,
+        }
+
+    # Alias más estándar para usar en la API
+    def to_dict(self):
+        return self.serialize()

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar producto" if producto else "Nuevo producto" }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 640px;">
+        <div class="auth__card">
+            <h1 class="auth__title">{{ "Editar producto" if producto else "Nuevo producto" }}</h1>
+            <p class="auth__subtitle">
+                Lo que vendés y a cuánto. Se muestra en la página de tu
+                emprendimiento; todavía no se puede comprar desde acá.
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="auth__form" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="auth__field">
+                    <label for="post_id" class="auth__label">Emprendimiento</label>
+                    <select name="post_id" id="post_id" class="auth__input" required>
+                        {% for post in posts %}
+                            <option value="{{ post.id }}"
+                                    {% if datos.post_id == post.id %}selected{% endif %}>
+                                {{ post.title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="auth__field">
+                    <label for="nombre" class="auth__label">Nombre</label>
+                    <input type="text" name="nombre" id="nombre" class="auth__input"
+                           maxlength="120" required value="{{ datos.nombre }}">
+                </div>
+
+                <div class="auth__field">
+                    <label for="descripcion" class="auth__label">Descripción corta (opcional)</label>
+                    <textarea name="descripcion" id="descripcion" class="auth__input"
+                              rows="3" maxlength="300">{{ datos.descripcion }}</textarea>
+                </div>
+
+                <div class="auth__field">
+                    <label for="precio" class="auth__label">Precio</label>
+                    <input type="text" name="precio" id="precio" class="auth__input"
+                           inputmode="decimal" required value="{{ datos.precio }}"
+                           placeholder="1500 o 1500,50">
+                </div>
+
+                <div class="auth__field">
+                    <label for="foto" class="auth__label">
+                        Foto (opcional){% if producto and producto.foto %} – reemplaza la actual{% endif %}
+                    </label>
+                    {% if producto and producto.foto %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
+                             alt="Foto de {{ producto.nombre }}"
+                             style="max-width:140px; border-radius:8px; margin-bottom:0.5rem;">
+                    {% endif %}
+                    <input type="file" name="foto" id="foto" class="auth__input"
+                           accept="image/png, image/jpeg, image/gif">
+                </div>
+
+                <div class="auth__field">
+                    <label class="auth__label" for="disponible">
+                        <input type="checkbox" name="disponible" id="disponible"
+                               {% if datos.disponible %}checked{% endif %}>
+                        Disponible
+                    </label>
+                    <small>
+                        Si lo destildás, el producto queda visible solo para vos,
+                        sin que tengas que borrarlo.
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn--primary auth__submit">
+                    {{ "Guardar cambios" if producto else "Agregar producto" }}
+                </button>
+            </form>
+
+            <p class="auth__footer">
+                Volver a <a href="{{ url_for('products.index') }}">mis productos</a>.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

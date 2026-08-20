@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Solicitudes de presupuesto – IMPULSAR{% endblock %}
+
+{% macro fila(solicitud, mostrar_cliente) %}
+    <article class="card">
+        <div class="card__body">
+            <div class="card__tags">
+                <span class="badge badge--category">{{ solicitud.estado_label }}</span>
+                <span class="badge">{{ solicitud.servicio.rubro_label }}</span>
+            </div>
+            <h3 class="card__title">
+                <a href="{{ url_for('servicios.solicitud', id=solicitud.id) }}">
+                    {{ solicitud.servicio.titulo }}
+                </a>
+            </h3>
+            <p class="card__description">
+                {% if mostrar_cliente %}
+                    De {{ solicitud.cliente.username }} · {{ solicitud.servicio.post.title }}
+                {% else %}
+                    {{ solicitud.servicio.post.title }}
+                {% endif %}
+            </p>
+            <p class="card__description">{{ solicitud.descripcion }}</p>
+        </div>
+    </article>
+{% endmacro %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Solicitudes de presupuesto</h2>
+                <p class="section__subtitle">
+                    Lo que te pidieron y lo que pediste.
+                </p>
+            </div>
+            <a href="{{ url_for('servicios.index') }}" class="btn btn--secondary">
+                Mis servicios
+            </a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <h3 class="section__title" style="font-size:1.1rem;">Recibidas</h3>
+        {% if recibidas %}
+            {# Las pendientes primero, que son las que hay que contestar. #}
+            <div class="cards-grid">
+                {% for solicitud in recibidas if solicitud.estado == estados.PENDIENTE %}
+                    {{ fila(solicitud, true) }}
+                {% endfor %}
+                {% for solicitud in recibidas if solicitud.estado != estados.PENDIENTE %}
+                    {{ fila(solicitud, true) }}
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="reviews-empty">
+                Todavía no te pidieron ningún presupuesto.
+            </p>
+        {% endif %}
+
+        <h3 class="section__title" style="font-size:1.1rem; margin-top:2rem;">Enviadas</h3>
+        {% if enviadas %}
+            <div class="cards-grid">
+                {% for solicitud in enviadas %}
+                    {{ fila(solicitud, false) }}
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="reviews-empty">
+                Todavía no pediste ningún presupuesto.
+            </p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

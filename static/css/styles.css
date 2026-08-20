@@ -1,154 +1,2612 @@
-*{
-    padding: 0;
-    margin: 0;
+/* ==========================================================================
+   TEMA (claro / oscuro)
+   --------------------------------------------------------------------------
+   Patron elegido: atributo `data-theme` en <html> ("light" | "dark").
+
+   Lo setea el script inline del <head> de base.html ANTES de que cargue esta
+   hoja, leyendo localStorage y, si no hay nada guardado, prefers-color-scheme.
+   Eso evita el parpadeo claro->oscuro al cargar (FOUC). El switch del navbar
+   solo cambia ese mismo atributo y persiste la eleccion.
+
+   Usamos atributo y no una clase (.dark) para no mezclar el estado del tema
+   con las clases de layout del documento: se lee y escribe con un unico
+   setAttribute, y en CSS los dos bloques quedan con la misma especificidad
+   (0,1,0), asi que gana el que va despues (el oscuro).
+
+   REGLA al agregar estilos nuevos: nada de colores hardcodeados de aca para
+   abajo. Si hace falta un color nuevo, se agrega como token en LOS DOS
+   bloques; si solo se define en :root, el modo oscuro queda roto en silencio.
+   ========================================================================== */
+
+:root {
+    color-scheme: light;
+
+    /* Era #6C63FF, que contra --color-on-primary (blanco) daba 4.32:1, abajo
+       del minimo AA de 4.5:1 para texto normal: el texto de todo .btn--primary
+       en modo claro. Se oscurecio lo justo para pasar -- este da 4.77:1 -- en
+       vez de mover el blanco, que ademas de tener que cambiar a un gris habria
+       tocado tambien el avatar y los iconos.
+       Los numeros salen de la formula de WCAG ((L1+0.05)/(L2+0.05) sobre la
+       luminancia relativa), no de mirarlo. El modo oscuro ya cumplia (6.9:1) y
+       no se toco. */
+    --color-primary: #665DF1;
+    /* Sigue siendo mas oscuro que el normal, asi que el hover se nota igual
+       que antes: 5.39:1 contra blanco, 1.13:1 contra el normal. */
+    --color-primary-hover: #5C55E6;
+    --color-primary-soft: #E3E0FF;
+    /* Texto/iconos que van encima del violeta solido (botones, avatar). */
+    --color-on-primary: #FFFFFF;
+
+    --color-bg: #F8F9FB;
+    --color-surface: #FFFFFF;
+    --color-surface-alt: #F3F4F6;
+    --color-image-bg: #F8F8F8;
+
+    --color-text: #1F2933;
+    --color-text-soft: #4B5563;
+    --color-muted: #6B7280;
+    --color-border: #E5E7EB;
+
+    --color-input-bg: #F9FAFB;
+    --color-input-bg-focus: #FFFFFF;
+
+    --color-hero-from: #F9FAFB;
+    --color-hero-to: #EEF2FF;
+    --color-hero-illustration: #EEF2FF;
+
+    --color-success-bg: #DCFCE7;
+    --color-success-text: #15803D;
+    --color-success-strong: #16A34A;
+
+    --color-danger-bg: #FEE2E2;
+    --color-danger-text: #B91C1C;
+    --color-danger-strong: #991B1B;
+    --color-danger-border: #FCA5A5;
+    --color-danger-surface: #FEF2F2;
+    --color-heart: #DC2626;
+
+    --color-star: #FBBF24;
+    --color-star-empty: #E5E7EB;
+
+    --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.10);
+    --shadow-light: 0 4px 12px rgba(15, 23, 42, 0.08);
+    --shadow-card: 0 8px 20px rgba(15, 23, 42, 0.06);
+    --shadow-navbar: 0 1px 4px rgba(15, 23, 42, 0.06);
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+}
+
+/* Paleta oscura: no es "todo gris invertido". Los fondos mantienen la tirada
+   violeta de IMPULSAR (azul-violeta desaturado, no negro neutro) y el primario
+   se aclara, porque el #6C63FF original sobre fondo oscuro queda apagado y con
+   poco contraste. Como el violeta claro es luminoso, el texto que va ENCIMA
+   del primario pasa a ser oscuro (--color-on-primary). */
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-primary: #9B93FF;
+    --color-primary-hover: #B3ACFF;
+    --color-primary-soft: #2E2950;
+    --color-on-primary: #16132A;
+
+    --color-bg: #141222;
+    --color-surface: #1D1A2E;
+    --color-surface-alt: #292440;
+    --color-image-bg: #16132A;
+
+    --color-text: #ECEAF7;
+    --color-text-soft: #C6C2DA;
+    --color-muted: #A29DBA;
+    --color-border: #342E4D;
+
+    --color-input-bg: #221E38;
+    --color-input-bg-focus: #2A2544;
+
+    --color-hero-from: #191630;
+    --color-hero-to: #221D3D;
+    --color-hero-illustration: #221D3D;
+
+    --color-success-bg: #14321F;
+    --color-success-text: #7EE2A8;
+    --color-success-strong: #4ADE80;
+
+    --color-danger-bg: #3A1C22;
+    --color-danger-text: #FCA5A5;
+    --color-danger-strong: #FCA5A5;
+    --color-danger-border: #7F2A34;
+    --color-danger-surface: #2C1720;
+    --color-heart: #F87171;
+
+    --color-star: #FBBF24;
+    /* Mas claro que el borde: la estrella sin marcar tiene que insinuarse para
+       que se vea que el widget tiene 5, y sobre fondo oscuro un gris apenas por
+       encima de la superficie directamente desaparece. */
+    --color-star-empty: #4A4370;
+
+    /* Sobre fondo oscuro una sombra azulada translucida no se ve: hace falta
+       negro y bastante mas opacidad para que las tarjetas sigan despegando. */
+    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.55);
+    --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.45);
+    --shadow-card: 0 8px 20px rgba(0, 0, 0, 0.40);
+    --shadow-navbar: 0 1px 4px rgba(0, 0, 0, 0.50);
+}
+
+/* RESETEO BÁSICO */
+
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
-body{
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 20px;
-}
-
-.header{
-    background-color: #377ba8;
-}
-.nav{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 90%;
-    margin: 0 auto;
-    padding: 10px 0;
-}
-.nav a{
-    text-decoration: none;
-    color: antiquewhite;
-}
-
-.nav nav{
-    display: flex;
-    align-items: center;
-}
-.nav img {
-    width: 30px;   /* ancho */
-    height: 30px;  /* alto */
-    border-radius: 50%; /* si querés que quede redondeada */
-    object-fit: cover;  /* ajusta la imagen dentro del cuadro */
-}
-
-.nav nav a{
-    margin: 0 10px;
-}
-.nav nav span{
-    margin: 0 10px 0 0;
-    color: #ccc;
-    text-transform: capitalize;
-    font-weight: 600;
-}
-
-/*Content*/
-.content{
-    max-width: 85%;
-    margin: 10px auto;
-}
-.content header{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #ccc;
-}
-
-/*MNSJ DE FLASH*/
-.flash{
-    background-color: #707070;
-    color: #fff;
-    padding: 10px;
-}
-
-/*Index - Publicaciones/blog*/
-article{
-    padding: 10px;
-}
-article header{
-    margin: 10px 0;
-    display: flex;
-    align-self: center ;
-    justify-content: space-between;
-}
-article header h1{
-    font-size: 26px;
-}
-
-article header .about{
-    font-style:italic ;
-    color: #707070;
-    font-size: 18px;
-}
-
-/*Formularios*/
-form-container {
-    display: flex;
-    justify-content: center; /* centra horizontalmente */
-    align-items: center;     /* centra verticalmente */
-    min-height: 80vh;        /* altura mínima para centrar verticalmente */
-}
-
-
-.register, .login {
-    width: 60%;          /* ocupa la mayor parte en pantallas pequeñas */
-    max-width: 500px;            /* ancho del formulario */
-    background-color: #f2f2f2; 
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    margin: 20px 0 0 0;
-    padding: 10px;
-}
-
-.login input[type=submit]:hover {
-    background-color: #2c6c97;
-    cursor: pointer
-}
-form{
-    margin: 10px 0;
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--color-text);
+    background-color: var(--color-bg);
     display: flex;
     flex-direction: column;
 }
 
-*/
-form label,
-form input,
-form textarea {
-    font-weight: 500;
-    margin: 5px 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 18px;
-    padding: 10px;
-}
-form input[type=submit]{
-    align-self: start;
-    min-width: 200px;
+main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
+/* UTILIDADES GENERALES */
 
-
-/* LOGIN */
-
-.login{
-    max-width: 30%;
+.container {
+    width: 100%;
+    max-width: 1120px;
     margin: 0 auto;
+    padding: 0 1.5rem;
 }
 
-.login input[type=submit]{
-    margin: 20px 0;
-    min-width: 100%;
-    background-color: #377ba8;
+/* NAVBAR */
+
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-navbar);
+}
+
+.navbar__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    min-height: 64px;
+    /* Referencia para centrar los links respecto al navbar entero (ver
+       .navbar__links). */
+    position: relative;
+}
+
+/* Logo */
+
+.navbar__logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.navbar__logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.75rem;
+}
+
+.navbar__logo-text {
+    font-size: 1rem;
+}
+
+.navbar__logo-image {
+    max-height: 50px; 
+    width: auto;
+    vertical-align: middle;
+}
+
+/* Links */
+
+.navbar__links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+}
+
+/* El centrado es un caso particular del navbar: solo vale cuando el menu entra
+   en el medio sin pisar los costados. Va en su propio media query, y no como un
+   undo dentro del bloque mobile, porque es una regla de escritorio y le
+   corresponde vivir con la regla que la establece.
+
+   El corte no es el de la hamburguesa (768px) sino mas arriba, y sale de una
+   cuenta, no de una preferencia. El menu esta fuera del flujo: no reserva
+   espacio, asi que nadie lo empuja y hay que garantizar el lugar a mano. Con el
+   menu de 257px centrado, a cada lado quedan (C - 257) / 2 menos el gap de
+   24px, y ahi tienen que entrar el logo (138px) de un lado y las acciones mas
+   el switch de tema (+24px de gap, +34px) del otro. Despeja en
+   C >= 421 + 2 * acciones, y el caso mas ancho es el del usuario anonimo
+   ("Acceder" + "Registrarse", 228px), que pide C >= 877, es decir 925px de
+   viewport contando el padding de 24px del container. 960px deja margen para
+   que un cambio de fuente o de copy no lo desborde de callado.
+
+   El otro lado de la cuenta es el ancho del bloque de usuario, que no se acota
+   solo: por eso .navbar__user-name esta limitado con ellipsis. Sin ese tope un
+   username largo empuja las acciones sobre el menu y lo tapa a cualquier ancho,
+   porque el container corta en 1120px y estirar la ventana ya no agranda el
+   navbar. Las dos piezas van juntas: el breakpoint asume el tope. */
+@media (min-width: 960px) {
+    /* Centrado respecto al navbar entero, no al hueco que queda entre el logo y
+       el bloque de usuario: ese hueco no esta centrado, asi que cualquier
+       reparto dentro del flujo (space-between, margin auto, un 1fr por lado)
+       correria el menu segun cuanto ocupen los costados. Fuera del flujo y
+       anclado al 50%, el centro es el del navbar y no se mueve cuando cambia el
+       ancho del nombre de usuario. */
+    .navbar__links {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* Con los links fuera del flujo quedan en la fila logo, acciones y switch de
+       tema: el space-between del contenedor dejaria las acciones en el medio,
+       encima del menu centrado. El margen automatico junta todo el aire despues
+       del logo y las manda al extremo derecho. */
+    .navbar__actions {
+        margin-left: auto;
+    }
+}
+
+.navbar__link {
+    text-decoration: none;
+    color: var(--color-muted);
+    position: relative;
+    padding-bottom: 2px;
+    transition: color 0.15s ease;
+}
+
+.navbar__link:hover {
+    color: var(--color-text);
+}
+
+.navbar__link--active {
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+.navbar__link--active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 100%;
+    height: 2px;
+    border-radius: 999px;
+    background-color: var(--color-primary);
+}
+
+/* Botones navbar */
+
+.navbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* SWITCH DE TEMA (claro / oscuro) */
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    /* Es un circulo de 34px, no una pieza elastica: sin esto el flex lo encoge
+       cuando la fila no entra y el boton queda deformado (se lo vio en 24px)
+       en vez de que se note que falta lugar. Que no ceda es lo que hace que el
+       ancho que pide el navbar sea el de verdad, que es de donde sale el
+       breakpoint de mas abajo. */
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background-color: transparent;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.15s ease;
+}
+
+.theme-toggle:hover {
+    background-color: var(--color-primary-soft);
+    border-color: var(--color-primary-soft);
+    transform: translateY(-1px);
+}
+
+/* Se muestra solo el icono de la accion disponible: en claro la luna (ir a
+   oscuro), en oscuro el sol (volver a claro). */
+.theme-toggle__icon {
+    display: none;
+}
+
+[data-theme="light"] .theme-toggle__icon--light,
+[data-theme="dark"] .theme-toggle__icon--dark {
+    display: inline;
+}
+
+/* Sin JS no hay atributo data-theme y el sitio queda en claro (el default de
+   :root): sin esto el boton se veria vacio en vez de mostrar la luna. */
+:root:not([data-theme]) .theme-toggle__icon--light {
+    display: inline;
+}
+
+/* Toggle mobile */
+
+.navbar__toggle {
+    display: none;
     border: none;
-    border-radius: 5px;
-    color: #fff;
+    background: transparent;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--color-text);
+}
+
+/* BOTONES GENERALES */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1.2rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.btn--primary {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    box-shadow: var(--shadow-light);
+}
+
+.btn--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-soft);
+    background-color: var(--color-primary-hover);
+}
+
+.btn--secondary {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    border-color: var(--color-border);
+}
+
+.btn--secondary:hover {
+    background-color: var(--color-primary-soft);
+    border-color: var(--color-primary-soft);
+}
+
+.btn--ghost {
+    background-color: transparent;
+    color: var(--color-muted);
+}
+
+.btn--ghost:hover {
+    color: var(--color-text);
+}
+
+/* HERO */
+
+.hero {
+    padding: 3.5rem 0 3rem;
+    background: linear-gradient(135deg, var(--color-hero-from) 0%, var(--color-hero-to) 100%);
+}
+
+.hero__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3rem;
+}
+
+.hero__text {
+    flex: 1 1 0%;
+}
+
+.hero__title {
+    margin: 0 0 1rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 2.4rem;
+    line-height: 1.15;
+}
+
+.hero__subtitle {
+    margin: 0 0 1.75rem;
+    color: var(--color-muted);
+    max-width: 480px;
+}
+
+.hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.hero__image {
+    flex: 1 1 0%;
+    display: flex;
+    justify-content: center;
+}
+
+/* Ilustración placeholder */
+
+.hero-illustration {
+    position: relative;
+    width: 320px;
+    height: 220px;
+    border-radius: var(--radius-lg);
+    background: var(--color-hero-illustration);
+    box-shadow: var(--shadow-light);
+    overflow: hidden;
+}
+
+.hero-illustration__card {
+    position: absolute;
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-light);
+}
+
+.hero-illustration__card--main {
+    inset: 32px 40px 60px 40px;
+}
+
+.hero-illustration__card--secondary {
+    inset: 90px 70px 20px 120px;
+    opacity: 0.9;
+}
+
+.hero-illustration__pin {
+    position: absolute;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    top: 62px;
+    right: 68px;
+    /* Sombra de marca: el halo tiene que ser del violeta del pin, no de la
+       sombra neutra de las tarjetas, asi que va hardcodeada en los dos temas. */
+    box-shadow: 0 6px 16px rgba(88, 80, 236, 0.5);
+}
+
+/* BUSCADOR */
+
+.search {
+    margin-top: -1.8rem;
+    padding-bottom: 2.5rem;
+}
+
+.search__form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background-color: var(--color-surface);
+    border-radius: 999px;
+    padding: 0.5rem 0.75rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.search__hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.search__group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.search__group--full {
+    flex: 1 1 auto;
+}
+
+.search__icon {
+    font-size: 1.1rem;
+    opacity: 0.7;
+}
+
+.search__input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.95rem;
+    background-color: transparent;
+    color: var(--color-text);
+}
+
+.search__input::placeholder {
+    color: var(--color-muted);
+}
+
+.search__button {
+    white-space: nowrap;
+}
+
+/* El checkbox "solo verificados" del buscador de servicios. No usa
+   .search__group: ese estira con flex:1 para repartir el ancho entre el select
+   y el input de texto, y aca al reves conviene que ocupe lo justo, para no
+   comerle lugar a la zona. */
+.search__check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.search__check input {
+    cursor: pointer;
+}
+
+/* SECCIONES GENERALES */
+
+.section {
+    padding: 1.5rem 0 3rem;
+}
+
+.section__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.section__title {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.3rem;
+}
+
+.section__subtitle {
+    margin: 0.35rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.section__link {
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: var(--color-primary);
+}
+
+/* GRID DE CARDS */
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+/* CARD EMPRENDIMIENTO */
+
+.card {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-soft);
+}
+
+/* CARD EMPRENDIMIENTO */
+
+.card__image-wrapper {
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+}
+
+.card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: var(--color-image-bg);
+}
+
+.card__body {
+    padding: 1rem 1.1rem 1.1rem;
+}
+
+.card__tags {
+    margin-bottom: 0.5rem;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge--category {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.badge--author {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+}
+
+/* El sello de "credenciales verificadas por un admin". Verde y no violeta para
+   que no se confunda con el badge de rubro, que es el que lleva el primario.
+   Usa los tokens de exito que ya existen en los dos temas: nada de colores
+   nuevos (ver la REGLA del encabezado de esta hoja). */
+.badge--verificado {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+/* Formularios que deben comportarse como un boton dentro de una fila
+   (por ejemplo el de eliminar, que es un form POST y no un link). */
+.form-inline {
+    display: inline;
+    margin: 0;
+}
+
+.card__title {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.card__location {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.card__rating {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* La cantidad de reseñas al lado del puntaje, y la card que todavia no tiene
+   ninguna: texto secundario, no el dato principal de la linea. Estaban con un
+   color inline (#9CA3AF) que no existia en modo oscuro. */
+.card__rating-count {
+    font-weight: 400;
+    color: var(--color-muted);
+}
+
+.card__rating--vacio {
+    font-weight: 400;
+    color: var(--color-muted);
+}
+
+.card__views {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.card__description {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+}
+
+/* SEGUIR EMPRENDEDORES */
+
+.siguiendo-lista {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0.75rem 0 0;
+    padding: 0;
+}
+
+.siguiendo-lista__item a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.siguiendo-lista__item a:hover {
+    border-color: var(--color-primary);
+}
+
+.siguiendo-lista__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* HORARIOS DE ATENCION */
+/* El estado "abierto ahora / cerrado" ya no vive aca: es un chip del hero del
+   perfil (.perfil-chip), junto con la ubicacion. */
+
+.horarios-lista {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    max-width: 320px;
+}
+
+.horarios-lista__item {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.9rem;
+}
+
+.horarios-lista__dia {
+    font-weight: 600;
+}
+
+.horarios-lista__rango {
+    color: var(--color-muted);
+}
+
+.horario-fila {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+}
+
+.horario-fila__dia {
+    min-width: 90px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.horario-fila__hora {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.horario-fila__separador {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+}
+
+.horario-fila__cerrado {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+/* EVENTOS Y FERIAS */
+
+.eventos-lista {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+}
+
+.eventos-lista__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* El recuadro con el numero grande y el mes: se lee la fecha de un vistazo
+   sin tener que parsear la linea de texto de abajo. */
+.eventos-lista__fecha {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 56px;
+    padding: 0.4rem 0;
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    line-height: 1.1;
+}
+
+.eventos-lista__dia {
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.eventos-lista__mes {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.eventos-lista__cuerpo {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.eventos-lista__titulo {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.eventos-lista__cuando,
+.eventos-lista__descripcion,
+.eventos-lista__post {
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.eventos-lista__acciones {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.eventos-lista__acciones .btn {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.8rem;
+}
+
+/* En la cartelera cada evento es una tarjeta suelta y no una fila de una lista
+   apretada: es el contenido principal de la pagina, no una seccion del perfil. */
+.eventos-lista--cartelera .eventos-lista__item {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    /* Reemplaza el border-bottom de separador de la lista del perfil: aca cada
+       item es una tarjeta cerrada, no una fila. */
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-soft);
+}
+
+.eventos-lista--cartelera .eventos-lista__titulo a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.eventos-lista--cartelera .eventos-lista__titulo a:hover {
+    text-decoration: underline;
+}
+
+/* Los ya vencidos se ven apagados, para que no compitan con los proximos. */
+.eventos-lista--pasados .eventos-lista__titulo {
+    font-weight: 500;
+    color: var(--color-muted);
+}
+
+/* GALERIA DE FOTOS DEL EMPRENDIMIENTO */
+
+.galeria-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.5rem;
+    padding: 0.5rem;
+}
+
+.galeria-grid__item {
+    display: block;
+    overflow: hidden;
+    border-radius: 8px;
+    aspect-ratio: 1 / 1;
+}
+
+.galeria-grid__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+
+.galeria-grid__item:hover img {
+    transform: scale(1.05);
+}
+
+.galeria-miniaturas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.galeria-miniatura {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+}
+
+/* FOOTER */
+
+.footer {
+    padding: 1.75rem 0;
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+}
+
+.footer__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.footer__link {
+    text-decoration: none;
+    color: var(--color-muted);
+}
+
+.footer__link:hover {
+    color: var(--color-text);
+}
+
+/* "Sobre IMPULSAR" y "Contacto" ahora se navegan desde aca, asi que el pie
+   tiene que poder decir en cual de las dos estas parado. Sin subrayado ni
+   barrita como el navbar: es un pie, no la navegacion principal. */
+.footer__link--active {
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+    .hero__content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hero__image {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .hero-illustration {
+        width: 100%;
+        max-width: 320px;
+    }
+}
+
+/* === INICIO DE CAMBIOS RESPONSIVE === */
+
+/* El navbar corta mas arriba que el resto del responsive, y por eso tiene su
+   propio media query en vez de compartir el de 768px de aca abajo.
+
+   La cuenta, medida en Chromium: logo 138px + menu 344px + acciones 229px +
+   switch de tema 34px, mas tres gaps de 24px y los 48px de padding del
+   container, dan 865px. El caso que manda es el del visitante anonimo, donde
+   las acciones son dos botones ("Acceder" + "Registrarse") y ocupan 229px
+   contra los 133px del bloque de usuario logueado: por eso el problema se veia
+   sin sesion y no con ella.
+
+   Con la hamburguesa cortando en 768px, esa fila se mostraba desde 769px sin
+   lugar donde ponerla. De 841px para abajo desbordaba el viewport y le metia
+   scroll horizontal a toda la pagina; entre 841px y 864px no desbordaba pero
+   se comia el padding del container hasta pegar el switch al borde.
+
+   Se redondea a 879px y no a 865px por lo mismo que el breakpoint de 960px
+   redondea su cuenta: un cambio de copy en los botones o de fuente no tiene
+   que volver a abrir el agujero de callado.
+
+   Ojo que el numero de arriba (960px) mide otra cosa y no se toca: es a partir
+   de donde el menu se puede centrar respecto al navbar entero sin pisar los
+   costados. Entre 880px y 959px el menu va en el flujo, como siempre. */
+@media (max-width: 879px) {
+    .navbar__content {
+        flex-wrap: wrap; /* Permite que los items bajen */
+    }
+
+    .navbar__links,
+    .navbar__actions {
+        /* Ocultos por defecto */
+        visibility: hidden;
+        max-height: 0;
+        overflow: hidden;
+        
+        /* Estilos de layout */
+        display: flex;
+        flex-direction: column;
+        width: 100%; /* Ocupan todo el ancho */
+        order: 3; /* Se van al final */
+        align-items: flex-start; /* Alineamos a la izquierda */
+        padding: 0;
+        gap: 0; /* Reseteamos gaps */
+
+        /* Transición */
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* Estilos para los links y botones dentro del menú */
+    .navbar__links .navbar__link,
+    .navbar__actions .btn {
+        width: 100%;
+        text-align: left;
+        padding: 0.75rem 0.5rem; /* Ajustamos padding para que quede alineado */
+        border-radius: 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .navbar__actions .btn {
+        padding: 0.75rem 0.5rem;
+        justify-content: flex-start;
+    }
+    .navbar__actions .btn--ghost {
+         border-bottom: none;
+    }
+
+    /* Ocultamos el '::after' del link activo en mobile */
+    .navbar__link--active::after {
+        display: none;
+    }
+    /* Estilo del link activo en mobile */
+    .navbar__link--active {
+        background-color: var(--color-primary-soft);
+        color: var(--color-primary);
+    }
+
+    .navbar__toggle {
+        display: block;
+        order: 2; /* Botón de hamburguesa va segundo */
+    }
+
+    /* Mismo order que la hamburguesa: quedan los dos en la fila de arriba, en
+       el orden del HTML (tema, despues hamburguesa), mientras los links y las
+       acciones se van a la fila de abajo con order 3. Asi el switch sigue
+       visible en mobile aunque el menu este cerrado. */
+    .theme-toggle {
+        order: 2;
+        margin-left: auto;
+        margin-right: 0.5rem;
+    }
+
+    /* El logo va primero */
+    .navbar__logo {
+        order: 1;
+    }
+
+    /* --- ESTADO ABIERTO (Togglenado por JS) --- */
+    .navbar--mobile-open .navbar__links,
+    .navbar--mobile-open .navbar__actions {
+        visibility: visible;
+        max-height: 100vh; /* Alto máximo para que se vea */
+        padding: 0.5rem 0;
+        gap: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero {
+        padding: 2.5rem 0 2rem;
+    }
+
+    .hero__title {
+        font-size: 2rem;
+    }
+
+    .search__form {
+        flex-direction: column;
+        align-items: stretch;
+        border-radius: var(--radius-lg);
+    }
+
+    .search__button {
+        width: 100%;
+    }
+
+    .section__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .footer__content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+/* === FIN DE CAMBIOS RESPONSIVE === */
+
+
+/* =========================
+PÁGINAS DE AUTENTICACIÓN
+========================= */
+
+.auth {
+    padding: 3rem 1.5rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+.auth__container {
+    display: flex;
+    justify-content: center;
+}
+
+.auth__card {
+    width: 100%;
+    max-width: 420px;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    padding: 2rem 2.25rem;
+}
+
+.auth__title {
+    margin: 0 0 0.5rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.5rem;
+}
+
+.auth__subtitle {
+    margin: 0 0 1.5rem;
+    color: var(--color-muted);
+    font-size: 0.95rem;
+}
+
+.auth__messages {
+    margin-bottom: 1rem;
+}
+
+/* Es el unico estilo de flash message del sitio: todas las vistas renderizan
+   get_flashed_messages() con esta clase, asi que alcanza con tematizarla aca. */
+.auth__alert {
+    padding: 0.6rem 0.8rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    font-size: 0.85rem;
+}
+
+.auth__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.auth__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.auth__label {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.auth__input {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    padding: 0.6rem 0.75rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    outline: none;
+    color: var(--color-text);
+    background-color: var(--color-input-bg);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.auth__input::placeholder {
+    color: var(--color-muted);
+}
+
+.auth__input:focus {
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+    box-shadow: 0 0 0 1px var(--color-primary-soft);
+}
+
+textarea.auth__input {
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 120px;
 }
 
 
+.auth__submit {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.auth__footer {
+    margin-top: 1.25rem;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+}
+
+.auth__footer a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.auth__footer a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .auth__card {
+        padding: 1.5rem 1.5rem;
+    }
+}
+/* =========================
+    MENÚ DE USUARIO EN NAVBAR
+    ========================= */
+
+.navbar__user {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.navbar__user-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
+}
+
+.navbar__user-toggle:hover {
+    background-color: var(--color-primary-soft);
+    box-shadow: var(--shadow-light);
+    transform: translateY(-1px);
+}
+
+.navbar__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.navbar__user-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    /* El username llega hasta 50 caracteres (MAX_USERNAME_LENGTH), y sin tope
+       arrastra todo el bloque de acciones hacia el centro hasta tapar el menu.
+       No se arregla con la ventana: el container corta en 1120px, asi que a
+       partir de ahi agrandar la pantalla no da mas lugar. Con el tope, el bloque
+       de usuario nunca supera al de "Acceder / Registrarse", que es el ancho que
+       asume el breakpoint del centrado. El nombre completo sigue estando en el
+       perfil. */
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.navbar__user-caret {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+/* Dropdown */
+
+.user-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    min-width: 160px;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft);
+    padding: 0.4rem 0;
+    display: none; /* se muestra con la clase .user-menu--open */
+    z-index: 30;
+}
+
+.user-menu--open {
+    display: block;
+}
+
+.user-menu__item {
+    display: block;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: var(--color-text);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.user-menu__item:hover {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.user-menu__item--danger {
+    color: var(--color-danger-text);
+}
+
+.user-menu__item--danger:hover {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-strong);
+}
+
+.badge--notif {
+    display: inline-block;
+    min-width: 1.1rem;
+    padding: 0.05rem 0.35rem;
+    margin-left: 0.35rem;
+    border-radius: 999px;
+    /* Rojo fijo en los dos temas: es un indicador de alerta, no una superficie. */
+    background-color: #DC2626;
+    color: #FFFFFF;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.3;
+}
+
+/* Responsive: en mobile, que no rompa el layout.
+
+   879px y no 768px: el corte del navbar es el de la hamburguesa, que se mudo a
+   879 en 6bcb310 cuando se midio que la fila de escritorio pide 865px. Estas
+   dos reglas se habian quedado en el 768 viejo, asi que entre 769 y 879 el
+   bloque de usuario ya estaba dentro del desplegable pero seguia con los
+   valores de escritorio. El 768 que queda mas arriba en el archivo es otro
+   bloque, el del hero, el buscador y el footer, que si corta ahi a proposito. */
+@media (max-width: 879px) {
+    .navbar__user-toggle {
+        padding: 0.35rem 0.5rem;
+    }
+
+    /* Aca el tope de 9rem se puede soltar, y es el unico lado donde se puede.
+       Lo que ese tope protege (ver .navbar__user-name) es el menu centrado, que
+       esta fuera del flujo y por eso no empuja a nadie: un nombre largo se le
+       encima. Pero el centrado solo existe de 960px para arriba. En mobile el
+       bloque de acciones es una columna de ancho completo dentro del desplegable,
+       asi que el nombre tiene toda la fila para el y no hay nada a lo que
+       encimarse.
+
+       Sigue habiendo tope, en vw y no en rem, porque el username llega a 50
+       caracteres (MAX_USERNAME_LENGTH): asi el ellipsis se mantiene y el corte
+       acompaña al ancho real del telefono en vez de asumir uno. Deja lugar para
+       el avatar y el caret en cualquier pantalla. */
+    .navbar__user-name {
+        max-width: 60vw;
+    }
+}
+.about {
+    max-width: 720px;
+    font-size: 0.95rem;
+    color: var(--color-text);
+}
+
+.about__text {
+    margin: 0 0 0.75rem;
+    line-height: 1.6;
+}
+.contact {
+    max-width: 700px;
+    font-size: 0.95rem;
+    color: var(--color-text);
+}
+
+.contact__text {
+    margin: 0 0 1rem;
+    line-height: 1.6;
+}
+
+.contact__info {
+    margin: 1.5rem 0;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.contact__email {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+    background-color: var(--color-primary-soft);
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
+}
+
+.contact__email:hover {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    transform: translateY(-2px);
+}
+.legal {
+    max-width: 720px;
+    font-size: 0.95rem;
+    color: var(--color-text);
+}
+
+.legal__text {
+    margin: 0 0 0.9rem;
+    line-height: 1.7;
+}
+
+.legal__subtitle {
+    margin: 1.2rem 0 0.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+/* RATING ESTRELLAS */
+
+.rating {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 0.15rem;
+    font-size: 1.4rem;
+}
+
+.rating input {
+    display: none;
+}
+
+.rating label {
+    cursor: pointer;
+    color: var(--color-star-empty); /* estrella sin marcar */
+    transition: color 0.15s ease;
+}
+
+/* hover y seleccionado */
+.rating input:checked ~ label,
+.rating label:hover,
+.rating label:hover ~ label {
+    color: var(--color-star); /* amarillo tipo estrella */
+}
+
+/* 
+    PÁGINA DE DETALLE (BLOG/DETAIL) */
+
+.post-detail-card {
+    margin-bottom: 2.5rem;
+    /* La clase .card ya aplica fondo, shadow y radius */
+}
+
+.post-author-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.post-author-link:hover {
+    text-decoration: underline;
+}
+
+.post-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+}
+.post-rating__stars {
+    font-size: 1.1rem;
+    color: var(--color-star);
+}
+.post-rating__score {
+    font-weight: 600;
+    color: var(--color-text);
+}
+.post-rating__count {
+    color: var(--color-muted);
+}
+
+.card-divider {
+    margin: 1.25rem 0;
+    border: none;
+    border-top: 1px solid var(--color-border);
+}
+
+.post-body-content {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text);
+    white-space: pre-wrap; /* Respeta saltos de línea y ajusta al contenedor */
+}
+
+.post-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* --- Sección de Reseñas --- */
+.reviews-section,
+.review-form-section {
+    margin-bottom: 2.5rem;
+}
+
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.review-card {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-light);
+    border: 1px solid var(--color-border);
+}
+
+.review-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    gap: 1rem;
+}
+
+.review-card__author {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.review-card__edited {
+    font-size: 0.8rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--color-muted);
+}
+
+.review-card__stars {
+    color: var(--color-star); /* Amarillo estrella */
+    font-size: 1.1rem;
+    flex-shrink: 0; /* Evita que las estrellas se rompan */
+}
+
+.review-card__comment {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-text-soft);
+    line-height: 1.5;
+}
+
+.review-card__comment--empty {
+    color: var(--color-muted);
+    font-style: italic;
+}
+
+.review-card__reply {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--color-bg);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.review-card__reply strong {
+    color: var(--color-text);
+}
+
+.review-card__reply p {
+    margin: 0.25rem 0 0;
+    color: var(--color-text-soft);
+    line-height: 1.5;
+}
+
+.review-card__reply-form {
+    margin-top: 0.75rem;
+}
+
+.review-card__reply-form textarea {
+    width: 100%;
+}
+
+.reviews-empty {
+    margin-top: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+/* --- Formulario de Reseña --- */
+.review-form-section .auth__form {
+    margin-top: 1rem;
+    /* Usamos la .auth__card pero sin el fondo/sombra */
+    max-width: 100%;
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+}
+
+.review-form-section .auth__field .rating {
+    /* Alinea las estrellas del formulario */
+    justify-content: flex-start; 
+}
+
+.review-form-info {
+    font-size: 0.9rem;
+    color: var(--color-muted);
+    margin-top: 0.5rem;
+}
+.review-form-info a {
+    color: var(--color-primary);
+}
+
+/* --- Link de Volver --- */
+.back-link {
+    display: inline-block;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+.back-link:hover {
+    text-decoration: underline;
+}
+/* ==========================================================================
+   PERFIL
+   --------------------------------------------------------------------------
+   Jerarquia de la vista, de arriba abajo y de izquierda a derecha:
+
+     1. Hero: quien es, donde queda, si atiende ahora y como contactarlo.
+     2. Columna principal: lo que ofrece (el catalogo) y cuando (los eventos).
+        Para el dueño, arriba de todo, su panel privado de estadisticas.
+     3. Columna lateral: datos de consulta (contacto, horarios, ubicacion) y
+        lo plegado: la semana completa de horarios y "Sigo a".
+
+   Antes era una sola columna angosta, y no por decision de diseño:
+   .profile-container tenia `max-width` + `margin: … auto` dentro del flex
+   column de <main>, y un item flex con margenes automaticos en el eje
+   transversal deja de estirarse y se encoge al contenido. El perfil terminaba
+   midiendo lo que midiera su texto (537px en un perfil, ~900 en otro, 465 en
+   un viewport de 390) y la grilla de emprendimientos nunca podia armar mas de
+   una columna. Por eso el ancho ahora sale de un `width: 100%` explicito y no
+   de un margen automatico.
+   ========================================================================== */
+
+.perfil {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* --- 1. Hero: identidad --- */
+
+.perfil-hero {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.perfil-hero__portada {
+    background-color: var(--color-surface-alt);
+}
+
+.perfil-hero__portada-img {
+    display: block;
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Avatar - identidad - acciones. El avatar pisa la portada con el margen
+   negativo, y las acciones quedan a la derecha en la misma linea que el
+   nombre: son lo segundo que se busca despues de saber de quien es el perfil.
+
+   Flex con wrap y no una grilla de tres columnas: la grilla le daba a las
+   acciones su ancho de contenido siempre, y la columna del medio se comia
+   todo el faltante. Un perfil ajeno con cuatro botones (WhatsApp, Seguir,
+   Ver reseñas y compartir) pide 377px de acciones, asi que a 769px la
+   identidad quedaba en 118px y partia el nombre; recien se normalizaba
+   pasados los 1000px, y el ancho exacto dependia de cuantos botones
+   hubiera. Aca las acciones bajan solas a la linea de abajo cuando la
+   identidad no entra en su base de 20rem, sin numeros atados al caso. */
+.perfil-hero__cuerpo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 0 2rem 1.75rem;
+}
+
+.perfil-hero__avatar {
+    flex: 0 0 auto;
+    width: 112px;
+    height: 112px;
+    margin-top: -56px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--color-surface);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-light);
+}
+
+.perfil-hero__avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* La base de 20rem es el ancho minimo con el que el nombre y los chips se
+   leen sin partirse: si no entra, wrapean las acciones y la identidad se
+   queda con la linea entera. Medido arriba de 768px (que es donde vale este
+   regimen, el de las tres piezas en linea con wrap), la identidad no baja de
+   321px con ninguna combinacion de botones. De 768px para abajo el hero ya
+   esta en columna y la identidad ocupa el ancho de la tarjeta, que es menos
+   que eso y esta bien que lo sea: 246px a 320px de viewport. */
+.perfil-hero__identidad {
+    flex: 1 1 20rem;
+    padding-top: 1.25rem;
+    min-width: 0;
+}
+
+.perfil-hero__nombre {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+}
+
+.perfil-hero__rol {
+    margin: 0.15rem 0 0;
+    font-size: 0.95rem;
+    color: var(--color-muted);
+}
+
+.perfil-hero__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+/* Ubicacion y estado de atencion como chips en una sola fila: antes eran dos
+   parrafos sueltos, uno arriba del otro, cada uno con su propio estilo. */
+.perfil-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+}
+
+.perfil-chip--abierto {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+    font-weight: 600;
+}
+
+.perfil-chip--cerrado {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    font-weight: 600;
+}
+
+.perfil-hero__bio {
+    margin: 0.9rem 0 0;
+    max-width: 62ch;
+    line-height: 1.6;
+    color: var(--color-text-soft);
+}
+
+.perfil-hero__bio--vacia {
+    color: var(--color-muted);
+    font-style: italic;
+}
+
+/* margin-left: auto es para cuando las acciones bajan solas a la segunda
+   linea: ahi las mantiene pegadas a la derecha. Cuando comparten linea con
+   la identidad no hace nada, porque el flex-grow de la identidad ya se comio
+   todo el espacio libre antes de que se repartan los margenes auto. */
+.perfil-hero__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding-top: 1.25rem;
+    margin-left: auto;
+}
+
+.perfil-hero__acciones form {
+    margin: 0;
+}
+
+/* --- 2. Cuerpo: principal + lateral --- */
+
+.perfil-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+    gap: 1.5rem;
+}
+
+.perfil-layout__principal,
+.perfil-layout__lateral {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+}
+
+/* Cada seccion es una tarjeta cerrada, en vez de bloques apilados separados
+   solo por un borde superior: se ve donde empieza y termina cada cosa. */
+.perfil-card {
+    padding: 1.5rem;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+/* Lo que solo ve el dueño lleva un filo violeta: se distingue de un vistazo
+   que ese bloque no es parte del perfil publico. */
+.perfil-card--propia {
+    border-left: 3px solid var(--color-primary);
+}
+
+.perfil-card__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.1rem;
+}
+
+.perfil-card__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+/* Tarjetas sin fila de acciones (Contacto, Ubicacion): el titulo se separa
+   solo del contenido. */
+.perfil-card > .perfil-card__titulo {
+    margin-bottom: 0.9rem;
+}
+
+.perfil-badge {
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.perfil-vacio {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+}
+
+.perfil-vacio a {
+    color: var(--color-primary);
+}
+
+/* Plegables (semana completa de horarios, eventos pasados, "Sigo a"): lo que
+   es de consulta no ocupa lugar hasta que alguien lo pide. */
+.perfil-plegable {
+    margin: 0;
+}
+
+.perfil-plegable__resumen {
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-primary);
+}
+
+.perfil-plegable[open] .perfil-plegable__resumen {
+    margin-bottom: 0.6rem;
+}
+
+/* --- Panel de estadisticas (solo el dueño) --- */
+
+.perfil-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+}
+
+.perfil-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.85rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-alt);
+}
+
+.perfil-stat__valor {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-primary);
+}
+
+.perfil-stat__label {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+/* --- Lateral: contacto, redes, mapa --- */
+
+.perfil-dato {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.92rem;
+    color: var(--color-text-soft);
+    text-decoration: none;
+}
+
+.perfil-dato:last-child {
+    margin-bottom: 0;
+}
+
+a.perfil-dato:hover {
+    color: var(--color-primary);
+}
+
+.perfil-redes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+}
+
+/* El mapa en la lateral es una referencia, no el contenido: mas bajo que el
+   de la ficha del emprendimiento, que si ocupa el ancho de la pagina. */
+.perfil-layout__lateral #map {
+    height: 200px;
+}
+
+/* El catalogo hereda .card/.cards-grid del resto del sitio; lo unico propio
+   es que el titulo entero sea el link, sin subrayado. */
+.perfil .card__title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.perfil .card__title a:hover {
+    color: var(--color-primary);
+}
+
+/* --- Responsive del perfil ---
+   Dos saltos, cada uno por lo que se rompe primero:
+
+   960px: la lateral fija de 320px deja de entrar al lado de la principal
+   (minmax(0,1fr) + 320px empieza a apretar las cards del catalogo a menos de
+   lo que miden), asi que baja abajo y todo pasa a una columna.
+
+   768px: el hero pasa a una sola columna (avatar arriba, identidad debajo y
+   las acciones al final). Que las acciones bajen de linea antes que eso no
+   depende de este salto: lo resuelve el wrap del propio .perfil-hero__cuerpo,
+   que las manda abajo apenas la identidad no entra en 20rem. Este breakpoint
+   es el otro paso, el de apilar tambien el avatar y arrancar de la izquierda. */
+
+@media (max-width: 960px) {
+    .perfil-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .perfil {
+        padding: 1.25rem 1rem 2.5rem;
+        gap: 1.25rem;
+    }
+
+    .perfil-hero__portada-img {
+        height: 150px;
+    }
+
+    .perfil-hero__cuerpo {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0 1.25rem 1.5rem;
+    }
+
+    /* En columna la base de 20rem no aplica: cada bloque ocupa el ancho. */
+    .perfil-hero__identidad {
+        flex: 0 0 auto;
+        align-self: stretch;
+    }
+
+    .perfil-hero__avatar {
+        width: 88px;
+        height: 88px;
+        margin-top: -44px;
+    }
+
+    .perfil-hero__identidad,
+    .perfil-hero__acciones {
+        padding-top: 0;
+    }
+
+    .perfil-hero__nombre {
+        font-size: 1.5rem;
+    }
+
+    .perfil-hero__acciones {
+        justify-content: flex-start;
+        margin-left: 0;
+    }
+
+    .perfil-card {
+        padding: 1.25rem;
+    }
+
+    /* Editar/Eliminar de cada evento se llevaban media fila y dejaban el titulo
+       y la descripcion en una columna de dos palabras de ancho: bajan a su
+       propia linea. Va acotado a .perfil y no a .eventos-lista en general
+       porque la cartelera de /eventos es otra vista y no es esta tanda. */
+    .perfil .eventos-lista__item {
+        flex-wrap: wrap;
+    }
+
+    /* base 0 y no auto: con auto el cuerpo pide su ancho de contenido, no entra
+       al lado del recuadro de la fecha y se lleva la fila entera el solo. */
+    .perfil .eventos-lista__cuerpo {
+        flex: 1 1 0;
+    }
+
+    .perfil .eventos-lista__acciones {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    /* La sangria alinea los botones con el texto, salteando el recuadro de la
+       fecha. Va atada a que ese recuadro exista de verdad (el ~ lo exige):
+       los eventos pasados no lo llevan, y con la sangria suelta quedaban
+       corridos 72px contra nada. */
+    .perfil .eventos-lista__fecha ~ .eventos-lista__acciones {
+        padding-left: calc(56px + 1rem);
+    }
+}
+
+/* La accion principal (WhatsApp, Seguir, Editar perfil) ocupa el ancho
+   completo, que es lo que se toca con el pulgar; las secundarias y el boton de
+   compartir se acomodan solos en la fila de abajo. */
+@media (max-width: 480px) {
+    .perfil-hero__acciones,
+    .perfil-hero__acciones form {
+        width: 100%;
+    }
+
+    .perfil-hero__acciones .btn--primary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .perfil-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
 
 
+/*  Redes Sociales  */
+/* El contenedor propio del perfil ahora es .perfil-redes, en la tarjeta de
+   contacto de la columna lateral; aca queda solo el boton en si. */
+.social-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--color-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-light);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.social-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft);
+}
+
+.social-icon img {
+    width: 55%; /* 24px aprox */
+    height: 55%;
+    object-fit: contain;
+}
+
+.social-icon.twitter:hover {
+    background-color: #1DA1F2;
+}
+
+.social-icon.instagram:hover {
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+}
+
+.social-icon.facebook:hover {
+    background-color: #1877F2;
+}
+
+/* Override global de .section__header que habia nacido para la seccion de
+   emprendimientos del perfil. El perfil ya no lo usa (arma sus tarjetas con
+   .perfil-card), pero se queda porque en el camino se lo comieron todas las
+   demas paginas: home, blog, eventos, mensajes y el panel de admin renderizan
+   sus cabeceras con este padding y este borde. Sacarlo es una tanda aparte,
+   con esas vistas a la vista. */
+.section__header {
+    padding: 2rem 2rem 1.5rem;
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+}
+
+/* === Sección Mapa === */
+.profile-map-section {
+    padding: 2rem;
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+}
+
+.profile-map-section h2 {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.3rem;
+    color: var(--color-text);
+    /* CORRECCIÓN: Margen inferior más pequeño para que la dirección no esté tan separada */
+    margin: 0 0 0.5rem 0; 
+    text-align: left;
+}
+
+/* CLASE NUEVA para el texto de la dirección */
+.map-address-text {
+    font-size: 0.95rem;
+    color: var(--color-muted);
+    /* CORRECCIÓN: Aseguramos que el texto tenga espacio debajo para el mapa */
+    margin: 0 0 1.5rem 0; 
+    text-align: left;
+}
+
+#map {
+    width: 100%;
+    height: 300px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-light);
+}
+/* =============================
+   PAGINAS DE ERROR (404 / 500)
+   ============================= */
+
+.error-page {
+    max-width: 480px;
+    margin: 3rem auto;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-light);
+}
+
+.error-page__code {
+    margin: 0;
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-primary);
+}
+
+.error-page__title {
+    margin: 0.75rem 0 0.5rem;
+    font-size: 1.35rem;
+}
+
+.error-page__text {
+    margin: 0 0 1.5rem;
+    color: var(--color-muted);
+}
+
+.error-page__actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* =============================
+   PAGINACION
+   ============================= */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.pagination__link {
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.pagination__link:hover {
+    background-color: var(--color-primary-soft);
+    border-color: var(--color-primary-soft);
+}
+
+.pagination__link--disabled {
+    color: var(--color-muted);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.pagination__status {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+/* === Chat === */
+.chat-inbox {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.chat-inbox__item {
+    display: block;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--shadow-light);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.chat-inbox__item:hover {
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-1px);
+}
+
+.chat-inbox__info {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.95rem;
+}
+
+.chat-inbox__with {
+    color: var(--color-muted);
+    font-weight: 400;
+}
+
+.chat-inbox__preview {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.chat-historial {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 60vh;
+    overflow-y: auto;
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.chat-message {
+    max-width: 75%;
+    padding: 0.6rem 0.9rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg);
+}
+
+.chat-message--mine {
+    align-self: flex-end;
+    background-color: var(--color-primary-soft);
+}
+
+.chat-message--theirs {
+    align-self: flex-start;
+}
+
+.chat-message__body {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    white-space: pre-wrap;
+}
+
+.chat-message__meta {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.75rem;
+    color: var(--color-muted);
+}
+
+.chat-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+    margin-top: 1rem;
+}
+
+.chat-form textarea {
+    flex-grow: 1;
+}
+
+/* === Favoritos === */
+.favorite-form {
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.favorite-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.3rem;
+    line-height: 1;
+    padding: 0.15rem;
+    color: var(--color-muted);
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.favorite-btn:hover {
+    transform: scale(1.15);
+}
+
+.favorite-btn--active {
+    color: var(--color-heart);
+}
+
+/* === Compartir === */
+.share-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0.15rem 0.3rem;
+    border-radius: var(--radius-sm);
+    color: var(--color-muted);
+    transition: transform 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.share-btn:hover {
+    transform: scale(1.1);
+    color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+}
+
+.share-btn--copied {
+    color: var(--color-success-strong);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* === Panel de administrador === */
+.admin-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-metric {
+    flex: 1 1 160px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    text-align: center;
+    box-shadow: var(--shadow-light);
+}
+
+.admin-metric--alert {
+    border-color: var(--color-danger-border);
+    background-color: var(--color-danger-surface);
+}
+
+.admin-metric__value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.admin-metric__label {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.admin-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.admin-table-wrapper {
+    overflow-x: auto;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-light);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.admin-table th {
+    color: var(--color-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.admin-badge--ok {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.admin-badge--danger {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-strong);
+}
+
+/* === Reportar contenido === */
+.report-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    text-decoration: none;
+}
+
+.report-link:hover {
+    color: var(--color-danger-strong);
+    text-decoration: underline;
+}
 
 
+/* === Utilidades de texto ===
+   Una sola, y existe por un motivo puntual: siete templates escribian
+   style="color:#9CA3AF" a mano. Ese gris es fijo, asi que en modo oscuro
+   quedaba con el contraste de otro tema; --color-muted si cambia en los dos.
+   Ver la REGLA del encabezado de esta hoja. */
+.text-muted {
+    color: var(--color-muted);
+}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios – Admin – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Usuarios</h2>
+                <p class="section__subtitle">{{ usuarios|length }} usuarios registrados.</p>
+            </div>
+            <a href="{{ url_for('admin.dashboard') }}" class="section__link">← Volver al panel</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="admin-table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                        <tr>
+                            <td><a href="{{ url_for('profile.view_profile', slug=u.slug) }}">{{ u.username }}</a></td>
+                            <td>{{ u.email }}</td>
+                            <td>{{ u.rol }}</td>
+                            <td>
+                                {% if u.is_banned %}
+                                    <span class="admin-badge admin-badge--danger">Baneado</span>
+                                {% else %}
+                                    <span class="admin-badge admin-badge--ok">Activo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.rol != Roles.ADMIN %}
+                                    <form method="post" action="{{ url_for('admin.toggle_ban', user_id=u.id) }}"
+                                        onsubmit="return confirm('¿Seguro que querés {{ 'desbanear' if u.is_banned else 'banear' }} a {{ u.username }}?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn--ghost" style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                            {{ 'Desbanear' if u.is_banned else 'Banear' }}
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted" style="font-size:0.85rem;">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

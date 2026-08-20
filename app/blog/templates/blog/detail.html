@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} – Emprendimiento{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 900px;">
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="card post-detail-card">
+            {% set galeria = post.galeria %}
+            {% if galeria %}
+                <div class="card__image-wrapper">
+                    <img
+                        src="{{ url_for('static', filename='uploads/' ~ galeria[0]) }}"
+                        alt="Imagen de {{ post.title }}"
+                        class="card__image"
+                    >
+                </div>
+                {# El resto de la galeria va abajo de la principal, en grilla. #}
+                {% if galeria|length > 1 %}
+                    <div class="galeria-grid">
+                        {% for foto in galeria[1:] %}
+                            <a href="{{ url_for('static', filename='uploads/' ~ foto) }}"
+                               target="_blank" rel="noopener noreferrer" class="galeria-grid__item">
+                                <img
+                                    src="{{ url_for('static', filename='uploads/' ~ foto) }}"
+                                    alt="Foto {{ loop.index + 1 }} de {{ post.title }}"
+                                    loading="lazy"
+                                >
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endif %}
+            
+            <div class="card__body">
+                <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <span class="badge badge--category">{{ post.category_label }}</span>
+                    <div style="display:flex; gap:0.35rem; align-items:center;">
+                        {% include "partials/_compartir_boton.html" %}
+                        {% if g.user %}
+                            {% include "partials/_favorito_boton.html" %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <h1 class="card__title" style="font-size:1.6rem;">{{ post.title }}</h1>
+                
+                <p class="card__location">
+                    Publicado por 
+                    <a href="{{ url_for('profile.view_profile', slug=author.slug) }}" class="post-author-link">
+                        {{ author.username }}
+                    </a>
+                </p>
+
+                <div class="post-rating">
+                    {% if avg_rating %}
+                        <span class="post-rating__stars">⭐</span> 
+                        <span class="post-rating__score">{{ avg_rating }} / 5</span>
+                        <span class="post-rating__count">(promedio de {{ reviews|length }} reseña{% if reviews|length != 1 %}s{% endif %})</span>
+                    {% else %}
+                        <span class="post-rating__count">Aún no hay reseñas.</span>
+                    {% endif %}
+                </div>
+
+                <hr class="card-divider">
+
+                <div class="post-body-content">
+                    {{ post.body }}
+                </div>
+
+                {% if post.latitude and post.longitude %}
+                <section class="profile-map-section">
+                    <h2>Ubicación</h2>
+                    
+                    <p class="map-address-text">
+                        {{ post.address_street }}
+                    </p>
+                    
+                    <div id="map"></div>
+                </section>
+                {% endif %}
+                {% if g.user and g.user.id == post.author %}
+                    <div class="post-actions">
+                        <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--secondary">
+                            Editar
+                        </a>
+                        <form method="post"
+                            action="{{ url_for('blog.delete', id=post.id) }}"
+                            class="form-inline"
+                            onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn--ghost">
+                                Eliminar
+                            </button>
+                        </form>
+                    </div>
+                {% elif g.user %}
+                    <div class="post-actions">
+                        <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id) }}" class="btn btn--primary">
+                            Escribirle al emprendedor
+                        </a>
+                        <a href="{{ url_for('blog.report', tipo='post', target_id=post.id) }}" class="report-link">
+                            Reportar
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# El catalogo. La vista ya filtro los no disponibles cuando mira un
+           visitante, asi que aca no hace falta volver a chequearlo: lo que
+           llega es lo que se puede ver. #}
+        {% if productos or es_dueño %}
+        <section class="products-section">
+            <div class="section__header">
+                {# "Qué vende" y no "Catálogo" a secas: al lado hay una seccion
+                   de servicios ("Qué hace"), y las dos son catalogo. #}
+                <h2 class="section__title">Qué vende</h2>
+                {% if es_dueño %}
+                    <a href="{{ url_for('products.index') }}" class="btn btn--secondary"
+                       style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                        Editar catálogo
+                    </a>
+                {% endif %}
+            </div>
+
+            {% if productos %}
+                <div class="cards-grid">
+                    {% for producto in productos %}
+                        <article class="card product-card">
+                            {% if producto.foto %}
+                                <div class="card__image-wrapper">
+                                    <img
+                                        src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
+                                        alt="Foto de {{ producto.nombre }}"
+                                        class="card__image"
+                                        loading="lazy"
+                                    >
+                                </div>
+                            {% endif %}
+                            <div class="card__body">
+                                <h3 class="card__title">{{ producto.nombre }}</h3>
+                                <p class="card__price" style="font-weight:600;">
+                                    {{ producto.precio | precio }}
+                                    {% if not producto.disponible %}
+                                        <span class="badge">Sin stock (solo lo ves vos)</span>
+                                    {% endif %}
+                                </p>
+                                {% if producto.descripcion %}
+                                    <p class="card__description">{{ producto.descripcion }}</p>
+                                {% endif %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+                <p class="products-note">
+                    Los precios son de referencia. Para comprar, escribile al emprendedor.
+                </p>
+            {% else %}
+                <p class="reviews-empty">
+                    Todavía no cargaste ningún producto.
+                    <a href="{{ url_for('products.nuevo') }}">Agregá el primero acá.</a>
+                </p>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        {# Los servicios: trabajos a presupuestar, al lado del catalogo y no
+           mezclados con el. Se presentan distinto (zona, precio opcional) y se
+           piden con una solicitud, no se compran. Mismo criterio de visibilidad
+           que los productos: los no disponibles ya vienen filtrados de la vista
+           salvo para el dueño. #}
+        {% if servicios or es_dueño %}
+        <section class="products-section">
+            <div class="section__header">
+                <h2 class="section__title">Qué hace</h2>
+                {% if es_dueño %}
+                    <a href="{{ url_for('servicios.index') }}" class="btn btn--secondary"
+                       style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                        Editar servicios
+                    </a>
+                {% endif %}
+            </div>
+
+            {% if servicios %}
+                <div class="cards-grid">
+                    {% for servicio in servicios %}
+                        <article class="card product-card">
+                            <div class="card__body">
+                                <div class="card__tags">
+                                    <span class="badge badge--category">{{ servicio.rubro_label }}</span>
+                                </div>
+                                <h3 class="card__title">{{ servicio.titulo }}</h3>
+                                <p class="card__price" style="font-weight:600;">
+                                    {# Sin precio no es gratis ni cero: se cotiza. #}
+                                    {{ servicio.precio_estimado | precio if servicio.precio_estimado else "A presupuestar" }}
+                                    {% if not servicio.disponible %}
+                                        <span class="badge">No disponible (solo lo ves vos)</span>
+                                    {% endif %}
+                                </p>
+                                {% if servicio.zona_cobertura %}
+                                    <p class="card__description">📍 {{ servicio.zona_cobertura }}</p>
+                                {% endif %}
+                                {% if servicio.descripcion %}
+                                    <p class="card__description">{{ servicio.descripcion }}</p>
+                                {% endif %}
+                                {# Al dueño no se le ofrece: las solicitudes le
+                                   llegan, no las hace. Sin sesion tampoco, que
+                                   la solicitud necesita a quien atribuirsela. #}
+                                {% if g.user and not es_dueño %}
+                                    <a href="{{ url_for('servicios.solicitar', id=servicio.id) }}"
+                                       class="btn btn--primary"
+                                       style="margin-top:0.75rem; font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                        Pedir presupuesto
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+                <p class="products-note">
+                    Los precios son estimados. Pedile un presupuesto para tu caso.
+                </p>
+            {% else %}
+                <p class="reviews-empty">
+                    Todavía no cargaste ningún servicio.
+                    <a href="{{ url_for('servicios.nuevo') }}">Agregá el primero acá.</a>
+                </p>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        <section class="reviews-section">
+            <h2 class="section__title">Reseñas</h2>
+
+            {% if reviews %}
+                <div class="reviews-list">
+                    {% for r in reviews %}
+                        <div class="review-card">
+                            <div class="review-card__header">
+                                <strong class="review-card__author">
+                                    Usuario #{{ r.user_id }}
+                                    {% if r.updated_at %}
+                                        <span class="review-card__edited" title="Editada el {{ r.updated_at }}">(editado)</span>
+                                    {% endif %}
+                                </strong>
+                                <div class="review-card__stars">
+                                    {% for i in range(1, 6) %}
+                                        {% if i <= r.rating %}★{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p class="review-card__comment {% if not r.comment %}review-card__comment--empty{% endif %}">
+                                {{ r.comment or 'Sin comentario escrito.' }}
+                            </p>
+
+                            {% if r.reply %}
+                                <div class="review-card__reply">
+                                    <strong>Respuesta de {{ author.username }}:</strong>
+                                    <p>{{ r.reply }}</p>
+                                </div>
+                            {% elif g.user and g.user.id == post.author %}
+                                <form method="post"
+                                    action="{{ url_for('blog.reply_review', review_id=r.id) }}"
+                                    class="review-card__reply-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <textarea
+                                        name="reply"
+                                        rows="2"
+                                        class="auth__input"
+                                        placeholder="Responder públicamente a esta reseña..."
+                                        required
+                                    ></textarea>
+                                    <button type="submit" class="btn btn--secondary" style="font-size:0.8rem; padding:0.3rem 0.8rem; margin-top:0.5rem;">
+                                        Responder
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            {% if g.user and g.user.id != r.user_id %}
+                                <a href="{{ url_for('blog.report', tipo='review', target_id=r.id) }}" class="report-link">
+                                    Reportar
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="reviews-empty">
+                    Todavía no hay reseñas. ¡Sé la primera persona en opinar!
+                </p>
+            {% endif %}
+        </section>
+
+        <section class="review-form-section">
+            <h2 class="section__title">{% if mi_review %}Tu reseña{% else %}Dejar una reseña{% endif %}</h2>
+
+            {% if not g.user %}
+                <p class="review-form-info">
+                    Tenés que <a href="{{ url_for('auth.login') }}">iniciar sesión</a> para dejar una reseña.
+                </p>
+            {% elif g.user.id == post.author %}
+                <p class="review-form-info">
+                    No podés dejar reseñas sobre tu propio emprendimiento.
+                </p>
+            {% else %}
+                <form method="post" action="{{ url_for('blog.add_review', id=post.id) }}" class="auth__form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="auth__field">
+                        <label class="auth__label">Tu calificación</label>
+                        <div class="rating">
+                            {% for i in range(5, 0, -1) %}
+                                <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}"
+                                    {% if mi_review and mi_review.rating == i %}checked{% endif %} required>
+                                <label for="star{{ i }}">★</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="auth__field">
+                        <label for="comment" class="auth__label">Comentario (opcional)</label>
+                        <textarea
+                            id="comment"
+                            name="comment"
+                            rows="4"
+                            class="auth__input"
+                            placeholder="Contá tu experiencia con este emprendimiento..."
+                        >{{ mi_review.comment or '' if mi_review else '' }}</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn--primary auth__submit">
+                        {% if mi_review %}Actualizar reseña{% else %}Enviar reseña{% endif %}
+                    </button>
+                </form>
+
+                {% if mi_review %}
+                    <form method="post"
+                        action="{{ url_for('blog.delete_review', review_id=mi_review.id) }}"
+                        class="form-inline"
+                        style="margin-top:0.75rem;"
+                        onsubmit="return confirm('¿Seguro que querés eliminar tu reseña?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn--ghost" style="font-size:0.85rem;">
+                            Eliminar mi reseña
+                        </button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </section>
+
+        <a href="{{ url_for('blog.index') }}" class="back-link">← Volver al listado</a>
+    </div>
+</section>
+{% endblock %}
+
+
+{% block scripts %}
+<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const mapContainer = document.getElementById("map");
+    
+    // Solo si el post tiene coordenadas Y existe el div del mapa
+    {% if post.latitude and post.longitude %}
+    if (mapContainer) {
+        const postLat = {{ post.latitude }};
+        const postLon = {{ post.longitude }};
+
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
+            center: [postLon, postLat],
+            zoom: 14,
+            interactive: true
+        });
+
+        map.addControl(new maplibregl.NavigationControl());
+
+        new maplibregl.Marker({ color: "var(--color-primary, #6C63FF)" })
+            .setLngLat([postLon, postLat])
+            .addTo(map);
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Conversación sobre {{ post.title }} – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 700px;">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">{{ post.title }}</h2>
+                <p class="section__subtitle">
+                    Conversación con
+                    <a href="{{ url_for('profile.view_profile', slug=otra_parte.slug) }}">{{ otra_parte.username }}</a>
+                </p>
+            </div>
+            <a href="{{ url_for('blog.detail', id=post.id) }}" class="section__link">Ver emprendimiento</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div id="chat-historial" class="chat-historial" data-post-id="{{ post.id }}" data-client-id="{{ client_id }}" data-my-id="{{ g.user.id }}">
+        </div>
+
+        <form method="post" class="chat-form" id="chat-form" action="{{ url_for('messages.conversation', post_id=post.id, client_id=client_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea name="body" rows="2" class="auth__input" placeholder="Escribí tu mensaje..." required></textarea>
+            <button type="submit" class="btn btn--primary">Enviar</button>
+        </form>
+
+        <a href="{{ url_for('messages.inbox') }}" class="back-link">← Volver a mensajes</a>
+    </div>
+</section>
+
+{# JS renderiza todo el historial (inicial + lo que llega por polling) para
+   no duplicar la logica de armar una burbuja en Jinja y en JS. #}
+<script id="chat-historial-data" type="application/json">
+{{ historial_json | tojson }}
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

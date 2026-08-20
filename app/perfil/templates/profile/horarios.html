@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Horarios de atención{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 640px;">
+        <div class="auth__card">
+            <h1 class="auth__title">Horarios de atención</h1>
+            <p class="auth__subtitle">
+                Un rango por día. Marcá "Cerrado" en los días que no atendés.
+                Las horas son de Argentina.
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="auth__messages">
+                        {% for message in messages %}
+                            <div class="auth__alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="auth__form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                {% for fila in filas %}
+                    <div class="horario-fila">
+                        <span class="horario-fila__dia">{{ fila.etiqueta }}</span>
+                        <input type="time" name="abre_{{ fila.dia }}" value="{{ fila.abre }}"
+                               class="auth__input horario-fila__hora" aria-label="Abre el {{ fila.etiqueta }}">
+                        <span class="horario-fila__separador">a</span>
+                        <input type="time" name="cierra_{{ fila.dia }}" value="{{ fila.cierra }}"
+                               class="auth__input horario-fila__hora" aria-label="Cierra el {{ fila.etiqueta }}">
+                        <label class="horario-fila__cerrado">
+                            <input type="checkbox" name="cerrado_{{ fila.dia }}"
+                                   {% if fila.cerrado %}checked{% endif %}>
+                            Cerrado
+                        </label>
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn--primary auth__submit">Guardar horarios</button>
+            </form>
+
+            <p class="auth__footer">
+                Volver a <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}">mi perfil</a>.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}
