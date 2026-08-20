@@ -6,11 +6,20 @@ escribio una resenia, denuncio algo o mando mensajes sobre cosas de otro. Hasta
 b2b97d078fb2 eso fallaba con IntegrityError, porque las cinco FK que apuntan a
 users desde esas tablas estaban en NO ACTION.
 
-Todos los tests borran con db.session.delete() y hacen commit: la cascada la
-aplica la base, no el ORM, asi que si la constraint no esta el commit explota.
+Se borra por los dos caminos, y la diferencia importa:
+
+  - la mayoria borra con db.session.delete() + commit, que es lo que hace la
+    app. Ese camino pasa antes por las cascadas del ORM, asi que un test que
+    pasa aca no prueba por si solo que la FK exista en la base;
+  - los que tienen que probar la constraint de verdad borran con SQL crudo
+    (db.session.execute(text("DELETE FROM ..."))). Sin ORM en el medio, la
+    cascada la hace el motor o no la hace nadie.
 
 Los del final son del otro lado del grafo, reviews.post_id (c1f4a90b6e35): la
 unica FK a posts que habia quedado sin CASCADE y que este lote dejo a la vista.
+Ahi se ve para que sirve la distincion -- con session.delete() el bug no
+aparecia, porque Post.reviews declara cascade="all, delete-orphan" y borraba
+las resenias antes de que el motor mirara la FK.
 """
 
 import datetime
