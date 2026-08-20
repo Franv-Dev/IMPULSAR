@@ -1,4 +1,5 @@
 from db import db, utcnow
+from app.servicios import fotos_huerfanas
 
 
 class EstadosVerificacion:
@@ -183,3 +184,9 @@ def _sincronizar_cupo_pendiente(mapper, connection, target):
     estado = target.estado or EstadosVerificacion.PENDIENTE
     target.estado = estado
     target.cupo_pendiente = 1 if estado == EstadosVerificacion.PENDIENTE else None
+
+
+# El archivo de la foto se va con la fila, por cualquier camino del ORM:
+# borrado directo, cascada desde Service, desde Post o desde User. El detalle,
+# y el limite conocido (no cubre SQL crudo), estan en fotos_huerfanas.py.
+fotos_huerfanas.registrar(VerificationRequest)
