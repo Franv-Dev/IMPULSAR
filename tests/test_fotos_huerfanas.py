@@ -13,6 +13,7 @@ quiere probar es justamente que el archivo desaparezca del disco.
 import os
 
 import pytest
+import sqlalchemy as sa
 
 from app.servicios.modelo import Rubros, Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
@@ -328,3 +329,69 @@ def test_la_cascada_no_se_lleva_fotos_de_filas_que_no_borra(
     assert not existe(foto_uno)
     assert existe(foto_otro)
     assert VerificationRequest.query.count() == 1
+
+
+# ------------------------------------------------- el limite, fijado a proposito
+
+def test_un_delete_crudo_borra_la_fila_pero_deja_la_foto(
+    db, crear_usuario, crear_post, crear_servicio, foto_en_disco
+):
+    """LIMITE CONOCIDO Y ACEPTADO, no un bug pendiente.
+
+    Un evento de mapper corre cuando el ORM procesa la instancia en el flush.
+    Con un DELETE crudo no hay instancia que procesar: la fila se va y el
+    listener nunca se entera, asi que el archivo queda huerfano igual que antes
+    de este lote.
+
+    Es la misma distincion que quedo a la vista con reviews.post_id, al reves:
+    alla el ORM tapaba que faltaba la constraint, aca la constraint (o el SQL
+    directo) tapa que el ORM no corrio. Cubrirlo pediria un trigger en el motor,
+    que es otro alcance.
+
+    El test existe para que el limite este medido y no supuesto: si algun dia se
+    agrega el trigger, este test se da vuelta y avisa.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    nombre = foto_en_disco("sobrevive-al-sql.png")
+    verificacion = VerificationRequest(service_id=servicio.id, foto=nombre)
+    db.session.add(verificacion)
+    db.session.commit()
+    verificacion_id = verificacion.id
+
+    db.session.execute(
+        sa.text("DELETE FROM verification_requests WHERE id = :i"),
+        {"i": verificacion_id},
+    )
+    db.session.commit()
+
+    # La fila se fue...
+    assert db.session.execute(
+        sa.text("SELECT COUNT(*) FROM verification_requests")
+    ).scalar() == 0
+    # ...y el archivo se quedo. Esto es lo que el listener NO cubre.
+    assert existe(nombre)
+
+
+def test_un_delete_masivo_del_orm_tampoco_dispara_el_listener(
+    db, crear_usuario, crear_post, crear_servicio, foto_en_disco
+):
+    """La otra forma del mismo limite, y la mas facil de escribir sin querer:
+    Query.delete() emite un solo DELETE sin cargar las instancias, asi que se
+    comporta como el SQL crudo. Queda fijado para que se sepa que ese atajo no
+    es equivalente a recorrer y borrar una por una."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    nombre = foto_en_disco("sobrevive-al-bulk.png")
+    db.session.add(VerificationRequest(service_id=servicio.id, foto=nombre))
+    db.session.commit()
+
+    VerificationRequest.query.filter_by(service_id=servicio.id).delete(
+        synchronize_session=False
+    )
+    db.session.commit()
+
+    assert VerificationRequest.query.count() == 0
+    assert existe(nombre)
