@@ -175,3 +175,156 @@ def test_un_rollback_no_se_lleva_la_foto(
 
     assert existe(nombre)
     assert VerificationRequest.query.count() == 1
+
+
+# ------------------------------------------------------------ por cascada
+
+def test_borrar_el_servicio_se_lleva_las_fotos_de_lo_que_cuelga(
+    db, crear_usuario, crear_post, crear_servicio, foto_en_disco
+):
+    """El primer escalon de la cascada. Ninguna vista de este dominio se entera
+    de que habia fotos: quien borra es el ORM bajando por Service.solicitudes y
+    Service.verificaciones."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    foto_solicitud = foto_en_disco("de-la-solicitud.png")
+    foto_verificacion = foto_en_disco("de-la-verificacion.png")
+    db.session.add_all([
+        ServiceRequest(service_id=servicio.id, cliente_id=cliente.id,
+                       descripcion="Se me tapó la pileta", foto=foto_solicitud),
+        VerificationRequest(service_id=servicio.id, foto=foto_verificacion),
+    ])
+    db.session.commit()
+
+    db.session.delete(db.session.get(Service, servicio.id))
+    db.session.commit()
+
+    assert not existe(foto_solicitud)
+    assert not existe(foto_verificacion)
+    assert ServiceRequest.query.count() == 0
+    assert VerificationRequest.query.count() == 0
+
+
+def test_borrar_el_post_se_lleva_las_fotos_de_sus_servicios(
+    db, crear_usuario, crear_post, crear_servicio, foto_en_disco
+):
+    """Dos escalones: Post -> Service -> ServiceRequest/VerificationRequest.
+    Este es el caso que motivo hacerlo en el modelo."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    foto_solicitud = foto_en_disco("post-solicitud.png")
+    foto_verificacion = foto_en_disco("post-verificacion.png")
+    db.session.add_all([
+        ServiceRequest(service_id=servicio.id, cliente_id=cliente.id,
+                       descripcion="Se me tapó la pileta", foto=foto_solicitud),
+        VerificationRequest(service_id=servicio.id, foto=foto_verificacion),
+    ])
+    db.session.commit()
+
+    db.session.delete(db.session.get(Post, post.id))
+    db.session.commit()
+
+    assert not existe(foto_solicitud)
+    assert not existe(foto_verificacion)
+    assert Service.query.count() == 0
+
+
+def test_borrar_al_usuario_dueño_se_lleva_las_fotos_de_todo_lo_que_cuelga(
+    db, crear_usuario, crear_post, crear_servicio, foto_en_disco
+):
+    """Tres escalones: User -> Post -> Service -> las dos tablas con foto. El
+    camino mas largo, y el que menos se parece a "borrar una foto"."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    foto_solicitud = foto_en_disco("user-solicitud.png")
+    foto_verificacion = foto_en_disco("user-verificacion.png")
+    db.session.add_all([
+        ServiceRequest(service_id=servicio.id, cliente_id=cliente.id,
+                       descripcion="Se me tapó la pileta", foto=foto_solicitud),
+        VerificationRequest(service_id=servicio.id, foto=foto_verificacion),
+    ])
+    db.session.commit()
+
+    db.session.delete(db.session.get(User, autor.id))
+    db.session.commit()
+
+    assert not existe(foto_solicitud)
+    assert not existe(foto_verificacion)
+    assert Post.query.count() == 0
+    assert Service.query.count() == 0
+
+
+def test_borrar_al_cliente_borra_la_fila_pero_deja_la_foto(
+    db, crear_usuario, crear_post, crear_servicio, foto_en_disco
+):
+    """HUECO CONOCIDO, no cubierto por el listener. Lo fija como esta hoy.
+
+    service_requests.cliente_id se borra por el ON DELETE CASCADE de la FK, no
+    por el ORM: modelo_solicitud.py declara la relacion `cliente` a proposito
+    SIN backref con cascada, al reves que `servicio`. La fila la saca el motor,
+    el ORM nunca carga la instancia, y sin instancia no hay after_delete: el
+    archivo queda huerfano.
+
+    Es el mismo limite que el de SQL crudo (ver el test del final), pero llega
+    por un camino normal de la app y no por uno excepcional, asi que va anotado
+    aparte. Arreglarlo es una linea -- ponerle backref con cascada del lado de
+    User -- pero eso revierte una decision de diseño explicita y hace que borrar
+    un usuario cargue todas sus solicitudes en memoria, asi que es una decision
+    de Tomás y no de este lote.
+
+    Cuando se decida, este test se da vuelta: pasa a esperar que la foto NO
+    exista.
+    """
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    post = crear_post(autor.id)
+    servicio = crear_servicio(post.id)
+    nombre = foto_en_disco("del-cliente.png")
+    db.session.add(ServiceRequest(
+        service_id=servicio.id, cliente_id=cliente.id,
+        descripcion="Se me tapó la pileta", foto=nombre,
+    ))
+    db.session.commit()
+    post_id = post.id
+
+    db.session.delete(db.session.get(User, cliente.id))
+    db.session.commit()
+
+    # La fila si se va: la cascada de la base funciona.
+    assert ServiceRequest.query.count() == 0
+    # Pero el archivo se queda, porque el ORM no vio pasar la fila.
+    assert existe(nombre)
+    # Lo del emprendedor sigue en pie.
+    assert db.session.get(Post, post_id) is not None
+
+
+def test_la_cascada_no_se_lleva_fotos_de_filas_que_no_borra(
+    db, crear_usuario, crear_post, crear_servicio, foto_en_disco
+):
+    """El contrapeso: borrar de mas pasaria igual de desapercibido que no borrar
+    nada. Se borra un servicio y el del otro emprendimiento queda intacto."""
+    autor = crear_usuario(username="autor")
+    post_uno = crear_post(autor.id, title="Uno")
+    post_otro = crear_post(autor.id, title="Otro")
+    servicio_uno = crear_servicio(post_uno.id)
+    servicio_otro = crear_servicio(post_otro.id)
+    foto_uno = foto_en_disco("del-uno.png")
+    foto_otro = foto_en_disco("del-otro.png")
+    db.session.add_all([
+        VerificationRequest(service_id=servicio_uno.id, foto=foto_uno),
+        VerificationRequest(service_id=servicio_otro.id, foto=foto_otro),
+    ])
+    db.session.commit()
+
+    db.session.delete(db.session.get(Post, post_uno.id))
+    db.session.commit()
+
+    assert not existe(foto_uno)
+    assert existe(foto_otro)
+    assert VerificationRequest.query.count() == 1

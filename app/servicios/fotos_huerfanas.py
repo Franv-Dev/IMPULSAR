@@ -22,7 +22,18 @@ casos el archivo queda huerfano igual que antes. Es la misma limitacion que ya
 se documento para clave_pendiente en app/blog/modelo_reporte.py, y la misma
 distincion que quedo a la vista con reviews.post_id: lo que el ORM garantiza no
 es lo que garantiza la base. Cubrirlo de verdad pediria un trigger en el motor,
-que es otro alcance; hoy todos los borrados de estas tablas pasan por el ORM.
+que es otro alcance.
+
+Y hay un caso de ese limite que NO es excepcional y conviene tener presente:
+borrar un User se lleva sus ServiceRequest como cliente por el ON DELETE
+CASCADE de service_requests.cliente_id, no por el ORM. modelo_solicitud.py
+declara esa relacion a proposito sin backref con cascada, asi que el ORM nunca
+carga esas filas y sus fotos quedan huerfanas. Los otros caminos (borrado
+directo, cascada desde Service, desde Post, y desde User bajando por Post) si
+pasan por el ORM y estan cubiertos. Queda anotado y fijado por un test
+(test_borrar_al_cliente_borra_la_fila_pero_deja_la_foto); darlo vuelta es una
+linea, pero revierte esa decision de diseño y hace que borrar un usuario cargue
+todas sus solicitudes en memoria.
 
 POR QUE NO SE BORRA EN EL after_delete MISMO. after_delete corre durante el
 flush, y un flush todavia se puede deshacer: si la transaccion hace rollback
