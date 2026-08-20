@@ -94,12 +94,11 @@ def borrar(app):
     lo que dejaron ellos como lo que usuarios REALES dejaron sobre contenido
     del seed (eso ultimo se va por la cascada del post, no la del usuario).
 
-    Se mantiene explicito igual, por dos razones. Una, que este script tiene
-    que decir exactamente que toca: es la unica forma de revisar que no se
-    lleve nada de un usuario real que no sea actividad sobre el seed. Y dos,
-    que las filas hacen falta como filas -- los nombres de los archivos a
-    borrar salen de ellas (ver _archivos_de), y una cascada del motor no
-    devuelve que borro.
+    Se mantiene explicito igual por una sola razon, que sigue en pie: este
+    script tiene que decir exactamente que toca. Es la unica forma de revisar,
+    leyendolo, que no se lleve nada de un usuario real que no sea su actividad
+    sobre el seed. Una cascada hace lo mismo sin dejarlo escrito en ningun
+    lado.
     """
     usuarios = _usuarios_de_seed()
     if not usuarios:
