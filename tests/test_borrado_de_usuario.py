@@ -421,7 +421,12 @@ def test_borrar_los_dos_lados_de_un_hilo_ajeno_al_post(db, crear_usuario, crear_
     db.session.delete(db.session.get(User, tercero.id))
     db.session.commit()
 
-    # Las tres: dos por sender_id y la del dueño por client_id.
+    # Las tres se van por client_id: las tres filas del hilo lo tienen apuntando
+    # al cliente, incluida la que escribio el dueño. La de sender_id se lleva
+    # sola la fila del tercero, que client_id ya cubria igual -- lo que aporta
+    # este test no es que sender_id haga falta aca (eso lo prueba
+    # test_borrar_a_un_remitente_suelto_deja_el_resto_del_hilo), sino que las
+    # dos cascadas sobre la misma tabla conviven sin el post de por medio.
     assert Message.query.count() == 0
     # Y lo que no era de ellos sigue en pie.
     assert db.session.get(Post, post_id) is not None
