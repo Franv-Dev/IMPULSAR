@@ -12,7 +12,11 @@
 (function () {
     "use strict";
 
-    var raiz = document.getElementById("calendario");
+    // La TARJETA, no la <section> que la envuelve: la section se llama
+    // "calendario" y es el ancla de la pagina. Es la que lleva la clase
+    // is-loading, asi que apuntar a la de afuera no rompe nada visible al
+    // instante pero deja el gris de "cargando" sin efecto.
+    var raiz = document.getElementById("calendario-card");
     if (!raiz) return;
 
     var grilla = document.getElementById("calendario-grid");
@@ -98,6 +102,13 @@
         cerrarPanel();
 
         if (cache[clave]) {
+            // El gris se saca ACA tambien y no solo en el .then() del fetch:
+            // este camino corta con el return y nunca llega alla. Y si quedo
+            // una peticion vieja en vuelo, su .then() tampoco lo va a sacar,
+            // porque su clave ya dejo de ser la pedida. Sin esta linea, ir
+            // rapido a un mes lejano y despues volver a uno ya cacheado dejaba
+            // el calendario en gris para siempre.
+            raiz.classList.remove("is-loading");
             aplicar(cache[clave], a, m);
             return;
         }
@@ -128,6 +139,12 @@
                 mostrarEstado("No se pudieron cargar los eventos. Probá de nuevo más tarde.");
             })
             .then(function () {
+                // Sigue con la guarda a proposito: si esta respuesta es vieja
+                // y ya hay otro mes cargando, sacar el gris aca lo apagaria
+                // mientras ese otro todavia esta en vuelo. Con la limpieza del
+                // cache-hit de arriba ya no queda ningun camino que lo deje
+                // pegado: todo lo que cambia `pedido` o lo saca en el acto
+                // (cache) o se hace cargo de sacarlo despues (este fetch).
                 if (pedido === clave) raiz.classList.remove("is-loading");
             });
     }

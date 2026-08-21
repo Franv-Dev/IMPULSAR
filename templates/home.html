@@ -107,7 +107,14 @@
                 <a href="{{ url_for('eventos.index') }}" class="section__link">Ver la cartelera</a>
             </div>
 
-            <div class="calendario" id="calendario">
+            <!-- El id va con el prefijo calendario- igual que el de la grilla,
+                 el mes y el panel: son todos ganchos del JS. La <section> de
+                 afuera se queda con id="calendario" a secas porque ese es el
+                 ancla de la pagina, igual que #emprendimientos ahi arriba.
+                 Antes los dos se llamaban "calendario" y getElementById
+                 devolvia la <section>, con lo cual el gris de "cargando" no se
+                 le aplicaba nunca a la tarjeta. -->
+            <div class="calendario" id="calendario-card">
                 <div class="calendario__head">
                     <h3 class="calendario__mes" id="calendario-mes" aria-live="polite">&nbsp;</h3>
                     <div class="calendario__nav">

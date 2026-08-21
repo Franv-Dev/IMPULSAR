@@ -735,4 +735,33 @@ def test_el_home_carga_el_calendario(client):
     html = client.get("/").get_data(as_text=True)
 
     assert 'id="calendario-grid"' in html
+    assert 'id="calendario-card"' in html
     assert "js/calendario.js" in html
+
+
+def test_el_home_no_repite_ids(client):
+    """Ningun id duplicado en el home, y en particular no "calendario".
+
+    La <section> ancla y la tarjeta que maneja el JS se llamaban las dos
+    "calendario". Como getElementById devuelve el PRIMERO, calendario.js se
+    quedaba con la section y la clase is-loading no le llegaba nunca a la
+    tarjeta, que es la que la usa. No falla nada a la vista, por eso hace falta
+    un test.
+    """
+    import re
+    from collections import Counter
+
+    html = client.get("/").get_data(as_text=True)
+    # Solo los id= de atributo real, no los que aparecen dentro de comentarios.
+    sin_comentarios = re.sub(r"<!--.*?-->", "", html, flags=re.S)
+    # El lookbehind deja afuera data-id="..." y cualquier otro atributo que
+    # termine en "id": lo que interesa es el id de verdad.
+    ids = re.findall(r'(?<![-\w])id="([^"]+)"', sin_comentarios)
+    repetidos = [nombre for nombre, veces in Counter(ids).items() if veces > 1]
+
+    # Que el patron encuentre ALGO: si dejara de matchear, la lista de
+    # repetidos quedaria vacia y el test pasaria sin mirar nada. Paso de
+    # verdad al escribirlo: un  se colo en el archivo como caracter de
+    # backspace y el test daba verde con el id duplicado puesto.
+    assert ids, "el patron no encontro ningun id: el test no esta probando nada"
+    assert repetidos == []
