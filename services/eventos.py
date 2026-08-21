@@ -10,7 +10,8 @@ que uno de los dos usara utcnow para que un evento aparezca vencido en una
 pantalla y vigente en la otra.
 """
 
-from datetime import datetime
+from calendar import monthrange
+from datetime import date, datetime
 
 from models.event import Event
 from app.blog.modelo_post import Post
@@ -89,6 +90,53 @@ def pasados(query, hoy=None):
     return (
         query.filter(Event.fecha < hoy)
         .order_by(Event.fecha.desc(), Event.hora.desc(), Event.id.desc())
+    )
+
+
+def parsear_mes(texto):
+    """Convierte "2026-08" en (anio, mes), o None si viene vacio o mal escrito.
+
+    Es el formato que manda el calendario del home en ?mes=. Se valida aca y no
+    en la vista por lo mismo que parsear_fecha: un mes que no existe tiene que
+    dar None y no una excepcion, para que quien llame decida que hacer.
+    """
+    texto = (texto or "").strip()
+    if not texto:
+        return None
+    try:
+        momento = datetime.strptime(texto, "%Y-%m")
+    except ValueError:
+        return None
+    return momento.year, momento.month
+
+
+def rango_del_mes(anio, mes):
+    """El primer y el ultimo dia de ese mes, como (date, date).
+
+    El ultimo dia sale de monthrange y no de una constante por mes: febrero
+    cambia de largo segun el anio, y restarle un dia al primero del mes
+    siguiente obliga a manejar el salto de diciembre a enero a mano.
+    """
+    return date(anio, mes, 1), date(anio, mes, monthrange(anio, mes)[1])
+
+
+def en_rango(query, desde, hasta):
+    """Eventos entre dos fechas, ambas incluidas, en orden de calendario.
+
+    No filtra por "todavia no paso", a diferencia de proximos(): el calendario
+    del home tiene navegacion de meses, y si escondiera lo ya vencido, moverse
+    a un mes anterior mostraria un mes vacio y la navegacion no serviria de
+    nada. Tampoco lo hace dentro del mes en curso: un calendario de agosto
+    parado un 20 tiene que seguir mostrando la feria del 14, porque lo que
+    responde es "que paso y que va a pasar este mes", no "a que llego a ir".
+
+    El orden y el desempate por id son los mismos que en proximos() y por la
+    misma razon (ver su docstring): la hora es opcional, asi que varios eventos
+    del mismo dia comparten la clave de orden entera.
+    """
+    return (
+        query.filter(Event.fecha >= desde, Event.fecha <= hasta)
+        .order_by(Event.fecha.asc(), Event.hora.asc(), Event.id.asc())
     )
 
 

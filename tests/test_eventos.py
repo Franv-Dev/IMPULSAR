@@ -5,7 +5,11 @@ from datetime import date, time, timedelta
 import pytest
 
 from models.event import Event
-from services.eventos import hoy_en_argentina, parsear_fecha, pasados, proximos
+from services.eventos import (
+    en_rango, hoy_en_argentina, parsear_fecha, parsear_mes, pasados, proximos,
+    rango_del_mes,
+)
+from views import eventos_api
 
 
 @pytest.fixture
@@ -481,3 +485,254 @@ def test_eventos_esta_en_los_slugs_reservados():
     from services.slugs import SLUGS_RESERVADOS
 
     assert "eventos" in SLUGS_RESERVADOS
+
+
+# === Calendario del home: consulta por rango y API JSON ===
+#
+# La consulta y el endpoint se prueban aparte de proximos()/pasados() porque
+# responden otra pregunta: en_rango() NO filtra por "todavia no paso" (ver su
+# docstring), asi que lo que hay que fijar aca es justamente lo contrario de lo
+# que fijan los tests de proximos().
+
+
+@pytest.fixture
+def crear_evento_en(db):
+    """Fabrica de eventos en una fecha exacta, no relativa a hoy.
+
+    crear_evento trabaja con "dentro de N dias", que sirve para el corte de
+    vencidos pero no para probar bordes de mes: el 1 y el 31 tienen que caer
+    donde caen, sin depender de que dia se corra la suite.
+    """
+
+    def _crear(post_id, fecha, titulo="Feria", hora=None, descripcion=None):
+        evento = Event(
+            post_id=post_id, titulo=titulo, descripcion=descripcion,
+            fecha=fecha, hora=hora,
+        )
+        db.session.add(evento)
+        db.session.commit()
+        return evento
+
+    return _crear
+
+
+def test_parsear_mes_acepta_el_formato_del_calendario():
+    assert parsear_mes("2026-08") == (2026, 8)
+    assert parsear_mes("  2026-01  ") == (2026, 1)
+
+
+@pytest.mark.parametrize("texto", ["", None, "2026", "2026-13", "agosto", "2026-8-1"])
+def test_parsear_mes_rechaza_lo_que_no_es_un_mes(texto):
+    """Devuelve None en vez de explotar: la vista decide que hacer con eso."""
+    assert parsear_mes(texto) is None
+
+
+def test_rango_del_mes_cubre_el_mes_entero():
+    assert rango_del_mes(2026, 8) == (date(2026, 8, 1), date(2026, 8, 31))
+    # Meses de 30, y febrero, que es el que se rompe si alguien hardcodea 31.
+    assert rango_del_mes(2026, 4) == (date(2026, 4, 1), date(2026, 4, 30))
+    assert rango_del_mes(2026, 2) == (date(2026, 2, 1), date(2026, 2, 28))
+    assert rango_del_mes(2024, 2) == (date(2024, 2, 1), date(2024, 2, 29))
+
+
+def test_en_rango_trae_solo_los_del_mes_pedido(db, crear_usuario, crear_post, crear_evento_en):
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    crear_evento_en(post.id, date(2026, 7, 31), titulo="Se fue por un dia")
+    dentro_primero = crear_evento_en(post.id, date(2026, 8, 1), titulo="Primer dia")
+    dentro_ultimo = crear_evento_en(post.id, date(2026, 8, 31), titulo="Ultimo dia")
+    crear_evento_en(post.id, date(2026, 9, 1), titulo="Se pasa por un dia")
+
+    desde, hasta = rango_del_mes(2026, 8)
+    ids = [evento.id for evento in en_rango(Event.query, desde, hasta).all()]
+
+    # Los dos bordes entran (el rango es inclusivo en las dos puntas) y los
+    # vecinos de afuera no.
+    assert ids == [dentro_primero.id, dentro_ultimo.id]
+
+
+def test_en_rango_no_esconde_los_que_ya_pasaron(db, crear_usuario, crear_post, crear_evento):
+    """A diferencia de proximos(): sin esto, moverse a un mes anterior mostraria
+    un mes vacio y la navegacion del calendario no serviria para nada."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    viejo = crear_evento(post.id, titulo="Feria de la semana pasada", dias=-7)
+
+    hoy = hoy_en_argentina()
+    desde, hasta = rango_del_mes(viejo.fecha.year, viejo.fecha.month)
+    ids = [evento.id for evento in en_rango(Event.query, desde, hasta).all()]
+
+    assert viejo.id in ids
+    # Y proximos() sobre el mismo dato sigue escondiendolo, que es su trabajo.
+    assert viejo.id not in [evento.id for evento in proximos(Event.query, hoy).all()]
+
+
+def test_en_rango_sin_eventos_no_revienta(db):
+    desde, hasta = rango_del_mes(2026, 8)
+
+    assert en_rango(Event.query, desde, hasta).all() == []
+
+
+def test_en_rango_ordena_por_fecha_y_hora(db, crear_usuario, crear_post, crear_evento_en):
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    tarde = crear_evento_en(post.id, date(2026, 8, 14), titulo="Tarde", hora=time(18, 0))
+    temprano = crear_evento_en(post.id, date(2026, 8, 14), titulo="Temprano", hora=time(9, 0))
+    otro_dia = crear_evento_en(post.id, date(2026, 8, 2), titulo="Antes")
+
+    desde, hasta = rango_del_mes(2026, 8)
+    ids = [evento.id for evento in en_rango(Event.query, desde, hasta).all()]
+
+    assert ids == [otro_dia.id, temprano.id, tarde.id]
+
+
+# --- el endpoint ---------------------------------------------------------
+
+
+def test_api_devuelve_el_mes_pedido(client, crear_usuario, crear_post, crear_evento_en):
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id, title="Panadería del barrio")
+    crear_evento_en(post.id, date(2026, 8, 14), titulo="Feria de la plaza", hora=time(10, 0))
+    crear_evento_en(post.id, date(2026, 9, 1), titulo="Del mes que viene")
+
+    respuesta = client.get("/api/eventos/?mes=2026-08")
+
+    assert respuesta.status_code == 200
+    datos = respuesta.get_json()
+    assert datos["mes"] == "2026-08"
+    assert datos["desde"] == "2026-08-01"
+    assert datos["hasta"] == "2026-08-31"
+    assert datos["total"] == 1
+    assert datos["truncado"] is False
+    assert [item["titulo"] for item in datos["items"]] == ["Feria de la plaza"]
+
+
+def test_api_incluye_el_emprendimiento_y_su_link(client, crear_usuario, crear_post, crear_evento_en):
+    """El panel del dia muestra de quien es el evento y linkea al emprendimiento."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id, title="Panadería del barrio")
+    crear_evento_en(post.id, date(2026, 8, 14), hora=time(10, 30), descripcion="Traé bolsa")
+
+    datos = client.get("/api/eventos/?mes=2026-08").get_json()
+    item = datos["items"][0]
+
+    assert item["emprendimiento"] == "Panadería del barrio"
+    assert item["url"] == f"/blog/{post.id}"
+    assert item["hora"] == "10:30"
+    assert item["descripcion"] == "Traé bolsa"
+
+
+def test_api_sin_mes_usa_el_mes_en_curso(client, crear_usuario, crear_post, crear_evento):
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    crear_evento(post.id, titulo="De este mes", dias=0)
+
+    datos = client.get("/api/eventos/").get_json()
+    hoy = hoy_en_argentina()
+
+    assert datos["mes"] == f"{hoy.year:04d}-{hoy.month:02d}"
+    # `hoy` viaja en la respuesta para que el JS marque el dia sin usar el reloj
+    # del visitante, que puede estar en otro huso.
+    assert datos["hoy"] == hoy.isoformat()
+    assert [item["titulo"] for item in datos["items"]] == ["De este mes"]
+
+
+@pytest.mark.parametrize("mes", ["", "2026", "2026-13", "cualquiera"])
+def test_api_con_mes_invalido_cae_al_mes_en_curso(client, mes):
+    """No es un 400: el parametro lo escribe el JS, y si algo lo rompe es mejor
+    mostrar el mes actual que dejar el calendario en blanco."""
+    respuesta = client.get(f"/api/eventos/?mes={mes}")
+    hoy = hoy_en_argentina()
+
+    assert respuesta.status_code == 200
+    assert respuesta.get_json()["mes"] == f"{hoy.year:04d}-{hoy.month:02d}"
+
+
+def test_api_sin_eventos_devuelve_lista_vacia(client):
+    respuesta = client.get("/api/eventos/?mes=2026-08")
+
+    assert respuesta.status_code == 200
+    datos = respuesta.get_json()
+    assert datos["items"] == []
+    assert datos["total"] == 0
+    assert datos["truncado"] is False
+
+
+def test_api_agrupa_varios_eventos_del_mismo_dia(client, crear_usuario, crear_post, crear_evento_en):
+    """El caso que dibuja mas de un punto en la celda y lista varios en el panel."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    crear_evento_en(post.id, date(2026, 8, 20), titulo="Tarde", hora=time(16, 0))
+    crear_evento_en(post.id, date(2026, 8, 20), titulo="Temprano", hora=time(9, 0))
+    crear_evento_en(post.id, date(2026, 8, 20), titulo="Sin hora")
+
+    datos = client.get("/api/eventos/?mes=2026-08").get_json()
+
+    assert datos["total"] == 3
+    assert all(item["fecha"] == "2026-08-20" for item in datos["items"])
+    # Sin hora primero: es como los ordena la base (NULL va antes en ASC) y es
+    # el mismo orden que ya usa la cartelera.
+    assert [item["titulo"] for item in datos["items"]] == ["Sin hora", "Temprano", "Tarde"]
+
+
+def test_api_es_publica_y_no_depende_de_la_sesion(
+    client, crear_usuario, crear_post, crear_evento_en, login
+):
+    """Event no tiene ningun campo de visibilidad: todo evento es publico, igual
+    que en la cartelera de /eventos/ y en el perfil, las dos sin login. Este
+    test fija que la respuesta no cambie segun quien mire, para que el dia que
+    Event gane un estado (borrador, cancelado) haya que decidirlo a proposito."""
+    autor = crear_usuario(username="panaderia")
+    post = crear_post(autor.id)
+    crear_evento_en(post.id, date(2026, 8, 14))
+
+    anonimo = client.get("/api/eventos/?mes=2026-08").get_json()
+
+    otro = crear_usuario(username="mirona")
+    login(otro.id)
+    logueado = client.get("/api/eventos/?mes=2026-08").get_json()
+
+    login(autor.id)
+    duenio = client.get("/api/eventos/?mes=2026-08").get_json()
+
+    assert anonimo == logueado == duenio
+
+
+def test_api_no_expone_campos_de_mas(client, crear_usuario, crear_post, crear_evento_en):
+    """Fija el contrato: si alguien suma una columna a Event, no se filtra sola
+    por serialize() sin que un test lo note."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    crear_evento_en(post.id, date(2026, 8, 14))
+
+    item = client.get("/api/eventos/?mes=2026-08").get_json()["items"][0]
+
+    assert set(item) == {
+        "id", "post_id", "titulo", "descripcion", "fecha", "hora",
+        "emprendimiento", "url",
+    }
+
+
+def test_api_trunca_y_lo_avisa(client, crear_usuario, crear_post, crear_evento_en, monkeypatch):
+    """El tope no se puede alcanzar con datos de verdad en un test, asi que se
+    baja a 2: lo que importa es que avise en vez de recortar en silencio."""
+    monkeypatch.setattr(eventos_api, "MAX_EVENTOS_POR_MES", 2)
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    for numero in range(4):
+        crear_evento_en(post.id, date(2026, 8, 10 + numero), titulo=f"Feria {numero}")
+
+    datos = client.get("/api/eventos/?mes=2026-08").get_json()
+
+    assert datos["truncado"] is True
+    assert datos["total"] == 2
+    assert len(datos["items"]) == 2
+
+
+def test_el_home_carga_el_calendario(client):
+    """El contenedor y el script tienen que estar en el HTML del home: si alguien
+    saca el bloque scripts, el calendario queda mudo sin que falle nada."""
+    html = client.get("/").get_data(as_text=True)
+
+    assert 'id="calendario-grid"' in html
+    assert "js/calendario.js" in html

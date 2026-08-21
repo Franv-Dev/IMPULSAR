@@ -37,6 +37,7 @@ from app.servicios.vistas import servicios
 from views.admin import admin
 from views.auth import api_login, api_register, auth
 from views.eventos import eventos
+from views.eventos_api import eventos_api
 from views.messages import messages
 from views.pages import pages
 from views.posts_api import posts_api
@@ -93,6 +94,7 @@ def _registrar_blueprints(app):
     app.register_blueprint(auth)
     app.register_blueprint(blog)
     app.register_blueprint(eventos)
+    app.register_blueprint(eventos_api)
     app.register_blueprint(posts_api)
     app.register_blueprint(products)
     app.register_blueprint(servicios)

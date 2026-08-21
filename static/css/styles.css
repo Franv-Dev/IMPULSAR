@@ -68,6 +68,14 @@
     --color-star: #FBBF24;
     --color-star-empty: #E5E7EB;
 
+    /* Acento secundario. Hoy lo usa un solo lugar: el punto que marca el dia de
+       hoy en el calendario del home, que necesitaba distinguirse del violeta de
+       "este dia tiene eventos" sin competir con el. Se reserva ademas para
+       cuando Event tenga tipos y haya que diferenciarlos.
+       Solo como marca de color, nunca como color de TEXTO: contra el fondo
+       claro da 2.5:1 y no llegaria a AA. */
+    --color-accent: #F1965D;
+
     --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.10);
     --shadow-light: 0 4px 12px rgba(15, 23, 42, 0.08);
     --shadow-card: 0 8px 20px rgba(15, 23, 42, 0.06);
@@ -120,6 +128,9 @@
     --color-heart: #F87171;
 
     --color-star: #FBBF24;
+    /* El mismo naranja: sobre fondo oscuro ya destaca y aclararlo lo volveria
+       chillon al lado del violeta del tema oscuro, que tambien es mas claro. */
+    --color-accent: #F1965D;
     /* Mas claro que el borde: la estrella sin marcar tiene que insinuarse para
        que se vea que el widget tiene 5, y sobre fondo oscuro un gris apenas por
        encima de la superficie directamente desaparece. */
@@ -2609,4 +2620,384 @@ a.perfil-dato:hover {
    Ver la REGLA del encabezado de esta hoja. */
 .text-muted {
     color: var(--color-muted);
+}
+
+
+/* === Calendario de eventos del home ===
+   Grilla mensual + panel que se despliega ABAJO de la grilla (no modal, no
+   tapa nada). Los colores salen de los tokens, asi que sigue los dos temas
+   solo: el violeta marca "este dia tiene eventos" y el naranja marca hoy. */
+
+.calendario {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    /* El panel crece desde adentro; sin esto se le escapa por las esquinas. */
+    overflow: hidden;
+}
+
+.calendario.is-loading {
+    opacity: 0.6;
+}
+
+.calendario__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem 0.9rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.calendario__mes {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.calendario__nav {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.calendario__nav-btn {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-soft);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.calendario__nav-btn:hover {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    border-color: var(--color-primary-soft);
+}
+
+.calendario__nav-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.calendario__weekdays,
+.calendario__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.calendario__weekdays {
+    padding: 0.85rem 1rem 0.15rem;
+}
+
+.calendario__weekdays span {
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.calendario__grid {
+    gap: 6px;
+    padding: 0.4rem 1rem 1.2rem;
+}
+
+.calendario__dia {
+    position: relative;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text);
+    font-size: 0.85rem;
+    font-weight: 500;
+    font-family: inherit;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+/* Los huecos anteriores al dia 1: ocupan lugar en la grilla y nada mas. */
+.calendario__dia--vacio {
+    border: 0;
+}
+
+.calendario__dia.has-events {
+    cursor: pointer;
+    background: var(--color-surface-alt);
+}
+
+.calendario__dia.has-events:hover {
+    background: var(--color-primary-soft);
+    transform: translateY(-1px);
+}
+
+.calendario__dia.has-events:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.calendario__dia.is-selected {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.calendario__dia.is-selected .calendario__punto {
+    background: var(--color-on-primary);
+}
+
+/* Hoy: marca en la esquina, para que no compita con los puntos de eventos
+   (un dia puede ser hoy Y tener eventos). */
+.calendario__dia.is-today::after {
+    content: "";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-accent);
+}
+
+.calendario__puntos {
+    display: flex;
+    gap: 3px;
+    /* Alto fijo aunque no haya puntos: si no, el numero de un dia sin eventos
+       queda mas abajo que el de uno con eventos y la grilla baila. */
+    height: 5px;
+}
+
+.calendario__punto {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-primary);
+}
+
+.calendario__punto--hoy {
+    background: var(--color-accent);
+}
+
+/* --- Panel desplegable ---
+   La animacion va sobre grid-template-rows (0fr -> 1fr) y no sobre max-height:
+   con max-height hay que adivinar un alto maximo, y si el dia tiene mas
+   eventos que los que entran en ese numero, el panel se corta. Asi el alto lo
+   sigue poniendo el contenido y la transicion igual funciona. */
+.calendario__expand {
+    display: grid;
+    grid-template-rows: 0fr;
+    border-top: 1px solid transparent;
+    transition: grid-template-rows 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.calendario__expand.is-open {
+    grid-template-rows: 1fr;
+    border-top-color: var(--color-border);
+}
+
+.calendario__expand-inner {
+    overflow: hidden;
+}
+
+.calendario__expand-content {
+    padding: 1.3rem 1.25rem 1.5rem;
+    background: linear-gradient(180deg, var(--color-primary-soft) 0%, transparent 90px);
+}
+
+.calendario__panel-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.calendario__panel-num {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.9rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-text);
+}
+
+.calendario__panel-fecha {
+    font-size: 0.85rem;
+    color: var(--color-text-soft);
+}
+
+.calendario__panel-cerrar {
+    margin-left: auto;
+    align-self: flex-start;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-soft);
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.calendario__panel-cerrar:hover {
+    background: var(--color-surface-alt);
+}
+
+.calendario__lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.calendario__evento {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.85rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.calendario__evento-hora {
+    min-width: 4.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-text-soft);
+    white-space: nowrap;
+}
+
+.calendario__evento-barra {
+    width: 3px;
+    align-self: stretch;
+    flex-shrink: 0;
+    border-radius: 3px;
+    background: var(--color-primary);
+}
+
+.calendario__evento-cuerpo {
+    flex: 1;
+    min-width: 0;
+}
+
+.calendario__evento-titulo {
+    display: block;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.calendario__evento-titulo:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.calendario__evento-meta,
+.calendario__evento-desc {
+    margin: 0.15rem 0 0;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.calendario__evento-desc {
+    color: var(--color-text-soft);
+}
+
+.calendario__estado {
+    margin: 0;
+    padding: 0 1.25rem 1.1rem;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.calendario__leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.4rem;
+    margin: 1.1rem 0 0;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.calendario__leyenda-item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+/* Mismo breakpoint que el resto de la hoja. La grilla no cambia de columnas
+   (un calendario son siete dias si o si), se achica lo de alrededor. */
+@media (max-width: 768px) {
+    .calendario__head {
+        padding: 1rem 1rem 0.8rem;
+    }
+
+    .calendario__grid {
+        gap: 4px;
+        padding: 0.4rem 0.6rem 1rem;
+    }
+
+    .calendario__weekdays {
+        padding: 0.8rem 0.6rem 0.15rem;
+    }
+
+    .calendario__expand-content {
+        padding: 1.1rem 1rem 1.3rem;
+    }
+
+    /* En vertical la hora arriba y el resto abajo: con 4.5rem fijos para la
+       hora, el titulo de un evento quedaba en una columna de dos palabras. */
+    .calendario__evento {
+        flex-wrap: wrap;
+        gap: 0.5rem 0.7rem;
+    }
+
+    .calendario__evento-barra {
+        display: none;
+    }
+
+    .calendario__evento-cuerpo {
+        flex-basis: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendario__dia {
+        font-size: 0.78rem;
+        border-radius: var(--radius-sm);
+    }
+
+    .calendario__mes {
+        font-size: 1rem;
+    }
+
+    .calendario__panel-num {
+        font-size: 1.6rem;
+    }
+
+    /* Los puntos de un dia con muchos eventos no entran en una celda de este
+       ancho: se deja uno solo, que es lo que hace falta para saber que hay algo. */
+    .calendario__puntos .calendario__punto:nth-child(n + 2) {
+        display: none;
+    }
 }
