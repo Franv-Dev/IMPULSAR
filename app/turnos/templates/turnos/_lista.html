@@ -1,0 +1,43 @@
+{# La fila de un turno, compartida por mios.html y agenda.html.
+
+   Un solo macro y no dos casi iguales: lo unico que cambia entre las dos
+   pantallas es a quien se nombra (el cliente o el emprendimiento) y adonde
+   vuelve el boton de cancelar, que ya resuelve la vista. #}
+
+{% macro fila(turno, estados, quien, ahora, mostrar_cliente) %}
+    <article class="card">
+        <div class="card__body">
+            <div class="card__tags">
+                <span class="badge badge--category">{{ turno.estado_label }}</span>
+                <span class="badge">{{ turno.servicio.rubro_label }}</span>
+            </div>
+            <h3 class="card__title">{{ turno.servicio.titulo }}</h3>
+            <p class="card__description">
+                {{ turno.fecha | fecha_evento }} ·
+                {{ turno.hora_inicio.strftime('%H:%M') }} a
+                {{ turno.hora_fin.strftime('%H:%M') }}
+            </p>
+            <p class="card__description">
+                {% if mostrar_cliente %}
+                    {{ turno.cliente.username }} · {{ turno.servicio.post.title }}
+                {% else %}
+                    {{ turno.servicio.post.title }}
+                {% endif %}
+            </p>
+
+            {% if turno.estado == estados.CANCELADO %}
+                <p class="card__description">
+                    Cancelado por {{ turno.cancelado_por_label or "una de las partes" }}.
+                </p>
+            {% elif turno.fecha >= ahora.date() %}
+                {# El boton se esconde para lo ya pasado y lo ya cancelado, pero
+                   quien decide es la vista: esconderlo no es un permiso. #}
+                <form method="post"
+                      action="{{ url_for('turnos.cancelar', id=turno.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--secondary">Cancelar</button>
+                </form>
+            {% endif %}
+        </div>
+    </article>
+{% endmacro %}

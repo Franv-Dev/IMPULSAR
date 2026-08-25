@@ -12,10 +12,15 @@ dominio de turnos, y de la unica cosa compartida que necesita -- como se lee un
 Horario -- ya se ocupa services/horarios.py.
 """
 
+from sqlalchemy.orm import joinedload
+
+from app.blog.modelo_post import Post
 from app.perfil.modelo_horario import Horario
+from app.servicios.modelo import Service
 from app.servicios.reglas import acepta_turnos
 from app.turnos.modelo_turno import EstadosTurno, Turno
 from app.turnos.reglas import cortar_en_slots
+from db import db
 
 
 def horario_del_dia(user_id, dia_semana):
@@ -95,3 +100,95 @@ def slots_disponibles(servicio, fecha):
 
     ocupadas = horas_tomadas(servicio.id, fecha)
     return [(inicio, fin) for inicio, fin in slots if inicio not in ocupadas]
+
+
+def turno_por_id_o_404(id):
+    return Turno.query.get_or_404(id)
+
+
+def rangos_ocupados_del_vendedor(user_id, fecha, excluir_turno_id=None):
+    """Los (inicio, fin) activos de ESE dia en TODOS los servicios del vendedor.
+
+    Es lo que necesita reglas.hay_solapamiento para el chequeo cross-service:
+    el UNIQUE de la base mira un servicio a la vez, y un vendedor con "corte"
+    de 30 minutos y "color" de 90 puede terminar con los dos a las 15:00.
+
+    Cruza turnos -> services -> posts porque el turno cuelga del servicio y el
+    servicio del emprendimiento; el vendedor es el autor del emprendimiento, y
+    puede tener varios.
+
+    excluir_turno_id existe para cuando se reprograme un turno (todavia no hay
+    pantalla): sin eso, un turno chocaria consigo mismo.
+    """
+    consulta = (
+        Turno.query
+        .with_entities(Turno.hora_inicio, Turno.hora_fin)
+        .join(Service, Service.id == Turno.service_id)
+        .join(Post, Post.id == Service.post_id)
+        .filter(
+            Post.author == user_id,
+            Turno.fecha == fecha,
+            Turno.estado == EstadosTurno.ACTIVO,
+        )
+    )
+    if excluir_turno_id is not None:
+        consulta = consulta.filter(Turno.id != excluir_turno_id)
+    return [(fila[0], fila[1]) for fila in consulta.all()]
+
+
+def turnos_de_cliente(user_id):
+    """Los turnos que ese usuario reservo, mas proximos primero.
+
+    Los cancelados vienen tambien: el cliente tiene que poder ver que se
+    cancelo y quien lo cancelo, no que el turno desaparezca sin explicacion.
+
+    Los joinedload traen el servicio y su emprendimiento en la misma consulta:
+    cada fila del listado los muestra, y sin ellos eso es un SELECT por turno
+    (problema N+1). Mismo criterio que consultas.solicitudes_enviadas_por.
+    """
+    return (
+        Turno.query
+        .options(joinedload(Turno.servicio).joinedload(Service.post))
+        .filter(Turno.cliente_id == user_id)
+        .order_by(Turno.fecha.desc(), Turno.hora_inicio.desc())
+        .all()
+    )
+
+
+def turnos_recibidos_por(user_id):
+    """Los turnos que le sacaron a los servicios de sus emprendimientos.
+
+    Mismo cruce que rangos_ocupados_del_vendedor y misma privacidad que las
+    solicitudes: esto lo ve el dueño de los servicios y nadie mas.
+    """
+    return (
+        Turno.query
+        .join(Service, Service.id == Turno.service_id)
+        .join(Post, Post.id == Service.post_id)
+        .options(
+            joinedload(Turno.servicio).joinedload(Service.post),
+            joinedload(Turno.cliente),
+        )
+        .filter(Post.author == user_id)
+        .order_by(Turno.fecha.desc(), Turno.hora_inicio.desc())
+        .all()
+    )
+
+
+# ------------------------------------------------------------------ escritura
+
+def guardar(fila=None):
+    """Confirma la transaccion, agregando la fila nueva si se pasa una.
+
+    Igual que servicios.consultas.guardar: existe para que las vistas no
+    importen db solo para escribir dos lineas de sesion. El manejo del
+    IntegrityError se queda arriba, que es donde se sabe que significa el
+    choque.
+    """
+    if fila is not None:
+        db.session.add(fila)
+    db.session.commit()
+
+
+def descartar():
+    db.session.rollback()

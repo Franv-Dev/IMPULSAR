@@ -8,6 +8,8 @@ slots se pueda probar sin levantar ni un request ni una sesion de SQLAlchemy
 
 from datetime import time
 
+from app.turnos.modelo_turno import QuienCancela
+
 # Como se reconoce el choque contra el UNIQUE de la doble reserva. Los dos
 # motores dicen algo distinto: MySQL nombra la constraint ("Duplicate entry
 # '3-2026-09-15-15:00:00-1' for key 'uq_turnos_slot_activo'") y SQLite no la
@@ -145,3 +147,107 @@ def fin_de_turno(hora_inicio, duracion_minutos):
     if fin >= 24 * 60:
         return None
     return _en_hora(fin)
+
+
+# --------------------------------------------------------------- solapamiento
+
+def se_solapan(inicio_a, fin_a, inicio_b, fin_b):
+    """Si dos rangos horarios del mismo dia pisan aunque sea un minuto.
+
+    Media abierta [inicio, fin), igual que el corte de slots: un turno de 9:00
+    a 9:30 y otro de 9:30 a 10:00 NO se solapan, se tocan. Si el borde contara
+    como choque, dos turnos consecutivos -- que es exactamente lo que genera
+    cortar_en_slots -- serian imposibles de reservar.
+    """
+    return inicio_a < fin_b and inicio_b < fin_a
+
+
+def hay_solapamiento(inicio, fin, ocupados):
+    """Si ese rango pisa alguno de los (inicio, fin) ya tomados.
+
+    ESTO NO LO CUBRE LA BASE, y es la parte que quedo pendiente de 2a. El
+    UNIQUE de turnos compara (service_id, fecha, hora_inicio) exacta, asi que
+    frena dos reservas del MISMO servicio a la misma hora, pero no ve que el
+    mismo vendedor tenga "corte" de 30 minutos y "color" de 90 y que alguien
+    saque los dos a las 15:00. Para eso hay que comparar rangos, y un UNIQUE no
+    compara rangos.
+
+    Vive en reglas y no en la vista porque es una decision de negocio pura y se
+    prueba sin sesion; quien la llama le pasa los turnos ya consultados.
+
+    OJO CON LO QUE ESTO ES Y LO QUE NO ES. Es un chequeo de aplicacion, no una
+    garantia: entre este SELECT y el INSERT hay una ventana, y dos requests
+    simultaneos sobre dos servicios distintos del mismo vendedor pueden pasar
+    los dos. Cerrarla de verdad pide una constraint de exclusion por rangos,
+    que MySQL no tiene y SQLite tampoco. Lo que si esta garantizado a nivel de
+    base es el caso mas comun y mas probable, que es el mismo slot del mismo
+    servicio (ver el UNIQUE en modelo_turno.py).
+    """
+    return any(se_solapan(inicio, fin, otro_inicio, otro_fin)
+               for otro_inicio, otro_fin in ocupados)
+
+
+# ------------------------------------------------------------------- permisos
+
+def es_el_cliente(turno, user_id):
+    """Quien reservo el turno."""
+    return turno.cliente_id == user_id
+
+
+def es_el_vendedor(turno, user_id):
+    """El dueño del emprendimiento del que cuelga el servicio del turno.
+
+    Se resuelve mirando el dueño del emprendimiento y no un campo del turno,
+    igual que servicios.reglas.es_de: un servicio pertenece a un Post.
+    """
+    return turno.servicio.post.author == user_id
+
+
+def es_parte_del_turno(turno, user_id):
+    """Las dos personas que pueden ver y cancelar un turno.
+
+    Nadie mas, ni otro emprendedor ni un admin: mismo criterio de privacidad
+    que servicios.reglas.es_parte_de_la_solicitud.
+    """
+    return es_el_cliente(turno, user_id) or es_el_vendedor(turno, user_id)
+
+
+def puede_cancelar(turno, user_id):
+    """Si esa persona puede cancelar ese turno.
+
+    Las dos partes pueden, y por motivos distintos y reales: al cliente le
+    surgio algo, y el vendedor se enfermo o cerro ese dia. Un turno ya
+    cancelado no se vuelve a cancelar.
+    """
+    return turno.esta_activo and es_parte_del_turno(turno, user_id)
+
+
+def quien_cancela(turno, user_id):
+    """CLIENTE o VENDEDOR segun de que lado esta el que cancela.
+
+    Se deduce del turno y no se recibe del formulario: si viniera del POST,
+    cualquiera podria decir que lo cancelo el otro.
+    """
+    return QuienCancela.CLIENTE if es_el_cliente(turno, user_id) else QuienCancela.VENDEDOR
+
+
+# --------------------------------------------------------- lo que ya paso
+
+def descartar_pasados(slots, fecha, ahora):
+    """Saca los slots cuya hora de inicio ya paso. Solo aplica al dia de hoy.
+
+    Va aca y no adentro de consultas.slots_disponibles, y es a proposito (esta
+    escrito en el docstring de esa funcion desde 2a): depende de la hora
+    actual, asi que meterlo alla haria que la misma llamada devuelva cosas
+    distintas segun el minuto en que se la haga. Aca `ahora` entra por
+    parametro, con lo cual esto sigue siendo puro y se prueba con un reloj fijo.
+
+    Un dia futuro vuelve entero y uno pasado vuelve vacio. El corte es por hora
+    de INICIO: un turno que ya empezo no se puede reservar aunque todavia no
+    haya terminado.
+    """
+    if fecha > ahora.date():
+        return list(slots)
+    if fecha < ahora.date():
+        return []
+    return [(inicio, fin) for inicio, fin in slots if inicio > ahora.time()]

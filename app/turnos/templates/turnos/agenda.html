@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "turnos/_lista.html" import fila %}
+
+{% block title %}Turnos recibidos – IMPULSAR{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Turnos recibidos</h2>
+                <p class="section__subtitle">Los que te sacaron en tus servicios.</p>
+            </div>
+            <a href="{{ url_for('turnos.mios') }}" class="btn btn--secondary">
+                Mis turnos
+            </a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if turnos %}
+            <div class="cards">
+                {% for turno in turnos %}
+                    {{ fila(turno, estados, quien, ahora, True) }}
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="section__subtitle">
+                Todavía no te sacaron ningún turno.
+            </p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

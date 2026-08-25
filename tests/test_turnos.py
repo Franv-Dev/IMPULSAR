@@ -6,16 +6,19 @@ base; los de slots_disponibles si, porque su trabajo es justamente juntar el
 servicio, el horario del dueño y los turnos ya tomados.
 """
 
-from datetime import date, time
+from datetime import date, datetime, time, timedelta
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 
 from app.perfil.modelo_horario import Horario
 from app.servicios.modelo import Service
+from app.turnos import consultas as consultas_turnos
 from app.turnos.consultas import horas_tomadas, slots_disponibles
 from app.turnos.modelo_turno import EstadosTurno, QuienCancela, Turno
 from app.turnos.reglas import cortar_en_slots, es_slot_duplicado, fin_de_turno
+from services.eventos import hoy_en_argentina
+from services.horarios import ZONA_ARGENTINA
 
 # 2026-09-14 fue lunes (weekday() == 0) y 2026-09-15 martes. Se usan fechas
 # fijas y no "hoy" para que los tests no cambien de dia de la semana solos.
@@ -439,3 +442,481 @@ def test_el_formulario_muestra_los_campos_de_turnos(client, emprendedor):
     assert 'name="duracion_turno_minutos"' in pagina
     # El rango sale de reglas.py y no de numeros escritos en el HTML.
     assert 'min="5"' in pagina and 'max="480"' in pagina
+
+
+# =========================================================== las vistas (2b)
+
+def _proximo_lunes():
+    """Un lunes estrictamente futuro, para que el filtro de "ya pasó" no moleste.
+
+    Calculado y no fijo: una fecha escrita a mano deja de ser futura el dia que
+    llega, y el test empieza a fallar solo sin que nadie haya tocado nada.
+    """
+    hoy = hoy_en_argentina()
+    return hoy + timedelta(days=(7 - hoy.weekday()) % 7 or 7)
+
+
+@pytest.fixture
+def escenario(db, crear_usuario, crear_post, login):
+    """Vendedor con un servicio que toma turnos, y un cliente logueado.
+
+    El cliente queda logueado porque es quien reserva; los tests del vendedor
+    cambian la sesion con la fixture login.
+    """
+
+    class Escenario:
+        pass
+
+    def _crear(duracion=30, abre=time(9, 0), cierra=time(11, 0), dia=0):
+        e = Escenario()
+        e.vendedor = crear_usuario(username="vendedora")
+        e.cliente = crear_usuario(username="clienta")
+        e.post = crear_post(e.vendedor.id, title="Peluquería")
+        db.session.add(Horario(user_id=e.vendedor.id, dia_semana=dia,
+                               abre=abre, cierra=cierra, cerrado=False))
+        e.servicio = Service(
+            post_id=e.post.id, titulo="Corte", rubro="otros",
+            turnos_habilitados=True, duracion_turno_minutos=duracion,
+        )
+        db.session.add(e.servicio)
+        db.session.commit()
+        e.fecha = _proximo_lunes()
+        login(e.cliente.id)
+        return e
+
+    return _crear
+
+
+def _pedir(client, servicio_id, fecha, hora="09:00"):
+    return client.post(f"/turnos/servicio/{servicio_id}",
+                       data={"fecha": fecha.isoformat(), "hora_inicio": hora})
+
+
+# ------------------------------------------------------------------- reservar
+
+def test_la_pantalla_muestra_los_slots_libres(client, escenario):
+    e = escenario()
+
+    pagina = client.get(
+        f"/turnos/servicio/{e.servicio.id}?fecha={e.fecha.isoformat()}"
+    ).get_data(as_text=True)
+
+    for hora in ("09:00", "09:30", "10:00", "10:30"):
+        assert hora in pagina
+
+
+def test_reservar_un_slot_crea_el_turno(client, escenario):
+    e = escenario()
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "09:30")
+
+    assert respuesta.status_code == 302
+    turno = Turno.query.one()
+    assert turno.cliente_id == e.cliente.id
+    assert turno.service_id == e.servicio.id
+    assert turno.fecha == e.fecha
+    assert turno.hora_inicio == time(9, 30)
+    # hora_fin se congela con la duracion del servicio al momento de reservar.
+    assert turno.hora_fin == time(10, 0)
+    assert turno.estado == EstadosTurno.ACTIVO
+    assert turno.cupo_activo == 1
+
+
+def test_un_slot_reservado_desaparece_de_la_pantalla(client, escenario):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:30")
+
+    pagina = client.get(
+        f"/turnos/servicio/{e.servicio.id}?fecha={e.fecha.isoformat()}"
+    ).get_data(as_text=True)
+
+    assert 'value="09:30"' not in pagina
+    assert 'value="10:00"' in pagina
+
+
+def test_no_se_puede_reservar_un_horario_que_no_estaba_en_la_lista(client, escenario):
+    """El POST se manda a mano: sin este chequeo se reserva a cualquier hora."""
+    e = escenario()
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "03:00")
+
+    assert respuesta.status_code == 302
+    assert Turno.query.count() == 0
+
+
+def test_no_se_puede_reservar_un_dia_cerrado(client, escenario):
+    e = escenario()
+    martes = e.fecha + timedelta(days=1)
+
+    respuesta = _pedir(client, e.servicio.id, martes, "09:00")
+
+    assert respuesta.status_code == 302
+    assert Turno.query.count() == 0
+
+
+def test_no_se_puede_reservar_una_fecha_pasada(client, escenario):
+    e = escenario()
+    lunes_pasado = e.fecha - timedelta(days=14)
+
+    respuesta = _pedir(client, e.servicio.id, lunes_pasado, "09:00")
+
+    assert respuesta.status_code == 302
+    assert Turno.query.count() == 0
+
+
+def test_los_slots_de_hoy_que_ya_pasaron_no_se_ofrecen(client, db, escenario, monkeypatch):
+    """El filtro del pasado vive en la vista, con la hora inyectada."""
+    e = escenario()
+    hoy = hoy_en_argentina()
+    # El horario se recarga para el dia de la semana que sea hoy.
+    Horario.query.filter_by(user_id=e.vendedor.id).delete()
+    db.session.add(Horario(user_id=e.vendedor.id, dia_semana=hoy.weekday(),
+                           abre=time(9, 0), cierra=time(11, 0), cerrado=False))
+    db.session.commit()
+
+    monkeypatch.setattr(
+        "app.turnos.vistas.ahora_en_argentina",
+        lambda: datetime.combine(hoy, time(9, 45), tzinfo=ZONA_ARGENTINA),
+    )
+
+    pagina = client.get(
+        f"/turnos/servicio/{e.servicio.id}?fecha={hoy.isoformat()}"
+    ).get_data(as_text=True)
+
+    assert 'value="09:00"' not in pagina
+    assert 'value="09:30"' not in pagina
+    assert 'value="10:00"' in pagina
+    assert 'value="10:30"' in pagina
+
+
+def test_el_dueno_no_se_saca_turno_a_si_mismo(client, escenario, login):
+    e = escenario()
+    login(e.vendedor.id)
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    assert respuesta.status_code == 302
+    assert Turno.query.count() == 0
+
+
+def test_un_servicio_que_no_toma_turnos_no_se_reserva(client, db, escenario):
+    e = escenario()
+    e.servicio.turnos_habilitados = False
+    db.session.commit()
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    assert respuesta.status_code == 302
+    assert Turno.query.count() == 0
+
+
+def test_un_servicio_apagado_no_se_reserva(client, db, escenario):
+    e = escenario()
+    e.servicio.disponible = False
+    db.session.commit()
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    assert respuesta.status_code == 302
+    assert Turno.query.count() == 0
+
+
+def test_reservar_pide_sesion(client, escenario):
+    e = escenario()
+    with client.session_transaction() as sesion:
+        sesion.clear()
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    assert respuesta.status_code == 302
+    assert "login" in respuesta.headers["Location"]
+    assert Turno.query.count() == 0
+
+
+# ------------------------------------------- solapamiento entre dos servicios
+
+def _con_color(db, e, inicio=time(9, 0), fin=time(10, 30),
+               estado=EstadosTurno.ACTIVO, dueno_post=None):
+    """Un segundo servicio del mismo vendedor, con un turno ya tomado."""
+    color = Service(post_id=(dueno_post or e.post).id, titulo="Color",
+                    rubro="otros", turnos_habilitados=True,
+                    duracion_turno_minutos=90)
+    db.session.add(color)
+    db.session.commit()
+    db.session.add(Turno(
+        service_id=color.id, cliente_id=e.cliente.id, fecha=e.fecha,
+        hora_inicio=inicio, hora_fin=fin, estado=estado,
+    ))
+    db.session.commit()
+    return color
+
+
+def test_no_se_puede_reservar_pisando_otro_turno_del_mismo_vendedor(
+    client, db, escenario
+):
+    """Lo que el UNIQUE de la base NO cubre: dos servicios distintos del vendedor.
+
+    "Corte" dura 30 minutos y "Color" 90. Con Color tomado de 9:00 a 10:30, el
+    slot de Corte de las 9:30 se pisa con el, aunque sea otro service_id y por
+    lo tanto otra fila para el UNIQUE.
+    """
+    e = escenario()
+    _con_color(db, e)
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "09:30")
+
+    assert respuesta.status_code == 302
+    assert Turno.query.filter_by(service_id=e.servicio.id).count() == 0
+
+
+def test_un_turno_pegado_al_anterior_si_se_puede_reservar(client, db, escenario):
+    """El borde no es choque: 9:00-10:30 y 10:30-11:00 se tocan, no se pisan."""
+    e = escenario()
+    _con_color(db, e)
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "10:30")
+
+    assert respuesta.status_code == 302
+    assert Turno.query.filter_by(service_id=e.servicio.id).count() == 1
+
+
+def test_el_solapamiento_no_mira_los_turnos_de_otro_vendedor(
+    client, db, escenario, crear_usuario, crear_post
+):
+    e = escenario()
+    otro = crear_usuario(username="otrovendedor")
+    otro_post = crear_post(otro.id, title="Otra")
+    _con_color(db, e, dueno_post=otro_post)
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "09:30")
+
+    assert respuesta.status_code == 302
+    assert Turno.query.filter_by(service_id=e.servicio.id).count() == 1
+
+
+def test_un_turno_cancelado_no_bloquea_por_solapamiento(client, db, escenario):
+    e = escenario()
+    _con_color(db, e, estado=EstadosTurno.CANCELADO)
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "09:30")
+
+    assert respuesta.status_code == 302
+    assert Turno.query.filter_by(service_id=e.servicio.id).count() == 1
+
+
+# ------------------------------------------------ la carrera por el mismo slot
+
+def test_si_otro_agarra_el_slot_en_el_medio_la_base_lo_frena(
+    client, db, escenario, monkeypatch
+):
+    """Reproduce la carrera entre el SELECT y el INSERT.
+
+    Los dos requests leen "el slot está libre" y los dos intentan insertar. El
+    que llega segundo choca contra el UNIQUE, y la vista lo traduce a un mensaje
+    en vez de reventar con un 500.
+
+    Se simula parchando los dos puntos de lectura de la vista: slots_disponibles
+    mete al competidor DESPUES de calcular (o sea, el que reserva vio la lista
+    vieja) y rangos_ocupados_del_vendedor devuelve vacio, que es lo que habria
+    leido antes de que el otro commiteara.
+    """
+    e = escenario()
+    real = consultas_turnos.slots_disponibles
+
+    def slots_y_competidor(servicio, fecha):
+        libres = real(servicio, fecha)
+        if not Turno.query.filter_by(hora_inicio=time(9, 0)).count():
+            db.session.add(Turno(
+                service_id=servicio.id, cliente_id=e.vendedor.id, fecha=fecha,
+                hora_inicio=time(9, 0), hora_fin=time(9, 30),
+            ))
+            db.session.commit()
+        return libres
+
+    monkeypatch.setattr("app.turnos.vistas.slots_disponibles", slots_y_competidor)
+    monkeypatch.setattr(
+        "app.turnos.vistas.rangos_ocupados_del_vendedor", lambda *a, **k: [])
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    assert respuesta.status_code == 302
+    # Quedo el del competidor y nada mas: el segundo INSERT lo rechazo la base.
+    assert Turno.query.filter_by(hora_inicio=time(9, 0)).count() == 1
+    assert Turno.query.filter_by(cliente_id=e.cliente.id).count() == 0
+
+
+def test_un_integrityerror_que_no_es_el_del_slot_no_se_disfraza(
+    client, escenario, monkeypatch
+):
+    """Una FK rota no puede salir como "ese horario lo tomó otra persona".
+
+    Se fabrica el IntegrityError en vez de romper una FK de verdad (borrando el
+    cliente o el servicio en el medio): cualquiera de esas dos cosas deja la
+    sesion de SQLAlchemy con objetos borrados y el request muere antes de
+    llegar al INSERT, con lo cual el test probaria otra cosa. Lo que importa
+    aca es la rama: si el choque no es el del slot, sube tal cual.
+    """
+    e = escenario()
+
+    def choque_ajeno(fila=None):
+        raise IntegrityError(
+            "INSERT INTO turnos ...", {},
+            Exception("FOREIGN KEY constraint failed"),
+        )
+
+    monkeypatch.setattr("app.turnos.consultas.guardar", choque_ajeno)
+
+    with pytest.raises(IntegrityError):
+        _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    assert Turno.query.count() == 0
+
+
+# ------------------------------------------------------------------- cancelar
+
+def test_el_cliente_cancela_su_turno(client, escenario):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    turno = Turno.query.one()
+
+    respuesta = client.post(f"/turnos/{turno.id}/cancelar")
+
+    assert respuesta.status_code == 302
+    assert turno.estado == EstadosTurno.CANCELADO
+    assert turno.cancelado_por == QuienCancela.CLIENTE
+    assert turno.cupo_activo is None
+
+
+def test_el_vendedor_cancela_un_turno_que_recibio(client, escenario, login):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    turno = Turno.query.one()
+    login(e.vendedor.id)
+
+    respuesta = client.post(f"/turnos/{turno.id}/cancelar")
+
+    assert respuesta.status_code == 302
+    assert turno.estado == EstadosTurno.CANCELADO
+    assert turno.cancelado_por == QuienCancela.VENDEDOR
+
+
+def test_un_tercero_no_puede_cancelar_un_turno_ajeno(
+    client, escenario, crear_usuario, login
+):
+    """El chequeo pasa en la vista, no en el template: el POST se manda a mano."""
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    turno = Turno.query.one()
+    intruso = crear_usuario(username="intruso")
+    login(intruso.id)
+
+    respuesta = client.post(f"/turnos/{turno.id}/cancelar")
+
+    assert respuesta.status_code == 302
+    assert turno.estado == EstadosTurno.ACTIVO
+    assert turno.cancelado_por is None
+
+
+def test_cancelar_dos_veces_no_pisa_quien_cancelo(client, escenario, login):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    turno = Turno.query.one()
+    client.post(f"/turnos/{turno.id}/cancelar")
+
+    login(e.vendedor.id)
+    respuesta = client.post(f"/turnos/{turno.id}/cancelar")
+
+    assert respuesta.status_code == 302
+    # Sigue diciendo que lo cancelo el cliente, que es quien lo cancelo.
+    assert turno.cancelado_por == QuienCancela.CLIENTE
+
+
+def test_cancelar_libera_el_slot_en_la_pantalla(client, escenario):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    turno = Turno.query.one()
+    client.post(f"/turnos/{turno.id}/cancelar")
+
+    pagina = client.get(
+        f"/turnos/servicio/{e.servicio.id}?fecha={e.fecha.isoformat()}"
+    ).get_data(as_text=True)
+
+    assert 'value="09:00"' in pagina
+
+
+def test_cancelar_solo_acepta_post(client, escenario):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    turno = Turno.query.one()
+
+    assert client.get(f"/turnos/{turno.id}/cancelar").status_code == 405
+
+
+# -------------------------------------------------------------------- listados
+
+def test_mis_turnos_muestra_los_propios(client, escenario):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    pagina = client.get("/turnos/mios").get_data(as_text=True)
+
+    assert "Corte" in pagina
+    assert "09:00" in pagina
+
+
+def test_mis_turnos_no_muestra_los_de_otro_cliente(
+    client, escenario, crear_usuario, login
+):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    otro = crear_usuario(username="otrocliente")
+    login(otro.id)
+
+    pagina = client.get("/turnos/mios").get_data(as_text=True)
+
+    assert "Todavía no reservaste" in pagina
+
+
+def test_la_agenda_del_vendedor_muestra_lo_que_le_sacaron(client, escenario, login):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    login(e.vendedor.id)
+
+    pagina = client.get("/turnos/agenda").get_data(as_text=True)
+
+    assert "Corte" in pagina
+    assert "clienta" in pagina
+
+
+def test_la_agenda_no_muestra_turnos_de_otro_vendedor(
+    client, escenario, crear_usuario, login
+):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    ajeno = crear_usuario(username="ajeno")
+    login(ajeno.id)
+
+    pagina = client.get("/turnos/agenda").get_data(as_text=True)
+
+    assert "Todavía no te sacaron" in pagina
+
+
+def test_el_cliente_ve_quien_le_cancelo_el_turno(client, escenario, login):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    turno = Turno.query.one()
+    login(e.vendedor.id)
+    client.post(f"/turnos/{turno.id}/cancelar")
+
+    login(e.cliente.id)
+    pagina = client.get("/turnos/mios").get_data(as_text=True)
+
+    assert "el prestador" in pagina
+
+
+@pytest.mark.parametrize("ruta", ["/turnos/mios", "/turnos/agenda"])
+def test_los_listados_piden_sesion(client, ruta):
+    respuesta = client.get(ruta)
+
+    assert respuesta.status_code == 302
+    assert "login" in respuesta.headers["Location"]

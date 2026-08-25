@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Reservar turno – {{ servicio.titulo }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container" style="max-width: 720px;">
+        <div class="section__header">
+            <div>
+                <h2 class="section__title">Reservar un turno</h2>
+                <p class="section__subtitle">
+                    {{ servicio.titulo }} · {{ servicio.post.title }}
+                    · {{ servicio.duracion_turno_minutos }} minutos
+                </p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages" style="margin-bottom:1rem;">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {# El dia se elige con un GET, asi la URL del dia queda compartible y el
+           navegador no repregunta por un POST al volver atras. #}
+        <form method="get" class="auth__form" style="margin-bottom:1.5rem;">
+            <div class="auth__field">
+                <label for="fecha" class="auth__label">Día</label>
+                <input type="date" name="fecha" id="fecha" class="auth__input"
+                       value="{{ fecha.isoformat() }}" min="{{ hoy.isoformat() }}">
+            </div>
+            <button type="submit" class="btn btn--secondary">Ver ese día</button>
+        </form>
+
+        {% if slots %}
+            <p class="section__subtitle">
+                Horarios libres para el {{ fecha | fecha_evento }}:
+            </p>
+            <div class="card__tags" style="gap:.5rem; flex-wrap:wrap;">
+                {% for inicio, fin in slots %}
+                    <form method="post" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="fecha" value="{{ fecha.isoformat() }}">
+                        <input type="hidden" name="hora_inicio"
+                               value="{{ inicio.strftime('%H:%M') }}">
+                        <button type="submit" class="btn btn--primary">
+                            {{ inicio.strftime('%H:%M') }} a {{ fin.strftime('%H:%M') }}
+                        </button>
+                    </form>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="section__subtitle">
+                No hay turnos disponibles para el {{ fecha | fecha_evento }}.
+                Probá con otro día.
+            </p>
+        {% endif %}
+
+        <p class="auth__footer">
+            Volver a <a href="{{ url_for('blog.detail', id=servicio.post_id) }}">{{ servicio.post.title }}</a>.
+        </p>
+    </div>
+</section>
+{% endblock %}
