@@ -2,14 +2,40 @@
 
 {% block title %}Editar perfil – IMPULSAR{% endblock %}
 
+{#  La pantalla "Ajustes de cuenta" del rediseño: el menu de cuenta a la
+    izquierda y, adentro, el sub-menu de ajustes.
+
+    De los cinco grupos del diseño existen dos: "Perfil publico" (esta pantalla)
+    y "Horarios". Los otros tres estan maquetados y apagados, con el aviso
+    abajo: no hay pantalla ni backend para contacto y redes, contraseña ni
+    notificaciones todavia. #}
+
 {% block content %}
-<section class="auth">
-    <div class="container auth__container">
-        <div class="auth__card">
-            <h1 class="auth__title">Editar mi perfil</h1>
-            <p class="auth__subtitle">
-                Actualizá tu biografía y tu ubicación.
-            </p>
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% include "partials/_menu_cuenta.html" with context %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Ajustes de mi cuenta</h1>
+                        <p class="cuenta__bajada">Actualizá tu biografía y tu ubicación.</p>
+                    </div>
+                </div>
+
+                <nav class="ajustes__nav" aria-label="Secciones de ajustes">
+                    <a href="{{ url_for('profile.edit') }}" class="ajustes__tab ajustes__tab--activa" aria-current="page">
+                        Perfil público
+                    </a>
+                    <a href="{{ url_for('profile.horarios') }}" class="ajustes__tab">Horarios</a>
+                    <span class="ajustes__tab ajustes__tab--pendiente" aria-disabled="true">Contacto y redes</span>
+                    <span class="ajustes__tab ajustes__tab--pendiente" aria-disabled="true">Cuenta y contraseña</span>
+                    <span class="ajustes__tab ajustes__tab--pendiente" aria-disabled="true">Notificaciones</span>
+                </nav>
+                <p class="cuenta__pendiente">Los tres últimos todavía no tienen pantalla.</p>
+
+                <div class="auth__card ajustes__caja">
 
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
@@ -164,10 +190,12 @@
                 </button>
             </form>
 
-            <p class="auth__footer">
-                Volver a
-                <a href="{{ url_for('profile.view_profile', slug=user.slug) }}">mi perfil</a>.
-            </p>
+                    <p class="auth__footer">
+                        Volver a
+                        <a href="{{ url_for('profile.view_profile', slug=user.slug) }}">mi perfil</a>.
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </section>

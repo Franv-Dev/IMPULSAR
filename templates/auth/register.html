@@ -3,13 +3,20 @@
 {% block title %}Registrarse – IMPULSAR{% endblock %}
 
 {% block content %}
-<section class="auth">
-    <div class="container auth__container">
+{# Misma pantalla partida que "Entrar" (ver templates/auth/login.html): el
+   rediseño trata entrar y crear cuenta como dos solapas de la misma pantalla. #}
+<section class="auth auth--split">
+    <div class="auth__formulario">
         <div class="auth__card">
             <h1 class="auth__title">Crear cuenta</h1>
             <p class="auth__subtitle">
                 Registrá tu usuario para empezar a impulsar tu emprendimiento.
             </p>
+
+            <div class="auth__tabs">
+                <a href="{{ url_for('auth.login') }}" class="auth__tab">Entrar</a>
+                <a href="{{ url_for('auth.register') }}" class="auth__tab auth__tab--activa">Crear cuenta</a>
+            </div>
 
             {# Mensajes flash (errores, avisos) #}
             {% with messages = get_flashed_messages() %}
@@ -83,5 +90,7 @@
             </p>
         </div>
     </div>
+
+    {% include "auth/_panel.html" %}
 </section>
 {% endblock %}

@@ -1,0 +1,51 @@
+{# La mitad derecha de la pantalla "Entrar" del rediseño: el fondo indigo
+   oscuro con el argumento de por que registrarse. Va como parcial porque las
+   dos pantallas de auth (entrar y crear cuenta) muestran la misma.
+
+   El numero del titulo es el conteo real de emprendimientos, no uno escrito a
+   mano: el mockup decia "218 de San Rafael", pero la ciudad no es un dato que
+   Post tenga todavia, asi que la frase se queda con lo que se puede sostener.
+   Los cuatro beneficios son los del diseño. #}
+<div class="auth__panel">
+    <div>
+        <span class="auth__panel-chip">Gratis para emprender</span>
+        <h2 class="auth__panel-titulo">
+            {{ total_posts }} emprendimiento{{ '' if total_posts == 1 else 's' }} ya {{ 'está' if total_posts == 1 else 'están' }} en IMPULSAR
+        </h2>
+        <p class="auth__panel-bajada">
+            Publicá lo que hacés, recibí pedidos de presupuesto y anunciá tus ferias
+            sin pagar comisión por venta.
+        </p>
+    </div>
+
+    <ol class="auth__beneficios">
+        <li class="auth__beneficio">
+            <span class="auth__beneficio-num" aria-hidden="true">1</span>
+            <div>
+                <span class="auth__beneficio-titulo">Publicá en cinco minutos</span>
+                <span class="auth__beneficio-desc">Nombre, categoría y una descripción. Las fotos las agregás después.</span>
+            </div>
+        </li>
+        <li class="auth__beneficio">
+            <span class="auth__beneficio-num" aria-hidden="true">2</span>
+            <div>
+                <span class="auth__beneficio-titulo">Recibí pedidos concretos</span>
+                <span class="auth__beneficio-desc">Presupuestos con fecha, cantidad y foto, no mensajes sueltos.</span>
+            </div>
+        </li>
+        <li class="auth__beneficio">
+            <span class="auth__beneficio-num" aria-hidden="true">3</span>
+            <div>
+                <span class="auth__beneficio-titulo">Anunciá tus ferias</span>
+                <span class="auth__beneficio-desc">Los eventos entran en la cartelera y en el calendario de la ciudad.</span>
+            </div>
+        </li>
+        <li class="auth__beneficio">
+            <span class="auth__beneficio-num" aria-hidden="true">4</span>
+            <div>
+                <span class="auth__beneficio-titulo">Sin comisión por venta</span>
+                <span class="auth__beneficio-desc">Cobrás como quieras: IMPULSAR no toca la plata.</span>
+            </div>
+        </li>
+    </ol>
+</div>

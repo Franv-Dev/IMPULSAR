@@ -97,6 +97,52 @@ def resenias_recibidas_por(user_id, page, per_page):
     )
 
 
+def resumen_de_resenias_recibidas(user_id):
+    """El resumen que el rediseño muestra al costado de "Reseñas recibidas".
+
+    Es sobre TODAS las reseñas del usuario y no sobre la pagina que se esta
+    viendo: el promedio y la distribucion de una pagina de doce no dicen nada.
+
+    Devuelve promedio, total, cuantas sin responder y la distribucion por
+    puntaje, con las cinco estrellas siempre presentes (las que no tienen
+    ninguna van en 0, porque la barra igual se dibuja).
+    """
+    base = Review.query.join(Post, Post.id == Review.post_id).filter(
+        Post.author == user_id
+    )
+
+    total = base.count()
+    promedio = (
+        base.with_entities(func.avg(Review.rating)).scalar() if total else None
+    )
+    sin_responder = base.filter(
+        (Review.reply.is_(None)) | (Review.reply == "")
+    ).count()
+
+    filas = base.with_entities(Review.rating, func.count(Review.id)).group_by(
+        Review.rating
+    ).all()
+    por_puntaje = {puntaje: cuantas for puntaje, cuantas in filas}
+
+    return {
+        "total": total,
+        "promedio": round(promedio, 1) if promedio else None,
+        "sin_responder": sin_responder,
+        "distribucion": [
+            {
+                "estrellas": estrellas,
+                "cuantas": por_puntaje.get(estrellas, 0),
+                # El ancho de la barra. Se calcula aca y no en el template para
+                # no repetir la division (y la guarda del cero) en el HTML.
+                "porcentaje": round(por_puntaje.get(estrellas, 0) * 100 / total)
+                if total
+                else 0,
+            }
+            for estrellas in range(5, 0, -1)
+        ],
+    }
+
+
 def estadisticas_de_usuario(user_id):
     """Las metricas acumuladas de todos los emprendimientos del usuario.
 

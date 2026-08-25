@@ -3,58 +3,41 @@
 {% block title %}IMPULSAR – Impulsá tu emprendimiento local{% endblock %}
 
 {% block content %}
-    <!-- HERO -->
-    <section class="hero">
-        <div class="container hero__content">
-            <div class="hero__text">
-                <h1 class="hero__title">Impulsá tu emprendimiento local</h1>
-                <p class="hero__subtitle">
-                    Centralizá la información de tu proyecto, mostrate a nuevos clientes
-                    y conectate con el ecosistema emprendedor de tu ciudad.
-                </p>
-
-                <div class="hero__actions">
-                    <div class="hero__actions">
-                        {% if g.user %}
-                            <a href="{{ url_for('blog.my_posts') }}" class="btn btn--primary">
-                                Registrar mi emprendimiento
-                            </a>
-                        {% else %}
-                            <a href="{{ url_for('auth.login') }}" class="btn btn--primary">
-                                Registrar mi emprendimiento
-                            </a>
-                        {% endif %}
-                        <a href="{{ url_for('blog.index') }}" class="btn btn--secondary">
-                            Ver emprendimientos
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="hero__image">
-                <div class="hero-illustration">
-                    <div class="hero-illustration__card hero-illustration__card--main"></div>
-                    <div class="hero-illustration__card hero-illustration__card--secondary"></div>
-                    <div class="hero-illustration__pin"></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- BUSCADOR -->
-    <section class="search">
+    <!-- BUSCADOR
+         Banda propia arriba de todo, como quedo en el rediseño: el buscador
+         deja de ser una pastilla flotando entre el hero y las tarjetas.
+         Los dos campos filtran la grilla de abajo en vivo (ver main.js); la
+         busqueda por cercania no esta aca porque necesita geocodificar una
+         direccion, y eso hoy solo lo hace el listado (/blog/). -->
+    <section class="buscador">
         <div class="container">
-            <form id="search-form" class="search__form">
-                <div class="search__group search__group--full">
-                    <span class="search__icon">🔍</span>
+            <h1 class="buscador__titulo">Todo lo que se hace cerca tuyo</h1>
+            <p class="buscador__conteo">
+                {{ total_posts }} emprendimiento{{ '' if total_posts == 1 else 's' }} publicado{{ '' if total_posts == 1 else 's' }}
+            </p>
+
+            <form id="search-form" class="buscador__form">
+                <div class="buscador__campo buscador__campo--ancho">
+                    <label class="buscador__label" for="search-text">Qué buscás</label>
                     <input
                         id="search-text"
                         type="text"
-                        class="search__input"
-                        placeholder="Buscar emprendimientos por nombre o descripción..."
+                        class="buscador__input"
+                        placeholder="Pan de masa madre"
                     />
                 </div>
-                <button type="submit" class="btn btn--primary search__button">
+
+                <div class="buscador__campo">
+                    <label class="buscador__label" for="search-category">Rubro</label>
+                    <select id="search-category" class="buscador__select">
+                        <option value="">Todos</option>
+                        {% for clave, etiqueta in categorias.items() %}
+                            <option value="{{ clave }}">{{ etiqueta }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn--primary buscador__boton">
                     Buscar
                 </button>
             </form>
@@ -92,10 +75,13 @@
                 <div>
                     <h2 class="section__title">Emprendimientos destacados</h2>
                     <p class="section__subtitle">
-                        Esta lista se carga automáticamente desde la API de IMPULSAR.
+                        Los últimos que se publicaron en la plataforma.
                     </p>
                 </div>
-                <a href="#emprendimientos" class="section__link">Ver todos</a>
+                {# Antes apuntaba a #emprendimientos, que es esta misma seccion:
+                   el link no llevaba a ninguna parte. Ahora va al listado
+                   completo, que es lo que promete. #}
+                <a href="{{ url_for('blog.index') }}" class="section__link">Ver todos</a>
             </div>
 
             <!-- GRID donde se insertan las cards con JS -->
@@ -123,49 +109,51 @@
         <div class="container">
             <div class="section__header">
                 <div>
-                    <h2 class="section__title">Calendario de ferias y eventos</h2>
+                    <h2 class="section__title">Ferias y eventos</h2>
                     <p class="section__subtitle">
-                        Lo que publican los emprendimientos, mes a mes. Tocá un día marcado para ver qué pasa.
+                        Lo que publican los emprendimientos, mes a mes. Elegí un día marcado para filtrar la lista.
                     </p>
                 </div>
                 <a href="{{ url_for('eventos.index') }}" class="section__link">Ver la cartelera</a>
             </div>
 
-            <!-- El id va con el prefijo calendario- igual que el de la grilla,
-                 el mes y el panel: son todos ganchos del JS. La <section> de
+            <!-- Dos columnas, como quedo en el rediseño: la lista de eventos ya
+                 no se despliega DENTRO de la grilla, se lee de una al lado y el
+                 calendario solo la filtra.
+
+                 El id va con el prefijo calendario- igual que el de la grilla,
+                 el mes y la lista: son todos ganchos del JS. La <section> de
                  afuera se queda con id="calendario" a secas porque ese es el
                  ancla de la pagina, igual que #emprendimientos ahi arriba.
                  Antes los dos se llamaban "calendario" y getElementById
                  devolvia la <section>, con lo cual el gris de "cargando" no se
                  le aplicaba nunca a la tarjeta. -->
-            <div class="calendario" id="calendario-card">
-                <div class="calendario__head">
-                    <h3 class="calendario__mes" id="calendario-mes" aria-live="polite">&nbsp;</h3>
-                    <div class="calendario__nav">
-                        <button type="button" class="calendario__nav-btn" id="calendario-prev" aria-label="Mes anterior">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-                        </button>
-                        <button type="button" class="calendario__nav-btn" id="calendario-next" aria-label="Mes siguiente">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
-                        </button>
+            <div class="eventos__layout">
+                <div class="calendario" id="calendario-card">
+                    <div class="calendario__head">
+                        <h3 class="calendario__mes" id="calendario-mes" aria-live="polite">&nbsp;</h3>
+                        <div class="calendario__nav">
+                            <button type="button" class="calendario__nav-btn" id="calendario-prev" aria-label="Mes anterior">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+                            </button>
+                            <button type="button" class="calendario__nav-btn" id="calendario-next" aria-label="Mes siguiente">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <div class="calendario__weekdays" aria-hidden="true">
-                    <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
-                </div>
-
-                <!-- JS inyecta acá los días del mes -->
-                <div class="calendario__grid" id="calendario-grid"></div>
-
-                <!-- Panel que se despliega abajo del mes, sin tapar la grilla -->
-                <div class="calendario__expand" id="calendario-expand">
-                    <div class="calendario__expand-inner">
-                        <div class="calendario__expand-content" id="calendario-expand-content"></div>
+                    <div class="calendario__weekdays" aria-hidden="true">
+                        <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
                     </div>
+
+                    <!-- JS inyecta acá los días del mes -->
+                    <div class="calendario__grid" id="calendario-grid"></div>
+
+                    <p class="calendario__estado" id="calendario-estado" role="status" aria-live="polite" hidden></p>
                 </div>
 
-                <p class="calendario__estado" id="calendario-estado" role="status" aria-live="polite" hidden></p>
+                <!-- JS inyecta acá la lista del mes, o la del día elegido -->
+                <div class="eventos__panel" id="calendario-lista" aria-live="polite"></div>
             </div>
 
             <p class="calendario__leyenda">
@@ -176,6 +164,37 @@
                     <span class="calendario__punto calendario__punto--hoy" aria-hidden="true"></span> Hoy
                 </span>
             </p>
+        </div>
+    </section>
+
+    <!-- CTA EMPRENDEDOR
+         El unico lugar del home donde se pide registrarse, como en el
+         rediseño: antes los dos botones del hero competian con el buscador
+         apenas entrabas. -->
+    <section class="cta">
+        <div class="container cta__caja">
+            <div class="cta__texto">
+                <h2 class="cta__titulo">¿Tenés un emprendimiento? Publicalo gratis</h2>
+                <p class="cta__bajada">
+                    Cargá fotos, horarios y ubicación una sola vez. Recibí consultas
+                    por la mensajería interna y mostrá tus reseñas.
+                </p>
+            </div>
+
+            <div class="cta__acciones">
+                {% if g.user %}
+                    <a href="{{ url_for('blog.my_posts') }}" class="btn btn--primary">
+                        Publicar mi emprendimiento
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn--primary">
+                        Publicar mi emprendimiento
+                    </a>
+                {% endif %}
+                <a href="{{ url_for('pages.about') }}" class="btn btn--secondary">
+                    Cómo funciona
+                </a>
+            </div>
         </div>
     </section>
 

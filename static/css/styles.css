@@ -21,42 +21,54 @@
 :root {
     color-scheme: light;
 
-    /* Era #6C63FF, que contra --color-on-primary (blanco) daba 4.32:1, abajo
-       del minimo AA de 4.5:1 para texto normal: el texto de todo .btn--primary
-       en modo claro. Se oscurecio lo justo para pasar -- este da 4.77:1 -- en
-       vez de mover el blanco, que ademas de tener que cambiar a un gris habria
-       tocado tambien el avatar y los iconos.
+    /* El indigo del logo, tal como esta en el rediseño de Claude Design (los
+       cuatro archivos de redisenio/project/ lo usan). Antes era #665DF1, que
+       venia de #6C63FF: un violeta mas claro y mas saturado. El del logo es
+       mas oscuro, asi que el texto blanco encima gana contraste en vez de
+       perderlo -- 10.3:1 contra --color-on-primary, muy por encima del minimo
+       AA de 4.5:1.
        Los numeros salen de la formula de WCAG ((L1+0.05)/(L2+0.05) sobre la
-       luminancia relativa), no de mirarlo. El modo oscuro ya cumplia (6.9:1) y
-       no se toco. */
-    --color-primary: #665DF1;
-    /* Sigue siendo mas oscuro que el normal, asi que el hover se nota igual
-       que antes: 5.39:1 contra blanco, 1.13:1 contra el normal. */
-    --color-primary-hover: #5C55E6;
-    --color-primary-soft: #E3E0FF;
-    /* Texto/iconos que van encima del violeta solido (botones, avatar). */
+       luminancia relativa), no de mirarlo. El modo oscuro NO se toca: ahi el
+       primario tiene que ser claro para despegar del fondo, y el suyo ya
+       cumplia (6.9:1). */
+    --color-primary: #3E2F94;
+    /* Mas oscuro que el normal, asi que el hover se sigue notando: 13.0:1
+       contra blanco, 1.27:1 contra el normal. */
+    --color-primary-hover: #33267C;
+    /* Indigo profundo del rediseño, para bloques de marca sobre los que va
+       texto blanco fijo (hoy: el panel de las pantallas de auth). Va con el
+       MISMO valor en los dos temas a proposito: no es una superficie que siga
+       al tema. Contra el blanco da 13.9:1. */
+    --color-primary-deep: #2A2068;
+    --color-primary-soft: #ECEAF7;
+    /* Texto/iconos que van encima del indigo solido (botones, avatar). */
     --color-on-primary: #FFFFFF;
 
-    --color-bg: #F8F9FB;
+    /* Neutros del rediseño: la misma familia fria y apenas azulada del indigo,
+       en vez de los grises neutros de antes. */
+    --color-bg: #F5F7FA;
     --color-surface: #FFFFFF;
-    --color-surface-alt: #F3F4F6;
-    --color-image-bg: #F8F8F8;
+    --color-surface-alt: #EEF1F7;
+    --color-image-bg: #F5F7FA;
 
-    --color-text: #1F2933;
-    --color-text-soft: #4B5563;
-    --color-muted: #6B7280;
-    --color-border: #E5E7EB;
+    --color-text: #1B2430;
+    --color-text-soft: #4A5666;
+    /* 5.5:1 contra --color-surface: sigue pasando AA como texto chico. */
+    --color-muted: #5F6B7C;
+    --color-border: #E2E6EE;
 
-    --color-input-bg: #F9FAFB;
+    --color-input-bg: #F5F7FA;
     --color-input-bg-focus: #FFFFFF;
 
-    --color-hero-from: #F9FAFB;
-    --color-hero-to: #EEF2FF;
-    --color-hero-illustration: #EEF2FF;
+    --color-hero-from: #FFFFFF;
+    --color-hero-to: #ECEAF7;
+    --color-hero-illustration: #ECEAF7;
 
-    --color-success-bg: #DCFCE7;
-    --color-success-text: #15803D;
-    --color-success-strong: #16A34A;
+    /* Verde del rediseño ("abierto ahora"). El texto da 4.7:1 sobre su propio
+       fondo y 5.3:1 sobre blanco. */
+    --color-success-bg: #E6F4EC;
+    --color-success-text: #1F7A4D;
+    --color-success-strong: #1F7A4D;
 
     --color-danger-bg: #FEE2E2;
     --color-danger-text: #B91C1C;
@@ -65,16 +77,19 @@
     --color-danger-surface: #FEF2F2;
     --color-heart: #DC2626;
 
-    --color-star: #FBBF24;
-    --color-star-empty: #E5E7EB;
+    --color-star: #E8A33D;
+    --color-star-empty: #E2E6EE;
 
-    /* Acento secundario. Hoy lo usa un solo lugar: el punto que marca el dia de
-       hoy en el calendario del home, que necesitaba distinguirse del violeta de
+    /* Acento secundario: la terracota del rediseño, que ahi marca las ferias y
+       el rotulo de publicidad. Hoy lo usa un solo lugar: el punto del dia de
+       hoy en el calendario del home, que necesitaba distinguirse del indigo de
        "este dia tiene eventos" sin competir con el. Se reserva ademas para
        cuando Event tenga tipos y haya que diferenciarlos.
        Solo como marca de color, nunca como color de TEXTO: contra el fondo
-       claro da 2.5:1 y no llegaria a AA. */
-    --color-accent: #F1965D;
+       claro da 3.2:1 y no llegaria a AA. Para texto sobre terracota suave el
+       rediseño usa #B85F30, que todavia no tiene token porque no hay donde
+       usarlo. */
+    --color-accent: #D97544;
 
     --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.10);
     --shadow-light: 0 4px 12px rgba(15, 23, 42, 0.08);
@@ -96,6 +111,8 @@
 
     --color-primary: #9B93FF;
     --color-primary-hover: #B3ACFF;
+    /* El mismo que en claro: ver el comentario alla arriba. */
+    --color-primary-deep: #2A2068;
     --color-primary-soft: #2E2950;
     --color-on-primary: #16132A;
 
@@ -128,8 +145,8 @@
     --color-heart: #F87171;
 
     --color-star: #FBBF24;
-    /* El mismo naranja: sobre fondo oscuro ya destaca y aclararlo lo volveria
-       chillon al lado del violeta del tema oscuro, que tambien es mas claro. */
+    /* Un tono mas claro que la terracota del tema claro (#D97544): sobre fondo
+       oscuro la version oscura se apagaria, igual que le pasa al indigo. */
     --color-accent: #F1965D;
     /* Mas claro que el borde: la estrella sin marcar tiene que insinuarse para
        que se vea que el widget tiene 5, y sobre fondo oscuro un gris apenas por
@@ -281,6 +298,79 @@ main {
     .navbar__actions {
         margin-left: auto;
     }
+}
+
+/* Texto solo para lectores de pantalla: la etiqueta del buscador del navbar,
+   que en pantalla se sobreentiende por el placeholder pero un lector de
+   pantalla no tiene de donde sacar. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Buscador del navbar. Aparece recien en 1200px: el menu de links va centrado
+   en absoluto respecto al navbar entero (ver el media query de arriba), asi
+   que no empuja a nadie y el lugar de los costados hay que garantizarlo a
+   mano. Con el menu de 257px en el medio y el bloque de acciones a la
+   derecha, abajo de 1200 este campo se le meteria encima. */
+.navbar__buscador {
+    display: none;
+}
+
+@media (min-width: 1200px) {
+    .navbar__buscador {
+        display: block;
+        flex: 0 1 320px;
+        min-width: 0;
+    }
+
+    /* Con el buscador en la fila, el menu deja de ir centrado y pasa a fluir
+       detras, que es el orden del rediseño: logo, buscador, links, acciones.
+       Medido: centrado, el menu arranca en 778 y el campo termina en 897, o
+       sea 119px montados uno sobre el otro. No es que el centrado estuviera
+       mal -- funcionaba mientras los costados fueran el logo y las acciones --
+       sino que ya no hay lugar en el medio para centrar nada.
+       El corte de 960px sigue intacto: entre 960 y 1200 no hay buscador y el
+       menu se centra como siempre. */
+    .navbar__links {
+        position: static;
+        left: auto;
+        transform: none;
+        margin-left: auto;
+    }
+
+    .navbar__actions {
+        margin-left: 0;
+    }
+}
+
+.navbar__buscador-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-input-bg);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.85rem;
+}
+
+.navbar__buscador-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+}
+
+.navbar__buscador-input::placeholder {
+    color: var(--color-muted);
 }
 
 .navbar__link {
@@ -517,7 +607,126 @@ main {
     box-shadow: 0 6px 16px rgba(88, 80, 236, 0.5);
 }
 
-/* BUSCADOR */
+/* BUSCADOR DEL HOME
+   Banda propia arriba de todo. No reusa .search__* a proposito: esas clases
+   son del buscador de servicios, que es una pastilla redonda de una sola
+   linea, y tocarlas ahi moveria una pagina que no tiene nada que ver. */
+
+.buscador {
+    padding: 3rem 0 2.5rem;
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.buscador__titulo {
+    margin: 0 0 0.4rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 2.2rem;
+    line-height: 1.15;
+    text-wrap: pretty;
+}
+
+.buscador__conteo {
+    margin: 0 0 1.75rem;
+    color: var(--color-muted);
+}
+
+.buscador__form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+}
+
+.buscador__campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1 1 180px;
+}
+
+.buscador__campo--ancho {
+    flex: 2 1 320px;
+}
+
+.buscador__label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-soft);
+}
+
+.buscador__input,
+.buscador__select {
+    /* 48px: el mismo alto para los dos, asi la fila queda pareja y sigue
+       siendo comodo de tocar en telefono. */
+    height: 48px;
+    padding: 0 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-input-bg);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.buscador__input:focus,
+.buscador__select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+}
+
+.buscador__input::placeholder {
+    color: var(--color-muted);
+}
+
+.buscador__boton {
+    height: 48px;
+    flex: 0 0 auto;
+}
+
+/* CTA EMPRENDEDOR (home) */
+
+.cta {
+    padding: 1rem 0 3.5rem;
+}
+
+.cta__caja {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--color-primary-soft);
+}
+
+.cta__texto {
+    flex: 1 1 320px;
+}
+
+.cta__titulo {
+    margin: 0 0 0.5rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.6rem;
+    line-height: 1.2;
+    text-wrap: pretty;
+}
+
+.cta__bajada {
+    margin: 0;
+    max-width: 52ch;
+    color: var(--color-text-soft);
+}
+
+.cta__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+/* BUSCADOR (servicios) */
 
 .search {
     margin-top: -1.8rem;
@@ -671,6 +880,1007 @@ main {
     font-family: "Poppins", system-ui, sans-serif;
     font-size: 0.95rem;
     font-weight: 500;
+}
+
+/* EXPLORAR (listado publico)
+   Columna de filtros fija + resultados, como la pantalla "Explorar" del
+   rediseño. Los 276px de la columna y los 28px de separacion salen de ahi. */
+
+.explorar {
+    display: grid;
+    grid-template-columns: 276px 1fr;
+    gap: 28px;
+    align-items: start;
+}
+
+.filtros {
+    position: sticky;
+    top: 88px;
+    padding: 22px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.filtros__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.filtros__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.filtros__limpiar {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.filtros__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* El <fieldset> del rubro tambien lo usa: sin esto trae borde y padding del
+   navegador y rompe la columna. */
+.filtros__grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.filtros__label {
+    padding: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.filtros__separador {
+    height: 1px;
+    background-color: var(--color-border);
+}
+
+.filtros__input {
+    width: 100%;
+    height: 40px;
+    padding: 0 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-input-bg);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.filtros__input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+}
+
+.filtros__ubicacion,
+.filtros__aplicar {
+    width: 100%;
+}
+
+.filtro-opcion {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+}
+
+/* Los grupos que todavia no filtran van con <fieldset disabled>: el navegador
+   les baja la opacidad solo en algunos casos, asi que se explicita para que se
+   lea como apagado y no como roto. */
+.filtros__grupo:disabled,
+.filtros__radios:disabled {
+    opacity: 0.65;
+}
+
+.filtros__grupo:disabled .filtro-opcion,
+.filtros__radios:disabled .radio-chip {
+    cursor: default;
+}
+
+.filtros__pendiente {
+    margin: 0.15rem 0 0;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--color-muted);
+}
+
+.filtros__radios {
+    display: flex;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.radio-chip {
+    flex: 1;
+    text-align: center;
+    padding: 7px 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text-soft);
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+/* El input se esconde pero sigue existiendo: la etiqueta entera es el chip, y
+   asi el foco de teclado y el estado marcado los sigue manejando el radio. */
+.radio-chip input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.radio-chip:has(input:checked) {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+/* Ordenar por: los tres botones dentro de una pastilla, como el rediseño. */
+
+.orden {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.orden__label {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.orden__grupo {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-alt);
+}
+
+.orden__opcion {
+    padding: 7px 14px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-muted);
+    font-family: inherit;
+    font-size: 0.8rem;
+}
+
+.orden__opcion--activa {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-weight: 600;
+    box-shadow: var(--shadow-light);
+}
+
+.filtro-opcion__nombre {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+.filtro-opcion__total {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+/* Resultados */
+
+.resultados {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.resultados__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.resultados__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+}
+
+.resultados__bajada {
+    margin: 5px 0 0;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.resultados__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+/* Chips de lo aplicado */
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px 6px 12px;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+.chip__quitar {
+    color: inherit;
+    text-decoration: none;
+    font-size: 0.9rem;
+    opacity: 0.6;
+    line-height: 1;
+}
+
+.chip__quitar:hover {
+    opacity: 1;
+}
+
+/* Ficha horizontal del listado: foto a la izquierda, datos a la derecha. */
+
+.ficha {
+    display: flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    overflow: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ficha:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-card);
+}
+
+.ficha__foto {
+    flex-shrink: 0;
+    width: 150px;
+    background-color: var(--color-image-bg);
+}
+
+.ficha__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.ficha__cuerpo {
+    flex: 1;
+    min-width: 0;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.ficha__tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.ficha__acciones {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.ficha__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.ficha__titulo a {
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.ficha__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--color-muted);
+}
+
+.ficha__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.ficha__estrella {
+    color: var(--color-star);
+}
+
+.ficha__desc {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--color-text-soft);
+    text-wrap: pretty;
+}
+
+.ficha__dueño {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.btn--chico {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.8rem;
+}
+
+/* Una sola columna de fichas antes de que la columna de filtros se vaya:
+   dos fichas horizontales en menos de 1100px dejan el texto en un hilo. */
+@media (max-width: 1100px) {
+    .resultados__grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 879px) {
+    .explorar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .filtros {
+        position: static;
+    }
+
+    .ficha {
+        flex-direction: column;
+    }
+
+    .ficha__foto {
+        width: 100%;
+        height: 160px;
+    }
+}
+
+/* EMPRENDIMIENTO (detalle)
+   Columna principal + lateral fija, como la pantalla "Emprendimiento" del
+   rediseño (ahi son 1fr y 340px). */
+
+.detalle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 28px;
+    align-items: start;
+}
+
+.detalle__principal {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.detalle__lateral {
+    position: sticky;
+    /* 88px: abajo del navbar, que es sticky y mide 64px. */
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.lateral__caja {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.lateral__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.lateral__estado {
+    margin: 0;
+    align-self: flex-start;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.lateral__estado--abierto {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.lateral__estado--cerrado {
+    background-color: var(--color-surface-alt);
+    color: var(--color-muted);
+}
+
+.lateral__accion {
+    width: 100%;
+    justify-content: center;
+}
+
+.lateral__secundarias {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.lateral__nota {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--color-muted);
+}
+
+.detalle__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    font-size: 0.88rem;
+    color: var(--color-muted);
+}
+
+.detalle__vistas {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+/* El mapa de la ficha vive en la columna lateral, que es angosta: sin esto
+   toma el alto del mapa del perfil y se come la pantalla. */
+.detalle__lateral #map {
+    height: 200px;
+    border-radius: var(--radius-md);
+}
+
+@media (max-width: 879px) {
+    .detalle {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .detalle__lateral {
+        position: static;
+    }
+}
+
+/* PANTALLAS DE CUENTA
+   Menu propio a la izquierda + contenido, como las cuatro pantallas de
+   "Cuenta" del rediseño (ahi la columna mide 260px). */
+
+.cuenta {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+}
+
+/* "Reseñas recibidas" es una URL publica y el menu de cuenta solo se incluye
+   si la mira su dueño. Sin esta regla, para un visitante el contenido cae en
+   la columna de 260px (la del menu que no esta) y la pantalla queda con una
+   palabra por renglon. */
+.cuenta:not(:has(.cuenta__menu)) {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.cuenta__menu {
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.cuenta__usuario {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.cuenta__avatar {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.cuenta__usuario-datos {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cuenta__usuario-nombre {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.cuenta__usuario-link {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+    text-decoration: none;
+}
+
+.cuenta__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cuenta__item {
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-soft);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.cuenta__item:hover {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text);
+}
+
+.cuenta__item--activo {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.cuenta__contenido {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.cuenta__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.cuenta__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+}
+
+.cuenta__bajada {
+    margin: 5px 0 0;
+    max-width: 60ch;
+    font-size: 0.88rem;
+    color: var(--color-muted);
+}
+
+/* Lo mismo que .filtros__pendiente pero para el contenido: lo que esta
+   maquetado y todavia no funciona se dice, no se deja adivinar. */
+.cuenta__pendiente {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+/* Filas de "Mis emprendimientos": foto, datos y acciones. */
+
+.mis-posts {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.mi-post {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr) 200px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    overflow: hidden;
+}
+
+.mi-post__foto {
+    background-color: var(--color-image-bg);
+}
+
+.mi-post__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.mi-post__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.1rem 1.25rem;
+    min-width: 0;
+}
+
+.mi-post__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.mi-post__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.mi-post__titulo a {
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.mi-post__corta {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--color-text-soft);
+}
+
+.metricas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+}
+
+.metrica {
+    display: flex;
+    flex-direction: column;
+}
+
+.metrica__valor {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.metrica__label {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+}
+
+.mi-post__acciones {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.1rem 1.25rem;
+    border-left: 1px solid var(--color-border);
+}
+
+.mi-post__secundarias {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+}
+
+/* El "Eliminar" es un <button> dentro de un form POST pero se lee como un
+   link, igual que "Ver como visita" al lado. */
+.mi-post__link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-muted);
+    font-family: inherit;
+    font-size: 0.8rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.mi-post__link:hover {
+    color: var(--color-text);
+}
+
+.mi-post__link--peligro:hover {
+    color: var(--color-danger-text);
+}
+
+.badge--estado {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+}
+
+/* Reseñas recibidas: lista + resumen al costado. */
+
+.resenias {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.resenias__lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.resenias__resumen {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.chips--filtro {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.chips--filtro:disabled {
+    opacity: 0.65;
+}
+
+.chip-filtro {
+    padding: 6px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background-color: var(--color-surface);
+    color: var(--color-text-soft);
+    font-family: inherit;
+    font-size: 0.8rem;
+}
+
+.chip-filtro--activo {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: 600;
+}
+
+.resumen__promedio {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
+.resumen__nota {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.resumen__total {
+    font-size: 0.82rem;
+    color: var(--color-muted);
+}
+
+.distribucion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.distribucion__fila {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+.distribucion__estrellas {
+    flex-shrink: 0;
+    width: 2.5rem;
+}
+
+.distribucion__barra {
+    flex: 1;
+    height: 8px;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    overflow: hidden;
+}
+
+.distribucion__relleno {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background-color: var(--color-star);
+}
+
+.distribucion__n {
+    flex-shrink: 0;
+    min-width: 1.5rem;
+    text-align: right;
+}
+
+/* El formulario de respuesta, abajo de una reseña sin responder. */
+.responder {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.responder__input {
+    flex: 1;
+    min-width: 0;
+    height: 38px;
+    padding: 0 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-input-bg);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.85rem;
+}
+
+.responder__input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+}
+
+/* Sub-menu de la pantalla de ajustes. */
+
+.ajustes__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 3px;
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-alt);
+}
+
+.ajustes__tab {
+    padding: 0.5rem 0.9rem;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-soft);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.ajustes__tab--activa {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-weight: 600;
+    box-shadow: var(--shadow-light);
+}
+
+.ajustes__tab--pendiente {
+    opacity: 0.55;
+    cursor: default;
+}
+
+/* La tarjeta de ajustes ya vive adentro de la columna: no necesita el ancho
+   maximo ni la sombra que tiene .auth__card cuando esta sola en la pantalla. */
+.ajustes__caja {
+    max-width: none;
+    box-shadow: none;
+    border: 1px solid var(--color-border);
+}
+
+@media (max-width: 1100px) {
+    .resenias {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 1100px) {
+    .mi-post {
+        grid-template-columns: 140px minmax(0, 1fr);
+    }
+
+    .mi-post__acciones {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        border-left: 0;
+        border-top: 1px solid var(--color-border);
+    }
+
+    .mi-post__secundarias {
+        flex-direction: row;
+        gap: 1rem;
+        margin: 0 0 0 auto;
+        padding: 0;
+    }
+}
+
+@media (max-width: 879px) {
+    .cuenta {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .cuenta__menu {
+        position: static;
+    }
+
+    .cuenta__nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .mi-post {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .mi-post__foto {
+        height: 160px;
+    }
 }
 
 /* CARD EMPRENDIMIENTO */
@@ -1041,19 +2251,35 @@ main {
     background-color: var(--color-surface);
 }
 
-.footer__content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+.footer__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
     font-size: 0.85rem;
     color: var(--color-muted);
 }
 
-.footer__links {
+.footer__col {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.footer__titulo {
+    margin: 0 0 0.25rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.footer__legal {
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.85rem;
+    color: var(--color-muted);
 }
 
 .footer__link {
@@ -1222,10 +2448,6 @@ main {
         align-items: flex-start;
     }
 
-    .footer__content {
-        flex-direction: column;
-        align-items: flex-start;
-    }
 }
 /* === FIN DE CAMBIOS RESPONSIVE === */
 
@@ -1246,6 +2468,162 @@ PÁGINAS DE AUTENTICACIÓN
 .auth__container {
     display: flex;
     justify-content: center;
+}
+
+/* Pantalla "Entrar" del rediseño: formulario a la izquierda, panel indigo con
+   el argumento a la derecha, mitad y mitad. Es un modificador de .auth y no
+   una pantalla nueva para que login y registro sigan compartiendo todo lo de
+   adentro de la tarjeta (campos, mensajes, boton). */
+.auth--split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+}
+
+.auth__formulario {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3.5rem 2rem;
+    background-color: var(--color-surface);
+}
+
+.auth--split .auth__card {
+    box-shadow: none;
+    padding: 0;
+}
+
+.auth__tabs {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    margin-bottom: 1.5rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg);
+}
+
+.auth__tab {
+    flex: 1;
+    padding: 10px 0;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    text-decoration: none;
+    font-size: 0.88rem;
+    color: var(--color-muted);
+}
+
+.auth__tab--activa {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-weight: 600;
+    box-shadow: var(--shadow-light);
+}
+
+/* El panel del argumento, sobre el indigo profundo del rediseño
+   (--color-primary-deep). Es a proposito el mismo color en los dos temas: no
+   es una superficie que siga al tema, es un bloque de marca, y el texto que
+   lleva encima es blanco fijo.
+   Primero se probo componerlo con color-mix sobre --color-primary, pero en
+   tema oscuro el primario es CLARO (#9B93FF) y el mix daba #7973C7: 4.1:1
+   contra el blanco, abajo del minimo AA. Por eso es un token y no una cuenta. */
+.auth__panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.75rem;
+    padding: 3.5rem 2.5rem;
+    background-color: var(--color-primary-deep);
+    color: #fff;
+}
+
+.auth__panel-chip {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.16);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.auth__panel-titulo {
+    margin: 1rem 0 0.6rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.6rem;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    text-wrap: pretty;
+}
+
+.auth__panel-bajada {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    /* Blanco al 78%: baja el brillo respecto del titulo sin irse a un gris que
+       sobre indigo se ensucia. */
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.auth__beneficios {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: none;
+}
+
+.auth__beneficio {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding: 15px 18px;
+    border-radius: var(--radius-md);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.auth__beneficio-num {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.auth__beneficio-titulo {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.auth__beneficio-desc {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.78);
+    text-wrap: pretty;
+}
+
+/* En pantalla angosta el panel pasa abajo del formulario: partir la pantalla
+   en dos columnas de 190px no le sirve a nadie. */
+@media (max-width: 879px) {
+    .auth--split {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .auth__panel {
+        padding: 2.5rem 1.5rem;
+    }
 }
 
 .auth__card {
@@ -2664,9 +4042,29 @@ a.perfil-dato:hover {
 
 
 /* === Calendario de eventos del home ===
-   Grilla mensual + panel que se despliega ABAJO de la grilla (no modal, no
-   tapa nada). Los colores salen de los tokens, asi que sigue los dos temas
-   solo: el violeta marca "este dia tiene eventos" y el naranja marca hoy. */
+   Grilla mensual a la izquierda y la lista del mes al lado (.eventos__panel):
+   elegir un dia marcado filtra la lista, no despliega nada. Los colores salen
+   de los tokens, asi que sigue los dos temas solo: el violeta marca "este dia
+   tiene eventos" y el naranja marca hoy. */
+
+.eventos__layout {
+    display: grid;
+    grid-template-columns: 1fr 372px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* Abajo de 960 la lista no entra al lado sin dejar el calendario apretado:
+   pasa a leerse debajo, que es como se ve en telefono. */
+@media (max-width: 960px) {
+    .eventos__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .eventos__panel {
+        max-height: none;
+    }
+}
 
 .calendario {
     background: var(--color-surface);
@@ -2837,65 +4235,64 @@ a.perfil-dato:hover {
    con max-height hay que adivinar un alto maximo, y si el dia tiene mas
    eventos que los que entran en ese numero, el panel se corta. Asi el alto lo
    sigue poniendo el contenido y la transicion igual funciona. */
-.calendario__expand {
-    display: grid;
-    grid-template-rows: 0fr;
-    border-top: 1px solid transparent;
-    transition: grid-template-rows 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+/* La lista de eventos AL LADO del calendario. El panel scrollea solo en vez
+   de estirar la seccion: un mes con veinte eventos dejaba el calendario
+   perdido arriba de todo. */
+
+.eventos__panel {
+    align-self: start;
+    /* Que no supere el alto del calendario ni se coma la pantalla en un
+       monitor bajo. */
+    max-height: 560px;
+    overflow-y: auto;
+    padding: 1.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
 }
 
-.calendario__expand.is-open {
-    grid-template-rows: 1fr;
-    border-top-color: var(--color-border);
-}
-
-.calendario__expand-inner {
-    overflow: hidden;
-}
-
-.calendario__expand-content {
-    padding: 1.3rem 1.25rem 1.5rem;
-    background: linear-gradient(180deg, var(--color-primary-soft) 0%, transparent 90px);
-}
-
-.calendario__panel-head {
+.eventos__panel-head {
     display: flex;
     align-items: baseline;
-    gap: 0.6rem;
+    justify-content: space-between;
+    gap: 0.75rem;
     margin-bottom: 1rem;
 }
 
-.calendario__panel-num {
+.eventos__panel-titulo {
+    margin: 0;
     font-family: "Poppins", system-ui, sans-serif;
-    font-size: 1.9rem;
-    font-weight: 600;
-    line-height: 1;
+    font-size: 1.05rem;
     color: var(--color-text);
 }
 
-.calendario__panel-fecha {
-    font-size: 0.85rem;
-    color: var(--color-text-soft);
-}
-
-.calendario__panel-cerrar {
-    margin-left: auto;
-    align-self: flex-start;
-    width: 30px;
-    height: 30px;
-    display: grid;
-    place-items: center;
-    border-radius: var(--radius-sm);
+.eventos__panel-volver {
+    flex: 0 0 auto;
+    padding: 0.3rem 0.6rem;
     border: 1px solid var(--color-border);
-    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
     color: var(--color-text-soft);
-    font-size: 0.85rem;
-    line-height: 1;
+    font-family: inherit;
+    font-size: 0.8rem;
     cursor: pointer;
 }
 
-.calendario__panel-cerrar:hover {
-    background: var(--color-surface-alt);
+.eventos__panel-volver:hover {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text);
+}
+
+.eventos__panel-vacio {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.calendario__evento-dia {
+    display: block;
+    color: var(--color-text);
 }
 
 .calendario__lista {

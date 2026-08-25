@@ -1,0 +1,41 @@
+{# La columna izquierda de las pantallas de cuenta del rediseño: el avatar y
+   los siete accesos a lo propio. Va como parcial porque las cuatro pantallas
+   de "Cuenta" la comparten.
+
+   Los siete llevan a rutas que ya existen; ninguno es decorativo. Quien la
+   incluya pasa `seccion` con el nombre del item activo, o nada si esa pantalla
+   no esta en el menu.
+
+   Los contadores (mensajes sin leer, presupuestos abiertos) que el diseño
+   muestra al lado de algunos items todavia no estan: cada uno es una consulta
+   propia y se agregan cuando se cableen, no se inventan. #}
+<aside class="cuenta__menu">
+    <div class="cuenta__usuario">
+        <span class="cuenta__avatar" aria-hidden="true">{{ g.user.username[0]|upper }}</span>
+        <div class="cuenta__usuario-datos">
+            <span class="cuenta__usuario-nombre">{{ g.user.username }}</span>
+            <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}" class="cuenta__usuario-link">
+                Ver mi perfil
+            </a>
+        </div>
+    </div>
+
+    <nav class="cuenta__nav" aria-label="Mi cuenta">
+        {% set items = [
+            ('Mis emprendimientos', url_for('blog.my_posts')),
+            ('Mi catálogo', url_for('products.index')),
+            ('Presupuestos', url_for('servicios.solicitudes')),
+            ('Mensajes', url_for('messages.inbox')),
+            ('Reseñas recibidas', url_for('profile.reviews', slug=g.user.slug)),
+            ('Favoritos', url_for('blog.my_favorites')),
+            ('Ajustes', url_for('profile.edit')),
+        ] %}
+        {% for etiqueta, destino in items %}
+            <a href="{{ destino }}"
+               class="cuenta__item {% if etiqueta == seccion %}cuenta__item--activo{% endif %}"
+               {% if etiqueta == seccion %}aria-current="page"{% endif %}>
+                {{ etiqueta }}
+            </a>
+        {% endfor %}
+    </nav>
+</aside>

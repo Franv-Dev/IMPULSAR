@@ -1,8 +1,9 @@
 /* Calendario de ferias y eventos del home.
  *
  * Consume /api/eventos/?mes=AAAA-MM (ver views/eventos_api.py) y arma una
- * grilla mensual. Tocar un dia con eventos despliega un panel ABAJO de la
- * grilla, sin taparla y sin modal.
+ * grilla mensual. La lista de eventos vive AL LADO de la grilla y se lee sin
+ * tocar nada; elegir un dia marcado la filtra a ese dia, y volver a tocarlo
+ * (o el boton "Ver todo el mes") la devuelve al mes entero.
  *
  * Todo el DOM se arma con createElement/textContent y no con innerHTML: el
  * titulo y la descripcion de un evento los escribe un usuario, asi que
@@ -21,8 +22,7 @@
 
     var grilla = document.getElementById("calendario-grid");
     var etiquetaMes = document.getElementById("calendario-mes");
-    var expand = document.getElementById("calendario-expand");
-    var expandContent = document.getElementById("calendario-expand-content");
+    var panelLista = document.getElementById("calendario-lista");
     var estado = document.getElementById("calendario-estado");
     var btnPrev = document.getElementById("calendario-prev");
     var btnNext = document.getElementById("calendario-next");
@@ -76,9 +76,8 @@
         estado.textContent = texto;
     }
 
-    function cerrarPanel() {
+    function limpiarSeleccion() {
         seleccionado = null;
-        expand.classList.remove("is-open");
     }
 
     /* ---------------------------------------------------------------- datos */
@@ -98,8 +97,8 @@
         mes = m;
         var clave = claveMes(a, m);
         pedido = clave;
-        // Un dia abierto pertenece al mes que se esta dejando.
-        cerrarPanel();
+        // Un dia elegido pertenece al mes que se esta dejando.
+        limpiarSeleccion();
 
         if (cache[clave]) {
             // El gris se saca ACA tambien y no solo en el .then() del fetch:
@@ -163,9 +162,10 @@
         pintar(a, m);
         if (datos.truncado) {
             mostrarEstado("Este mes tiene muchos eventos: se muestran los primeros " + datos.total + ".");
-        } else if (!datos.items || datos.items.length === 0) {
-            mostrarEstado("No hay eventos publicados este mes.");
         } else {
+            // El mes vacio ya lo dice la lista de al lado, que es donde el
+            // usuario esta mirando: repetirlo abajo de la grilla lo decia dos
+            // veces.
             mostrarEstado("");
         }
     }
@@ -194,6 +194,11 @@
         for (var d = 1; d <= largo; d++) {
             grilla.appendChild(celda(a, m, d));
         }
+
+        // La lista se repinta junto con la grilla y no por su cuenta: depende
+        // de los mismos dos datos (eventosPorDia y el dia elegido), y asi no
+        // hay ningun camino que mueva uno y se olvide del otro.
+        pintarLista();
     }
 
     function celda(a, m, d) {
@@ -213,7 +218,9 @@
                 d + " de " + MESES[m - 1] + ", " + eventos.length +
                 (eventos.length === 1 ? " evento" : " eventos")
             );
-            nodo.setAttribute("aria-expanded", seleccionado === d ? "true" : "false");
+            // aria-pressed y no aria-expanded: el dia ya no despliega nada,
+            // ahora es un filtro que queda apretado o suelto.
+            nodo.setAttribute("aria-pressed", seleccionado === d ? "true" : "false");
             nodo.addEventListener("click", function () { alternar(d); });
         }
         if (claveDia(a, m, d) === hoy) nodo.classList.add("is-today");
@@ -238,60 +245,90 @@
         return nodo;
     }
 
-    /* ---------------------------------------------------------------- panel */
+    /* ---------------------------------------------------------------- lista */
 
     function alternar(d) {
         if (seleccionado === d) {
-            cerrarPanel();
+            limpiarSeleccion();
         } else {
             seleccionado = d;
-            pintarPanel(d);
-            expand.classList.add("is-open");
         }
         pintar(anio, mes);
         if (seleccionado !== null) {
-            var abierto = grilla.querySelector(".is-selected");
-            if (abierto && abierto.focus) abierto.focus();
+            var elegido = grilla.querySelector(".is-selected");
+            if (elegido && elegido.focus) elegido.focus();
         }
     }
 
-    function pintarPanel(d) {
-        var eventos = eventosPorDia[d] || [];
-        expandContent.textContent = "";
+    /* Los eventos que le tocan a la lista: los del dia elegido, o los de todo
+     * el mes en orden de fecha. Se recorren los dias y no datos.items para no
+     * depender del orden en que vino la respuesta. */
+    function eventosDeLaLista() {
+        if (seleccionado !== null) return eventosPorDia[seleccionado] || [];
+
+        var todos = [];
+        Object.keys(eventosPorDia)
+            .map(function (d) { return parseInt(d, 10); })
+            .sort(function (a, b) { return a - b; })
+            .forEach(function (d) {
+                todos = todos.concat(eventosPorDia[d]);
+            });
+        return todos;
+    }
+
+    function pintarLista() {
+        // La lista es opcional: si alguna pagina reusa el calendario sin ella,
+        // la grilla tiene que seguir andando igual.
+        if (!panelLista) return;
+
+        panelLista.textContent = "";
+
+        var eventos = eventosDeLaLista();
 
         var cabecera = document.createElement("div");
-        cabecera.className = "calendario__panel-head";
+        cabecera.className = "eventos__panel-head";
 
-        var numero = document.createElement("span");
-        numero.className = "calendario__panel-num";
-        numero.textContent = String(d);
-        cabecera.appendChild(numero);
+        var titulo = document.createElement("h3");
+        titulo.className = "eventos__panel-titulo";
+        if (seleccionado !== null) {
+            var diaSemana = DIAS[(new Date(anio, mes - 1, seleccionado).getDay() + 6) % 7];
+            titulo.textContent = conMayuscula(diaSemana) + " " + seleccionado +
+                " de " + MESES[mes - 1];
+        } else {
+            titulo.textContent = "Todo " + MESES[mes - 1];
+        }
+        cabecera.appendChild(titulo);
 
-        var etiqueta = document.createElement("span");
-        etiqueta.className = "calendario__panel-fecha";
-        var diaSemana = DIAS[(new Date(anio, mes - 1, d).getDay() + 6) % 7];
-        etiqueta.textContent = conMayuscula(diaSemana) + " de " + MESES[mes - 1];
-        cabecera.appendChild(etiqueta);
+        if (seleccionado !== null) {
+            var volver = document.createElement("button");
+            volver.type = "button";
+            volver.className = "eventos__panel-volver";
+            volver.textContent = "Ver todo el mes";
+            volver.addEventListener("click", function () {
+                limpiarSeleccion();
+                pintar(anio, mes);
+            });
+            cabecera.appendChild(volver);
+        }
 
-        var cerrar = document.createElement("button");
-        cerrar.type = "button";
-        cerrar.className = "calendario__panel-cerrar";
-        cerrar.setAttribute("aria-label", "Cerrar el detalle del día");
-        cerrar.textContent = "✕";
-        cerrar.addEventListener("click", function () {
-            cerrarPanel();
-            pintar(anio, mes);
-        });
-        cabecera.appendChild(cerrar);
+        panelLista.appendChild(cabecera);
 
-        expandContent.appendChild(cabecera);
+        if (eventos.length === 0) {
+            var vacio = document.createElement("p");
+            vacio.className = "eventos__panel-vacio";
+            vacio.textContent = seleccionado !== null
+                ? "Ese día no tiene eventos publicados."
+                : "No hay eventos publicados este mes.";
+            panelLista.appendChild(vacio);
+            return;
+        }
 
         var lista = document.createElement("ul");
         lista.className = "calendario__lista";
         eventos.forEach(function (evento) {
             lista.appendChild(tarjeta(evento));
         });
-        expandContent.appendChild(lista);
+        panelLista.appendChild(lista);
     }
 
     function tarjeta(evento) {
@@ -302,6 +339,17 @@
         hora.className = "calendario__evento-hora";
         // La hora es opcional en Event: "el sabado hay feria" es valido.
         hora.textContent = evento.hora || "Todo el día";
+        // Mirando el mes entero, la hora sola no ubica: hace falta el dia. Se
+        // corta el string en vez de construir un Date, por lo mismo que en
+        // aplicar(): new Date("2026-08-14") se lee como UTC y en un huso
+        // negativo cae un dia antes.
+        if (seleccionado === null) {
+            var dia = document.createElement("strong");
+            dia.className = "calendario__evento-dia";
+            dia.textContent = parseInt(String(evento.fecha).slice(8, 10), 10) +
+                " de " + MESES[mes - 1];
+            hora.insertBefore(dia, hora.firstChild);
+        }
         item.appendChild(hora);
 
         var barra = document.createElement("span");
@@ -352,7 +400,7 @@
 
     document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && seleccionado !== null) {
-            cerrarPanel();
+            limpiarSeleccion();
             pintar(anio, mes);
         }
     });

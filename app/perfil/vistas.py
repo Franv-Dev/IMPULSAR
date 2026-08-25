@@ -85,7 +85,12 @@ def reviews(slug):
         page=request.args.get("page", 1, type=int),
         per_page=current_app.config["POSTS_POR_PAGINA"],
     )
-    return render_template("profile/reviews.html", user=user, paginacion=paginacion)
+    return render_template(
+        "profile/reviews.html",
+        user=user,
+        paginacion=paginacion,
+        resumen=consultas.resumen_de_resenias_recibidas(user.id),
+    )
 
 
 # --- 1.b RUTAS VIEJAS POR ID (redirect permanente al slug)

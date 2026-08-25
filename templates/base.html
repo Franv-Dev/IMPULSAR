@@ -61,6 +61,22 @@
                     <img src="{{ url_for('static', filename='icons/logo_impulsar.png') }}" alt="IMPULSAR" class="navbar__logo-image">
                 </a>
             </div>
+
+            {# Buscador siempre a mano, como en el rediseño: antes solo existia
+               en el home. Manda al listado, que es el que sabe buscar de
+               verdad (texto, rubro y cercania). Solo aparece en pantallas
+               anchas: entre 960 y 1200 el menu centrado no deja lugar sin
+               pisarlo, y en el home ya esta la banda de busqueda. #}
+            <form class="navbar__buscador" action="{{ url_for('blog.index') }}" method="get" role="search">
+                <label class="sr-only" for="navbar-q">Buscar emprendimientos</label>
+                <input type="search"
+                       id="navbar-q"
+                       name="q"
+                       class="navbar__buscador-input"
+                       placeholder="Buscar emprendimientos, rubros, servicios…"
+                       value="{{ request.args.get('q', '') if request.endpoint == 'blog.index' else '' }}">
+            </form>
+
 <nav class="navbar__links" id="navbar-links">
 
     <a href="{{ url_for('index') }}" class="navbar__link {% if request.endpoint == 'index' %}navbar__link--active{% endif %}">
@@ -159,12 +175,33 @@
     </main>
 
     <footer class="footer">
-        <div class="container footer__content">
-            <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
-            <nav class="footer__links" aria-label="Enlaces del pie">
+        {# En columnas, como quedo en el rediseño: la fila unica de cuatro links
+           mezclaba lo institucional con la navegacion. Ahora cada grupo dice
+           que es, y los links son los mismos que ya existian. #}
+        <div class="container footer__grid">
+            <div class="footer__col">
+                <h2 class="footer__titulo">Explorar</h2>
+                <a href="{{ url_for('blog.index') }}" class="footer__link">Emprendimientos</a>
+                <a href="{{ url_for('eventos.index') }}" class="footer__link">Eventos y ferias</a>
+                <a href="{{ url_for('servicios.buscar') }}" class="footer__link">Servicios</a>
+            </div>
+
+            <div class="footer__col">
+                <h2 class="footer__titulo">Emprendedores</h2>
+                {% if g.user %}
+                    <a href="{{ url_for('blog.my_posts') }}" class="footer__link">Publicar</a>
+                    <a href="{{ url_for('servicios.solicitudes') }}" class="footer__link">Solicitudes</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="footer__link">Publicar</a>
+                    <a href="{{ url_for('auth.register') }}" class="footer__link">Crear una cuenta</a>
+                {% endif %}
+            </div>
+
+            <div class="footer__col">
+                <h2 class="footer__titulo">IMPULSAR</h2>
                 <a href="{{ url_for('pages.about') }}"
                    class="footer__link {% if request.endpoint == 'pages.about' %}footer__link--active{% endif %}">
-                    Sobre IMPULSAR
+                    Sobre el proyecto
                 </a>
                 <a href="{{ url_for('pages.contact') }}"
                    class="footer__link {% if request.endpoint == 'pages.contact' %}footer__link--active{% endif %}">
@@ -172,7 +209,11 @@
                 </a>
                 <a href="{{ url_for('pages.terms') }}" class="footer__link">Términos</a>
                 <a href="{{ url_for('pages.privacy') }}" class="footer__link">Privacidad</a>
-            </nav>
+            </div>
+        </div>
+
+        <div class="container footer__legal">
+            <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
         </div>
     </footer>
 

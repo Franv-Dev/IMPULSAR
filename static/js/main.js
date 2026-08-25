@@ -94,9 +94,12 @@ function renderPosts(posts) {
 // Pide los emprendimientos al servidor. La busqueda se resuelve en la base de
 // datos y no en el navegador: antes se descargaban TODOS los posts y se
 // filtraban aca, lo que deja de funcionar apenas la plataforma crezca.
-function fetchPosts(query) {
+function fetchPosts(query, categoria) {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
+    // La API ignora una categoria que no existe, asi que no hace falta
+    // validarla aca: alcanza con no mandar el parametro vacio.
+    if (categoria) params.set("category", categoria);
     params.set("per_page", "12");
 
     return fetch(`/api/posts/?${params.toString()}`).then((res) => {
@@ -120,17 +123,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadingEl = document.getElementById("posts-loading");
     const searchForm = document.getElementById("search-form");
     const input = document.getElementById("search-text");
+    const selectCategoria = document.getElementById("search-category");
 
     if (!grid) return; // no estamos en la home
 
-    function cargar(query) {
+    function cargar(query, categoria) {
         // En conexiones lentas la grilla queda vacia varios segundos sin este
         // aviso, y parece que la pagina no respondio.
         if (errorEl) errorEl.style.display = "none";
         if (loadingEl) loadingEl.style.display = "block";
         grid.innerHTML = "";
 
-        fetchPosts(query)
+        fetchPosts(query, categoria)
             .then((data) => {
                 ALL_POSTS = Array.isArray(data.items) ? data.items : [];
                 renderPosts(ALL_POSTS);
@@ -144,19 +148,34 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
-    cargar("");
+    // Los dos campos del buscador se leen juntos: filtrar por rubro no tiene
+    // que perder lo que el usuario ya habia escrito, ni al reves.
+    function cargarDesdeElFormulario() {
+        cargar(
+            input ? input.value.trim() : "",
+            selectCategoria ? selectCategoria.value : ""
+        );
+    }
+
+    cargar("", "");
 
     if (searchForm) {
         searchForm.addEventListener("submit", (e) => {
             e.preventDefault();
-            cargar(input ? input.value.trim() : "");
+            cargarDesdeElFormulario();
         });
 
         if (input) {
             input.addEventListener(
                 "input",
-                debounce(() => cargar(input.value.trim()), 300)
+                debounce(cargarDesdeElFormulario, 300)
             );
+        }
+
+        // El select no pasa por el debounce: elegir un rubro es un solo gesto
+        // deliberado, no una tecla atras de otra.
+        if (selectCategoria) {
+            selectCategoria.addEventListener("change", cargarDesdeElFormulario);
         }
     }
 });

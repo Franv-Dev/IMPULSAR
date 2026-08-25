@@ -36,6 +36,7 @@ from app.blog.modelo_reporte import Report
 from app.blog.modelo_resenia import Review
 from db import utcnow
 from services.geocoding import get_coordinates_from_address
+from services.horarios import ETIQUETAS_DIAS, esta_abierto
 from services.ratings import serializar_con_rating
 from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
 from views.auth import login_required
@@ -165,6 +166,11 @@ def index():
         busqueda_actual=busqueda,
         cerca_de_actual=cerca_de,
         ordenado_por_distancia=ordenado_por_distancia,
+        # Los numeros que van al lado de cada rubro en la columna de filtros.
+        # Son de toda la plataforma y no de la busqueda actual, a proposito:
+        # dicen cuanto hay si te movés a ese rubro, que es para lo que se
+        # miran.
+        conteo_por_categoria=consultas.conteo_por_categoria(),
     )
 
 
@@ -196,6 +202,13 @@ def detail(id):
         productos=consultas.productos_de(id, solo_disponibles=not es_dueño),
         servicios=consultas.servicios_de(id, solo_disponibles=not es_dueño),
         es_dueño=es_dueño,
+        # Los horarios son del emprendedor, no del emprendimiento (viven en
+        # User): la columna lateral del rediseño los muestra junto con si esta
+        # abierto ahora, que lo calcula services/horarios con el reloj de
+        # Argentina y no con el del visitante.
+        horarios=sorted(post.author_user.horarios, key=lambda h: h.dia_semana),
+        abierto=esta_abierto(post.author_user.horarios),
+        etiquetas_dias=ETIQUETAS_DIAS,
         MAPTILER_KEY=current_app.config["MAPTILER_KEY"],
     )
 
@@ -211,8 +224,24 @@ def my_posts():
         pagina=formulario.leer_pagina(),
         por_pagina=current_app.config["POSTS_POR_PAGINA"],
     )
+
+    # Las tres metricas que el rediseño muestra en cada fila. Se arman aca y no
+    # en el template para que la plantilla no dispare consultas mientras
+    # renderiza: son las relaciones del post, una pagina por vez.
+    posts = [
+        {
+            "post": post,
+            "vistas": post.views_count,
+            "resenias": post.reviews.count(),
+            "promedio": consultas.promedio_de_rating(post.id),
+            "productos": len(post.productos),
+            "servicios": len(post.servicios),
+        }
+        for post in paginacion.items
+    ]
+
     return render_template(
-        "blog/my_posts.html", posts=paginacion.items, paginacion=paginacion
+        "blog/my_posts.html", posts=posts, paginacion=paginacion
     )
 
 

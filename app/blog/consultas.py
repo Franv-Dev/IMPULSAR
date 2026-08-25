@@ -103,6 +103,21 @@ def buscar_posts(busqueda, categoria, lat, lon, pagina, por_pagina):
     return paginacion, ordenar_por_distancia
 
 
+def conteo_por_categoria():
+    """{categoria: cuantos}, para los numeros de la columna de filtros.
+
+    Es una sola consulta agrupada y no siete COUNT: la columna los muestra
+    todos juntos. Las categorias sin ningun emprendimiento no vuelven en el
+    resultado, asi que quien lo use tiene que caer a 0 (el template lo hace con
+    un `.get`), en vez de dejar el rubro afuera: la lista de rubros es fija y
+    tiene que verse entera aunque alguno este vacio.
+    """
+    filas = db.session.query(Post.category, func.count(Post.id)).group_by(
+        Post.category
+    ).all()
+    return {categoria: total for categoria, total in filas}
+
+
 def posts_de(user_id, pagina, por_pagina):
     """Los emprendimientos de ese usuario, paginados."""
     return (

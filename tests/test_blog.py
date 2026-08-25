@@ -408,8 +408,11 @@ def test_el_listado_se_pagina(client, app, crear_usuario, crear_post):
     primera = client.get("/blog/").get_data(as_text=True)
     segunda = client.get("/blog/?page=2").get_data(as_text=True)
 
-    assert primera.count('class="card"') == por_pagina
-    assert segunda.count('class="card"') == 3
+    # .ficha es la tarjeta del listado (la horizontal de la pantalla
+    # "Explorar"). No es la misma clase que .card, que es la tarjeta vertical
+    # del home y del detalle.
+    assert primera.count('class="ficha"') == por_pagina
+    assert segunda.count('class="ficha"') == 3
     assert "Página 2 de 2" in segunda
 
 
@@ -735,7 +738,11 @@ def test_las_vistas_se_muestran_en_mis_emprendimientos(client, crear_usuario, cr
     login(autor.id)
     html = client.get("/blog/mis-emprendimientos").get_data(as_text=True)
 
-    assert "1 vista" in html
+    # El numero y la palabra son dos elementos distintos desde el rediseño (la
+    # metrica es un valor grande con su etiqueta chica abajo), asi que se
+    # buscan por separado en vez de como "1 vista".
+    assert '<span class="metrica__valor">1</span>' in html
+    assert '<span class="metrica__label">vista</span>' in html
 
 
 # ------------------------------------------------------- galeria de fotos

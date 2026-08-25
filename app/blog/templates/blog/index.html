@@ -2,171 +2,297 @@
 
 {% block title %}Emprendimientos – IMPULSAR{% endblock %}
 
+{#  La pantalla "Explorar" del rediseño: columna de filtros con nombre a la
+    izquierda y los resultados a la derecha, con el conteo arriba y los chips de
+    lo que esta aplicado.
+
+    Del diseño quedaron afuera tres controles que no tienen con que funcionar
+    todavia: los radios de distancia (la consulta ordena por cercania pero no
+    filtra por radio), "Solo verificados" (Post no tiene esa marca; la
+    verificacion hoy es de Service) y "Abierto ahora" (los horarios no entran en
+    la query del listado). Un filtro que no filtra es peor que no tenerlo.
+
+    El filtro por rubro es de a uno y no con checkboxes como el mockup, porque
+    la consulta acepta una sola categoria: se dibujan como radios para que se
+    vea que eligen uno. #}
+
+{# La misma URL de ahora menos un filtro, para la × de cada chip. Se arma desde
+   request.args y no desde las variables del contexto para no perder ningun
+   parametro que no conozca este template.
+   Se cae siempre a la pagina 1: sacar un filtro trae mas resultados, y quedarse
+   en la pagina 7 de la busqueda anterior es caer en una pagina que puede no
+   existir. Quitar "near" se lleva tambien lat/lon, que son la misma decision
+   ya resuelta en coordenadas. #}
+{% macro url_sin(param) -%}
+    {%- set args = request.args.to_dict() -%}
+    {%- set _ = args.pop(param, None) -%}
+    {%- set _ = args.pop('page', None) -%}
+    {%- if param == 'near' -%}
+        {%- set _ = args.pop('lat', None) -%}
+        {%- set _ = args.pop('lon', None) -%}
+    {%- endif -%}
+    {{- url_for('blog.index', **args) -}}
+{%- endmacro %}
+
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Emprendimientos</h2>
-                <p class="section__subtitle">
-                    Explorá todos los emprendimientos registrados en IMPULSAR.
-                </p>
-            </div>
-            <a href="{{ url_for('index') }}" class="section__link">Volver al inicio</a>
-        </div>
+        <div class="explorar">
 
-        <form method="get" class="search__form" style="margin-bottom:1.5rem;">
-            <div class="search__group search__group--full">
-                <span class="search__icon">🔍</span>
-                <input
-                    type="text"
-                    name="q"
-                    class="search__input"
-                    placeholder="Buscar por nombre o descripción..."
-                    value="{{ busqueda_actual }}"
-                >
-            </div>
-            <div class="search__group">
-                <select name="category" class="search__input">
-                    <option value="">Todas las categorías</option>
-                    {% for valor, etiqueta in categorias.items() %}
-                        <option value="{{ valor }}" {% if valor == categoria_actual %}selected{% endif %}>
-                            {{ etiqueta }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="search__group">
-                <span class="search__icon">📍</span>
-                <input
-                    type="text"
-                    name="near"
-                    id="near-input"
-                    class="search__input"
-                    placeholder="Cerca de (dirección)..."
-                    value="{{ cerca_de_actual }}"
-                >
-            </div>
-            <button type="button" id="use-my-location" class="btn btn--secondary" title="Usar mi ubicación actual">
-                📍 Mi ubicación
-            </button>
-            <input type="hidden" name="lat" id="near-lat" value="{{ request.args.get('lat', '') }}">
-            <input type="hidden" name="lon" id="near-lon" value="{{ request.args.get('lon', '') }}">
-            <button type="submit" class="btn btn--primary search__button">Filtrar</button>
-        </form>
-        {% if ordenado_por_distancia %}
-            <p class="search__hint">Ordenado por cercanía.</p>
-        {% endif %}
-
-        {% if posts %}
-            <div class="cards-grid">
-                {% for item in posts %}
-                    {% set post = item.post %}
-                    {% set is_favorite = item.is_favorite %}
-                    <article class="card">
-                        {% if post.image %}
-                            <a href="{{ url_for('blog.detail', id=post.id) }}" class="card__image-link">
-                                <div class="card__image-wrapper">
-                                    <img
-                                        src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
-                                        alt="Imagen de {{ post.title }}"
-                                        class="card__image"
-                                    >
-                                </div>
-                            </a>
-                        {% endif %}
-                        <div class="card__body">
-                            <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-                                    <span class="badge badge--category">{{ post.category_label }}</span>
-                                    {% if post.author_user %}
-                                        <span class="badge badge--author">
-                                            {{ post.author_user.username }}
-                                        </span>
-                                    {% endif %}
-                                </div>
-                                <div style="display:flex; gap:0.35rem; align-items:center;">
-                                    {% include "partials/_compartir_boton.html" %}
-                                    {% if g.user %}
-                                        {% include "partials/_favorito_boton.html" %}
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <h3 class="card__title">
-                                <a href="{{ url_for('blog.detail', id=post.id) }}"
-                                    style="text-decoration:none; color:inherit;">
-                                    {{ post.title }}
-                                </a>
-                            </h3>
-
-                            {% if item.distance_km is not none %}
-                                <p class="card__location">📍 A {{ item.distance_km }} km</p>
-                            {% endif %}
-
-                            {% if item.avg_rating %}
-                                <p class="card__rating" aria-label="Calificación promedio: {{ item.avg_rating }} de 5">
-                                    ⭐ {{ item.avg_rating }} <span class="text-muted">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
-                                </p>
-                            {% else %}
-                                <p class="card__rating text-muted">Sin reseñas todavía</p>
-                            {% endif %}
-
-                            <p class="card__description">
-                                {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
-                            </p>
-
-                            <div style="margin-top:0.75rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
-                                {% if g.user and g.user.id == post.author %}
-                                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                        <a href="{{ url_for('blog.update', id=post.id) }}"
-                                            class="btn btn--secondary"
-                                            style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                            Editar
-                                        </a>
-                                        <form method="post"
-                                            action="{{ url_for('blog.delete', id=post.id) }}"
-                                            class="form-inline"
-                                            onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit"
-                                                class="btn btn--ghost"
-                                                style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                                Eliminar
-                                            </button>
-                                        </form>
-                                    </div>
-                                {% else %}
-                                    <span class="text-muted" style="font-size:0.8rem;">
-                                        Hacé clic en el título o en el botón para ver más.
-                                    </span>
-                                {% endif %}
-
-                                <a href="{{ url_for('blog.detail', id=post.id) }}"
-                                    class="btn btn--secondary"
-                                    style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                    Ver detalle / Reseñas
-                                </a>
-                            </div>
-                        </div>
-                    </article>
-                {% endfor %}
-            </div>
-
-            {% include "partials/_paginacion.html" %}
-        {% else %}
-            <div class="emprendimientos__empty" style="margin-top:1rem;">
-                <p>
-                    {% if ordenado_por_distancia %}
-                        No encontramos emprendimientos con ubicación cargada cerca de ahí.
-                    {% elif busqueda_actual or categoria_actual or cerca_de_actual %}
-                        No encontramos emprendimientos con esos filtros.
-                    {% else %}
-                        No hay emprendimientos registrados todavía.
+            <aside class="filtros">
+                <div class="filtros__head">
+                    <h2 class="filtros__titulo">Filtros</h2>
+                    {% if busqueda_actual or categoria_actual or cerca_de_actual %}
+                        <a href="{{ url_for('blog.index') }}" class="filtros__limpiar">Limpiar</a>
                     {% endif %}
-                </p>
+                </div>
+
+                {# Un solo <form>: los tres grupos son la misma busqueda, asi
+                   que cambiar el rubro no tiene que perder el texto ni la
+                   direccion que el usuario ya habia puesto. #}
+                <form method="get" class="filtros__form">
+                    <div class="filtros__grupo">
+                        <label class="filtros__label" for="filtro-q">Qué buscás</label>
+                        <input type="search"
+                               id="filtro-q"
+                               name="q"
+                               class="filtros__input"
+                               placeholder="Pan de masa madre"
+                               value="{{ busqueda_actual }}">
+                    </div>
+
+                    <div class="filtros__separador" role="presentation"></div>
+
+                    <fieldset class="filtros__grupo">
+                        <legend class="filtros__label">Rubro</legend>
+
+                        <label class="filtro-opcion">
+                            <input type="radio" name="category" value=""
+                                   {% if not categoria_actual %}checked{% endif %}>
+                            <span class="filtro-opcion__nombre">Todos</span>
+                        </label>
+
+                        {% for valor, etiqueta in categorias.items() %}
+                            <label class="filtro-opcion">
+                                <input type="radio" name="category" value="{{ valor }}"
+                                       {% if valor == categoria_actual %}checked{% endif %}>
+                                <span class="filtro-opcion__nombre">{{ etiqueta }}</span>
+                                <span class="filtro-opcion__total">{{ conteo_por_categoria.get(valor, 0) }}</span>
+                            </label>
+                        {% endfor %}
+                    </fieldset>
+
+                    <div class="filtros__separador" role="presentation"></div>
+
+                    <div class="filtros__grupo">
+                        <label class="filtros__label" for="near-input">Dónde</label>
+                        <input type="text"
+                               name="near"
+                               id="near-input"
+                               class="filtros__input"
+                               placeholder="Cerca de (dirección)"
+                               value="{{ cerca_de_actual }}">
+                        <button type="button" id="use-my-location" class="btn btn--secondary filtros__ubicacion">
+                            Usar mi ubicación
+                        </button>
+                        <input type="hidden" name="lat" id="near-lat" value="{{ request.args.get('lat', '') }}">
+                        <input type="hidden" name="lon" id="near-lon" value="{{ request.args.get('lon', '') }}">
+
+                        {# Radio de distancia. La UI del rediseño ya esta, pero
+                           la consulta todavia no filtra por radio (ordena por
+                           cercania y nada mas), asi que va deshabilitada: un
+                           control apagado no se puede tocar y ademas no viaja
+                           en el GET, con lo cual no puede devolver un
+                           resultado que no corresponda. Cuando el backend lo
+                           soporte, se saca el `disabled` y el aviso. #}
+                        <fieldset class="filtros__radios" disabled>
+                            <legend class="sr-only">Radio de distancia</legend>
+                            {% for etiqueta in ['1 km', '5 km', '10 km', 'Toda'] %}
+                                <label class="radio-chip">
+                                    <input type="radio" name="radio_km" value="{{ etiqueta }}">
+                                    <span>{{ etiqueta }}</span>
+                                </label>
+                            {% endfor %}
+                        </fieldset>
+                        <p class="filtros__pendiente">El radio todavía no filtra.</p>
+                    </div>
+
+                    <div class="filtros__separador" role="presentation"></div>
+
+                    {# Igual que los radios: dibujados y apagados. "Solo
+                       verificados" ademas necesita una marca que Post no
+                       tiene todavia (la verificacion hoy es de Service), y
+                       "Abierto ahora" necesita meter los horarios en la
+                       consulta del listado. #}
+                    <fieldset class="filtros__grupo" disabled>
+                        <legend class="filtros__label">Otros</legend>
+                        <label class="filtro-opcion">
+                            <input type="checkbox" name="solo_verificados">
+                            <span class="filtro-opcion__nombre">Solo verificados</span>
+                        </label>
+                        <label class="filtro-opcion">
+                            <input type="checkbox" name="con_resenias">
+                            <span class="filtro-opcion__nombre">Con reseñas</span>
+                        </label>
+                        <label class="filtro-opcion">
+                            <input type="checkbox" name="abierto_ahora">
+                            <span class="filtro-opcion__nombre">Abierto ahora</span>
+                        </label>
+                        <p class="filtros__pendiente">Estos tres todavía no filtran.</p>
+                    </fieldset>
+
+                    <button type="submit" class="btn btn--primary filtros__aplicar">Aplicar filtros</button>
+                </form>
+            </aside>
+
+            <div class="resultados">
+                <div class="resultados__head">
+                    <div>
+                        <h1 class="resultados__titulo">
+                            {{ paginacion.total }} emprendimiento{{ '' if paginacion.total == 1 else 's' }}
+                        </h1>
+                        <p class="resultados__bajada">
+                            {% if ordenado_por_distancia %}
+                                Ordenados por cercanía.
+                            {% else %}
+                                De los más nuevos a los más viejos.
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    {# "Ordenar por" del rediseño. El orden real hoy lo decide
+                       la consulta (cercania si hay coordenadas, y si no los
+                       mas nuevos), asi que el control esta dibujado y apagado:
+                       marca cual de los tres esta activo pero no deja
+                       cambiarlo todavia. #}
+                    <div class="orden">
+                        <span class="orden__label">Ordenar por</span>
+                        <div class="orden__grupo" role="group" aria-label="Ordenar por (todavía no se puede cambiar)">
+                            {% set orden_activo = 'Cercanía' if ordenado_por_distancia else 'Nuevos' %}
+                            {% for etiqueta in ['Cercanía', 'Mejor puntuados', 'Nuevos'] %}
+                                <button type="button" disabled
+                                        class="orden__opcion {{ 'orden__opcion--activa' if etiqueta == orden_activo }}">
+                                    {{ etiqueta }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if busqueda_actual or categoria_actual or cerca_de_actual %}
+                    <div class="chips">
+                        {% if busqueda_actual %}
+                            <span class="chip">
+                                {{ busqueda_actual }}
+                                <a href="{{ url_sin('q') }}" class="chip__quitar" aria-label="Quitar el filtro de texto">×</a>
+                            </span>
+                        {% endif %}
+                        {% if categoria_actual %}
+                            <span class="chip">
+                                {{ categorias.get(categoria_actual, categoria_actual) }}
+                                <a href="{{ url_sin('category') }}" class="chip__quitar" aria-label="Quitar el filtro de rubro">×</a>
+                            </span>
+                        {% endif %}
+                        {% if cerca_de_actual %}
+                            <span class="chip">
+                                Cerca de {{ cerca_de_actual }}
+                                <a href="{{ url_sin('near') }}" class="chip__quitar" aria-label="Quitar el filtro de cercanía">×</a>
+                            </span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {% if posts %}
+                    <div class="resultados__grid">
+                        {% for item in posts %}
+                            {% set post = item.post %}
+                            {% set is_favorite = item.is_favorite %}
+                            <article class="ficha">
+                                <a href="{{ url_for('blog.detail', id=post.id) }}" class="ficha__foto" tabindex="-1" aria-hidden="true">
+                                    {% if post.image %}
+                                        <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                             alt=""
+                                             class="ficha__img">
+                                    {% endif %}
+                                </a>
+
+                                <div class="ficha__cuerpo">
+                                    <div class="ficha__tags">
+                                        <span class="badge badge--category">{{ post.category_label }}</span>
+                                        {# Sello del rediseño. Todavia no hay
+                                           que verificar un Post, asi que por
+                                           ahora lo lleva cualquiera: es la
+                                           pieza visual, no el dato. #}
+                                        <span class="badge badge--verificado">Verificado</span>
+                                        {% if post.author_user %}
+                                            <span class="badge badge--author">{{ post.author_user.username }}</span>
+                                        {% endif %}
+                                        <div class="ficha__acciones">
+                                            {% include "partials/_compartir_boton.html" %}
+                                            {% if g.user %}
+                                                {% include "partials/_favorito_boton.html" %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <h2 class="ficha__titulo">
+                                        <a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a>
+                                    </h2>
+
+                                    <div class="ficha__meta">
+                                        {% if item.avg_rating %}
+                                            <span class="ficha__rating" aria-label="Calificación promedio: {{ item.avg_rating }} de 5">
+                                                <span class="ficha__estrella" aria-hidden="true">★</span>{{ item.avg_rating }}
+                                            </span>
+                                            <span>({{ item.review_count }})</span>
+                                        {% else %}
+                                            <span>Sin reseñas todavía</span>
+                                        {% endif %}
+                                        {% if item.distance_km is not none %}
+                                            <span aria-hidden="true">·</span>
+                                            <span>a {{ item.distance_km }} km</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <p class="ficha__desc">
+                                        {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
+                                    </p>
+
+                                    {% if g.user and g.user.id == post.author %}
+                                        <div class="ficha__dueño">
+                                            <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--secondary btn--chico">
+                                                Editar
+                                            </a>
+                                            <form method="post"
+                                                  action="{{ url_for('blog.delete', id=post.id) }}"
+                                                  class="form-inline"
+                                                  onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn--ghost btn--chico">Eliminar</button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+
+                    {% include "partials/_paginacion.html" %}
+                {% else %}
+                    <div class="emprendimientos__empty">
+                        <p>
+                            {% if ordenado_por_distancia %}
+                                No encontramos emprendimientos con ubicación cargada cerca de ahí.
+                            {% elif busqueda_actual or categoria_actual or cerca_de_actual %}
+                                No encontramos emprendimientos con esos filtros.
+                            {% else %}
+                                No hay emprendimientos registrados todavía.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
+        </div>
     </div>
 </section>
 {% endblock %}

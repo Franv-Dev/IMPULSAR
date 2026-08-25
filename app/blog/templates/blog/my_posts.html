@@ -2,107 +2,132 @@
 
 {% block title %}Mis emprendimientos – IMPULSAR{% endblock %}
 
+{#  La pantalla "Mis emprendimientos" del rediseño: el menu de cuenta a la
+    izquierda y las filas anchas de cada emprendimiento a la derecha, con sus
+    metricas y la columna de acciones.
+
+    El sello "Verificado" y el estado "Publicado / Borrador" son la pieza
+    visual del diseño: Post todavia no tiene ni verificacion ni borradores, asi
+    que van maquetados y avisados abajo de la lista, no omitidos. #}
+
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Mis emprendimientos</h2>
-                <p class="section__subtitle">
-                    Acá podés ver y gestionar los emprendimientos asociados a tu cuenta.
-                </p>
-            </div>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                <a href="{{ url_for('products.index') }}" class="btn btn--secondary">
-                    Mis productos
-                </a>
-                <a href="{{ url_for('servicios.index') }}" class="btn btn--secondary">
-                    Mis servicios
-                </a>
-                <a href="{{ url_for('blog.create') }}" class="btn btn--primary">
-                    + Crear nuevo emprendimiento
-                </a>
+        <div class="cuenta">
+            {% include "partials/_menu_cuenta.html" with context %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Mis emprendimientos</h1>
+                        <p class="cuenta__bajada">
+                            {{ paginacion.total }} publicado{{ '' if paginacion.total == 1 else 's' }}.
+                            Desde acá gestionás el catálogo y los eventos de cada uno.
+                        </p>
+                    </div>
+                    <a href="{{ url_for('blog.create') }}" class="btn btn--primary">
+                        + Nuevo emprendimiento
+                    </a>
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% if posts %}
+                    <div class="mis-posts">
+                        {% for item in posts %}
+                            {% set post = item.post %}
+                            <article class="mi-post">
+                                <a href="{{ url_for('blog.detail', id=post.id) }}" class="mi-post__foto" tabindex="-1" aria-hidden="true">
+                                    {% if post.image %}
+                                        <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                             alt=""
+                                             class="mi-post__img">
+                                    {% endif %}
+                                </a>
+
+                                <div class="mi-post__cuerpo">
+                                    <div class="mi-post__tags">
+                                        <span class="badge badge--estado">Publicado</span>
+                                        <span class="badge badge--category">{{ post.category_label }}</span>
+                                        <span class="badge badge--verificado">Verificado</span>
+                                    </div>
+
+                                    <h2 class="mi-post__titulo">
+                                        <a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a>
+                                    </h2>
+
+                                    <p class="mi-post__corta">
+                                        {{ post.body[:120] }}{% if post.body|length > 120 %}...{% endif %}
+                                    </p>
+
+                                    <div class="metricas">
+                                        <span class="metrica">
+                                            <span class="metrica__valor">{{ item.vistas }}</span>
+                                            <span class="metrica__label">vista{{ '' if item.vistas == 1 else 's' }}</span>
+                                        </span>
+                                        <span class="metrica">
+                                            <span class="metrica__valor">{{ item.promedio if item.promedio else '—' }}</span>
+                                            <span class="metrica__label">
+                                                {{ item.resenias }} reseña{{ '' if item.resenias == 1 else 's' }}
+                                            </span>
+                                        </span>
+                                        <span class="metrica">
+                                            <span class="metrica__valor">{{ item.productos + item.servicios }}</span>
+                                            <span class="metrica__label">en el catálogo</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="mi-post__acciones">
+                                    <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--primary btn--chico">
+                                        Editar
+                                    </a>
+                                    <a href="{{ url_for('products.index') }}" class="btn btn--secondary btn--chico">
+                                        Catálogo y eventos
+                                    </a>
+                                    <div class="mi-post__secundarias">
+                                        <a href="{{ url_for('blog.detail', id=post.id) }}" class="mi-post__link">
+                                            Ver como visita
+                                        </a>
+                                        <form method="post"
+                                              action="{{ url_for('blog.delete', id=post.id) }}"
+                                              class="form-inline"
+                                              onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="mi-post__link mi-post__link--peligro">
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+
+                    <p class="cuenta__pendiente">
+                        El estado y el sello de verificación todavía no son reales:
+                        por ahora todos los emprendimientos se muestran igual.
+                    </p>
+
+                    {% include "partials/_paginacion.html" %}
+                {% else %}
+                    <div class="emprendimientos__empty">
+                        <p>
+                            Todavía no registraste ningún emprendimiento.
+                            <a href="{{ url_for('blog.create') }}">Creá el primero acá.</a>
+                        </p>
+                    </div>
+                {% endif %}
             </div>
         </div>
-
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
-                    {% for message in messages %}
-                        <div class="auth__alert">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        {% if posts %}
-            <div class="cards-grid">
-                {% for post in posts %}
-                    <article class="card">
-                        {% if post.image %}
-                            <a href="{{ url_for('blog.detail', id=post.id) }}" class="card__image-link">
-                                <div class="card__image-wrapper">
-                                    <img
-                                        src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
-                                        alt="Imagen de {{ post.title }}"
-                                        class="card__image"
-                                    >
-                                </div>
-                            </a>
-                        {% endif %}
-                        <div class="card__body">
-                            <div class="card__tags">
-                                <span class="badge badge--category">Mi emprendimiento</span>
-                            </div>
-                            <h3 class="card__title">
-                                <a href="{{ url_for('blog.detail', id=post.id) }}" style="text-decoration:none; color:inherit;">
-                                    {{ post.title }}
-                                </a>
-                            </h3>   
-                            <p class="card__location">
-                                {{ g.user.username}}
-                            </p>
-                            <p class="card__views">
-                                👁 {{ post.views_count }} vista{{ "s" if post.views_count != 1 else "" }}
-                            </p>
-                            <p class="card__description">
-                                {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
-                            </p>
-
-                            <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                <a href="{{ url_for('blog.update', id=post.id) }}"
-                                    class="btn btn--secondary"
-                                    style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                    Editar
-                                </a>
-                                <form method="post"
-                                    action="{{ url_for('blog.delete', id=post.id) }}"
-                                    class="form-inline"
-                                    onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit"
-                                        class="btn btn--ghost"
-                                        style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                        Eliminar
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </article>
-                {% endfor %}
-            </div>
-
-            {% include "partials/_paginacion.html" %}
-        {% else %}
-            <div class="emprendimientos__empty" style="margin-top:1rem;">
-                <p>
-                    Todavía no registraste ningún emprendimiento.
-                    <a href="{{ url_for('blog.create') }}">Creá el primero acá.</a>
-                </p>
-            </div>
-        {% endif %}
     </div>
 </section>
 {% endblock %}

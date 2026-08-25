@@ -2,61 +2,158 @@
 
 {% block title %}Reseñas recibidas por {{ user.username }} – IMPULSAR{% endblock %}
 
+{#  La pantalla "Reseñas recibidas" del rediseño: la lista a la izquierda y el
+    resumen (promedio, distribucion y cuantas quedan sin responder) al costado.
+
+    Los chips para filtrar ("Sin responder", "Críticas", ...) estan maquetados y
+    apagados: la consulta todavia trae todas, ordenadas por fecha.
+
+    Ojo con quien mira: esta URL es publica (/perfil/<slug>/resenias), asi que
+    lo que es del dueño -- responder, y el aviso de cuantas quedan pendientes --
+    va detras de es_dueño. Un visitante ve la lista y el resumen, nada mas. #}
+
+{% set es_dueño = g.user and g.user.id == user.id %}
+
 {% block content %}
 <section class="section">
-    <div class="container" style="max-width: 800px;">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Reseñas recibidas</h2>
-                <p class="section__subtitle">
-                    {{ paginacion.total }} reseña{{ "s" if paginacion.total != 1 else "" }}
-                    en los emprendimientos de {{ user.username }}.
-                </p>
-            </div>
-            <a href="{{ url_for('profile.view_profile', slug=user.slug) }}" class="section__link">← Volver al perfil</a>
-        </div>
+    <div class="container">
+        <div class="cuenta">
+            {% if es_dueño %}
+                {% include "partials/_menu_cuenta.html" with context %}
+            {% endif %}
 
-        {% if paginacion.items %}
-            <div class="reviews-list">
-                {% for r in paginacion.items %}
-                    <div class="review-card">
-                        <div class="review-card__header">
-                            <strong class="review-card__author">
-                                {{ r.user.username if r.user else "Usuario borrado" }}
-                                {% if r.updated_at %}
-                                    <span class="review-card__edited">(editado)</span>
-                                {% endif %}
-                            </strong>
-                            <div class="review-card__stars">
-                                {% for i in range(1, 6) %}
-                                    {% if i <= r.rating %}★{% else %}☆{% endif %}
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Reseñas recibidas</h1>
+                        <p class="cuenta__bajada">
+                            {{ resumen.total }} reseña{{ '' if resumen.total == 1 else 's' }}
+                            en los emprendimientos de {{ user.username }}.
+                            {% if es_dueño and resumen.sin_responder %}
+                                Responder las críticas suele mejorar la impresión de quien las lee.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <a href="{{ url_for('profile.view_profile', slug=user.slug) }}" class="section__link">
+                        ← Volver al perfil
+                    </a>
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <div class="resenias">
+                    <div class="resenias__lista">
+                        <fieldset class="chips chips--filtro" disabled>
+                            <legend class="sr-only">Filtrar las reseñas</legend>
+                            {% for etiqueta in ['Todas', 'Sin responder', 'Críticas (3★ o menos)', 'Respondidas', '5 estrellas'] %}
+                                <button type="button" class="chip-filtro {{ 'chip-filtro--activo' if loop.first }}">
+                                    {{ etiqueta }}
+                                </button>
+                            {% endfor %}
+                        </fieldset>
+                        <p class="cuenta__pendiente">Los filtros todavía no filtran: se ven todas, de la más nueva a la más vieja.</p>
+
+                        {% if paginacion.items %}
+                            <div class="reviews-list">
+                                {% for r in paginacion.items %}
+                                    <div class="review-card">
+                                        <div class="review-card__header">
+                                            <strong class="review-card__author">
+                                                {{ r.user.username if r.user else "Usuario borrado" }}
+                                                {% if r.updated_at %}
+                                                    <span class="review-card__edited">(editado)</span>
+                                                {% endif %}
+                                            </strong>
+                                            <div class="review-card__stars">
+                                                {% for i in range(1, 6) %}
+                                                    {% if i <= r.rating %}★{% else %}☆{% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+
+                                        <p class="card__location">
+                                            Sobre
+                                            <a href="{{ url_for('blog.detail', id=r.post_id) }}">{{ r.post.title if r.post else "un emprendimiento" }}</a>
+                                        </p>
+
+                                        <p class="review-card__comment {% if not r.comment %}review-card__comment--empty{% endif %}">
+                                            {{ r.comment or 'Sin comentario escrito.' }}
+                                        </p>
+
+                                        {% if r.reply %}
+                                            <div class="review-card__reply">
+                                                <strong>Respuesta de {{ user.username }}:</strong>
+                                                <p>{{ r.reply }}</p>
+                                            </div>
+                                        {% elif es_dueño %}
+                                            {# Responder SI funciona: blog.reply_review ya existe. #}
+                                            <form method="post"
+                                                  action="{{ url_for('blog.reply_review', review_id=r.id) }}"
+                                                  class="responder">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <label class="sr-only" for="reply-{{ r.id }}">Tu respuesta pública</label>
+                                                <input type="text"
+                                                       id="reply-{{ r.id }}"
+                                                       name="reply"
+                                                       class="responder__input"
+                                                       placeholder="Escribí una respuesta pública…"
+                                                       required>
+                                                <button type="submit" class="btn btn--secondary btn--chico">Responder</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
                                 {% endfor %}
                             </div>
-                        </div>
 
-                        <p class="card__location">
-                            Sobre
-                            <a href="{{ url_for('blog.detail', id=r.post_id) }}">{{ r.post.title if r.post else "un emprendimiento" }}</a>
-                        </p>
-
-                        <p class="review-card__comment {% if not r.comment %}review-card__comment--empty{% endif %}">
-                            {{ r.comment or 'Sin comentario escrito.' }}
-                        </p>
-
-                        {% if r.reply %}
-                            <div class="review-card__reply">
-                                <strong>Respuesta de {{ user.username }}:</strong>
-                                <p>{{ r.reply }}</p>
-                            </div>
+                            {% include "partials/_paginacion.html" %}
+                        {% else %}
+                            <p class="reviews-empty">Todavía no recibió ninguna reseña.</p>
                         {% endif %}
                     </div>
-                {% endfor %}
-            </div>
 
-            {% include "partials/_paginacion.html" %}
-        {% else %}
-            <p class="reviews-empty">Todavía no recibió ninguna reseña.</p>
-        {% endif %}
+                    <aside class="resenias__resumen">
+                        <div class="lateral__caja">
+                            <div class="resumen__promedio">
+                                <span class="resumen__nota">{{ resumen.promedio if resumen.promedio else '—' }}</span>
+                                <span class="resumen__total">
+                                    {{ resumen.total }} reseña{{ '' if resumen.total == 1 else 's' }}
+                                </span>
+                            </div>
+
+                            <ul class="distribucion">
+                                {% for fila in resumen.distribucion %}
+                                    <li class="distribucion__fila">
+                                        <span class="distribucion__estrellas">{{ fila.estrellas }} ★</span>
+                                        <span class="distribucion__barra">
+                                            <span class="distribucion__relleno" style="width: {{ fila.porcentaje }}%"></span>
+                                        </span>
+                                        <span class="distribucion__n">{{ fila.cuantas }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        {% if es_dueño and resumen.sin_responder %}
+                            <div class="lateral__caja">
+                                <h2 class="lateral__titulo">Sin responder</h2>
+                                <span class="resumen__nota">{{ resumen.sin_responder }}</span>
+                                <p class="lateral__nota">
+                                    Responder a tiempo evita que la reseña quede como última palabra.
+                                </p>
+                            </div>
+                        {% endif %}
+                    </aside>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 {% endblock %}

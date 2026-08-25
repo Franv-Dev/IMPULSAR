@@ -3,13 +3,21 @@
 {% block title %}Iniciar sesión – IMPULSAR{% endblock %}
 
 {% block content %}
-<section class="auth">
-    <div class="container auth__container">
+{# La pantalla "Entrar" del rediseño: el formulario a la izquierda y el panel
+   indigo con el argumento a la derecha (templates/auth/_panel.html). Las dos
+   solapas de arriba son links de verdad entre entrar y crear cuenta. #}
+<section class="auth auth--split">
+    <div class="auth__formulario">
         <div class="auth__card">
-            <h1 class="auth__title">Iniciar sesión</h1>
+            <h1 class="auth__title">Entrá a tu cuenta</h1>
             <p class="auth__subtitle">
-                Accedé a tu cuenta de IMPULSAR para gestionar tus emprendimientos.
+                Para publicar, guardar favoritos y responder presupuestos.
             </p>
+
+            <div class="auth__tabs">
+                <a href="{{ url_for('auth.login') }}" class="auth__tab auth__tab--activa">Entrar</a>
+                <a href="{{ url_for('auth.register') }}" class="auth__tab">Crear cuenta</a>
+            </div>
 
             {# Mensajes flash (errores, avisos) #}
             {% with messages = get_flashed_messages() %}
@@ -51,7 +59,7 @@
                 </div>
 
                 <button type="submit" class="btn btn--primary auth__submit">
-                    Iniciar sesión
+                    Entrar
                 </button>
             </form>
 
@@ -61,5 +69,7 @@
             </p>
         </div>
     </div>
+
+    {% include "auth/_panel.html" %}
 </section>
 {% endblock %}

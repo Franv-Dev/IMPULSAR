@@ -3,9 +3,16 @@
 {% block title %}{{ post.title }} – Emprendimiento{% endblock %}
 
 {% block content %}
+{#  La pantalla "Emprendimiento" del rediseño: la columna principal con la
+    galeria, el catalogo y las reseñas, y una columna lateral fija con lo que
+    tiene que estar siempre a la vista -- si esta abierto, como escribirle,
+    donde queda y los horarios.
+
+    Del diseño no esta el sello "Verificado por IMPULSAR": Post no tiene esa
+    marca (la verificacion hoy es de Service). #}
 <section class="section">
-    <div class="container" style="max-width: 900px;">
-        
+    <div class="container">
+
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <div class="auth__messages" style="margin-bottom:1rem;">
@@ -15,6 +22,9 @@
                 </div>
             {% endif %}
         {% endwith %}
+
+        <div class="detalle">
+        <div class="detalle__principal">
 
         <div class="card post-detail-card">
             {% set galeria = post.galeria %}
@@ -44,33 +54,32 @@
             {% endif %}
             
             <div class="card__body">
-                <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div class="card__tags">
                     <span class="badge badge--category">{{ post.category_label }}</span>
-                    <div style="display:flex; gap:0.35rem; align-items:center;">
-                        {% include "partials/_compartir_boton.html" %}
-                        {% if g.user %}
-                            {% include "partials/_favorito_boton.html" %}
-                        {% endif %}
-                    </div>
+                    {# El sello del rediseño. Todavia no hay una marca de
+                       verificacion sobre Post (la que existe es de Service),
+                       asi que hoy lo muestra cualquier emprendimiento. #}
+                    <span class="badge badge--verificado">Verificado por IMPULSAR</span>
+                    {% if es_dueño %}
+                        <span class="detalle__vistas">{{ post.views_count }} vista{{ '' if post.views_count == 1 else 's' }}</span>
+                    {% endif %}
                 </div>
 
                 <h1 class="card__title" style="font-size:1.6rem;">{{ post.title }}</h1>
-                
-                <p class="card__location">
-                    Publicado por 
+
+                <div class="detalle__meta">
+                    {% if avg_rating %}
+                        <span class="ficha__rating" aria-label="Calificación promedio: {{ avg_rating }} de 5">
+                            <span class="ficha__estrella" aria-hidden="true">★</span>{{ avg_rating }}
+                        </span>
+                        <span>{{ reviews|length }} reseña{% if reviews|length != 1 %}s{% endif %}</span>
+                    {% else %}
+                        <span>Aún no hay reseñas.</span>
+                    {% endif %}
+                    <span aria-hidden="true">·</span>
                     <a href="{{ url_for('profile.view_profile', slug=author.slug) }}" class="post-author-link">
                         {{ author.username }}
                     </a>
-                </p>
-
-                <div class="post-rating">
-                    {% if avg_rating %}
-                        <span class="post-rating__stars">⭐</span> 
-                        <span class="post-rating__score">{{ avg_rating }} / 5</span>
-                        <span class="post-rating__count">(promedio de {{ reviews|length }} reseña{% if reviews|length != 1 %}s{% endif %})</span>
-                    {% else %}
-                        <span class="post-rating__count">Aún no hay reseñas.</span>
-                    {% endif %}
                 </div>
 
                 <hr class="card-divider">
@@ -78,43 +87,6 @@
                 <div class="post-body-content">
                     {{ post.body }}
                 </div>
-
-                {% if post.latitude and post.longitude %}
-                <section class="profile-map-section">
-                    <h2>Ubicación</h2>
-                    
-                    <p class="map-address-text">
-                        {{ post.address_street }}
-                    </p>
-                    
-                    <div id="map"></div>
-                </section>
-                {% endif %}
-                {% if g.user and g.user.id == post.author %}
-                    <div class="post-actions">
-                        <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--secondary">
-                            Editar
-                        </a>
-                        <form method="post"
-                            action="{{ url_for('blog.delete', id=post.id) }}"
-                            class="form-inline"
-                            onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn--ghost">
-                                Eliminar
-                            </button>
-                        </form>
-                    </div>
-                {% elif g.user %}
-                    <div class="post-actions">
-                        <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id) }}" class="btn btn--primary">
-                            Escribirle al emprendedor
-                        </a>
-                        <a href="{{ url_for('blog.report', tipo='post', target_id=post.id) }}" class="report-link">
-                            Reportar
-                        </a>
-                    </div>
-                {% endif %}
             </div>
         </div>
 
@@ -360,6 +332,92 @@
         </section>
 
         <a href="{{ url_for('blog.index') }}" class="back-link">← Volver al listado</a>
+
+        </div>{# /.detalle__principal #}
+
+        {# Columna lateral: lo que el rediseño deja fijo mientras se lee el
+           resto. Va DESPUES de la principal en el HTML aunque se vea al lado,
+           para que un lector de pantalla lea primero de que emprendimiento se
+           trata y despues como contactarlo. #}
+        <aside class="detalle__lateral">
+            <div class="lateral__caja">
+                {% if horarios %}
+                    <p class="lateral__estado {{ 'lateral__estado--abierto' if abierto else 'lateral__estado--cerrado' }}">
+                        {{ 'Abierto ahora' if abierto else 'Cerrado ahora' }}
+                    </p>
+                {% endif %}
+
+                {% if g.user and g.user.id == post.author %}
+                    <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--primary lateral__accion">
+                        Editar
+                    </a>
+                    <form method="post"
+                          action="{{ url_for('blog.delete', id=post.id) }}"
+                          onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn--ghost lateral__accion">Eliminar</button>
+                    </form>
+                {% elif g.user %}
+                    <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id) }}"
+                       class="btn btn--primary lateral__accion">
+                        Escribirle al emprendedor
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn--primary lateral__accion">
+                        Entrá para escribirle
+                    </a>
+                {% endif %}
+
+                <div class="lateral__secundarias">
+                    {% include "partials/_compartir_boton.html" %}
+                    {% if g.user %}
+                        {% include "partials/_favorito_boton.html" %}
+                    {% endif %}
+                </div>
+
+                {% if g.user and g.user.id != post.author %}
+                    <p class="lateral__nota">
+                        Los mensajes quedan dentro de IMPULSAR: no hace falta dar tu teléfono.
+                    </p>
+                {% endif %}
+            </div>
+
+            {% if post.latitude and post.longitude %}
+                <div class="lateral__caja">
+                    <h2 class="lateral__titulo">Dónde queda</h2>
+                    <p class="map-address-text">{{ post.address_street }}</p>
+                    <div id="map"></div>
+                </div>
+            {% endif %}
+
+            {% if horarios %}
+                <div class="lateral__caja">
+                    <h2 class="lateral__titulo">Horarios</h2>
+                    <ul class="horarios-lista">
+                        {% for horario in horarios %}
+                            <li class="horarios-lista__item">
+                                <span class="horarios-lista__dia">{{ etiquetas_dias[horario.dia_semana] }}</span>
+                                <span class="horarios-lista__rango">
+                                    {% if horario.cerrado or not horario.abre %}
+                                        Cerrado
+                                    {% else %}
+                                        {{ horario.abre.strftime("%H:%M") }} a {{ horario.cierra.strftime("%H:%M") }}
+                                    {% endif %}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            {% if g.user and g.user.id != post.author %}
+                <a href="{{ url_for('blog.report', tipo='post', target_id=post.id) }}" class="report-link">
+                    Reportar este emprendimiento
+                </a>
+            {% endif %}
+        </aside>
+
+        </div>{# /.detalle #}
     </div>
 </section>
 {% endblock %}

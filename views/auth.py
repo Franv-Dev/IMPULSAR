@@ -1,6 +1,7 @@
 from flask import (
     render_template, Blueprint, flash, request, session, url_for, redirect, g, jsonify, abort
 )
+from app.blog.modelo_post import Post
 from models.user import Roles, User
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.exc import IntegrityError
@@ -69,7 +70,10 @@ def register():
 
         flash(error)
 
-    return render_template('auth/register.html')
+    # El panel lateral del rediseño (auth/_panel.html) dice cuantos
+    # emprendimientos hay: es el numero real y no uno escrito a mano, asi que
+    # se lo pasan las dos vistas que muestran ese panel.
+    return render_template('auth/register.html', total_posts=Post.query.count())
 
 
 @auth.route("/login", methods=("GET", "POST"))
@@ -95,7 +99,10 @@ def login():
 
         flash(error)
 
-    return render_template('auth/login.html')
+    # El panel lateral del rediseño (auth/_panel.html) dice cuantos
+    # emprendimientos hay: es el numero real y no uno escrito a mano, asi que
+    # se lo pasan las dos vistas que muestran ese panel.
+    return render_template('auth/login.html', total_posts=Post.query.count())
 
 
 @auth.before_app_request
