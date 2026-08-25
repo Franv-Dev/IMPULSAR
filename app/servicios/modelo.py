@@ -124,6 +124,23 @@ class Service(db.Model):
     # Un electricista puede tener matricula de electricidad y no de gas, y un
     # solo flag en el usuario diria que las dos estan verificadas.
     verificado = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
+    # Si este servicio ademas se puede reservar por turno. Va por servicio y
+    # no por usuario a proposito: un peluquero puede tomar turnos para "corte"
+    # y seguir presupuestando "peinado para fiesta" por solicitud. Apagado por
+    # default, que es lo que corresponde para todas las filas que ya existen.
+    turnos_habilitados = db.Column(
+        db.Boolean, nullable=False, default=False, server_default="0")
+    # Cuanto dura cada turno de este servicio, en minutos. Lo define el
+    # vendedor y no el cliente ni una constante global: media hora para un
+    # corte de pelo y tres horas para un service de moto son los dos correctos,
+    # y solo el que presta el servicio sabe cual es.
+    #
+    # Nullable porque solo tiene sentido con turnos_habilitados=True; que sea
+    # obligatoria y positiva EN ESE CASO lo hace cumplir
+    # reglas.duracion_de_turno_valida (la base no puede: seria un CHECK con
+    # condicion, que MySQL recien valida desde 8.0.16 y que ademas obligaria a
+    # una migracion para cambiar el rango).
+    duracion_turno_minutos = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     def __repr__(self):
@@ -151,4 +168,6 @@ class Service(db.Model):
             ),
             "disponible": self.disponible,
             "verificado": self.verificado,
+            "turnos_habilitados": self.turnos_habilitados,
+            "duracion_turno_minutos": self.duracion_turno_minutos,
         }

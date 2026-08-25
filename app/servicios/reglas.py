@@ -52,6 +52,54 @@ def rubro_valido(rubro):
     return rubro in Rubros.TODOS
 
 
+# Los limites de la duracion de un turno, en minutos. Van aca y no en modelo.py
+# junto a MAX_SERVICIOS_POR_POST porque no son un limite de la base sino una
+# decision de negocio que el formulario tiene que poder citar en su mensaje de
+# error; es el mismo lugar y el mismo criterio que RATING_MINIMO/RATING_MAXIMO
+# en app/blog/reglas.py.
+#
+# El piso son 5 minutos: mas corto que eso no es un turno que alguien atienda,
+# y ademas una jornada de 8 horas cortada en tramos de 1 minuto son 480 slots
+# para pintar en una sola pantalla. El techo son 480 (8 horas), que es una
+# jornada entera: un turno mas largo que el horario de atencion no genera
+# ningun slot y solo se veria como "no hay turnos disponibles" sin explicacion.
+MIN_DURACION_TURNO_MINUTOS = 5
+MAX_DURACION_TURNO_MINUTOS = 480
+
+
+def duracion_de_turno_valida(turnos_habilitados, duracion):
+    """Si la duracion que mando el vendedor sirve para ese servicio.
+
+    Con los turnos apagados no se mira nada: la columna queda en NULL y no
+    significa nada (ver Service.duracion_turno_minutos). Con los turnos
+    prendidos pasa a ser obligatoria y tiene que caer dentro del rango, porque
+    es lo unico de lo que sale el corte de slots.
+
+    Es una funcion y no un CHECK de la base a proposito: la condicion depende
+    de OTRA columna, y un CHECK condicional recien lo valida MySQL desde 8.0.16
+    (antes lo parsea y lo ignora, en silencio). Ademas mover el rango pediria
+    una migracion.
+    """
+    if not turnos_habilitados:
+        return True
+    return (
+        duracion is not None
+        and MIN_DURACION_TURNO_MINUTOS <= duracion <= MAX_DURACION_TURNO_MINUTOS
+    )
+
+
+def acepta_turnos(servicio):
+    """Si sobre ese servicio se puede reservar un turno.
+
+    Las dos condiciones juntas y no solo el flag: un servicio con
+    turnos_habilitados=True pero sin duracion no tiene de donde cortar slots.
+    La combinacion no deberia existir (el formulario no la deja guardar), pero
+    una fila cargada antes de esta tanda o tocada a mano si puede tenerla, y el
+    corte de slots la tiene que poder descartar sin romperse.
+    """
+    return bool(servicio.turnos_habilitados) and bool(servicio.duracion_turno_minutos)
+
+
 def esta_cerrada(solicitud):
     return solicitud.estado == EstadosSolicitud.CERRADA
 
