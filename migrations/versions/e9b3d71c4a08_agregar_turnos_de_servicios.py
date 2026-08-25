@@ -25,10 +25,24 @@ usa. En SQLite un batch_alter_table solo recrea la tabla si la operacion no se
 puede hacer con un ALTER nativo, y ADD COLUMN si se puede (recreate="auto" lo
 resuelve solo), asi que services nunca se dropea. El downgrade si lo necesita:
 ahi hay DROP COLUMN, que SQLite no tiene, el batch recrea services de verdad, y
-services es una tabla referenciada por service_requests, verification_requests y
-ahora turnos. Con PRAGMA foreign_keys=ON -que db.py deja en toda conexion y
-reafirma en cada begin()- ese DROP TABLE muere con "FOREIGN KEY constraint
-failed" si hay filas hijas. Es el mismo caso que el downgrade de a2f7c50e19bd.
+services es una tabla referenciada: por service_requests y por
+verification_requests en el momento en que se la recrea (turnos ya se dropeo un
+par de lineas antes), y las dos FK estan en ON DELETE CASCADE.
+
+Y ESO ES JUSTAMENTE EL PROBLEMA, que no es el que suena. Con PRAGMA
+foreign_keys=ON -que db.py deja en toda conexion y reafirma en cada begin()- el
+DROP TABLE services NO tira ningun error: en SQLite un DROP TABLE corre un
+DELETE implicito, ese DELETE dispara las acciones de las FK, y como las hijas
+cascadean, lo que pasa es que se vacian service_requests y verification_requests
+en silencio. No hay excepcion, la migracion termina "bien", y un PRAGMA
+foreign_key_check posterior da limpio, porque justamente no quedo nada
+inconsistente: quedo todo borrado. El unico sintoma es el conteo de filas, y por
+eso se verifica contando y no solo mirando que el downgrade no reviente.
+
+Es exactamente el borrado mudo de service_requests que se le escapo a
+a2f7c50e19bd y que solo aparecio corriendo ese downgrade aislado (ver el
+docstring del listener "begin" en db.py). Apagar las FK evita el CASCADE, que es
+lo que hace que las filas hijas sobrevivan a la recreacion.
 """
 from contextlib import contextmanager
 
@@ -50,8 +64,9 @@ def _sin_foreign_keys_en_sqlite():
     En SQLite un batch_alter_table que no puede resolverse con un ALTER nativo
     recrea la tabla: copia a una temporal, dropea la original y renombra. Aca
     hace falta en el downgrade porque services es una tabla referenciada y db.py
-    deja PRAGMA foreign_keys=ON en toda conexion: si ya hay filas hijas, el DROP
-    TABLE services muere con "FOREIGN KEY constraint failed". Es el mismo caso
+    deja PRAGMA foreign_keys=ON en toda conexion: con las FK prendidas, el DROP
+    TABLE services no falla, VACIA a las hijas que cascadean (ver el docstring
+    del modulo, que explica el sintoma y por que no se nota). Es el mismo caso
     que a2f7c50e19bd con services, d4a2b6f19c73 con posts y a3f1c9d47b52 con
     users, y esta copiada de ahi por la misma razon que se duplica _nombre_fk en
     esas: una migracion es una foto de un momento y tiene que poder correr sola.
