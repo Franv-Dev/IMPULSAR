@@ -88,9 +88,10 @@ def _sin_foreign_keys_en_sqlite():
 
     # El OFF se relee para confirmar que agarro. En SQLite un PRAGMA es un no-op
     # SILENCIOSO si ya hay una transaccion abierta: no tira error, no avisa,
-    # simplemente no apaga nada. Sin este chequeo el sintoma aparece recien mas
-    # adelante, como un "FOREIGN KEY constraint failed" sobre un DROP TABLE que
-    # no explica por que las FK seguian prendidas.
+    # simplemente no apaga nada. Y sin este chequeo el sintoma tampoco avisa: el
+    # DROP TABLE de mas abajo no falla, cascadea y vacia las tablas hijas sin
+    # decir una palabra (ver el docstring del modulo). Un pragma mudo arriba de
+    # un borrado mudo no lo descubre nadie.
     if bind.exec_driver_sql('PRAGMA foreign_keys').scalar():
         raise RuntimeError(
             "PRAGMA foreign_keys sigue en ON despues del OFF: hay una "
