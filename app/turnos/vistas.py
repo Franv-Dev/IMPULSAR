@@ -13,10 +13,12 @@ DOS FRENOS DISTINTOS A LA DOBLE RESERVA, y conviene no confundirlos:
 - el mismo slot del mismo servicio lo garantiza la BASE, con el UNIQUE y la
   columna centinela de modelo_turno.py. La vista chequea antes para dar un
   mensaje lindo, pero si pierde la carrera el que rechaza es el motor;
-- el solapamiento entre servicios DISTINTOS del mismo vendedor lo chequea solo
-  la aplicacion (reglas.hay_solapamiento), porque un UNIQUE no compara rangos.
-  Ahi queda una ventana chica entre el SELECT y el INSERT, documentada en esa
-  funcion.
+- el solapamiento entre servicios DISTINTOS del mismo vendedor no lo puede dar
+  un UNIQUE, porque un UNIQUE no compara rangos. Lo chequea la aplicacion
+  (reglas.hay_solapamiento), y para que ese chequeo valga contra dos requests
+  simultaneos la reserva toma antes un candado de fila sobre el vendedor (ver
+  consultas.bloquear_agenda_del_vendedor). En MySQL eso lo cierra; en SQLite,
+  que es dev y los tests, no hay candado y no hace falta: es monoproceso.
 """
 
 from flask import (
@@ -143,6 +145,13 @@ def _reservar(servicio, fecha, hora_inicio, ahora):
     # El solapamiento cross-service, que el UNIQUE de la base no cubre: el mismo
     # vendedor puede tener "corte" de 30 y "color" de 90, y sin esto los dos se
     # pueden sacar a las 15:00 (ver reglas.hay_solapamiento).
+    #
+    # El candado va ANTES de la lectura y no despues: es lo que serializa por
+    # vendedor a dos clientes que reservan al mismo tiempo. Sin el, los dos leen
+    # la agenda vacia y los dos insertan. Con el, el segundo espera aca, y
+    # rangos_ocupados_del_vendedor -- que lee con FOR UPDATE, no por casualidad
+    # -- le devuelve la agenda ya con el turno del primero.
+    consultas.bloquear_agenda_del_vendedor(servicio.post.author)
     ocupados = rangos_ocupados_del_vendedor(servicio.post.author, fecha)
     if reglas.hay_solapamiento(inicio, fin, ocupados):
         return "Ese horario se pisa con otro turno del prestador. Elegí otro."

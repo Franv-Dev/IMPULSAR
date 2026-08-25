@@ -175,13 +175,28 @@ def hay_solapamiento(inicio, fin, ocupados):
     Vive en reglas y no en la vista porque es una decision de negocio pura y se
     prueba sin sesion; quien la llama le pasa los turnos ya consultados.
 
-    OJO CON LO QUE ESTO ES Y LO QUE NO ES. Es un chequeo de aplicacion, no una
-    garantia: entre este SELECT y el INSERT hay una ventana, y dos requests
-    simultaneos sobre dos servicios distintos del mismo vendedor pueden pasar
-    los dos. Cerrarla de verdad pide una constraint de exclusion por rangos,
-    que MySQL no tiene y SQLite tampoco. Lo que si esta garantizado a nivel de
-    base es el caso mas comun y mas probable, que es el mismo slot del mismo
-    servicio (ver el UNIQUE en modelo_turno.py).
+    PROTEGE LA AGENDA DEL VENDEDOR, NO LA DEL CLIENTE, y es deliberado. Un
+    cliente SI puede tener dos turnos a la misma hora con dos prestadores
+    distintos, y nadie se lo impide: la plataforma se mete con la agenda de
+    quien atiende -- que no puede estar en dos lugares a la vez y ademas es
+    quien pierde plata con un choque -- y no le administra el dia a quien
+    reserva. Si el cliente se anota en dos lados a la misma hora, es problema
+    suyo y sabra cual deja. Por eso `ocupados` se arma con los turnos DEL
+    VENDEDOR (ver consultas.rangos_ocupados_del_vendedor) y no con los del
+    cliente.
+
+    ESTO SOLO NO ES UNA GARANTIA. Es un chequeo de aplicacion: entre el SELECT
+    que arma `ocupados` y el INSERT del turno hay una ventana, y dos requests
+    simultaneos sobre dos servicios distintos del mismo vendedor la pasarian
+    los dos. La ventana se cierra afuera de aca, en la reserva, con un candado
+    de fila sobre el vendedor mas una lectura con FOR UPDATE (ver
+    consultas.bloquear_agenda_del_vendedor, que explica por que hacen falta las
+    dos cosas y no una). Una constraint de exclusion por rangos seria mas
+    prolijo, pero ni MySQL ni SQLite la tienen.
+
+    Lo que si esta garantizado a nivel de base, y sin depender de ningun
+    candado, es el caso mas comun: el mismo slot del mismo servicio (ver el
+    UNIQUE en modelo_turno.py).
     """
     return any(se_solapan(inicio, fin, otro_inicio, otro_fin)
                for otro_inicio, otro_fin in ocupados)

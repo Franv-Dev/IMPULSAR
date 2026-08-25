@@ -9,6 +9,8 @@ servicio, el horario del dueño y los turnos ya tomados.
 from datetime import date, datetime, time, timedelta
 
 import pytest
+from sqlalchemy import event
+from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.exc import IntegrityError
 
 from app.perfil.modelo_horario import Horario
@@ -920,3 +922,161 @@ def test_los_listados_piden_sesion(client, ruta):
 
     assert respuesta.status_code == 302
     assert "login" in respuesta.headers["Location"]
+
+
+# ============================================ el candado de fila (cross-service)
+#
+# El candado solo existe en MySQL, y los tests corren en SQLite, asi que lo que
+# se puede probar aca no es que serialice -- eso pide dos conexiones al motor de
+# produccion -- sino las dos cosas de las que depende que serialice:
+#
+#   1. que la lectura del solapamiento lleve FOR UPDATE cuando el motor es
+#      MySQL, porque sin eso el REPEATABLE READ le devuelve al perdedor de la
+#      carrera la foto vieja, sin el turno del ganador;
+#   2. que el candado se tome ANTES de esa lectura y no despues, que es todo el
+#      argumento de por que funciona.
+#
+# Las dos son deterministas y fallan si alguien reordena o saca una de las dos.
+
+
+def test_en_mysql_la_lectura_del_solapamiento_lleva_for_update(
+    db, escenario, monkeypatch
+):
+    e = escenario()
+    monkeypatch.setattr("app.turnos.consultas.usa_candado_de_fila", lambda: True)
+
+    consulta = consultas_turnos.consulta_de_rangos(e.vendedor.id, e.fecha)
+    sql = str(consulta.statement.compile(dialect=mysql_dialect()))
+
+    assert "FOR UPDATE" in sql
+
+
+def test_sin_mysql_la_lectura_del_solapamiento_es_comun(db, escenario):
+    """En SQLite no hay candado y no hace falta: dev y tests son monoproceso."""
+    e = escenario()
+
+    consulta = consultas_turnos.consulta_de_rangos(e.vendedor.id, e.fecha)
+
+    assert consultas_turnos.usa_candado_de_fila() is False
+    assert "FOR UPDATE" not in str(consulta.statement.compile())
+
+
+def test_el_candado_no_emite_sql_fuera_de_mysql(db, escenario):
+    e = escenario()
+    # El id se lee ANTES de empezar a espiar: despues del commit el objeto queda
+    # expirado, y tocarlo dispara un SELECT de refresco que no tiene nada que
+    # ver con el candado y ensuciaria la medicion.
+    vendedor_id = e.vendedor.id
+    emitidas = []
+
+    def espiar(conn, cursor, sentencia, *resto):
+        emitidas.append(sentencia)
+
+    event.listen(db.engine, "before_cursor_execute", espiar)
+    try:
+        consultas_turnos.bloquear_agenda_del_vendedor(vendedor_id)
+    finally:
+        event.remove(db.engine, "before_cursor_execute", espiar)
+
+    assert emitidas == []
+
+
+def test_en_mysql_el_candado_es_un_select_for_update_sobre_el_vendedor(
+    db, escenario, monkeypatch
+):
+    """La fila que se traba es la del USUARIO, no la del servicio.
+
+    Es lo que hace que el candado sirva: el solapamiento es de la agenda de la
+    persona, que puede tener varios emprendimientos y varios servicios. Un
+    candado por servicio dejaria pasar justo el caso que hay que frenar.
+    """
+    e = escenario()
+    monkeypatch.setattr("app.turnos.consultas.usa_candado_de_fila", lambda: True)
+    ejecutadas = []
+    monkeypatch.setattr(
+        consultas_turnos.db.session, "execute",
+        lambda sentencia, *a, **k: ejecutadas.append(
+            str(sentencia.compile(dialect=mysql_dialect()))
+        ),
+    )
+
+    consultas_turnos.bloquear_agenda_del_vendedor(e.vendedor.id)
+
+    assert len(ejecutadas) == 1
+    sql = ejecutadas[0]
+    assert "FOR UPDATE" in sql
+    assert "users" in sql
+    assert "turnos" not in sql
+
+
+def test_el_candado_se_toma_antes_de_leer_el_solapamiento(client, escenario, monkeypatch):
+    """El orden es el fix. Al reves, el perdedor releeria antes de esperar.
+
+    Se espia el orden real de las dos llamadas durante una reserva: si alguien
+    mueve el candado despues de la lectura, o lo saca, este test cae.
+    """
+    e = escenario()
+    orden = []
+
+    real_bloquear = consultas_turnos.bloquear_agenda_del_vendedor
+    real_rangos = consultas_turnos.rangos_ocupados_del_vendedor
+
+    def bloquear_espiado(user_id):
+        orden.append("candado")
+        return real_bloquear(user_id)
+
+    def rangos_espiado(*a, **k):
+        orden.append("lectura")
+        return real_rangos(*a, **k)
+
+    monkeypatch.setattr(
+        "app.turnos.consultas.bloquear_agenda_del_vendedor", bloquear_espiado)
+    monkeypatch.setattr("app.turnos.vistas.rangos_ocupados_del_vendedor", rangos_espiado)
+
+    respuesta = _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    assert respuesta.status_code == 302
+    assert orden == ["candado", "lectura"]
+
+
+def test_el_candado_se_toma_por_vendedor_y_no_por_cliente(client, escenario, monkeypatch):
+    """Lo que se serializa es la agenda de quien atiende."""
+    e = escenario()
+    bloqueados = []
+    monkeypatch.setattr(
+        "app.turnos.consultas.bloquear_agenda_del_vendedor", bloqueados.append)
+
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    assert bloqueados == [e.vendedor.id]
+    assert e.cliente.id not in bloqueados
+
+
+def test_el_cliente_si_puede_tener_dos_turnos_a_la_misma_hora(
+    client, db, escenario, crear_usuario, crear_post
+):
+    """Deliberado: la plataforma cuida la agenda del vendedor, no la del cliente.
+
+    Un cliente que se anota con dos prestadores distintos a la misma hora sabra
+    cual deja; nadie se lo impide.
+    """
+    e = escenario()
+    otro = crear_usuario(username="otrovendedor")
+    otro_post = crear_post(otro.id, title="Otra")
+    db.session.add(Horario(user_id=otro.id, dia_semana=0,
+                           abre=time(9, 0), cierra=time(11, 0), cerrado=False))
+    otro_servicio = Service(post_id=otro_post.id, titulo="Masajes", rubro="otros",
+                            turnos_habilitados=True, duracion_turno_minutos=30)
+    db.session.add(otro_servicio)
+    db.session.commit()
+
+    primera = _pedir(client, e.servicio.id, e.fecha, "09:00")
+    segunda = _pedir(client, otro_servicio.id, e.fecha, "09:00")
+
+    assert primera.status_code == 302
+    assert segunda.status_code == 302
+    # Los dos turnos, a la misma hora, del mismo cliente, con vendedores distintos.
+    mios = Turno.query.filter_by(cliente_id=e.cliente.id,
+                                 hora_inicio=time(9, 0)).all()
+    assert len(mios) == 2
+    assert {t.service_id for t in mios} == {e.servicio.id, otro_servicio.id}

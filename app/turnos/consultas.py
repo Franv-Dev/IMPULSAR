@@ -12,6 +12,7 @@ dominio de turnos, y de la unica cosa compartida que necesita -- como se lee un
 Horario -- ya se ocupa services/horarios.py.
 """
 
+from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from app.blog.modelo_post import Post
@@ -21,6 +22,7 @@ from app.servicios.reglas import acepta_turnos
 from app.turnos.modelo_turno import EstadosTurno, Turno
 from app.turnos.reglas import cortar_en_slots
 from db import db
+from models.user import User
 
 
 def horario_del_dia(user_id, dia_semana):
@@ -106,6 +108,37 @@ def turno_por_id_o_404(id):
     return Turno.query.get_or_404(id)
 
 
+def usa_candado_de_fila():
+    """Si este motor soporta el candado que serializa las reservas.
+
+    Solo MySQL. En SQLite -- que es dev y los tests, monoproceso -- SELECT ...
+    FOR UPDATE no existe como candado real: el dialecto de SQLAlchemy ni
+    siquiera lo emite. No es una perdida, porque el escenario que el candado
+    ataja (dos requests simultaneos del mismo vendedor) no se da ahi.
+    """
+    return db.engine.dialect.name == "mysql"
+
+
+def bloquear_agenda_del_vendedor(user_id):
+    """Toma el candado de la fila del vendedor. Sin efecto fuera de MySQL.
+
+    Es la primera mitad del cierre de la ventana entre el SELECT del chequeo de
+    solapamiento y el INSERT del turno. Serializa POR VENDEDOR: dos clientes
+    reservando con prestadores distintos no se estorban, y dos reservando con
+    el mismo se ordenan una atras de la otra.
+
+    Se bloquea la fila de users y no la de services a proposito: el
+    solapamiento es de la agenda de la PERSONA, que puede tener varios
+    emprendimientos y varios servicios. Un candado por servicio dejaria pasar
+    justo el caso que hay que frenar, que es el de dos servicios distintos.
+
+    El candado se suelta solo, cuando la transaccion commitea o hace rollback.
+    """
+    if not usa_candado_de_fila():
+        return
+    db.session.execute(select(User.id).where(User.id == user_id).with_for_update())
+
+
 def rangos_ocupados_del_vendedor(user_id, fecha, excluir_turno_id=None):
     """Los (inicio, fin) activos de ESE dia en TODOS los servicios del vendedor.
 
@@ -117,8 +150,39 @@ def rangos_ocupados_del_vendedor(user_id, fecha, excluir_turno_id=None):
     servicio del emprendimiento; el vendedor es el autor del emprendimiento, y
     puede tener varios.
 
+    ESTA LECTURA TIENE QUE SER CON CANDADO, y es la segunda mitad del cierre de
+    la ventana (la primera es bloquear_agenda_del_vendedor). No alcanza con
+    tomar el candado y despues leer normal: en MySQL/InnoDB con REPEATABLE READ
+    -- que es el default -- el read view del request ya quedo fijado en el
+    primer SELECT consistente, o sea al cargar el Service y al calcular los
+    slots. Una lectura comun despues del candado seguiria viendo esa foto
+    vieja, sin el turno que el ganador de la carrera acaba de commitear, y el
+    perdedor se colaria igual. Una lectura con FOR UPDATE, en cambio, siempre
+    lee la ultima version commiteada.
+
+    Con las dos cosas juntas el perdedor espera en el candado, relee fresco, ve
+    el turno del ganador y lo rechaza por solapamiento.
+
+    El FOR UPDATE cae sobre el join entero, asi que tambien traba las filas de
+    services y posts de ese vendedor mientras dura la transaccion. Se acepta:
+    son milisegundos, las filas son del mismo vendedor que ya esta serializado
+    por el candado de users, y acotarlo con FOR UPDATE OF pide MySQL 8.0.1 y
+    dejaria la migracion atada a una version.
+
     excluir_turno_id existe para cuando se reprograme un turno (todavia no hay
     pantalla): sin eso, un turno chocaria consigo mismo.
+    """
+    return [(fila[0], fila[1])
+            for fila in consulta_de_rangos(user_id, fecha, excluir_turno_id).all()]
+
+
+def consulta_de_rangos(user_id, fecha, excluir_turno_id=None):
+    """La consulta de rangos_ocupados_del_vendedor, sin ejecutar.
+
+    Se separa para que un test pueda compilarla contra el dialecto de MySQL y
+    comprobar que lleva el FOR UPDATE: en SQLite no hay forma de verlo, porque
+    el dialecto directamente no lo emite, y el candado es justo lo que no se
+    puede probar corriendo los tests en el motor donde no existe.
     """
     consulta = (
         Turno.query
@@ -133,7 +197,9 @@ def rangos_ocupados_del_vendedor(user_id, fecha, excluir_turno_id=None):
     )
     if excluir_turno_id is not None:
         consulta = consulta.filter(Turno.id != excluir_turno_id)
-    return [(fila[0], fila[1]) for fila in consulta.all()]
+    if usa_candado_de_fila():
+        consulta = consulta.with_for_update()
+    return consulta
 
 
 def turnos_de_cliente(user_id):
