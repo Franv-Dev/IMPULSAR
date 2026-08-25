@@ -43,6 +43,15 @@ from views.pages import pages
 from views.posts_api import posts_api
 from views.products import products
 
+# Modelos sin blueprint todavia. Los demas llegan al registro de SQLAlchemy de
+# arriba: importar un blueprint arrastra sus vistas, que importan sus consultas,
+# que importan sus modelos. Turno todavia no tiene vistas (llegan en la 2b), y
+# un modelo que nadie importa no existe para db.create_all() ni para el
+# autogenerate de alembic: la tabla simplemente no se crea y no falla nada, que
+# es la peor forma de enterarse. Esta linea se puede borrar el dia que
+# app.turnos.vistas exista y se registre aca.
+import app.turnos.modelo_turno  # noqa: F401
+
 # Extensiones. Se crean vacias aca y se enlazan a la app dentro de create_app,
 # que es lo que permite tener mas de una app conviviendo.
 migrate = Migrate()
