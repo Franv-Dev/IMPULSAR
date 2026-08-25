@@ -96,6 +96,38 @@
                     </small>
                 </div>
 
+                <div class="auth__field">
+                    <label class="auth__label" for="turnos_habilitados">
+                        <input type="checkbox" name="turnos_habilitados"
+                               id="turnos_habilitados"
+                               {% if datos.turnos_habilitados %}checked{% endif %}>
+                        Tomar turnos para este servicio
+                    </label>
+                    <small>
+                        Los clientes reservan una hora concreta, cortada de tus
+                        horarios de atención del perfil. Si no cargaste horarios
+                        todavía, no va a haber turnos para elegir.
+                    </small>
+                </div>
+
+                <div class="auth__field">
+                    <label for="duracion_turno_minutos" class="auth__label">
+                        Duración de cada turno (minutos)
+                    </label>
+                    {# type="number" con min/max ayuda al que usa el formulario,
+                       pero no valida nada: el POST se manda a mano igual. Quien
+                       decide es reglas.duracion_de_turno_valida. #}
+                    <input type="number" name="duracion_turno_minutos"
+                           id="duracion_turno_minutos" class="auth__input"
+                           min="{{ min_duracion_turno }}" max="{{ max_duracion_turno }}"
+                           step="1" value="{{ datos.duracion_turno_minutos }}"
+                           placeholder="30">
+                    <small>
+                        Obligatorio si tomás turnos. Entre {{ min_duracion_turno }}
+                        y {{ max_duracion_turno }} minutos.
+                    </small>
+                </div>
+
                 <button type="submit" class="btn btn--primary auth__submit">
                     {{ "Guardar cambios" if servicio else "Agregar servicio" }}
                 </button>

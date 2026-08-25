@@ -328,3 +328,114 @@ def test_borrar_el_cliente_se_lleva_sus_turnos(db, servicio_con_turnos):
     db.session.commit()
 
     assert Turno.query.count() == 0
+
+
+# ------------------------------- el formulario de Service: habilitar turnos
+
+@pytest.fixture
+def emprendedor(crear_usuario, crear_post, login):
+    """Un usuario logueado con un emprendimiento propio, para el form de Service."""
+
+    def _crear(username="duenio"):
+        usuario = crear_usuario(username=username)
+        post = crear_post(usuario.id)
+        login(usuario.id)
+        return usuario, post
+
+    return _crear
+
+
+def _alta(post_id, **extra):
+    datos = {
+        "post_id": post_id, "titulo": "Corte", "rubro": "otros",
+        "precio_estimado": "", "disponible": "on",
+    }
+    datos.update(extra)
+    return datos
+
+
+def test_habilitar_turnos_guarda_el_flag_y_la_duracion(client, emprendedor):
+    _usuario, post = emprendedor()
+
+    respuesta = client.post("/servicios/nuevo", data=_alta(
+        post.id, turnos_habilitados="on", duracion_turno_minutos="30"))
+
+    assert respuesta.status_code == 302
+    servicio = Service.query.one()
+    assert servicio.turnos_habilitados is True
+    assert servicio.duracion_turno_minutos == 30
+
+
+def test_sin_tildar_turnos_la_duracion_queda_en_null(client, emprendedor):
+    """Aunque el campo venga escrito: con el flag apagado la columna no significa nada."""
+    _usuario, post = emprendedor()
+
+    respuesta = client.post("/servicios/nuevo", data=_alta(
+        post.id, duracion_turno_minutos="30"))
+
+    assert respuesta.status_code == 302
+    servicio = Service.query.one()
+    assert servicio.turnos_habilitados is False
+    assert servicio.duracion_turno_minutos is None
+
+
+@pytest.mark.parametrize("duracion", ["", "4", "481", "0", "-30"])
+def test_con_turnos_tildados_la_duracion_es_obligatoria_y_acotada(
+    client, emprendedor, duracion
+):
+    _usuario, post = emprendedor()
+
+    respuesta = client.post("/servicios/nuevo", data=_alta(
+        post.id, turnos_habilitados="on", duracion_turno_minutos=duracion))
+
+    # Se repinta el formulario en vez de guardar: no hay redirect ni fila.
+    assert respuesta.status_code == 200
+    assert Service.query.count() == 0
+
+
+def test_una_duracion_que_no_es_un_numero_lo_dice(client, emprendedor):
+    _usuario, post = emprendedor()
+
+    respuesta = client.post("/servicios/nuevo", data=_alta(
+        post.id, turnos_habilitados="on", duracion_turno_minutos="media hora"))
+
+    assert respuesta.status_code == 200
+    assert "número de minutos" in respuesta.get_data(as_text=True)
+    assert Service.query.count() == 0
+
+
+@pytest.mark.parametrize("duracion", ["5", "480"])
+def test_los_dos_bordes_del_rango_se_aceptan(client, emprendedor, duracion):
+    _usuario, post = emprendedor()
+
+    respuesta = client.post("/servicios/nuevo", data=_alta(
+        post.id, turnos_habilitados="on", duracion_turno_minutos=duracion))
+
+    assert respuesta.status_code == 302
+    assert Service.query.one().duracion_turno_minutos == int(duracion)
+
+
+def test_apagar_los_turnos_al_editar_borra_la_duracion(client, db, emprendedor):
+    """Volver a prender los turnos no tiene que revivir una duracion vieja."""
+    _usuario, post = emprendedor()
+    servicio = Service(post_id=post.id, titulo="Corte", rubro="otros",
+                       turnos_habilitados=True, duracion_turno_minutos=30)
+    db.session.add(servicio)
+    db.session.commit()
+
+    respuesta = client.post(f"/servicios/{servicio.id}/editar", data=_alta(post.id))
+
+    assert respuesta.status_code == 302
+    assert servicio.turnos_habilitados is False
+    assert servicio.duracion_turno_minutos is None
+
+
+def test_el_formulario_muestra_los_campos_de_turnos(client, emprendedor):
+    _usuario, _post = emprendedor()
+
+    pagina = client.get("/servicios/nuevo").get_data(as_text=True)
+
+    assert 'name="turnos_habilitados"' in pagina
+    assert 'name="duracion_turno_minutos"' in pagina
+    # El rango sale de reglas.py y no de numeros escritos en el HTML.
+    assert 'min="5"' in pagina and 'max="480"' in pagina

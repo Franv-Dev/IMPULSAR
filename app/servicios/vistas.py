@@ -36,6 +36,20 @@ servicios = Blueprint(
 )
 
 
+def _limites_de_turno():
+    """El rango valido de duracion, para que el template lo muestre y lo cite.
+
+    Sale de reglas.py y no de numeros escritos en el HTML: el mensaje de error
+    del formulario ya los cita desde ahi, y con el rango repetido en la
+    plantilla mover el limite dejaria el <input> y el error diciendo cosas
+    distintas.
+    """
+    return {
+        "min_duracion_turno": reglas.MIN_DURACION_TURNO_MINUTOS,
+        "max_duracion_turno": reglas.MAX_DURACION_TURNO_MINUTOS,
+    }
+
+
 def _servicio_propio(id):
     """El servicio con ese id si el usuario actual puede tocarlo.
 
@@ -180,7 +194,7 @@ def nuevo():
             flash(error)
             return render_template(
                 "servicios/form.html", posts=posts, datos=datos,
-                servicio=None, rubros=Rubros,
+                servicio=None, rubros=Rubros, **_limites_de_turno(),
             )
 
         consultas.guardar(Service(post_id=post_id, **valores))
@@ -191,9 +205,11 @@ def nuevo():
         "titulo": "", "rubro": Rubros.OTROS, "descripcion": "",
         "zona_cobertura": "", "precio_estimado": "",
         "disponible": True, "post_id": None,
+        "turnos_habilitados": False, "duracion_turno_minutos": "",
     }
     return render_template(
-        "servicios/form.html", posts=posts, datos=datos, servicio=None, rubros=Rubros
+        "servicios/form.html", posts=posts, datos=datos, servicio=None,
+        rubros=Rubros, **_limites_de_turno(),
     )
 
 
@@ -231,7 +247,7 @@ def editar(id):
             flash(error)
             return render_template(
                 "servicios/form.html", posts=posts, datos=datos,
-                servicio=servicio, rubros=Rubros,
+                servicio=servicio, rubros=Rubros, **_limites_de_turno(),
             )
 
         servicio.post_id = post_id
@@ -250,9 +266,14 @@ def editar(id):
         "precio_estimado": texto_para_formulario(servicio.precio_estimado),
         "disponible": servicio.disponible,
         "post_id": servicio.post_id,
+        "turnos_habilitados": servicio.turnos_habilitados,
+        # Cadena vacia y no None: es lo que el <input> tiene que mostrar cuando
+        # el servicio no toma turnos, igual que hace el precio.
+        "duracion_turno_minutos": servicio.duracion_turno_minutos or "",
     }
     return render_template(
-        "servicios/form.html", posts=posts, datos=datos, servicio=servicio, rubros=Rubros
+        "servicios/form.html", posts=posts, datos=datos, servicio=servicio,
+        rubros=Rubros, **_limites_de_turno(),
     )
 
 
