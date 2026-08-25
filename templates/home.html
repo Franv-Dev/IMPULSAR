@@ -61,6 +61,30 @@
         </div>
     </section>
 
+    <!-- RUBROS
+         Los 7 del sistema, a la vista en vez de escondidos en el <select> del
+         listado, como quedaron en el rediseño de la interfaz. Cada uno entra
+         al listado ya filtrado (?category=...), que es la misma URL que arma
+         ese <select>. -->
+    <section class="section rubros">
+        <div class="container">
+            <div class="section__header">
+                <h2 class="section__title">Explorá por rubro</h2>
+                <a href="{{ url_for('blog.index') }}" class="section__link">Ver los 7 rubros</a>
+            </div>
+
+            <ul class="rubros__grid">
+                {% for clave, etiqueta in categorias.items() %}
+                    <li>
+                        <a href="{{ url_for('blog.index', category=clave) }}" class="rubro">
+                            <span class="rubro__nombre">{{ etiqueta }}</span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+
     <!-- SECCIÓN EMPRENDIMIENTOS -->
     <section id="emprendimientos" class="section">
         <div class="container">

@@ -31,6 +31,7 @@ from services.uploads import MAX_IMAGE_BYTES
 # es de donde se pide: ninguno reexporta desde su __init__, para no meter las
 # vistas en el medio de cada import de sus modelos (ver app/blog/__init__.py).
 # Los que todavia no se migraron siguen en views/.
+from app.blog.modelo_post import Categorias
 from app.blog.vistas import blog
 from app.perfil.vistas import profile
 from app.servicios.vistas import servicios
@@ -109,7 +110,10 @@ def _registrar_blueprints(app):
 def _registrar_rutas(app):
     @app.route("/")
     def index():
-        return render_template("home.html")
+        # Los 7 rubros salen del mismo lugar que el <select> del listado
+        # (Categorias.ETIQUETAS), asi que agregar uno nuevo lo hace aparecer en
+        # los dos lados sin tocar el template.
+        return render_template("home.html", categorias=Categorias.ETIQUETAS)
 
 
 def _registrar_filtros_jinja(app):
