@@ -16,6 +16,7 @@ from app.blog.modelo_favorito import Favorite
 from app.blog.modelo_post import Post
 from app.blog.modelo_reporte import Report
 from app.blog.modelo_resenia import Review
+from app.perfil.modelo_horario import Horario
 from app.servicios.modelo import Service
 from db import db
 from models.product import Product
@@ -284,6 +285,19 @@ def hay_reporte_pendiente(reporter_id, tipo, target_id):
     return Report.query.filter_by(
         reporter_id=reporter_id, resolved=False, **filtro_objetivo
     ).first() is not None
+
+
+def tiene_horarios_cargados(user_id):
+    """Si ese usuario ya cargo sus horarios de atencion.
+
+    Un EXISTS y no traer las filas: lo unico que se pregunta es si hay alguna,
+    para el item del checklist de publicacion. Los horarios cuelgan del USUARIO
+    y no del emprendimiento (ver app/perfil/modelo_horario.py), asi que el
+    item ya puede estar cumplido cuando se publica el primer emprendimiento.
+    """
+    return db.session.query(
+        Horario.query.filter(Horario.user_id == user_id).exists()
+    ).scalar()
 
 
 def guardar(fila=None):

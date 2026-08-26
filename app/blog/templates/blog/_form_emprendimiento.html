@@ -1,0 +1,339 @@
+{#  El formulario de emprendimiento del rediseño, compartido por el alta y la
+    edicion.
+
+    Las dos pantallas eran dos copias del mismo formulario con diferencias
+    chicas (los value, el texto de los botones, la galeria que ya existe). Con
+    el rediseño la copia pasaba a ser el doble de larga, asi que el markup vive
+    una sola vez aca y cada pantalla pasa lo suyo.
+
+    Quien lo incluye pasa:
+      post         el emprendimiento que se edita, o None si es un alta
+      categorias   el catalogo de Categorias.ETIQUETAS
+      maximo_fotos MAX_IMAGENES_POR_POST
+      checklist    los items de reglas.checklist_de_publicacion
+      accion       el texto del boton que guarda
+
+    El titulo y la bajada de la pantalla NO salen de aca: los pone cada
+    template, porque son justamente lo unico que se lee distinto entre publicar
+    y editar.
+
+    LO DEL DISEÑO QUE NO EXISTE EN LA APP, y como quedo cada cosa:
+
+      - Asistente de 3 pasos con el numerito en curso: el alta es un solo POST,
+        no tres. Los tres tramos SI existen como secciones, asi que el paso a
+        paso se convirtio en un indice con anclas -- lleva a la seccion de
+        verdad -- en vez de un progreso inventado.
+      - "Borrador guardado hace 1 min": no hay borradores. El indicador se
+        omite, porque afirmaria algo falso; el boton "Guardar borrador" si va,
+        maquetado y apagado, porque eso es cableado pendiente.
+      - Reordenar las fotos arrastrando y elegir cual es la principal:
+        PostImage.posicion existe pero la asigna la vista sola y no hay ruta
+        que la cambie. Los slots muestran el orden real y se avisa.
+      - "No mostrar la dirección exacta": no hay columna en Post. Va apagado.
+      - Mapa con el pin arrastrable: la direccion se geocodifica al guardar, no
+        mientras se escribe. El panel queda con el aviso en vez del mapa.
+      - Contador de caracteres de la descripcion: Post.body es Text y no tiene
+        limite, asi que no se inventa uno. El del nombre si va, porque
+        Post.title es String(100) y ese numero es real. #}
+
+{% set es_alta = post is none %}
+
+<div class="form-empren">
+    <div class="form-empren__principal">
+
+        {#  El indice de los tres tramos. Son anclas a las secciones de abajo,
+            no pasos de un asistente: se guarda todo junto. #}
+        <nav class="tramos" aria-label="Secciones del formulario">
+            {% for numero, etiqueta, ayuda, ancla in [
+                (1, 'Lo básico', 'Nombre y descripción', 'tramo-basico'),
+                (2, 'Fotos', 'Hasta 5', 'tramo-fotos'),
+                (3, 'Ubicación', 'Opcional', 'tramo-ubicacion'),
+            ] %}
+                <a href="#{{ ancla }}" class="tramo">
+                    <span class="tramo__numero" aria-hidden="true">{{ numero }}</span>
+                    <span class="tramo__datos">
+                        <span class="tramo__label">{{ etiqueta }}</span>
+                        <span class="tramo__ayuda">{{ ayuda }}</span>
+                    </span>
+                </a>
+            {% endfor %}
+        </nav>
+
+        <form method="post" class="form-empren__form" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <section class="panel panel--tramo" id="tramo-basico">
+                <div>
+                    <h2 class="panel__titulo panel__titulo--grande">Lo básico</h2>
+                    <p class="panel__bajada">
+                        Con esto ya podés publicar. Las fotos y la dirección se
+                        pueden agregar después.
+                    </p>
+                </div>
+
+                <div class="auth__field">
+                    <label for="title" class="auth__label auth__label--fila">
+                        <span>Nombre del emprendimiento</span>
+                        {#  100 es el largo real de la columna (Post.title es
+                            String(100)), no un numero de diseño. #}
+                        <span class="contador" data-contador-de="title" hidden>
+                            <span class="contador__valor">0</span> / 100
+                        </span>
+                    </label>
+                    <input id="title" name="title" type="text" class="auth__input"
+                           maxlength="100" required
+                           placeholder="Ej: Dulces Artesanales Mendoza"
+                           value="{{ post.title if post else '' }}">
+                    <small class="auth__hint">
+                        Como te conocen tus clientes. Sin “emprendimiento de” ni la ciudad.
+                    </small>
+                </div>
+
+                <fieldset class="auth__field campo-categoria">
+                    <legend class="auth__label">Categoría</legend>
+                    {#  Chips de verdad: son radios, asi que la eleccion viaja
+                        en el POST sin una linea de JavaScript. El name sigue
+                        siendo "category", que es lo que lee formulario.py. #}
+                    <div class="chips-radio">
+                        {% for valor, etiqueta in categorias.items() %}
+                            {% set elegida = (post.category == valor) if post else loop.first %}
+                            <label class="chip-radio">
+                                <input type="radio" name="category" value="{{ valor }}"
+                                       class="sr-only" {% if elegida %}checked{% endif %}>
+                                <span class="chip-radio__cara">{{ etiqueta }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    <small class="auth__hint">
+                        Elegí una. Es el filtro con el que más te van a buscar.
+                    </small>
+                </fieldset>
+
+                <div class="auth__field">
+                    <label for="body" class="auth__label">Descripción</label>
+                    <textarea id="body" name="body" rows="6" class="auth__input"
+                              {% if es_alta %}required{% endif %}
+                              placeholder="Contanos qué ofrecés y qué te diferencia."
+                              >{{ post.body if post else '' }}</textarea>
+                    <small class="auth__hint">
+                        Contá qué ofrecés y qué te diferencia. Los horarios y las
+                        redes se cargan aparte, no hace falta ponerlos acá.
+                    </small>
+                </div>
+            </section>
+
+            <section class="panel panel--tramo" id="tramo-fotos">
+                <div>
+                    <h2 class="panel__titulo panel__titulo--grande">Fotos</h2>
+                    <p class="panel__bajada">
+                        Hasta {{ maximo_fotos }}, contando la principal.
+                        La primera es la que se ve en las búsquedas.
+                    </p>
+                </div>
+
+                {#  Los slots muestran las fotos REALES que tiene el post: la
+                    principal marcada, despues las de la galeria, y al final los
+                    lugares que quedan libres. En el alta estan todos vacios. #}
+                <div class="slots-foto">
+                    <div class="slot-foto {{ 'slot-foto--principal' if post and post.image }}">
+                        {% if post and post.image %}
+                            <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                 alt="Foto principal de {{ post.title }}" class="slot-foto__img">
+                            <span class="slot-foto__sello">Principal</span>
+                        {% else %}
+                            <span class="slot-foto__vacio">Foto principal</span>
+                        {% endif %}
+                    </div>
+
+                    {% if post %}
+                        {% for imagen in post.imagenes %}
+                            <div class="slot-foto">
+                                <img src="{{ url_for('static', filename='uploads/' ~ imagen.filename) }}"
+                                     alt="Foto de {{ post.title }}" class="slot-foto__img">
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% set libres = post.lugares_de_imagen_libres if post else maximo_fotos - 1 %}
+                    {% for _ in range(libres) %}
+                        <div class="slot-foto slot-foto--libre">
+                            <span class="slot-foto__vacio">Libre</span>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-empren__archivos">
+                    <div class="auth__field">
+                        <label for="image" class="auth__label">
+                            {{ "Reemplazar la foto principal" if post and post.image else "Foto principal" }}
+                            <span class="auth__opcional">(opcional)</span>
+                        </label>
+                        <input id="image" name="image" type="file" class="auth__input"
+                               accept=".png,.jpg,.jpeg,.gif">
+                        {% if post and post.image %}
+                            <small class="auth__hint">
+                                Si elegís una nueva, reemplaza a la que está ahora.
+                            </small>
+                        {% endif %}
+                    </div>
+
+                    <div class="auth__field">
+                        <label for="galeria" class="auth__label">
+                            Más fotos <span class="auth__opcional">(opcional)</span>
+                        </label>
+                        <input id="galeria" name="galeria" type="file" multiple
+                               class="auth__input" accept=".png,.jpg,.jpeg,.gif">
+                        <small class="auth__hint">
+                            {% if es_alta %}
+                                Hasta {{ maximo_fotos }} en total, contando la principal.
+                            {% elif post.lugares_de_imagen_libres %}
+                                Podés sumar {{ post.lugares_de_imagen_libres }}
+                                foto{{ '' if post.lugares_de_imagen_libres == 1 else 's' }} más.
+                                Las nuevas se agregan a las que ya están.
+                            {% else %}
+                                Ya llegaste al máximo de {{ maximo_fotos }} fotos.
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+
+                <p class="cuenta__pendiente">
+                    PNG, JPG o GIF. Todavía no se pueden reordenar las fotos ni
+                    elegir cuál es la principal: el orden es el de carga y la
+                    principal es la de arriba.
+                </p>
+            </section>
+
+            <section class="panel panel--tramo" id="tramo-ubicacion">
+                <div>
+                    <h2 class="panel__titulo panel__titulo--grande">
+                        Dónde te encuentran <span class="auth__opcional">· opcional</span>
+                    </h2>
+                    <p class="panel__bajada">
+                        Si tenés local, la dirección te suma en las búsquedas
+                        “cerca de mí”. Si vendés a domicilio, dejala vacía.
+                    </p>
+                </div>
+
+                <div class="form-empren__ubicacion">
+                    <div class="form-empren__ubicacion-campos">
+                        <div class="auth__field">
+                            <label for="address_street" class="auth__label">Dirección</label>
+                            <input type="text" id="address_street" name="address_street"
+                                   class="auth__input"
+                                   placeholder="Av. San Martín 1240, San Rafael, Mendoza"
+                                   value="{{ post.address_street or '' if post else '' }}">
+                            <small class="auth__hint">
+                                Calle, número, distrito y provincia.
+                            </small>
+                        </div>
+
+                        <label class="opcion-apagada">
+                            <input type="checkbox" disabled>
+                            <span>
+                                <span class="opcion-apagada__titulo">No mostrar la dirección exacta</span>
+                                <span class="opcion-apagada__desc">
+                                    Todavía no se puede: la dirección que cargues se
+                                    muestra entera en la ficha pública.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="panel panel--mapa">
+                        {% if post and post.latitude %}
+                            <p class="panel__nota">
+                                Esta dirección ya está ubicada en el mapa.
+                                <a href="{{ url_for('blog.detail', id=post.id) }}">Vela en la ficha</a>.
+                            </p>
+                        {% else %}
+                            <p class="panel__nota">
+                                El mapa se arma al guardar, con la dirección que
+                                escribas. Todavía no se puede corregir el punto a mano.
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <div class="form-empren__acciones">
+                <button type="submit" class="btn btn--primary">{{ accion }}</button>
+                <button type="button" class="btn btn--secondary btn--proximamente" disabled>
+                    Guardar borrador
+                </button>
+                <span class="form-empren__legal">
+                    Al publicar aceptás las reglas de la comunidad.
+                </span>
+            </div>
+            <p class="cuenta__pendiente">
+                Todavía no hay borradores: lo que cargues se guarda recién cuando
+                apretás “{{ accion }}”.
+            </p>
+        </form>
+    </div>
+
+    <aside class="form-empren__lateral">
+        <div class="vista-previa">
+            <span class="vista-previa__rotulo">Así se va a ver al buscarte</span>
+            <div class="vista-previa__card">
+                <div class="vista-previa__foto">
+                    {% if post and post.image %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                             alt="" class="vista-previa__img">
+                    {% endif %}
+                </div>
+                <div class="vista-previa__cuerpo">
+                    <span class="badge badge--category" data-previa="categoria">
+                        {{ post.category_label if post else categorias.values()|list|first }}
+                    </span>
+                    <span class="vista-previa__titulo" data-previa="titulo">
+                        {{ post.title if post else "El nombre que pongas" }}
+                    </span>
+                    <span class="vista-previa__texto" data-previa="descripcion">
+                        {% if post %}
+                            {{ post.body[:110] }}{% if post.body|length > 110 %}…{% endif %}
+                        {% else %}
+                            Lo que escribas en la descripción.
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel__head">
+                <h2 class="panel__titulo">Qué te falta</h2>
+                {% set hechos = checklist | selectattr('cumplido') | list | length %}
+                <span class="panel__contador">{{ hechos }} de {{ checklist | length }}</span>
+            </div>
+            <span class="barra" aria-hidden="true">
+                <span class="barra__relleno"
+                      style="width: {{ (hechos * 100 // (checklist | length)) }}%"></span>
+            </span>
+            <ul class="checklist">
+                {% for item in checklist %}
+                    <li class="checklist__item {{ 'checklist__item--hecho' if item.cumplido }}">
+                        <span class="checklist__marca" aria-hidden="true">{{ '✓' if item.cumplido }}</span>
+                        <span>{{ item.etiqueta }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <p class="panel__nota">
+                Es un consejo, no un requisito: alcanza con el nombre y la
+                descripción para publicar.
+            </p>
+        </div>
+
+        <div class="bloque-marca">
+            <span class="bloque-marca__titulo">Después de publicar</span>
+            <ul class="bloque-marca__lista">
+                <li>Aparece en Emprendimientos al instante, sin revisión previa.</li>
+                <li>Podés cargar productos, servicios y eventos desde tu catálogo.</li>
+                {#  La verificacion es de cada SERVICIO y no del emprendimiento
+                    (ver app/servicios/modelo_verificacion.py), asi que se dice
+                    asi y no como en el diseño. #}
+                <li>Pedí la verificación de cada servicio cuando tengas la documentación.</li>
+            </ul>
+        </div>
+    </aside>
+</div>

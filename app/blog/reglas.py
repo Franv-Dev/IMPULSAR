@@ -103,3 +103,53 @@ def categoria_valida(categoria):
     emprendimiento fuera del filtro por categoria sin que nadie se entere.
     """
     return categoria in Categorias.TODAS
+
+
+# --------------------------------------------------- checklist de publicacion
+
+# Cuanto tiene que tener una descripcion para contar como completa. No es un
+# limite de la base (Post.body es Text y no valida largo) sino un consejo: mas
+# corto que esto no alcanza para que alguien entienda que ofrece el
+# emprendimiento. Vive aca y no en el template para que el numero se diga una
+# sola vez, en el item y en el texto de ayuda.
+DESCRIPCION_COMPLETA = 120
+
+# Cuantas fotos ademas de la principal se recomiendan.
+FOTOS_RECOMENDADAS = 2
+
+
+def checklist_de_publicacion(post, tiene_horarios):
+    """Que le falta a un emprendimiento para estar bien cargado.
+
+    Es un consejo y no una validacion: un emprendimiento se publica con el
+    nombre y la descripcion, y todo lo demas se puede completar despues. Por
+    eso no corta nada ni vive en formulario.py.
+
+    Devuelve una lista de dicts {etiqueta, cumplido}. Dicts y no tuplas para
+    que el template pueda contar los cumplidos con un selectattr("cumplido"),
+    que sobre tuplas no funciona.
+
+    `post` es None en el alta, que es el caso en el que todavia no hay nada que
+    cumplir: los items salen todos sin tildar menos los horarios, que son del
+    usuario y no del emprendimiento y pueden estar cargados de antes.
+
+    `tiene_horarios` se pasa y no se consulta adentro por lo mismo que el resto
+    de este modulo: aca no se toca la base.
+    """
+    galeria = len(post.imagenes) if post else 0
+
+    items = [
+        ("Nombre y categoría", bool(post and post.title and post.category)),
+        (
+            f"Descripción de al menos {DESCRIPCION_COMPLETA} caracteres",
+            bool(post and post.body and len(post.body) >= DESCRIPCION_COMPLETA),
+        ),
+        ("Foto principal", bool(post and post.image)),
+        (
+            f"{FOTOS_RECOMENDADAS} fotos más (te encuentran más veces)",
+            galeria >= FOTOS_RECOMENDADAS,
+        ),
+        ("Horarios de atención", bool(tiene_horarios)),
+        ("Dirección", bool(post and post.address_street)),
+    ]
+    return [{"etiqueta": etiqueta, "cumplido": cumplido} for etiqueta, cumplido in items]

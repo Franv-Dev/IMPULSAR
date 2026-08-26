@@ -5,6 +5,7 @@ import re
 import pytest
 from sqlalchemy import event
 
+from app.blog import reglas
 from app.blog.modelo_post import Categorias, Post
 from app.blog.modelo_resenia import Review
 from models.user import User
@@ -1055,3 +1056,135 @@ def test_borrar_un_usuario_borra_sus_emprendimientos_y_lo_que_cuelga(
     assert Favorite.query.filter_by(post_id=post_id).count() == 0
     # El otro usuario no se toca: solo se va lo que colgaba del que se borro.
     assert User.query.get(cliente.id) is not None
+
+# --- formulario compartido por el alta y la edicion
+
+def test_el_alta_y_la_edicion_usan_el_mismo_formulario(
+    client, crear_usuario, crear_post, login
+):
+    """Las dos pantallas incluyen el mismo parcial, asi que traen las mismas piezas.
+
+    Es lo que evita que se vuelvan a separar en dos copias: si alguien duplica
+    una de las dos, este test lo dice.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería")
+    login(autor.id)
+
+    alta = client.get("/blog/create").get_data(as_text=True)
+    edicion = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    for html in (alta, edicion):
+        # Los tres tramos, los campos reales y el checklist.
+        assert 'id="tramo-basico"' in html
+        assert 'id="tramo-fotos"' in html
+        assert 'id="tramo-ubicacion"' in html
+        assert 'name="title"' in html
+        assert 'name="body"' in html
+        assert 'name="category"' in html
+        assert 'name="galeria"' in html
+        assert "Qué te falta" in html
+
+    assert "Publicar emprendimiento" in alta
+    assert "Guardar cambios" in edicion
+
+
+def test_la_edicion_trae_los_valores_del_post(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(
+        autor.id, title="Panadería La Espiga", body="Pan de masa madre.",
+        category=Categorias.ALIMENTOS,
+    )
+    login(autor.id)
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert "Panadería La Espiga" in html
+    assert "Pan de masa madre." in html
+
+    # El chip tildado tiene que ser el de la categoria guardada, y solo ese.
+    tildados = re.findall(r'value="([^"]+)"[^>]*\bchecked\b', html)
+    assert tildados == [Categorias.ALIMENTOS]
+
+
+def test_la_categoria_viaja_como_radio_y_no_como_select(
+    client, crear_usuario, login
+):
+    """Los chips del rediseño son radios de verdad: la eleccion va en el POST.
+
+    Si alguien los vuelve a maquetar como <span> sin input, el formulario
+    guardaria siempre la categoria por defecto sin fallar en ningun lado.
+    """
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    html = client.get("/blog/create").get_data(as_text=True)
+
+    assert '<select id="category"' not in html
+    assert 'type="radio" name="category"' in html
+
+
+def test_el_checklist_del_alta_esta_todo_sin_tildar(client, crear_usuario, login):
+    """En el alta no hay nada cargado todavia, asi que no puede decir lo contrario."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    html = client.get("/blog/create").get_data(as_text=True)
+
+    assert "0 de 6" in html
+
+
+def test_el_checklist_de_la_edicion_cuenta_lo_que_el_post_tiene(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(
+        autor.id,
+        title="Panadería",
+        body="x" * reglas.DESCRIPCION_COMPLETA,
+        category=Categorias.ALIMENTOS,
+    )
+    post.address_street = "Av. San Martín 1240"
+    db.session.commit()
+    login(autor.id)
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    # Nombre y categoria, descripcion larga y direccion: tres de seis.
+    # Faltan la foto principal, las dos de galeria y los horarios.
+    assert "3 de 6" in html
+
+
+def test_el_checklist_no_da_por_cumplida_una_descripcion_corta(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería", body="Corta.")
+    login(autor.id)
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert "1 de 6" in html
+
+
+def test_el_checklist_cuenta_los_horarios_del_usuario(
+    client, db, crear_usuario, crear_post, login
+):
+    """Los horarios cuelgan del usuario, no del emprendimiento.
+
+    Asi que el item puede estar cumplido en un emprendimiento recien creado, si
+    el usuario ya los habia cargado antes.
+    """
+    from app.perfil.modelo_horario import Horario
+
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería", body="Corta.")
+    db.session.add(Horario(user_id=autor.id, dia_semana=0, cerrado=True))
+    db.session.commit()
+    login(autor.id)
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert "2 de 6" in html

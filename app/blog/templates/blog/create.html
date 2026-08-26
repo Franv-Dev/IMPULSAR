@@ -1,116 +1,37 @@
 {% extends "base.html" %}
 
-{% block title %}Nuevo emprendimiento – IMPULSAR{% endblock %}
+{% block title %}Publicar un emprendimiento – IMPULSAR{% endblock %}
+
+{#  El alta de un emprendimiento. Todo el formulario vive en el parcial que
+    comparte con la edicion; aca solo van los textos propios del alta. #}
 
 {% block content %}
-<section class="auth">
-    <div class="container auth__container">
-        <div class="auth__card">
-            <h1 class="auth__title">Registrar emprendimiento</h1>
-            <p class="auth__subtitle">
-                Completá la información de tu emprendimiento para mostrarlo en IMPULSAR.
-            </p>
-
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="auth__messages">
-                        {% for message in messages %}
-                            <div class="auth__alert">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-
-            <form method="post" class="auth__form" enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="auth__field">
-                    <label for="title" class="auth__label">Nombre del emprendimiento</label>
-                    <input
-                        id="title"
-                        name="title"
-                        type="text"
-                        class="auth__input"
-                        placeholder="Ej: Dulces Artesanales Mendoza"
-                        required
-                    >
-                </div>
-
-                <div class="auth__field">
-                    <label for="body" class="auth__label">Descripción</label>
-                    <textarea
-                        id="body"
-                        name="body"
-                        rows="5"
-                        class="auth__input"
-                        placeholder="Contanos qué ofrecés, tu historia, horarios, redes, etc."
-                        required
-                    ></textarea>
-                </div>
-
-                <div class="auth__field">
-                    <label for="category" class="auth__label">Categoría</label>
-                    <select id="category" name="category" class="auth__input">
-                        {% for valor, etiqueta in categorias.items() %}
-                            <option value="{{ valor }}">{{ etiqueta }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="auth__field">
-                    <label for="image" class="auth__label">Imagen (opcional)</label>
-                    <input
-                        id="image"
-                        name="image"
-                        type="file"
-                        class="auth__input"
-                        accept=".png,.jpg,.jpeg,.gif"
-                    >
-                    <small class="auth__hint">
-                        Formatos permitidos: PNG, JPG, JPEG o GIF.
-                    </small>
-                </div>
-
-                <div class="auth__field">
-                    <label for="galeria" class="auth__label">Más fotos (opcional)</label>
-                    <input
-                        id="galeria"
-                        name="galeria"
-                        type="file"
-                        multiple
-                        class="auth__input"
-                        accept=".png,.jpg,.jpeg,.gif"
-                    >
-                    <small class="auth__hint">
-                        Hasta 5 fotos en total, contando la principal de arriba.
-                    </small>
-                </div>
-
-                <div class="auth__field">
-                    <label for="address_street" class="auth__label">Dirección Completa (opcional)</label>
-                    <input
-                        type="text"
-                        id="address_street"
-                        name="address_street"
-                        class="auth__input"
-                        placeholder="Ej: Calle, Nº, Distrito, Provincia (Ej: Av. San Martín 123, Maipú, Mendoza)"
-                    >
-                    <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
-                        Ingresá la dirección completa para el mapa: Calle, Nº, Distrito y Provincia.
-                    </small>
-                </div>
-
-                <button type="submit" class="btn btn--primary auth__submit">
-                    Guardar emprendimiento
-                </button>
-            </form>
-
-            <p class="auth__footer">
-                Volver a
-                <a href="{{ url_for('blog.my_posts') }}">mis emprendimientos</a>.
-            </p>
+<section class="section">
+    <div class="container">
+        <div class="cuenta__head">
+            <div>
+                <h1 class="cuenta__titulo">Publicar un emprendimiento</h1>
+                <p class="cuenta__bajada">
+                    Con el nombre y la descripción ya alcanza. Todo lo demás se
+                    puede completar después.
+                </p>
+            </div>
+            <a href="{{ url_for('blog.my_posts') }}" class="section__link">Cancelar</a>
         </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% with accion = "Publicar emprendimiento" %}
+            {% include "blog/_form_emprendimiento.html" with context %}
+        {% endwith %}
     </div>
 </section>
 {% endblock %}

@@ -249,6 +249,22 @@ def my_posts():
     )
 
 
+def _contexto_del_formulario(post=None):
+    """Lo que el formulario de emprendimiento necesita, sea alta o edicion.
+
+    Las dos pantallas comparten el mismo parcial, asi que comparten tambien lo
+    que hay que pasarle. `post` es None en el alta.
+    """
+    return {
+        "post": post,
+        "categorias": Categorias.ETIQUETAS,
+        "maximo_fotos": MAX_IMAGENES_POR_POST,
+        "checklist": reglas.checklist_de_publicacion(
+            post, consultas.tiene_horarios_cargados(g.user.id)
+        ),
+    }
+
+
 @blog.route("/create", methods=("GET", "POST"))
 @login_required
 def create():
@@ -294,13 +310,13 @@ def create():
                 # escribio antes y se queda sin post que la referencie.
                 borrar_de_disco(upload_dir, [filename])
                 flash(galeria_error)
-                return render_template("blog/create.html", categorias=Categorias.ETIQUETAS)
+                return render_template("blog/create.html", **_contexto_del_formulario())
 
             consultas.guardar(post)
             flash("Emprendimiento registrado correctamente.")
             return redirect(url_for("blog.my_posts"))
 
-    return render_template("blog/create.html", categorias=Categorias.ETIQUETAS)
+    return render_template("blog/create.html", **_contexto_del_formulario())
 
 
 def _geocodificar(direccion):
@@ -386,7 +402,7 @@ def update(id):
             flash("Emprendimiento actualizado correctamente.")
             return redirect(url_for("blog.my_posts"))
 
-    return render_template("blog/update.html", post=post, categorias=Categorias.ETIQUETAS)
+    return render_template("blog/update.html", **_contexto_del_formulario(post))
 
 
 @blog.route("/delete/<int:id>", methods=("POST",))

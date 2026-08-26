@@ -379,3 +379,75 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
+
+
+/* Contador de caracteres (formulario de emprendimiento).
+
+   El bloque viene con `hidden` desde el template y se destapa aca, igual que
+   las plantillas de respuesta: sin JS no queda un contador clavado en cero.
+   El tope lo pone el maxlength del campo, que sale del largo real de la
+   columna; aca no hay ningun numero escrito. */
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("[data-contador-de]").forEach((contador) => {
+        const campo = document.getElementById(contador.dataset.contadorDe);
+        const valor = contador.querySelector(".contador__valor");
+        if (!campo || !valor) return;
+
+        contador.hidden = false;
+
+        const actualizar = () => {
+            valor.textContent = campo.value.length;
+        };
+
+        campo.addEventListener("input", actualizar);
+        actualizar();
+    });
+});
+
+
+/* Vista previa en vivo de la tarjeta del emprendimiento.
+
+   Refleja lo que se esta escribiendo; no guarda nada ni consulta nada. Los
+   textos de arranque los pinta el servidor (el post que se edita, o el
+   placeholder en el alta), asi que sin JS la tarjeta igual dice algo
+   coherente: lo unico que se pierde es que acompañe mientras se tipea. */
+document.addEventListener("DOMContentLoaded", () => {
+    const previa = document.querySelector(".vista-previa");
+    if (!previa) return;
+
+    const espejo = (idCampo, selector, recorte) => {
+        const campo = document.getElementById(idCampo);
+        const destino = previa.querySelector(selector);
+        if (!campo || !destino) return;
+
+        // El texto que ya esta puesto es el que corresponde cuando el campo
+        // esta vacio: se guarda para poder volver a el si lo borran.
+        const porDefecto = destino.textContent.trim();
+
+        campo.addEventListener("input", () => {
+            const texto = campo.value.trim();
+            if (!texto) {
+                destino.textContent = porDefecto;
+                return;
+            }
+            destino.textContent =
+                recorte && texto.length > recorte ? `${texto.slice(0, recorte)}…` : texto;
+        });
+    };
+
+    espejo("title", '[data-previa="titulo"]');
+    espejo("body", '[data-previa="descripcion"]', 110);
+
+    // La categoria son radios: se escucha el cambio en el grupo y se copia la
+    // etiqueta visible del elegido, que es exactamente lo que muestra el chip.
+    const destinoCategoria = previa.querySelector('[data-previa="categoria"]');
+    if (destinoCategoria) {
+        document.querySelectorAll('input[name="category"]').forEach((radio) => {
+            radio.addEventListener("change", () => {
+                if (!radio.checked) return;
+                const cara = radio.parentElement.querySelector(".chip-radio__cara");
+                if (cara) destinoCategoria.textContent = cara.textContent.trim();
+            });
+        });
+    }
+});
