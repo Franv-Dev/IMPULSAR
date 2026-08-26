@@ -1,85 +1,237 @@
 {% extends "base.html" %}
 
-{% block title %}Solicitudes de presupuesto – IMPULSAR{% endblock %}
+{% block title %}Presupuestos – IMPULSAR{% endblock %}
+
+{#  La pantalla "Presupuestos" del rediseño: el menu de cuenta a la izquierda,
+    las solicitudes agrupadas en el centro y el resumen al costado.
+
+    Va con el layout de cuenta y no con el header propio que dibuja el handoff
+    (que suma un item "Presupuestos" a la navegacion principal): el acceso ya
+    existe en el menu de cuenta, y base.html deja escrito que el resto de
+    /servicios se entra desde ahi y no desde el nav. Si esa decision cambia,
+    cambia en base.html y no en esta pantalla.
+
+    Las solapas son links con ?lado=, no JavaScript: las dos listas ya vienen
+    enteras del servidor, asi que la solapa es una URL que se puede compartir y
+    a la que se puede volver con el boton de atras.
+
+    Los tres chips de datos del pedido que el diseño muestra en cada fila
+    ("Para cuándo", "Cantidad", "Entrega") no estan: ServiceRequest no tiene
+    esos campos -- no es backend pendiente, es un dato que no existe -- asi que
+    no se maquetan. Queda anotado como backlog de modelo. #}
+
+{% set solicitudes = enviadas if lado == "enviadas" else recibidas %}
+{% set pendientes = resumen.pendientes %}
+
+{#  Cada estado aporta el tono de su barra y sus chips, y como se llama la
+    accion de la fila. Se arma una vez aca y no con un if por fila. #}
+{% set decorado = {
+    estados.PENDIENTE:  ('pendiente',  'Responder'),
+    estados.RESPONDIDA: ('respondida', 'Ver respuesta'),
+    estados.CERRADA:    ('cerrada',    'Ver detalle'),
+} %}
 
 {% macro fila(solicitud, mostrar_cliente) %}
-    <article class="card">
-        <div class="card__body">
-            <div class="card__tags">
-                <span class="badge badge--category">{{ solicitud.estado_label }}</span>
-                <span class="badge">{{ solicitud.servicio.rubro_label }}</span>
+    {% set tono, accion = decorado.get(solicitud.estado, ('cerrada', 'Ver detalle')) %}
+    <article class="solicitud solicitud--{{ tono }}">
+        <div class="solicitud__cuerpo">
+            <div class="solicitud__tags">
+                <span class="badge badge--{{ tono }}">{{ solicitud.estado_label }}</span>
+                <span class="badge badge--category">{{ solicitud.servicio.rubro_label }}</span>
+                <span class="solicitud__fecha">{{ solicitud.created_at.strftime('%d/%m') }}</span>
             </div>
-            <h3 class="card__title">
+
+            <h3 class="solicitud__titulo">
                 <a href="{{ url_for('servicios.solicitud', id=solicitud.id) }}">
                     {{ solicitud.servicio.titulo }}
                 </a>
             </h3>
-            <p class="card__description">
+
+            <p class="solicitud__quien">
                 {% if mostrar_cliente %}
-                    De {{ solicitud.cliente.username }} · {{ solicitud.servicio.post.title }}
+                    <span class="solicitud__avatar" aria-hidden="true">{{ solicitud.cliente.username[0]|upper }}</span>
+                    {{ solicitud.cliente.username }} · {{ solicitud.servicio.post.title }}
                 {% else %}
                     {{ solicitud.servicio.post.title }}
                 {% endif %}
             </p>
-            <p class="card__description">{{ solicitud.descripcion }}</p>
+
+            <p class="solicitud__descripcion">{{ solicitud.descripcion }}</p>
+
+            {% if solicitud.respuesta_mensaje or solicitud.respuesta_precio %}
+                <p class="solicitud__respuesta">
+                    <span class="solicitud__precio">
+                        {{ solicitud.respuesta_precio | precio if solicitud.respuesta_precio else "Sin precio" }}
+                    </span>
+                    {% if solicitud.respuesta_mensaje %}
+                        <span class="solicitud__respuesta-texto">{{ solicitud.respuesta_mensaje }}</span>
+                    {% endif %}
+                </p>
+            {% endif %}
+        </div>
+
+        <div class="solicitud__acciones">
+            <a href="{{ url_for('servicios.solicitud', id=solicitud.id) }}"
+               class="btn btn--chico {{ 'btn--primary' if solicitud.estado == estados.PENDIENTE else 'btn--secondary' }}">
+                {{ accion }}
+            </a>
+            {% set zona = solicitud.zona or solicitud.servicio.zona_cobertura %}
+            {% if zona %}
+                <span class="solicitud__zona">{{ zona }}</span>
+            {% endif %}
         </div>
     </article>
+{% endmacro %}
+
+{% macro grupo(titulo, ayuda, items, mostrar_cliente) %}
+    {% if items %}
+        <section class="solicitudes__grupo">
+            <h2 class="solicitudes__grupo-titulo">
+                <span>{{ titulo }}</span>
+                <span class="solicitudes__grupo-linea" aria-hidden="true"></span>
+                <span class="solicitudes__grupo-ayuda">{{ ayuda }}</span>
+            </h2>
+            <div class="solicitudes__lista">
+                {% for solicitud in items %}
+                    {{ fila(solicitud, mostrar_cliente) }}
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
 {% endmacro %}
 
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Solicitudes de presupuesto</h2>
-                <p class="section__subtitle">
-                    Lo que te pidieron y lo que pediste.
-                </p>
-            </div>
-            <a href="{{ url_for('servicios.index') }}" class="btn btn--secondary">
-                Mis servicios
-            </a>
-        </div>
+        <div class="cuenta">
+            {% with seccion = "Presupuestos" %}
+                {% include "partials/_menu_cuenta.html" with context %}
+            {% endwith %}
 
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
-                    {% for message in messages %}
-                        <div class="auth__alert">{{ message }}</div>
-                    {% endfor %}
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Presupuestos</h1>
+                        <p class="cuenta__bajada">
+                            Lo que te pidieron y lo que pediste.
+                            Las que esperan respuesta van primero.
+                        </p>
+                    </div>
+                    <a href="{{ url_for('servicios.index') }}" class="btn btn--secondary">
+                        Mis servicios
+                    </a>
                 </div>
-            {% endif %}
-        {% endwith %}
 
-        <h3 class="section__title" style="font-size:1.1rem;">Recibidas</h3>
-        {% if recibidas %}
-            {# Las pendientes primero, que son las que hay que contestar. #}
-            <div class="cards-grid">
-                {% for solicitud in recibidas if solicitud.estado == estados.PENDIENTE %}
-                    {{ fila(solicitud, true) }}
-                {% endfor %}
-                {% for solicitud in recibidas if solicitud.estado != estados.PENDIENTE %}
-                    {{ fila(solicitud, true) }}
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="reviews-empty">
-                Todavía no te pidieron ningún presupuesto.
-            </p>
-        {% endif %}
+                <nav class="solapas" aria-label="Lado de las solicitudes">
+                    {% for clave, etiqueta, total in [
+                        ('recibidas', 'Recibidas', recibidas|length),
+                        ('enviadas', 'Enviadas', enviadas|length),
+                    ] %}
+                        <a href="{{ url_for('servicios.solicitudes', lado=clave) }}"
+                           class="solapa {{ 'solapa--activa' if lado == clave }}"
+                           {% if lado == clave %}aria-current="page"{% endif %}>
+                            {{ etiqueta }}
+                            <span class="solapa__total">{{ total }}</span>
+                        </a>
+                    {% endfor %}
+                </nav>
 
-        <h3 class="section__title" style="font-size:1.1rem; margin-top:2rem;">Enviadas</h3>
-        {% if enviadas %}
-            <div class="cards-grid">
-                {% for solicitud in enviadas %}
-                    {{ fila(solicitud, false) }}
-                {% endfor %}
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <div class="solicitudes">
+                    <div class="solicitudes__principal">
+                        {#  El aviso solo tiene sentido del lado en el que uno
+                            responde: en "Enviadas" el que debe una respuesta es
+                            el otro. #}
+                        {% if lado == "recibidas" and pendientes %}
+                            <p class="aviso-pendientes">
+                                <span class="aviso-pendientes__punto" aria-hidden="true"></span>
+                                <span>
+                                    <strong>
+                                        {{ pendientes }} pedido{{ '' if pendientes == 1 else 's' }}
+                                        espera{{ 'n' if pendientes != 1 }} tu respuesta.
+                                    </strong>
+                                    Contestar rápido sube tus chances de cerrar el trabajo.
+                                </span>
+                            </p>
+                        {% endif %}
+
+                        {% if solicitudes %}
+                            {% if lado == "recibidas" %}
+                                {{ grupo(
+                                    'Esperan tu respuesta', 'Contestá primero estas',
+                                    solicitudes | selectattr('estado', 'equalto', estados.PENDIENTE) | list,
+                                    true
+                                ) }}
+                                {{ grupo(
+                                    'Ya contestadas', 'Respondidas y cerradas',
+                                    solicitudes | rejectattr('estado', 'equalto', estados.PENDIENTE) | list,
+                                    true
+                                ) }}
+                            {% else %}
+                                {{ grupo('Enviadas', 'Esperás respuesta de otros', solicitudes, false) }}
+                            {% endif %}
+                        {% else %}
+                            <p class="reviews-empty">
+                                {% if lado == "recibidas" %}
+                                    Todavía no te pidieron ningún presupuesto.
+                                {% else %}
+                                    Todavía no pediste ningún presupuesto.
+                                    <a href="{{ url_for('servicios.buscar') }}">Buscá un servicio</a>
+                                    para pedir el primero.
+                                {% endif %}
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <aside class="solicitudes__lateral">
+                        <div class="panel">
+                            <h2 class="panel__titulo">Cómo vas</h2>
+                            <dl class="panel__datos">
+                                <div class="panel__dato">
+                                    <dt>Pendientes de responder</dt>
+                                    <dd>{{ resumen.pendientes }}</dd>
+                                </div>
+                                <div class="panel__dato">
+                                    <dt>Respondidas este mes</dt>
+                                    <dd>{{ resumen.respondidas_del_mes }}</dd>
+                                </div>
+                                <div class="panel__dato">
+                                    <dt>Tiempo promedio de respuesta</dt>
+                                    {#  Sin ninguna respondida no hay promedio, y un
+                                        "0 min" diria lo contrario de lo que pasa. #}
+                                    <dd>{{ resumen.promedio if resumen.promedio else '—' }}</dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        <div class="panel">
+                            <h2 class="panel__titulo">Sobre los estados</h2>
+                            <ul class="leyenda">
+                                {% for tono, nombre, texto in [
+                                    ('pendiente', 'Pendiente', 'el cliente espera tu precio o tu mensaje.'),
+                                    ('respondida', 'Respondida', 'ya contestaste; podés corregir la respuesta.'),
+                                    ('cerrada', 'Cerrada', 'archivada por cualquiera de los dos. No se reabre.'),
+                                ] %}
+                                    <li class="leyenda__item">
+                                        <span class="leyenda__punto leyenda__punto--{{ tono }}" aria-hidden="true"></span>
+                                        <span><strong>{{ nombre }}:</strong> {{ texto }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </aside>
+                </div>
             </div>
-        {% else %}
-            <p class="reviews-empty">
-                Todavía no pediste ningún presupuesto.
-            </p>
-        {% endif %}
+        </div>
     </div>
 </section>
 {% endblock %}

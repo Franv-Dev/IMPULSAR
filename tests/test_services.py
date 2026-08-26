@@ -2,11 +2,13 @@
 
 import os
 import threading
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from app.servicios import reglas
 from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from app.servicios.modelo_verificacion import (
@@ -1327,7 +1329,12 @@ def test_responder_y_cerrar_no_se_disparan_con_un_get(
 def test_el_panel_muestra_las_recibidas_y_las_enviadas(
     client, crear_usuario, crear_post, crear_servicio, crear_solicitud, login
 ):
-    """Un usuario puede ser las dos cosas: presta un servicio y pide otro."""
+    """Un usuario puede ser las dos cosas: presta un servicio y pide otro.
+
+    Desde el rediseño los dos lados estan en solapas y se pinta uno por vez,
+    asi que se piden los dos. Lo que no cambio es lo de siempre: las dos listas
+    salen de la misma pagina y ninguna se pierde.
+    """
     yo = crear_usuario(username="yo")
     mi_servicio = crear_servicio(crear_post(yo.id, title="Lo mío").id, titulo="Lo que hago")
     otro = crear_usuario(username="otro")
@@ -1338,10 +1345,40 @@ def test_el_panel_muestra_las_recibidas_y_las_enviadas(
     crear_solicitud(servicio_ajeno.id, yo.id, descripcion="Pedido que hice")
     login(yo.id)
 
+    recibidas = client.get("/servicios/solicitudes").get_data(as_text=True)
+    enviadas = client.get("/servicios/solicitudes?lado=enviadas").get_data(as_text=True)
+
+    # Sin ?lado, la solapa que abre es la de las recibidas.
+    assert "Pedido que recibí" in recibidas
+    assert "Pedido que hice" not in recibidas
+
+    assert "Pedido que hice" in enviadas
+    assert "Pedido que recibí" not in enviadas
+
+
+def test_las_solapas_cuentan_los_dos_lados_desde_cualquiera_de_los_dos(
+    client, crear_usuario, crear_post, crear_servicio, crear_solicitud, login
+):
+    """El numero del otro lado se ve sin ir hasta el.
+
+    Es la razon por la que la vista sigue trayendo las dos consultas aunque
+    pinte una sola lista: si la solapa que no se muestra no dijera cuantas
+    tiene, no habria forma de saber que hay algo del otro lado.
+    """
+    yo = crear_usuario(username="yo")
+    otro = crear_usuario(username="otro")
+    servicio_ajeno = crear_servicio(
+        crear_post(otro.id, title="Lo de otro").id, titulo="Lo que hace el otro"
+    )
+    crear_solicitud(servicio_ajeno.id, yo.id, descripcion="Pedido que hice")
+    login(yo.id)
+
     html = client.get("/servicios/solicitudes").get_data(as_text=True)
 
-    assert "Pedido que recibí" in html
-    assert "Pedido que hice" in html
+    # Estando parado en "Recibidas" (que esta vacia), la solapa de al lado
+    # tiene que decir que hay una.
+    assert "?lado=enviadas" in html
+    assert "Todavía no te pidieron ningún presupuesto." in html
 
 
 def test_el_panel_no_muestra_solicitudes_de_terceros(
@@ -1355,6 +1392,83 @@ def test_el_panel_no_muestra_solicitudes_de_terceros(
     html = client.get("/servicios/solicitudes").get_data(as_text=True)
 
     assert "Pedido ajeno" not in html
+
+
+# --- resumen del panel ("Cómo vas")
+
+class _SolicitudFalsa:
+    """Lo minimo que mira resumen_de_solicitudes: estado y las dos fechas.
+
+    Sin base de por medio a proposito: la funcion no consulta nada, deriva de
+    la lista que ya le pasan, y probarla con filas reales solo agregaria setup
+    que no aporta al caso.
+    """
+
+    def __init__(self, estado, created_at=None, responded_at=None):
+        self.estado = estado
+        self.created_at = created_at
+        self.responded_at = responded_at
+
+
+def test_el_resumen_cuenta_pendientes_y_respondidas_del_mes():
+    ahora = datetime(2026, 8, 26, 12, 0)
+    recibidas = [
+        _SolicitudFalsa(EstadosSolicitud.PENDIENTE),
+        _SolicitudFalsa(EstadosSolicitud.PENDIENTE),
+        _SolicitudFalsa(
+            EstadosSolicitud.RESPONDIDA,
+            created_at=datetime(2026, 8, 20, 10, 0),
+            responded_at=datetime(2026, 8, 20, 13, 0),
+        ),
+        # Del mes pasado: cuenta para el promedio, no para "este mes".
+        _SolicitudFalsa(
+            EstadosSolicitud.CERRADA,
+            created_at=datetime(2026, 7, 10, 10, 0),
+            responded_at=datetime(2026, 7, 10, 15, 0),
+        ),
+    ]
+
+    resumen = reglas.resumen_de_solicitudes(recibidas, ahora)
+
+    assert resumen["pendientes"] == 2
+    assert resumen["respondidas_del_mes"] == 1
+    # (3 h + 5 h) / 2
+    assert resumen["promedio"] == "4 h"
+
+
+def test_sin_respuestas_el_promedio_no_es_cero():
+    """Un "0 min" diria que contesta al toque, y lo que pasa es lo contrario."""
+    recibidas = [_SolicitudFalsa(EstadosSolicitud.PENDIENTE)]
+
+    resumen = reglas.resumen_de_solicitudes(recibidas, datetime(2026, 8, 26))
+
+    assert resumen["pendientes"] == 1
+    assert resumen["respondidas_del_mes"] == 0
+    assert resumen["promedio"] is None
+
+
+@pytest.mark.parametrize(
+    "minutos, esperado",
+    [
+        (0.5, "1 min"),   # menos de un minuto igual se cuenta como uno
+        (45, "45 min"),
+        (90, "1 h"),
+        (60 * 47, "47 h"),
+        (60 * 49, "2 d"),  # a partir de dos dias se cuenta en dias
+    ],
+)
+def test_el_promedio_se_escribe_en_la_unidad_que_corresponde(minutos, esperado):
+    recibidas = [
+        _SolicitudFalsa(
+            EstadosSolicitud.RESPONDIDA,
+            created_at=datetime(2026, 8, 1, 0, 0),
+            responded_at=datetime(2026, 8, 1, 0, 0) + timedelta(minutes=minutos),
+        )
+    ]
+
+    resumen = reglas.resumen_de_solicitudes(recibidas, datetime(2026, 8, 26))
+
+    assert resumen["promedio"] == esperado
 
 
 # --- badge del navbar

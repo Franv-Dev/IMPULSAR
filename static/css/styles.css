@@ -70,6 +70,16 @@
     --color-success-text: #1F7A4D;
     --color-success-strong: #1F7A4D;
 
+    /* Naranja de "esperando respuesta" del rediseño. El texto NO es el #B85F30
+       que usan los chips del handoff: sobre este fondo da 3.9:1 y no llega al
+       4.5:1 que pide AA para texto chico, y los chips de estado son chicos y en
+       mayusculas. El tono un paso mas oscuro da 5.9:1 y se ve igual de
+       naranja. El #D97544 queda como marca de color (el punto, la barra de la
+       fila), nunca como color de texto: es el mismo --color-accent. */
+    --color-warning-bg: #FBEDE4;
+    --color-warning-text: #8C4A22;
+    --color-warning-strong: #D97544;
+
     --color-danger-bg: #FEE2E2;
     --color-danger-text: #B91C1C;
     --color-danger-strong: #991B1B;
@@ -136,6 +146,12 @@
     --color-success-bg: #14321F;
     --color-success-text: #7EE2A8;
     --color-success-strong: #4ADE80;
+
+    /* Sobre fondo oscuro el par se invierte igual que el resto: fondo calido
+       muy oscuro y texto naranja claro (6.5:1 contra su fondo). */
+    --color-warning-bg: #3A2317;
+    --color-warning-text: #F1965D;
+    --color-warning-strong: #F1965D;
 
     --color-danger-bg: #3A1C22;
     --color-danger-text: #FCA5A5;
@@ -4723,6 +4739,733 @@ a.perfil-dato:hover {
     /* Los puntos de un dia con muchos eventos no entran en una celda de este
        ancho: se deja uno solo, que es lo que hace falta para saber que hay algo. */
     .calendario__puntos .calendario__punto:nth-child(n + 2) {
+        display: none;
+    }
+}
+
+/* ==========================================================================
+   PRESUPUESTOS (solicitudes de servicio)
+   --------------------------------------------------------------------------
+   Dos pantallas: el listado, que va dentro del layout de cuenta, y el detalle,
+   que es principal + lateral a lo ancho del container.
+
+   Las piezas del costado (.panel) y la linea de tiempo se escriben genericas a
+   proposito: son las mismas cajas que el diseño repite en las tres pantallas
+   de Emprendedor, asi que la de "Publicar" va a reusarlas sin duplicar reglas.
+   ========================================================================== */
+
+/* --- Solapas Recibidas / Enviadas --- */
+
+.solapas {
+    display: flex;
+    gap: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.solapa {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 2px 0.75rem;
+    /* El borde transparente y no ausente: si no, el item activo mide 2px mas
+       que los otros y la fila se mueve al cambiar de solapa. */
+    border-bottom: 2px solid transparent;
+    color: var(--color-muted);
+    font-size: 0.92rem;
+    text-decoration: none;
+}
+
+.solapa:hover {
+    color: var(--color-text);
+}
+
+.solapa--activa {
+    border-bottom-color: var(--color-primary);
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.solapa__total {
+    padding: 2px 0.5rem;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.solapa--activa .solapa__total {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+/* --- Listado: lista + resumen al costado --- */
+
+.solicitudes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.solicitudes__principal {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+}
+
+.solicitudes__lateral {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.solicitudes__grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* El titulo del grupo es una fila: nombre, una linea que llena el hueco, y la
+   ayuda alineada a la derecha. */
+.solicitudes__grupo-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text);
+}
+
+.solicitudes__grupo-linea {
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-border);
+}
+
+.solicitudes__grupo-ayuda {
+    flex-shrink: 0;
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--color-muted);
+}
+
+.solicitudes__lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* --- Una fila --- */
+
+.solicitud {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    /* La barra de color del estado es el borde izquierdo de la propia tarjeta,
+       no un elemento aparte: asi acompaña el alto de la fila sin que haya que
+       estirarla. */
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.1rem 1.4rem;
+    background-color: var(--color-surface);
+}
+
+.solicitud:hover {
+    border-color: var(--color-primary-soft);
+    box-shadow: var(--shadow-card);
+}
+
+.solicitud--pendiente {
+    border-left-color: var(--color-warning-strong);
+}
+
+.solicitud--respondida {
+    border-left-color: var(--color-primary);
+}
+
+.solicitud--cerrada {
+    border-left-color: var(--color-border);
+}
+
+/* El hover cambia el borde entero; sin esto se comeria tambien la barra del
+   estado, que es justamente lo que distingue una fila de otra. */
+.solicitud--pendiente:hover {
+    border-left-color: var(--color-warning-strong);
+}
+
+.solicitud--respondida:hover {
+    border-left-color: var(--color-primary);
+}
+
+.solicitud__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.solicitud__tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.solicitud__fecha {
+    margin-left: auto;
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+.solicitud__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.solicitud__titulo a {
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.solicitud__titulo a:hover {
+    color: var(--color-primary);
+}
+
+.solicitud__quien {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.solicitud__avatar {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.solicitud__descripcion {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--color-text-soft);
+    text-wrap: pretty;
+}
+
+/* La respuesta ya dada, resumida en una linea: precio a la izquierda y el
+   mensaje recortado al ancho que quede. */
+.solicitud__respuesta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0.15rem 0 0;
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+    min-width: 0;
+}
+
+.solicitud__precio {
+    flex-shrink: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+.solicitud__respuesta-texto {
+    font-size: 0.85rem;
+    color: var(--color-text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.solicitud__acciones {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.solicitud__zona {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+    white-space: nowrap;
+}
+
+/* --- Chips de estado --- */
+
+.badge--pendiente {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.badge--respondida {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.badge--cerrada {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+}
+
+/* --- Aviso de pendientes --- */
+
+.aviso-pendientes {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0.9rem 1.2rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.aviso-pendientes__punto {
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background-color: var(--color-warning-strong);
+}
+
+/* --- Cajas del costado, compartidas por las dos pantallas --- */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem 1.4rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.panel__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--color-text);
+}
+
+.panel__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.panel__ayuda,
+.panel__nota {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.panel__bajada {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+}
+
+.panel__datos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0;
+}
+
+.panel__dato {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.panel__dato dt {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.panel__dato dd {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.panel__persona {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.panel__persona-nombre {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--color-text);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.panel__persona-nombre:hover {
+    color: var(--color-primary);
+}
+
+.panel__dato-suelto {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.panel__link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.panel__link:hover {
+    color: var(--color-primary-hover);
+}
+
+/* --- Leyenda de estados --- */
+
+.leyenda {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.leyenda__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--color-text-soft);
+}
+
+.leyenda__punto {
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+    margin-top: 0.4rem;
+    border-radius: 999px;
+}
+
+.leyenda__punto--pendiente {
+    background-color: var(--color-warning-strong);
+}
+
+.leyenda__punto--respondida {
+    background-color: var(--color-primary);
+}
+
+.leyenda__punto--cerrada {
+    background-color: var(--color-border);
+}
+
+/* --- Detalle --- */
+
+.volver {
+    margin: 0 0 1rem;
+    font-size: 0.88rem;
+}
+
+.volver a {
+    color: var(--color-muted);
+    text-decoration: none;
+}
+
+.volver a:hover {
+    color: var(--color-text);
+}
+
+.detalle-solicitud {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.detalle-solicitud__principal {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.detalle-solicitud__lateral {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.detalle-solicitud__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.6rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--color-text);
+}
+
+.detalle-solicitud__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--color-text-soft);
+}
+
+.detalle-solicitud__meta a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.detalle-solicitud__descripcion {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: var(--color-text-soft);
+    text-wrap: pretty;
+    /* La descripcion es un <textarea> del otro lado: los saltos que escribio
+       el cliente son parte de lo que quiso decir. */
+    white-space: pre-line;
+}
+
+.detalle-solicitud__rotulo {
+    margin: 0.25rem 0 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.detalle-solicitud__foto {
+    display: block;
+    max-width: 100%;
+    border-radius: var(--radius-md);
+}
+
+.detalle-solicitud__precio {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.detalle-solicitud__cerrar {
+    margin: 0;
+}
+
+/* El bloque de la respuesta es el que importa de la pantalla: se despega con
+   sombra y un borde apenas mas marcado, como en el diseño. */
+.panel--respuesta {
+    border-color: var(--color-primary-soft);
+    box-shadow: var(--shadow-card);
+}
+
+.panel--cabecera {
+    gap: 0.9rem;
+}
+
+/* --- Formulario de respuesta --- */
+
+.respuesta-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+/* Precio angosto y mensaje ancho, uno al lado del otro. */
+.respuesta-form__campos {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.respuesta-form__acciones {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.auth__opcional {
+    font-weight: 400;
+    color: var(--color-muted);
+}
+
+/* --- Plantillas de respuesta --- */
+
+.plantillas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.plantillas__opcion {
+    font-size: 0.8rem;
+}
+
+/* --- Linea de tiempo del estado --- */
+
+.linea-tiempo {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* El punto y la linea que baja son dos pseudoelementos del <li>: asi el tramo
+   vertical mide exactamente lo que mide el hito, sin alturas fijas. */
+.linea-tiempo__hito {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 0 1rem 1.5rem;
+}
+
+.linea-tiempo__hito::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 0;
+    width: 11px;
+    height: 11px;
+    border-radius: 999px;
+    border: 2px solid var(--color-border);
+    background-color: var(--color-surface);
+}
+
+.linea-tiempo__hito::after {
+    content: "";
+    position: absolute;
+    top: 16px;
+    left: 4.5px;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--color-border);
+}
+
+.linea-tiempo__hito--ultimo {
+    padding-bottom: 0;
+}
+
+.linea-tiempo__hito--ultimo::after {
+    display: none;
+}
+
+.linea-tiempo__hito--hecho::before {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+}
+
+.linea-tiempo__hito--hecho::after {
+    background-color: var(--color-primary);
+}
+
+.linea-tiempo__hito--actual::before {
+    border-color: var(--color-warning-strong);
+    background-color: var(--color-warning-strong);
+}
+
+.linea-tiempo__titulo {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+.linea-tiempo__hito--hecho .linea-tiempo__titulo,
+.linea-tiempo__hito--actual .linea-tiempo__titulo {
+    color: var(--color-text);
+}
+
+.linea-tiempo__hito--actual .linea-tiempo__titulo {
+    font-weight: 600;
+}
+
+.linea-tiempo__cuando {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+/* --- Angosto --- */
+
+@media (max-width: 1100px) {
+    /* El resumen y las fichas de contexto pasan abajo antes que el contenido
+       se aplaste: son apoyo, no la pantalla. */
+    .solicitudes,
+    .detalle-solicitud {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .respuesta-form__campos {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* La accion baja debajo del texto en vez de pelear por el ancho. */
+    .solicitud {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .solicitud__acciones {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.75rem;
+    }
+
+    .solicitudes__grupo-ayuda {
         display: none;
     }
 }

@@ -166,3 +166,66 @@ def es_verificacion_duplicada(error):
     """
     texto = str(getattr(error, "orig", error))
     return _CONSTRAINT_VERIFICACION in texto or _COLUMNA_VERIFICACION in texto
+
+
+# ------------------------------------------------- resumen del panel de solicitudes
+
+def _promedio_legible(segundos):
+    """Un promedio en segundos escrito como lo diria una persona.
+
+    Devuelve None si no hay con que promediar, para que la vista no muestre un
+    "0 min" que en realidad significa "todavia no respondiste nada".
+    """
+    if not segundos:
+        return None
+
+    minutos = int(segundos // 60)
+    if minutos < 60:
+        return f"{max(minutos, 1)} min"
+
+    horas = minutos // 60
+    if horas < 48:
+        return f"{horas} h"
+
+    return f"{horas // 24} d"
+
+
+def resumen_de_solicitudes(recibidas, ahora):
+    """Los tres numeros del "Cómo vas" del panel, derivados de la lista.
+
+    No hace consultas a proposito: `recibidas` ya viene entera de
+    consultas.solicitudes_recibidas_por(), asi que contar en Python es gratis y
+    tres COUNT/AVG mas contra la misma tabla no son. Si algun dia el listado se
+    pagina, esto pasa a ser una consulta y deja de recibir la lista.
+
+    `ahora` se pasa y no se toma de utcnow() adentro para que el corte del mes
+    se pueda probar sin viajar en el tiempo.
+
+    "Respondidas este mes" es el mes calendario corriente y no los ultimos 30
+    dias: el numero lo lee alguien que quiere saber como viene ESTE mes, y una
+    ventana movil cambia de valor todos los dias sin que haya pasado nada.
+    """
+    pendientes = 0
+    respondidas_del_mes = 0
+    demoras = []
+
+    for solicitud in recibidas:
+        if solicitud.estado == EstadosSolicitud.PENDIENTE:
+            pendientes += 1
+
+        if solicitud.responded_at:
+            if (solicitud.responded_at.year, solicitud.responded_at.month) == (
+                ahora.year, ahora.month
+            ):
+                respondidas_del_mes += 1
+
+            if solicitud.created_at:
+                demoras.append(
+                    (solicitud.responded_at - solicitud.created_at).total_seconds()
+                )
+
+    return {
+        "pendientes": pendientes,
+        "respondidas_del_mes": respondidas_del_mes,
+        "promedio": _promedio_legible(sum(demoras) / len(demoras) if demoras else 0),
+    }

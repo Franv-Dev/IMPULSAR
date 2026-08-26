@@ -351,3 +351,31 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     });
 });
+
+/* Plantillas de respuesta (detalle de una solicitud de presupuesto).
+
+   Escriben en un textarea de la misma pagina; no hay nada del servidor de por
+   medio. El bloque viene con `hidden` desde el template y se destapa aca: si
+   el navegador no corre este archivo, no quedan tres botones que no hacen
+   nada. Es el mismo criterio del boton "Mi ubicación" de la busqueda. */
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("[data-plantillas-de]").forEach((bloque) => {
+        const destino = document.getElementById(bloque.dataset.plantillasDe);
+        if (!destino) return;
+
+        bloque.hidden = false;
+
+        bloque.querySelectorAll(".plantillas__opcion").forEach((opcion) => {
+            opcion.addEventListener("click", () => {
+                const texto = opcion.dataset.texto || "";
+                const actual = destino.value.trim();
+
+                // Se agrega, no se pisa: quien ya escribio algo esta usando la
+                // plantilla como remate, no como reemplazo.
+                destino.value = actual ? `${actual} ${texto}` : texto;
+                destino.focus();
+                destino.setSelectionRange(destino.value.length, destino.value.length);
+            });
+        });
+    });
+});

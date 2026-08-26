@@ -396,11 +396,25 @@ def solicitudes():
     cliente), igual que messages.inbox lista las conversaciones sin importar
     de que lado esta uno: la mitad de los usuarios va a ser las dos cosas, y
     dos paginas separadas obligarian a acordarse de cual mirar.
+
+    Los dos lados siguen viniendo enteros en cada carga aunque la pantalla
+    muestre uno solo: son las mismas dos consultas de siempre, y traerlas
+    juntas es lo que deja poner el numero del otro lado en su solapa sin una
+    tercera consulta. El `lado` solo elige cual se pinta.
     """
+    recibidas = consultas.solicitudes_recibidas_por(g.user.id)
+    enviadas = consultas.solicitudes_enviadas_por(g.user.id)
+
+    # Se normaliza a "recibidas" cualquier cosa que no sea exactamente
+    # "enviadas": la solapa viaja en la URL y se escribe a mano.
+    lado = "enviadas" if request.args.get("lado") == "enviadas" else "recibidas"
+
     return render_template(
         "servicios/solicitudes.html",
-        recibidas=consultas.solicitudes_recibidas_por(g.user.id),
-        enviadas=consultas.solicitudes_enviadas_por(g.user.id),
+        recibidas=recibidas,
+        enviadas=enviadas,
+        lado=lado,
+        resumen=reglas.resumen_de_solicitudes(recibidas, utcnow()),
         estados=EstadosSolicitud,
     )
 

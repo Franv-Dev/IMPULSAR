@@ -1,12 +1,40 @@
 {% extends "base.html" %}
-{% block title %}Solicitud de presupuesto – IMPULSAR{% endblock %}
+
+{% block title %}{{ solicitud.servicio.titulo }} – Presupuestos – IMPULSAR{% endblock %}
+
+{#  El detalle de una solicitud del rediseño: el pedido y la respuesta a la
+    izquierda, el estado y las dos fichas de contexto al costado.
+
+    La pantalla la ven las dos partes y no es la misma para cada una: quien
+    presta ve el formulario de respuesta, quien pidio ve la respuesta escrita.
+    Eso ya era asi y no cambia; lo que cambia es como se ve.
+
+    Lo que el diseño muestra y no existe:
+      - Los tres chips de datos del pedido ("Para cuándo", "Cantidad",
+        "Entrega"): ServiceRequest no tiene esos campos. No se maquetan porque
+        no hay dato ni parcial detras -- es backlog de modelo, no de cableado.
+      - El hito "Lo abriste" de la linea de tiempo: no hay marca de lectura.
+        Quedan los tres hitos que si tienen fecha real.
+      - "Guardar sin enviar": no hay borradores en ningun lado. Va maquetado y
+        apagado, con el aviso al lado.
+      - "En IMPULSAR desde ..." en la ficha de la otra parte: User no tiene
+        fecha de alta. #}
+
+{% set es_cerrada = solicitud.estado == estados.CERRADA %}
+{% set hay_respuesta = solicitud.respuesta_mensaje or solicitud.respuesta_precio %}
+{% set post = solicitud.servicio.post %}
+{% set otra_parte = solicitud.cliente if es_prestador else post.author_user %}
 
 {% block content %}
 <section class="section">
-    <div class="container" style="max-width: 720px;">
+    <div class="container">
+        <p class="volver">
+            <a href="{{ url_for('servicios.solicitudes') }}">‹ Volver a presupuestos</a>
+        </p>
+
         {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
+                <div class="auth__messages">
                     {% for message in messages %}
                         <div class="auth__alert">{{ message }}</div>
                     {% endfor %}
@@ -14,107 +42,230 @@
             {% endif %}
         {% endwith %}
 
-        <article class="card">
-            <div class="card__body">
-                <div class="card__tags">
-                    <span class="badge badge--category">{{ solicitud.estado_label }}</span>
-                    <span class="badge">{{ solicitud.servicio.rubro_label }}</span>
-                </div>
+        <div class="detalle-solicitud">
+            <div class="detalle-solicitud__principal">
 
-                <h1 class="card__title">{{ solicitud.servicio.titulo }}</h1>
-                <p class="card__description">
-                    <a href="{{ url_for('blog.detail', id=solicitud.servicio.post_id) }}">
-                        {{ solicitud.servicio.post.title }}
-                    </a>
-                    {%- if es_prestador %} · Pedido de {{ solicitud.cliente.username }}{% endif %}
-                </p>
+                <article class="panel panel--cabecera">
+                    <div class="solicitud__tags">
+                        <span class="badge badge--{{ solicitud.estado }}">
+                            {% if solicitud.estado == estados.PENDIENTE and es_prestador %}
+                                Esperando tu respuesta
+                            {% else %}
+                                {{ solicitud.estado_label }}
+                            {% endif %}
+                        </span>
+                        <span class="badge badge--category">{{ solicitud.servicio.rubro_label }}</span>
+                        <span class="solicitud__fecha">
+                            Pedido el {{ solicitud.created_at.strftime('%d/%m/%Y, %H:%M') }}
+                        </span>
+                    </div>
 
-                <h2 class="section__title" style="font-size:1rem; margin-top:1rem;">Qué necesita</h2>
-                <p class="card__description">{{ solicitud.descripcion }}</p>
+                    <h1 class="detalle-solicitud__titulo">{{ solicitud.servicio.titulo }}</h1>
 
-                {% if solicitud.zona %}
-                    <p class="card__description">📍 {{ solicitud.zona }}</p>
-                {% elif solicitud.servicio.zona_cobertura %}
-                    <p class="card__description">📍 {{ solicitud.servicio.zona_cobertura }}</p>
-                {% endif %}
-
-                {% if solicitud.foto %}
-                    {# Por la ruta del blueprint y no por /static: el archivo lleva el
-                       mismo chequeo de permiso que esta pagina (ver
-                       servicios.foto_de_solicitud). #}
-                    <img src="{{ url_for('servicios.foto_de_solicitud', id=solicitud.id) }}"
-                         alt="Foto del pedido"
-                         style="max-width:100%; border-radius:8px; margin-top:0.75rem;">
-                {% endif %}
-
-                {% if solicitud.respuesta_mensaje or solicitud.respuesta_precio %}
-                    <h2 class="section__title" style="font-size:1rem; margin-top:1.25rem;">Respuesta</h2>
-                    <p class="card__price" style="font-weight:600;">
-                        {# Que haya contestado sin precio es una respuesta valida:
-                           "pasame una foto", "no llego a esa zona". #}
-                        {{ solicitud.respuesta_precio | precio if solicitud.respuesta_precio else "Sin precio todavía" }}
+                    <p class="detalle-solicitud__meta">
+                        {% if es_prestador %}
+                            <span class="solicitud__avatar" aria-hidden="true">{{ solicitud.cliente.username[0]|upper }}</span>
+                            Pedido de {{ solicitud.cliente.username }}
+                        {% endif %}
+                        <a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a>
+                        {% set zona = solicitud.zona or solicitud.servicio.zona_cobertura %}
+                        {% if zona %}
+                            <span>{{ zona }}</span>
+                        {% endif %}
                     </p>
-                    {% if solicitud.respuesta_mensaje %}
-                        <p class="card__description">{{ solicitud.respuesta_mensaje }}</p>
+                </article>
+
+                <article class="panel">
+                    <h2 class="panel__titulo">Qué necesita</h2>
+                    <p class="detalle-solicitud__descripcion">{{ solicitud.descripcion }}</p>
+
+                    {% if solicitud.foto %}
+                        <p class="detalle-solicitud__rotulo">Foto de referencia</p>
+                        {#  Por la ruta del blueprint y no por /static: el archivo lleva
+                            el mismo chequeo de permiso que esta pagina (ver
+                            servicios.foto_de_solicitud). #}
+                        <img src="{{ url_for('servicios.foto_de_solicitud', id=solicitud.id) }}"
+                             alt="Foto que adjuntó quien hizo el pedido"
+                             class="detalle-solicitud__foto">
                     {% endif %}
+                </article>
+
+                {% if es_prestador and not es_cerrada %}
+                    <article class="panel panel--respuesta">
+                        <div class="panel__head">
+                            <h2 class="panel__titulo">Tu respuesta</h2>
+                            <span class="panel__ayuda">Se la mandamos por mensajería</span>
+                        </div>
+                        <p class="panel__bajada">
+                            Si todavía no podés dar un precio, dejalo vacío y explicale
+                            por qué. Podés corregir la respuesta mientras la solicitud
+                            siga abierta.
+                        </p>
+
+                        <form method="post"
+                              action="{{ url_for('servicios.responder', id=solicitud.id) }}"
+                              class="respuesta-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                            <div class="respuesta-form__campos">
+                                <div class="auth__field">
+                                    <label for="respuesta_precio" class="auth__label">
+                                        Precio <span class="auth__opcional">(opcional)</span>
+                                    </label>
+                                    <input type="text" name="respuesta_precio" id="respuesta_precio"
+                                           class="auth__input" inputmode="decimal"
+                                           value="{{ solicitud.respuesta_precio | precio_form }}"
+                                           placeholder="1500 o 1500,50">
+                                    <small class="auth__hint">Precio final, no por porción.</small>
+                                </div>
+
+                                <div class="auth__field">
+                                    <label for="respuesta_mensaje" class="auth__label">Mensaje</label>
+                                    <textarea name="respuesta_mensaje" id="respuesta_mensaje"
+                                              class="auth__input" rows="5" required
+                                              >{{ solicitud.respuesta_mensaje or "" }}</textarea>
+                                </div>
+                            </div>
+
+                            {#  Las plantillas no necesitan servidor: escriben en el
+                                textarea de al lado y listo. Si el navegador no corre
+                                el JS no aparecen, en vez de quedar como botones
+                                muertos (ver static/js/main.js). #}
+                            <div class="plantillas" data-plantillas-de="respuesta_mensaje" hidden>
+                                {% for texto in [
+                                    'Necesito más datos para poder pasarte un precio.',
+                                    'No llego a esa fecha, te propongo otra.',
+                                    'Queda fuera de mi zona de cobertura.',
+                                ] %}
+                                    <button type="button" class="chip-filtro plantillas__opcion" data-texto="{{ texto }}">
+                                        {{ texto }}
+                                    </button>
+                                {% endfor %}
+                            </div>
+
+                            <div class="respuesta-form__acciones">
+                                <button type="submit" class="btn btn--primary">Enviar respuesta</button>
+                                <button type="button" class="btn btn--secondary btn--proximamente" disabled>
+                                    Guardar sin enviar
+                                </button>
+                            </div>
+                            <p class="cuenta__pendiente">
+                                Todavía no se puede guardar una respuesta sin enviarla:
+                                no hay borradores. Lo que escribas se manda al enviar.
+                            </p>
+                        </form>
+                    </article>
+                {% elif hay_respuesta %}
+                    <article class="panel panel--respuesta">
+                        <h2 class="panel__titulo">
+                            {{ "Tu respuesta" if es_prestador else "La respuesta" }}
+                        </h2>
+                        <p class="detalle-solicitud__precio">
+                            {#  Que haya contestado sin precio es una respuesta valida:
+                                "pasame una foto", "no llego a esa zona". #}
+                            {{ solicitud.respuesta_precio | precio if solicitud.respuesta_precio else "Sin precio" }}
+                        </p>
+                        {% if solicitud.respuesta_mensaje %}
+                            <p class="detalle-solicitud__descripcion">{{ solicitud.respuesta_mensaje }}</p>
+                        {% endif %}
+                    </article>
+                {% elif not es_prestador %}
+                    <article class="panel">
+                        <h2 class="panel__titulo">La respuesta</h2>
+                        <p class="reviews-empty">
+                            Todavía no te contestaron. Te avisamos por mensajería cuando lo hagan.
+                        </p>
+                    </article>
                 {% endif %}
 
-                {# El formulario de respuesta es solo del prestador, y no
-                   aparece si ya esta cerrada: cerrada es el final. #}
-                {% if es_prestador and solicitud.estado != estados.CERRADA %}
-                    <h2 class="section__title" style="font-size:1rem; margin-top:1.25rem;">
-                        {{ "Corregir la respuesta" if solicitud.respuesta_mensaje else "Responder" }}
-                    </h2>
-                    <form method="post"
-                          action="{{ url_for('servicios.responder', id=solicitud.id) }}"
-                          class="auth__form">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                        <div class="auth__field">
-                            <label for="respuesta_precio" class="auth__label">
-                                Precio (opcional)
-                            </label>
-                            <input type="text" name="respuesta_precio" id="respuesta_precio"
-                                   class="auth__input" inputmode="decimal"
-                                   value="{{ solicitud.respuesta_precio | precio_form }}"
-                                   placeholder="1500 o 1500,50">
-                            <small>
-                                Si todavía no podés dar un precio, dejalo vacío y
-                                explicale por qué en el mensaje.
-                            </small>
-                        </div>
-
-                        <div class="auth__field">
-                            <label for="respuesta_mensaje" class="auth__label">Mensaje</label>
-                            <textarea name="respuesta_mensaje" id="respuesta_mensaje"
-                                      class="auth__input" rows="4" required>{{ solicitud.respuesta_mensaje or "" }}</textarea>
-                        </div>
-
-                        <button type="submit" class="btn btn--primary auth__submit">
-                            Enviar respuesta
-                        </button>
-                    </form>
-                {% endif %}
-
-                {# La cierra cualquiera de los dos: no es un acuerdo, es
-                   archivar. #}
-                {% if solicitud.estado != estados.CERRADA %}
+                {#  La cierra cualquiera de los dos: no es un acuerdo, es archivar. #}
+                {% if not es_cerrada %}
                     <form method="post"
                           action="{{ url_for('servicios.cerrar', id=solicitud.id) }}"
-                          class="form-inline" style="margin-top:1rem;"
+                          class="form-inline detalle-solicitud__cerrar"
                           onsubmit="return confirm('¿Cerrar esta solicitud? No se puede reabrir.');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn--ghost">
-                            Cerrar solicitud
-                        </button>
+                        <button type="submit" class="btn btn--ghost">Cerrar solicitud</button>
                     </form>
                 {% endif %}
             </div>
-        </article>
 
-        <p class="auth__footer" style="margin-top:1rem;">
-            Volver a <a href="{{ url_for('servicios.solicitudes') }}">mis solicitudes</a>.
-        </p>
+            <aside class="detalle-solicitud__lateral">
+                <div class="panel">
+                    <h2 class="panel__titulo">Estado</h2>
+                    {#  Tres hitos con fecha real. El "Lo abriste" del diseño no
+                        esta porque no hay marca de lectura que mostrar. #}
+                    <ol class="linea-tiempo">
+                        <li class="linea-tiempo__hito linea-tiempo__hito--hecho">
+                            <span class="linea-tiempo__titulo">Pedido enviado</span>
+                            <span class="linea-tiempo__cuando">
+                                {{ solicitud.created_at.strftime('%d/%m/%Y, %H:%M') }}
+                            </span>
+                        </li>
+                        <li class="linea-tiempo__hito
+                                   {{ 'linea-tiempo__hito--hecho' if solicitud.responded_at else 'linea-tiempo__hito--actual' }}">
+                            <span class="linea-tiempo__titulo">
+                                {{ "Tu respuesta" if es_prestador else "La respuesta" }}
+                            </span>
+                            <span class="linea-tiempo__cuando">
+                                {% if solicitud.responded_at %}
+                                    {{ solicitud.responded_at.strftime('%d/%m/%Y, %H:%M') }}
+                                {% else %}
+                                    Pendiente
+                                {% endif %}
+                            </span>
+                        </li>
+                        <li class="linea-tiempo__hito linea-tiempo__hito--ultimo
+                                   {{ 'linea-tiempo__hito--hecho' if es_cerrada }}">
+                            <span class="linea-tiempo__titulo">Cierre</span>
+                            {#  No hay columna con la fecha de cierre, asi que se
+                                dice el estado y no una fecha inventada. #}
+                            <span class="linea-tiempo__cuando">
+                                {{ "Archivada" if es_cerrada else "Cuando lo archiven" }}
+                            </span>
+                        </li>
+                    </ol>
+                </div>
+
+                {% if otra_parte %}
+                    <div class="panel">
+                        <h2 class="panel__titulo">
+                            {{ "Quién te escribe" if es_prestador else "Quién presta el servicio" }}
+                        </h2>
+                        <div class="panel__persona">
+                            <span class="cuenta__avatar" aria-hidden="true">{{ otra_parte.username[0]|upper }}</span>
+                            <a href="{{ url_for('profile.view_profile', slug=otra_parte.slug) }}"
+                               class="panel__persona-nombre">
+                                {{ otra_parte.username }}
+                            </a>
+                        </div>
+                        {#  La conversacion cuelga del emprendimiento y del cliente,
+                            que son los mismos dos de la solicitud, asi que el link
+                            sirve para los dos lados. #}
+                        <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=solicitud.cliente_id) }}"
+                           class="btn btn--secondary btn--bloque">
+                            Abrir la conversación
+                        </a>
+                    </div>
+                {% endif %}
+
+                <div class="panel">
+                    <h2 class="panel__titulo">El servicio pedido</h2>
+                    <p class="panel__dato-suelto">{{ solicitud.servicio.titulo }}</p>
+                    <p class="panel__nota">
+                        {{ solicitud.servicio.precio_estimado | precio if solicitud.servicio.precio_estimado else "A presupuestar" }}
+                        {%- if solicitud.servicio.zona_cobertura %} · {{ solicitud.servicio.zona_cobertura }}{% endif %}
+                        {%- if solicitud.servicio.verificado %} · Verificado{% endif %}
+                    </p>
+                    {% if es_prestador %}
+                        <a href="{{ url_for('servicios.editar', id=solicitud.servicio.id) }}"
+                           class="panel__link">
+                            Editar el servicio →
+                        </a>
+                    {% endif %}
+                </div>
+            </aside>
+        </div>
     </div>
 </section>
 {% endblock %}
