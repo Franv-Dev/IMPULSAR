@@ -1295,3 +1295,21 @@ def test_el_token_csrf_esta_disponible_para_el_javascript(client):
     html = client.get("/").get_data(as_text=True)
 
     assert 'name="csrf-token"' in html
+
+def test_el_listado_no_dice_que_un_emprendimiento_esta_verificado(
+    client, crear_usuario, crear_post
+):
+    """No hay verificacion de un Post, asi que el listado no puede afirmarla.
+
+    El sello estaba puesto sin ningun if y lo llevaban todos. La verificacion
+    que existe es de cada Service (Service.verificado, que pone un admin
+    despues de mirar la matricula) y se muestra en las pantallas de servicios,
+    con su condicion.
+    """
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería sin verificar")
+
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert "Panadería sin verificar" in html
+    assert "Verificado" not in html

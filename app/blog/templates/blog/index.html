@@ -219,11 +219,19 @@
                                 <div class="ficha__cuerpo">
                                     <div class="ficha__tags">
                                         <span class="badge badge--category">{{ post.category_label }}</span>
-                                        {# Sello del rediseño. Todavia no hay
-                                           que verificar un Post, asi que por
-                                           ahora lo lleva cualquiera: es la
-                                           pieza visual, no el dato. #}
-                                        <span class="badge badge--verificado">Verificado</span>
+                                        {# Aca iba el sello "Verificado" del
+                                           rediseño, sin ningun if: lo llevaban
+                                           TODOS los emprendimientos. No es una
+                                           maqueta apagada esperando cableado,
+                                           es una afirmacion falsa -- no existe
+                                           verificacion de un Post; la que hay
+                                           es de cada Service (Service.verificado,
+                                           que pone un admin despues de mirar la
+                                           matricula) y esa si se muestra con su
+                                           if en las pantallas de servicios.
+                                           Si algun dia se verifica un
+                                           emprendimiento, el sello vuelve con
+                                           su condicion. #}
                                         {% if post.author_user %}
                                             <span class="badge badge--author">{{ post.author_user.username }}</span>
                                         {% endif %}
