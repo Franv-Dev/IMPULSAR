@@ -19,7 +19,9 @@
     <div class="container">
         <div class="cuenta">
             {% if es_dueño %}
-                {% include "partials/_menu_cuenta.html" with context %}
+                {% with seccion = "Reseñas recibidas" %}
+                    {% include "partials/_menu_cuenta.html" with context %}
+                {% endwith %}
             {% endif %}
 
             <div class="cuenta__contenido">

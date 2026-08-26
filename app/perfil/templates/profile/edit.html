@@ -14,7 +14,9 @@
 <section class="section">
     <div class="container">
         <div class="cuenta">
-            {% include "partials/_menu_cuenta.html" with context %}
+            {% with seccion = "Ajustes" %}
+                {% include "partials/_menu_cuenta.html" with context %}
+            {% endwith %}
 
             <div class="cuenta__contenido">
                 <div class="cuenta__head">

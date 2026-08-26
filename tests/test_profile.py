@@ -1,6 +1,7 @@
 """Tests del perfil del emprendedor: contacto, avatar y sus emprendimientos."""
 
 import io
+import re
 
 from PIL import Image
 from werkzeug.datastructures import FileStorage
@@ -574,3 +575,51 @@ def test_un_slug_inexistente_da_404(client):
 
 def test_un_id_inexistente_da_404(client):
     assert client.get("/perfil/999999").status_code == 404
+
+
+# --------------------------------------------------- menu de cuenta
+
+def test_las_pantallas_de_cuenta_marcan_su_item_en_el_menu(
+    client, crear_usuario, login
+):
+    """El parcial del menu sabe marcar el item activo desde el rediseño, pero
+    ninguna de las tres pantallas le pasaba `seccion`, asi que la marca no se
+    dibujaba nunca: ni la clase ni el aria-current llegaban al HTML.
+
+    Se chequea el HTML renderizado y no el include, que es justamente lo que
+    dejaba pasar el error: el `{% if etiqueta == seccion %}` con `seccion`
+    indefinido no falla, da falso y sigue de largo.
+    """
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    pantallas = (
+        ("/blog/mis-emprendimientos", "Mis emprendimientos"),
+        ("/perfil/tomy/resenias", "Reseñas recibidas"),
+        ("/perfil/edit", "Ajustes"),
+    )
+
+    # Los siete items del menu, activo o no. Ajustes ademas tiene sus propias
+    # solapas con aria-current, asi que contar aria-current sobre la pagina
+    # entera daria dos y no diria nada del menu.
+    items = re.compile(
+        r'<a href="[^"]*"\s+class="cuenta__item([^"]*)"\s*([^>]*)>\s*([^<]+)',
+    )
+
+    for ruta, etiqueta in pantallas:
+        html = client.get(ruta).get_data(as_text=True)
+
+        encontrados = items.findall(html)
+        assert len(encontrados) == 7, (ruta, len(encontrados))
+
+        activos = [
+            (clases, atributos, texto.strip())
+            for clases, atributos, texto in encontrados
+            if "cuenta__item--activo" in clases
+        ]
+        assert len(activos) == 1, (ruta, activos)
+
+        _clases, atributos, texto = activos[0]
+        # El marcado tiene que caer en SU item, no en cualquiera de los siete.
+        assert texto == etiqueta, (ruta, texto)
+        assert 'aria-current="page"' in atributos, (ruta, atributos)
