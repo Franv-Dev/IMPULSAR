@@ -3,11 +3,14 @@
 import re
 
 import pytest
+from sqlalchemy import event
 
 from app.blog.modelo_post import Categorias, Post
 from app.blog.modelo_resenia import Review
 from models.user import User
 from app.blog.vistas import get_post
+from app.servicios.modelo import Service
+from models.product import Product
 
 
 # ------------------------------------------------------------------ unitarios
@@ -743,6 +746,75 @@ def test_las_vistas_se_muestran_en_mis_emprendimientos(client, crear_usuario, cr
     # buscan por separado en vez de como "1 vista".
     assert '<span class="metrica__valor">1</span>' in html
     assert '<span class="metrica__label">vista</span>' in html
+
+
+def test_mis_emprendimientos_no_consulta_de_mas_por_cada_fila(
+    app, client, crear_usuario, crear_post, login, db
+):
+    """El listado cuesta lo mismo con 3 emprendimientos que con 6.
+
+    Las metricas de cada fila (reseñas, promedio, tamaño del catalogo) salian
+    de una consulta por post: la pagina crecia cuatro consultas por fila. Lo
+    que se fija aca no es un numero de consultas, sino que ese numero NO
+    dependa de cuantos emprendimientos tenga el vendedor.
+    """
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    def consultas_del_listado():
+        sentencias = []
+
+        def espia(conn, cursor, statement, params, context, executemany):
+            sentencias.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", espia)
+        try:
+            assert client.get("/blog/mis-emprendimientos").status_code == 200
+        finally:
+            event.remove(db.engine, "before_cursor_execute", espia)
+        return len(sentencias)
+
+    for i in range(3):
+        crear_post(autor.id, title=f"Emprendimiento {i}")
+    con_tres = consultas_del_listado()
+
+    for i in range(3, 6):
+        crear_post(autor.id, title=f"Emprendimiento {i}")
+    con_seis = consultas_del_listado()
+
+    # Los 6 entran en una sola pagina (POSTS_POR_PAGINA es 9), asi que la
+    # comparacion es entre listados completos y no contra una pagina cortada.
+    assert app.config["POSTS_POR_PAGINA"] >= 6
+    assert con_seis == con_tres
+
+
+def test_las_metricas_de_mis_emprendimientos_no_se_inflan_entre_si(
+    client, crear_usuario, crear_post, login, db
+):
+    """Reseñas, productos y servicios se cuentan por separado.
+
+    Las tres salen de la misma consulta: si los joins se cruzaran, cada COUNT
+    quedaria multiplicado por las filas de las otras dos tablas.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    for nombre, puntaje in (("ana", 4), ("beto", 5)):
+        usuario = crear_usuario(username=nombre)
+        db.session.add(Review(post_id=post.id, user_id=usuario.id, rating=puntaje))
+    db.session.add(Product(post_id=post.id, nombre="Pan", precio=100))
+    db.session.add(Service(post_id=post.id, titulo="Delivery"))
+    db.session.commit()
+
+    login(autor.id)
+    html = client.get("/blog/mis-emprendimientos").get_data(as_text=True)
+
+    assert "2 reseñas" in html
+    assert '<span class="metrica__valor">4.5</span>' in html
+    # Un producto y un servicio: el catalogo los suma.
+    assert re.search(
+        r'metrica__valor">2</span>\s*<span class="metrica__label">en el catálogo',
+        html,
+    )
 
 
 # ------------------------------------------------------- galeria de fotos

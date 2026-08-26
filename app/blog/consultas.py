@@ -127,6 +127,85 @@ def posts_de(user_id, pagina, por_pagina):
     )
 
 
+def metricas_de_posts(post_ids):
+    """{post_id: {resenias, promedio, productos, servicios}} para un listado.
+
+    Las tres metricas que "Mis emprendimientos" muestra en cada fila salen de
+    aca en UNA consulta para toda la pagina, y no una por post: pedirlas post
+    por post en el bucle de la vista son cuatro consultas por fila (mismo
+    problema N+1 que ya resuelven conteo_por_categoria y reputacion_de).
+
+    Cada COUNT vive en su propia subconsulta agrupada y despues se outerjoinea
+    por post_id, en vez de juntar los tres joins en una sola query: joineando
+    reviews, products y services a la vez cada fila se multiplica contra las
+    otras dos tablas (producto cartesiano) y los COUNT salen inflados. Ya
+    agregadas, las subconsultas traen una fila por post y el join es 1 a 1.
+
+    Un post sin reseñas, sin productos o sin servicios no aparece en la
+    subconsulta correspondiente: el outerjoin lo deja en NULL y se cae a 0 (o a
+    None en el promedio, mismo criterio que promedio_de_rating).
+    """
+    if not post_ids:
+        # Sin esto seria un `IN ()`: una consulta que ya sabemos que no
+        # devuelve nada. La pagina vacia del listado es un caso normal.
+        return {}
+
+    resenias = (
+        db.session.query(
+            Review.post_id.label("post_id"),
+            func.count(Review.id).label("total"),
+            func.avg(Review.rating).label("promedio"),
+        )
+        .filter(Review.post_id.in_(post_ids))
+        .group_by(Review.post_id)
+        .subquery()
+    )
+    productos = (
+        db.session.query(
+            Product.post_id.label("post_id"),
+            func.count(Product.id).label("total"),
+        )
+        .filter(Product.post_id.in_(post_ids))
+        .group_by(Product.post_id)
+        .subquery()
+    )
+    servicios = (
+        db.session.query(
+            Service.post_id.label("post_id"),
+            func.count(Service.id).label("total"),
+        )
+        .filter(Service.post_id.in_(post_ids))
+        .group_by(Service.post_id)
+        .subquery()
+    )
+
+    filas = (
+        db.session.query(
+            Post.id,
+            resenias.c.total,
+            resenias.c.promedio,
+            productos.c.total,
+            servicios.c.total,
+        )
+        .outerjoin(resenias, resenias.c.post_id == Post.id)
+        .outerjoin(productos, productos.c.post_id == Post.id)
+        .outerjoin(servicios, servicios.c.post_id == Post.id)
+        .filter(Post.id.in_(post_ids))
+        .all()
+    )
+
+    return {
+        post_id: {
+            "resenias": total_resenias or 0,
+            "promedio": round(promedio, 1) if promedio else None,
+            "productos": total_productos or 0,
+            "servicios": total_servicios or 0,
+        }
+        for post_id, total_resenias, promedio, total_productos, total_servicios
+        in filas
+    }
+
+
 def favoritos_de(user_id, pagina, por_pagina):
     """Los emprendimientos que ese usuario marco como favoritos, paginados."""
     return (

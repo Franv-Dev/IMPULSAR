@@ -228,14 +228,18 @@ def my_posts():
     # Las tres metricas que el rediseño muestra en cada fila. Se arman aca y no
     # en el template para que la plantilla no dispare consultas mientras
     # renderiza: son las relaciones del post, una pagina por vez.
+    #
+    # Se piden de una sola vez para TODA la pagina (una consulta agrupada, no
+    # una por fila): leerlas de cada post en el bucle -- post.reviews.count(),
+    # len(post.productos), len(post.servicios) -- eran cuatro consultas por
+    # emprendimiento. Las vistas no salen de ahi porque views_count es una
+    # columna del propio post, que ya vino en el listado.
+    metricas = consultas.metricas_de_posts([post.id for post in paginacion.items])
     posts = [
         {
             "post": post,
             "vistas": post.views_count,
-            "resenias": post.reviews.count(),
-            "promedio": consultas.promedio_de_rating(post.id),
-            "productos": len(post.productos),
-            "servicios": len(post.servicios),
+            **metricas[post.id],
         }
         for post in paginacion.items
     ]
