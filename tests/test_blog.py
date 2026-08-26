@@ -1188,3 +1188,110 @@ def test_el_checklist_cuenta_los_horarios_del_usuario(
     html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
 
     assert "2 de 6" in html
+
+# --- home: rubros, buscador por cercania y favoritos en la API
+
+def test_el_home_cuenta_los_emprendimientos_de_cada_rubro(
+    client, crear_usuario, crear_post
+):
+    """El "N activos" de cada rubro es real, no decorativo."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Pan", category=Categorias.ALIMENTOS)
+    crear_post(autor.id, title="Facturas", category=Categorias.ALIMENTOS)
+    crear_post(autor.id, title="Macetas", category=Categorias.HOGAR)
+
+    html = client.get("/").get_data(as_text=True)
+
+    assert "2 activos" in html
+    assert "1 activo" in html
+    # Los siete rubros se muestran enteros aunque alguno este en cero: la lista
+    # es fija y conteo_por_categoria() no devuelve los vacios.
+    assert "0 activos" in html
+
+
+def test_el_home_no_dice_de_que_ciudad_es_el_total(
+    client, crear_usuario, crear_post
+):
+    """Post no tiene localidad, asi que el contador habla de la plataforma.
+
+    El rediseño muestra "218 emprendimientos en San Rafael"; el "San Rafael" es
+    un texto que el diseñador escribio a mano en el editor, no un dato.
+    """
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Pan")
+
+    html = client.get("/").get_data(as_text=True)
+
+    assert "1 emprendimiento publicado" in html
+    assert "San Rafael" not in html
+
+
+def test_el_home_ofrece_buscar_por_cercania(client):
+    """El tercer campo del buscador existe y trae el atajo de ubicacion."""
+    html = client.get("/").get_data(as_text=True)
+
+    assert 'id="search-near"' in html
+    assert 'id="search-lat"' in html
+    assert 'id="search-lon"' in html
+    assert "Cerca de mí" in html
+
+
+def test_el_home_no_promete_un_orden_que_no_existe(client):
+    """La grilla trae los ultimos publicados y el titulo lo dice.
+
+    El rediseño propone "Destacados esta semana · los mejor calificados con
+    reseñas de los ultimos 30 dias", y esa consulta no existe.
+    """
+    html = client.get("/").get_data(as_text=True)
+
+    assert "Últimos emprendimientos" in html
+    assert "Destacados esta semana" not in html
+
+
+def test_la_api_no_dice_nada_de_favoritos_sin_sesion(
+    client, crear_usuario, crear_post
+):
+    """Sin login la respuesta es la de siempre: la clave ni siquiera viaja.
+
+    Que no venga es distinto de que venga en False: el que consume tiene que
+    poder distinguir "no lo tenes" de "no sabemos quien sos" para decidir si
+    dibuja el corazon.
+    """
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Pan")
+
+    item = client.get("/api/posts/").get_json()["items"][0]
+
+    assert "favorito" not in item
+
+
+def test_la_api_marca_los_favoritos_del_usuario_logueado(
+    client, db, crear_usuario, crear_post, login
+):
+    from app.blog.modelo_favorito import Favorite
+
+    autor = crear_usuario(username="autor")
+    guardado = crear_post(autor.id, title="Guardado")
+    suelto = crear_post(autor.id, title="Suelto")
+
+    lector = crear_usuario(username="lector")
+    db.session.add(Favorite(user_id=lector.id, post_id=guardado.id))
+    db.session.commit()
+    login(lector.id)
+
+    items = client.get("/api/posts/").get_json()["items"]
+    por_titulo = {i["title"]: i for i in items}
+
+    assert por_titulo["Guardado"]["favorito"] is True
+    assert por_titulo["Suelto"]["favorito"] is False
+
+
+def test_el_token_csrf_esta_disponible_para_el_javascript(client):
+    """El corazon de la home es un form POST que arma el JS.
+
+    Sin este meta no tendria de donde sacar el token y el toggle rebotaria con
+    un error de CSRF.
+    """
+    html = client.get("/").get_data(as_text=True)
+
+    assert 'name="csrf-token"' in html

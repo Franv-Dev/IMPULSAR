@@ -31,6 +31,7 @@ from services.uploads import MAX_IMAGE_BYTES
 # es de donde se pide: ninguno reexporta desde su __init__, para no meter las
 # vistas en el medio de cada import de sus modelos (ver app/blog/__init__.py).
 # Los que todavia no se migraron siguen en views/.
+from app.blog import consultas as consultas_blog
 from app.blog.modelo_post import Categorias, Post
 from app.blog.vistas import blog
 from app.perfil.vistas import profile
@@ -116,11 +117,16 @@ def _registrar_rutas(app):
         #
         # El conteo es un COUNT, no un len() del listado: la grilla de abajo
         # trae solo una pagina, y el numero del titulo habla de la plataforma
-        # entera.
+        # entera. Sigue siendo de toda la plataforma y no de una ciudad: Post
+        # no tiene localidad, solo una direccion en texto libre.
+        #
+        # El de cada rubro sale de la misma consulta agrupada que ya usa la
+        # columna de filtros del listado, no de siete COUNT.
         return render_template(
             "home.html",
             categorias=Categorias.ETIQUETAS,
             total_posts=Post.query.count(),
+            conteo_por_rubro=consultas_blog.conteo_por_categoria(),
         )
 
 

@@ -1,5 +1,6 @@
 from flask import Blueprint, current_app, g, jsonify, request
 
+from app.blog import consultas
 from app.blog.modelo_post import Categorias, Post
 
 posts_api = Blueprint("posts_api", __name__, url_prefix="/api/posts")
@@ -41,10 +42,16 @@ def list_posts():
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
+    # Que esta en favoritos lo dice esta API porque la home pinta sus tarjetas
+    # con JavaScript y no tiene otro lado de donde sacarlo. Es UNA consulta
+    # para toda la pagina (ids_favoritos ya devuelve el set entero), no una por
+    # tarjeta, y sale solo si hay sesion: para quien mira sin loguearse la
+    # respuesta es la de siempre.
+    favoritos = consultas.ids_favoritos(g.user.id) if g.user else frozenset()
+
     return jsonify({
         "items": [
-            p.to_dict(include_views=bool(g.user and g.user.id == p.author))
-            for p in paginacion.items
+            _con_favorito(p, favoritos) for p in paginacion.items
         ],
         "page": paginacion.page,
         "per_page": paginacion.per_page,
@@ -53,6 +60,19 @@ def list_posts():
         "has_next": paginacion.has_next,
         "has_prev": paginacion.has_prev,
     }), 200
+
+
+def _con_favorito(post, favoritos):
+    """El post serializado, con el favorito del usuario si hay sesion.
+
+    La clave no viaja cuando nadie esta logueado, en vez de viajar en False:
+    "no lo tenes en favoritos" y "no sabemos quien sos" no son lo mismo, y el
+    que consume tiene que poder distinguirlos para decidir si dibuja el corazon.
+    """
+    datos = post.to_dict(include_views=bool(g.user and g.user.id == post.author))
+    if g.user:
+        datos["favorito"] = post.id in favoritos
+    return datos
 
 
 @posts_api.get("/<int:post_id>")

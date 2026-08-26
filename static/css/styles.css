@@ -5969,3 +5969,142 @@ a.perfil-dato:hover {
         gap: 0.75rem;
     }
 }
+
+/* ==========================================================================
+   HOME, SEGUNDA PASADA
+   --------------------------------------------------------------------------
+   Lo que faltaba del artboard "Inicio" y ahora tiene dato real detras: el
+   tercer campo del buscador, y el color y el conteo de cada rubro.
+   ========================================================================== */
+
+/* El campo "Dónde" lleva el link de "Cerca de mí" pegado abajo, asi que su
+   columna es mas alta que las otras dos. align-items:flex-end alinearia los
+   inputs por el borde de abajo del bloque entero y dejaria los tres a distinta
+   altura; con stretch cada campo ocupa el alto de la fila y los inputs quedan
+   parejos por arriba. */
+.buscador__form {
+    align-items: stretch;
+}
+
+.buscador__campo {
+    justify-content: flex-end;
+}
+
+/* Un boton que se lee como link: la accion principal de la fila es "Buscar", y
+   dos botones solidos uno al lado del otro competirian. */
+.buscador__cerca {
+    align-self: flex-start;
+    margin-top: 0.35rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-primary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.buscador__cerca:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}
+
+.buscador__cerca:disabled {
+    color: var(--color-muted);
+    cursor: progress;
+    text-decoration: none;
+}
+
+/* --- Rubros con color y conteo --- */
+
+/* Pasa de una fila a dos lineas de texto, asi que deja de ser un flex
+   horizontal centrado. */
+.rubro {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.35rem;
+    /* Mas alto que los 56px de antes: ahora entran el tono, el nombre y el
+       conteo. Sigue muy por encima del minimo de toque. */
+    min-height: 92px;
+    padding: 0.9rem 1rem;
+}
+
+.rubro__tono {
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-border);
+}
+
+.rubro__total {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+/* Los siete tonos del rediseño. Son marca de color y nunca fondo de texto, asi
+   que no necesitan par de contraste; van como clase por rubro y no inline para
+   que el template no cargue con la paleta.
+
+   En oscuro se dejan igual: son manchas chicas y saturadas sobre una tarjeta
+   clara o oscura, y en los dos casos se distinguen entre si, que es lo unico
+   que tienen que hacer. */
+.rubro__tono--alimentos     { background-color: #D97544; }
+.rubro__tono--indumentaria  { background-color: #3E2F94; }
+.rubro__tono--artesanias    { background-color: #8C7BD1; }
+.rubro__tono--tecnologia    { background-color: #4A5666; }
+.rubro__tono--hogar         { background-color: #1F7A4D; }
+.rubro__tono--servicios     { background-color: #C3CEE3; }
+.rubro__tono--otros         { background-color: #E8A33D; }
+
+/* En oscuro los dos tonos mas apagados se pierden contra la superficie: el gris
+   de Tecnología y el gris azulado de Servicios quedan casi del color de la
+   tarjeta. Se aclaran solo esos dos. */
+[data-theme="dark"] .rubro__tono--tecnologia { background-color: #8B97A8; }
+[data-theme="dark"] .rubro__tono--servicios  { background-color: #9DB0CE; }
+
+/* El hover pinta la tarjeta de lila; el conteo tiene que seguir leyendose. */
+.rubro:hover .rubro__total,
+.rubro:focus-visible .rubro__total {
+    color: var(--color-primary);
+}
+
+@media (max-width: 480px) {
+    /* A este ancho entran dos por fila y el conteo empuja el nombre a dos
+       renglones; el tono al lado del nombre lo devuelve a uno. */
+    .rubro {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        min-height: 56px;
+    }
+
+    .rubro__total {
+        width: 100%;
+    }
+}
+
+/* --- La ficha en vertical (home) ---
+   Misma tarjeta que el listado, girada: la foto arriba a lo ancho en vez de al
+   costado. En /blog/ hay dos columnas anchas y la foto lateral aprovecha el
+   ancho; en la home hay tres y la foto tiene que ser la cabecera. */
+
+.cards-grid--fichas {
+    /* 300px de piso da tres columnas en el container de 1240, que es lo que
+       muestra el artboard "Inicio", y baja a dos y a una sola solo. */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.ficha--vertical {
+    flex-direction: column;
+}
+
+.ficha--vertical .ficha__foto {
+    width: 100%;
+    /* Alto fijo y no aspect-ratio: las tarjetas de una fila tienen que empezar
+       el titulo a la misma altura, y las fotos que suben los usuarios vienen en
+       cualquier proporcion. */
+    height: 170px;
+}

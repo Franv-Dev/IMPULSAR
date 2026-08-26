@@ -10,6 +10,30 @@ function escapeHtml(str) {
         .replace(/'/g, "&#039;");
 }
 
+// El corazon de favorito de una tarjeta de la home.
+//
+// Es el mismo <form> POST con CSRF que arma partials/_favorito_boton.html en el
+// servidor, y no un fetch: asi el toggle sigue siendo una sola ruta
+// (blog.toggle_favorite), que ya redirige de vuelta a donde estabas. El token
+// sale del <meta name="csrf-token"> de base.html, que es el de la sesion.
+function botonFavorito(post, title) {
+    const token = document.querySelector('meta[name="csrf-token"]');
+    if (!token) return "";
+
+    const activo = post.favorito;
+    const etiqueta = activo ? "Quitar de favoritos" : "Agregar a favoritos";
+
+    return `
+        <form method="post" action="/blog/${post.id}/favorito" class="favorite-form">
+            <input type="hidden" name="csrf_token" value="${escapeHtml(token.content)}">
+            <button type="submit" class="favorite-btn ${activo ? "favorite-btn--active" : ""}"
+                aria-pressed="${activo ? "true" : "false"}"
+                aria-label="${etiqueta} ${title}"
+                title="${etiqueta}">${activo ? "♥" : "♡"}</button>
+        </form>
+    `;
+}
+
 function renderPosts(posts) {
     const grid = document.getElementById("posts-grid");
     const emptyEl = document.getElementById("posts-empty");
@@ -31,62 +55,57 @@ function renderPosts(posts) {
 
         const title = escapeHtml(post.title || "Emprendimiento sin título");
         const body = escapeHtml(post.body || "");
-        const shortBody =
-            body.length > 150 ? body.slice(0, 150) + "..." : body;
+        // 160, el mismo recorte que usa la ficha del listado.
+        const shortBody = body.length > 160 ? body.slice(0, 160) + "..." : body;
 
-        // --- INICIO DE CAMBIOS ---
-        
-        // 1. Construimos las URLs que necesitamos
-        const postDetailUrl = `/blog/${post.id}`; // URL a la vista de detalle
-        const postAbsoluteUrl = `${location.origin}${postDetailUrl}`; // para compartir
+        // La tarjeta es la misma .ficha que arma el listado en el servidor
+        // (ver app/blog/templates/blog/index.html): la home y /blog/ tienen que
+        // verse iguales, y antes esta seguia siendo la tarjeta vieja.
+        //
+        // Solo se pinta lo que la API devuelve de verdad. El rediseño muestra
+        // ademas el promedio de reseñas, la zona, los km y un sello
+        // "Verificado": el promedio existe en la base pero /api/posts/ todavia
+        // no lo manda, y los otros tres no existen (no hay barrio, no hay
+        // distancia sin geolocalizar, y la verificacion es de cada servicio y
+        // no del emprendimiento). Nada de eso se dibuja.
+        const postDetailUrl = `/blog/${post.id}`;
+        const postAbsoluteUrl = `${location.origin}${postDetailUrl}`;
         const postImageUrl = post.image ? `/static/uploads/${escapeHtml(post.image)}` : null;
-
-        // 2. Variable para el HTML de la imagen (si existe)
-        let imageHtml = "";
-        if (postImageUrl) {
-            imageHtml = `
-            <a href="${postDetailUrl}" class="card__image-link">
-                <div class="card__image-wrapper">
-                    <img src="${postImageUrl}" alt="Imagen de ${title}" class="card__image">
-                </div>
-            </a>
-            `;
-        }
-
-        // 3. Categoria real (la API ya la devuelve) y texto generico de ubicacion
         const categoryText = escapeHtml(post.category_label || "Sin categoría");
-        const locationText = "Ubicación no especificada";
 
-        // 4. Actualizamos el innerHTML para incluir la imagen
-        //    y los links en el título y el botón.
+        card.className = "ficha ficha--vertical";
+
+        const imagenHtml = postImageUrl
+            ? `<img src="${postImageUrl}" alt="" class="ficha__img">`
+            : "";
+
+        // El corazon solo existe si la API mando "favorito", o sea si hay
+        // sesion. Sin login no se dibuja un boton que iba a rebotar al login.
+        const favoritoHtml =
+            typeof post.favorito === "boolean" ? botonFavorito(post, title) : "";
+
         card.innerHTML = `
-            ${imageHtml} 
-            <div class="card__body">
-                <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <a href="${postDetailUrl}" class="ficha__foto" tabindex="-1" aria-hidden="true">
+                ${imagenHtml}
+            </a>
+            <div class="ficha__cuerpo">
+                <div class="ficha__tags">
                     <span class="badge badge--category">${categoryText}</span>
-                    <button type="button" class="share-btn"
-                        data-share-url="${postAbsoluteUrl}"
-                        data-share-title="${title}"
-                        aria-label="Compartir ${title}"
-                        title="Compartir">
-                        🔗
-                    </button>
+                    <div class="ficha__acciones">
+                        <button type="button" class="share-btn"
+                            data-share-url="${postAbsoluteUrl}"
+                            data-share-title="${title}"
+                            aria-label="Compartir ${title}"
+                            title="Compartir">🔗</button>
+                        ${favoritoHtml}
+                    </div>
                 </div>
-                <h3 class="card__title">
-                    <a href="${postDetailUrl}" style="text-decoration:none; color:inherit;">
-                        ${title}
-                    </a>
+                <h3 class="ficha__titulo">
+                    <a href="${postDetailUrl}">${title}</a>
                 </h3>
-                <p class="card__location">${locationText}</p>
-                <p class="card__description">${shortBody}</p>
-                <div style="margin-top:0.75rem; text-align:right;">
-                    <a href="${postDetailUrl}" class="btn btn--secondary" style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                        Ver detalle / Reseñas
-                    </a>
-                </div>
+                <p class="ficha__desc">${shortBody}</p>
             </div>
         `;
-        // --- FIN DE CAMBIOS ---
 
         grid.appendChild(card);
     });
@@ -124,6 +143,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchForm = document.getElementById("search-form");
     const input = document.getElementById("search-text");
     const selectCategoria = document.getElementById("search-category");
+    const cerca = document.getElementById("search-near");
+    const lat = document.getElementById("search-lat");
+    const lon = document.getElementById("search-lon");
+    const botonCerca = document.getElementById("use-my-location-home");
 
     if (!grid) return; // no estamos en la home
 
@@ -157,11 +180,80 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     }
 
+    // Si hay ubicacion, la busqueda se va al listado: es la unica pantalla que
+    // ordena por distancia (consultas.buscar_posts la calcula en SQL). La home
+    // filtra en vivo, pero no sabe de kilometros.
+    function hayUbicacion() {
+        return Boolean((cerca && cerca.value.trim()) || (lat && lat.value));
+    }
+
+    function irAlListadoConUbicacion() {
+        const params = new URLSearchParams();
+        const texto = input ? input.value.trim() : "";
+        const categoria = selectCategoria ? selectCategoria.value : "";
+
+        // Lo que el usuario ya habia cargado viaja con el; /blog/ lee los
+        // mismos tres nombres (ver formulario.leer_busqueda, leer_cercania y
+        // leer_categoria_de_filtro).
+        if (texto) params.set("q", texto);
+        if (categoria) params.set("category", categoria);
+
+        if (lat && lat.value && lon && lon.value) {
+            // Coordenadas del navegador: no hace falta geocodificar nada.
+            params.set("lat", lat.value);
+            params.set("lon", lon.value);
+        } else if (cerca) {
+            params.set("near", cerca.value.trim());
+        }
+
+        window.location.href = `/blog/?${params.toString()}`;
+    }
+
     cargar("", "");
+
+    // Si retoca la direccion a mano, las coordenadas de "Cerca de mí" quedan
+    // viejas: sin esto el servidor usaria esas en vez del texto nuevo. Es el
+    // mismo cuidado que ya tiene el buscador del listado.
+    if (cerca) {
+        cerca.addEventListener("input", () => {
+            if (lat) lat.value = "";
+            if (lon) lon.value = "";
+        });
+    }
+
+    if (botonCerca) {
+        botonCerca.addEventListener("click", () => {
+            if (!navigator.geolocation) {
+                alert("Tu navegador no soporta geolocalización.");
+                return;
+            }
+
+            const textoOriginal = botonCerca.textContent;
+            botonCerca.disabled = true;
+            botonCerca.textContent = "Ubicando...";
+
+            navigator.geolocation.getCurrentPosition(
+                (posicion) => {
+                    if (lat) lat.value = posicion.coords.latitude;
+                    if (lon) lon.value = posicion.coords.longitude;
+                    irAlListadoConUbicacion();
+                },
+                () => {
+                    alert("No pudimos acceder a tu ubicación.");
+                    botonCerca.disabled = false;
+                    botonCerca.textContent = textoOriginal;
+                }
+            );
+        });
+    }
 
     if (searchForm) {
         searchForm.addEventListener("submit", (e) => {
             e.preventDefault();
+            if (hayUbicacion()) {
+                irAlListadoConUbicacion();
+                return;
+            }
             cargarDesdeElFormulario();
         });
 

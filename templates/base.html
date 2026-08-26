@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title>{% block title %}IMPULSAR – Impulsá tu emprendimiento local{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# El token, para los formularios que arma el JavaScript (hoy: el corazon
+       de favorito de las tarjetas de la home, que se pintan con JS y no tienen
+       un csrf_token() de Jinja a mano). Es el mismo token de la sesion que ya
+       viaja en cada formulario del servidor, no uno nuevo. #}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{% block meta_description %}Centralizá la información de tu emprendimiento local, mostrate a nuevos clientes y conectate con el ecosistema emprendedor de tu ciudad.{% endblock %}">
 
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/logo_impulsar.png') }}">

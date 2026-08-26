@@ -6,9 +6,15 @@
     <!-- BUSCADOR
          Banda propia arriba de todo, como quedo en el rediseño: el buscador
          deja de ser una pastilla flotando entre el hero y las tarjetas.
-         Los dos campos filtran la grilla de abajo en vivo (ver main.js); la
-         busqueda por cercania no esta aca porque necesita geocodificar una
-         direccion, y eso hoy solo lo hace el listado (/blog/). -->
+
+         Tiene DOS comportamientos y no es un descuido:
+           - Sin "Dónde": los campos de texto y rubro filtran la grilla de abajo
+             en vivo, contra /api/posts/, sin recargar (es lo que ya hacia).
+           - Con "Dónde" (escrito o con "Cerca de mí"): el submit se va a /blog/
+             con ?near= o ?lat=&lon=, que es la unica pantalla que sabe ordenar
+             por distancia (consultas.buscar_posts). El texto y el rubro viajan
+             con el, asi que no se pierde nada de lo que el usuario cargo.
+         La regla la aplica main.js y esta escrita ahi tambien. -->
     <section class="buscador">
         <div class="container">
             <h1 class="buscador__titulo">Todo lo que se hace cerca tuyo</h1>
@@ -37,6 +43,25 @@
                     </select>
                 </div>
 
+                <div class="buscador__campo">
+                    <label class="buscador__label" for="search-near">Dónde</label>
+                    <input
+                        id="search-near"
+                        type="text"
+                        class="buscador__input"
+                        placeholder="Tu barrio o dirección"
+                        autocomplete="street-address"
+                    />
+                    {#  Los dos campos que llena "Cerca de mí" con lo que da el
+                        navegador. Van vacios si el usuario escribe la direccion
+                        a mano: /blog/ geocodifica el texto en ese caso. #}
+                    <input type="hidden" id="search-lat">
+                    <input type="hidden" id="search-lon">
+                    <button type="button" id="use-my-location-home" class="buscador__cerca">
+                        Cerca de mí
+                    </button>
+                </div>
+
                 <button type="submit" class="btn btn--primary buscador__boton">
                     Buscar
                 </button>
@@ -56,11 +81,24 @@
                 <a href="{{ url_for('blog.index') }}" class="section__link">Ver los 7 rubros</a>
             </div>
 
+            {#  El cuadradito de color es de cada rubro y sale de una clase por
+                clave (--alimentos, --servicios, ...), no de un style inline: son
+                siete tonos fijos del rediseño y viven con el resto de la paleta.
+
+                El "N activos" es real: conteo_por_categoria() en una sola
+                consulta agrupada. Un rubro sin ninguno no vuelve en el dict, y
+                por eso el .get(clave, 0): la lista de rubros es fija y se
+                muestra entera aunque alguno este en cero. #}
             <ul class="rubros__grid">
                 {% for clave, etiqueta in categorias.items() %}
+                    {% set total = conteo_por_rubro.get(clave, 0) %}
                     <li>
                         <a href="{{ url_for('blog.index', category=clave) }}" class="rubro">
+                            <span class="rubro__tono rubro__tono--{{ clave }}" aria-hidden="true"></span>
                             <span class="rubro__nombre">{{ etiqueta }}</span>
+                            <span class="rubro__total">
+                                {{ total }} activo{{ '' if total == 1 else 's' }}
+                            </span>
                         </a>
                     </li>
                 {% endfor %}
@@ -72,10 +110,17 @@
     <section id="emprendimientos" class="section">
         <div class="container">
             <div class="section__header">
+                {#  "Destacados" era el titulo y no es lo que hace la seccion:
+                    la grilla trae los ultimos publicados, ordenados por fecha
+                    (ver /api/posts/). El rediseño propone "Destacados esta
+                    semana · los mejor calificados con reseñas de los ultimos 30
+                    dias", que no existe: hay orden por rating
+                    (query_posts_con_rating) pero ninguna consulta corta por
+                    ventana de tiempo. Se dice lo que se muestra. #}
                 <div>
-                    <h2 class="section__title">Emprendimientos destacados</h2>
+                    <h2 class="section__title">Últimos emprendimientos</h2>
                     <p class="section__subtitle">
-                        Los últimos que se publicaron en la plataforma.
+                        Los que se publicaron más recientemente en la plataforma.
                     </p>
                 </div>
                 {# Antes apuntaba a #emprendimientos, que es esta misma seccion:
@@ -84,8 +129,12 @@
                 <a href="{{ url_for('blog.index') }}" class="section__link">Ver todos</a>
             </div>
 
-            <!-- GRID donde se insertan las cards con JS -->
-            <div id="posts-grid" class="cards-grid">
+            <!-- GRID donde se insertan las cards con JS.
+                 Las tarjetas son las mismas .ficha del listado, pero en su
+                 variante vertical: en /blog/ van a dos columnas anchas y la
+                 foto entra al costado; aca van a tres y la foto va arriba,
+                 como en el artboard "Inicio". -->
+            <div id="posts-grid" class="cards-grid cards-grid--fichas">
                 <!-- JS inyecta acá las tarjetas -->
             </div>
 
