@@ -54,14 +54,28 @@
 
                 <div class="perfil-hero__meta">
                     {% if user.location %}
-                        <span class="perfil-chip">📍 {{ user.location }}</span>
+                        <span class="perfil-chip">
+                            <svg class="perfil-chip__icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-5.6-7-11a7 7 0 0 1 14 0c0 5.4-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                            {{ user.location }}
+                        </span>
                     {% endif %}
                     {# abierto_ahora es None cuando el usuario no cargo horarios: en
                        ese caso no se muestra nada, porque "Cerrado" seria mentira. #}
                     {% if abierto_ahora is not none %}
                         <span class="perfil-chip {{ 'perfil-chip--abierto' if abierto_ahora else 'perfil-chip--cerrado' }}">
+                            <span class="perfil-chip__punto" aria-hidden="true"></span>
                             {{ "Abierto ahora" if abierto_ahora else "Cerrado" }}
                         </span>
+                    {% endif %}
+                    {# La reputacion es publica y va al lado de donde queda y si
+                       atiende: son las tres cosas que se miran antes de decidir si
+                       escribir. Sin reseñas todavia no se dibuja el chip: "0
+                       reseñas" no es informacion, es un hueco. #}
+                    {% if reputacion.promedio %}
+                        <a href="{{ url_for('profile.reviews', slug=user.slug) }}" class="perfil-chip perfil-chip--rating">
+                            <svg class="perfil-chip__icono perfil-chip__icono--estrella" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.4l2.6 5.3 5.8.9-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.9z"/></svg>
+                            {{ reputacion.promedio }} · {{ reputacion.total }} reseña{{ "s" if reputacion.total != 1 else "" }}
+                        </a>
                     {% endif %}
                 </div>
 
@@ -76,38 +90,89 @@
                 {% endif %}
             </div>
 
+            {# Dos filas: arriba lo que el visitante viene a hacer (escribir,
+               seguir), abajo los canales de contacto como iconos. El telefono y
+               las redes subieron aca desde la tarjeta "Contacto" de la lateral:
+               estaban al final de la columna de referencia, abajo de horarios y
+               del mapa, cuando son la accion que el perfil existe para provocar. #}
             <div class="perfil-hero__acciones">
-                {% if es_dueno %}
-                    <a href="{{ url_for('profile.edit') }}" class="btn btn--primary">Editar perfil</a>
-                {% else %}
-                    {% if user.whatsapp %}
-                        <a href="https://wa.me/{{ user.whatsapp|replace(' ', '')|replace('+', '')|replace('-', '') }}"
-                           class="btn btn--primary" target="_blank" rel="noopener noreferrer">
-                            WhatsApp
-                        </a>
+                <div class="perfil-hero__acciones-fila">
+                    {% if es_dueno %}
+                        <a href="{{ url_for('profile.edit') }}" class="btn btn--primary">Editar perfil</a>
+                    {% else %}
+                        {% if user.whatsapp %}
+                            <a href="https://wa.me/{{ user.whatsapp|replace(' ', '')|replace('+', '')|replace('-', '') }}"
+                               class="btn btn--whatsapp" target="_blank" rel="noopener noreferrer">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3.5 20.5l1.6-5A8.5 8.5 0 1 1 21 11.5z"/></svg>
+                                WhatsApp
+                            </a>
+                        {% endif %}
+                        {# El boton de seguir solo aparece en perfiles ajenos y con sesion
+                           iniciada: no hay a quien atribuirle el seguimiento si no hay
+                           usuario, y nadie se sigue a si mismo. #}
+                        {% if g.user %}
+                            <form method="post" action="{{ url_for('profile.toggle_follow', slug=user.slug) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn {{ 'btn--secondary' if lo_sigo else 'btn--primary' }}"
+                                        aria-pressed="{{ 'true' if lo_sigo else 'false' }}">
+                                    {{ "Dejar de seguir" if lo_sigo else "Seguir" }}
+                                </button>
+                            </form>
+                        {% endif %}
                     {% endif %}
-                    {# El boton de seguir solo aparece en perfiles ajenos y con sesion
-                       iniciada: no hay a quien atribuirle el seguimiento si no hay
-                       usuario, y nadie se sigue a si mismo. #}
-                    {% if g.user %}
-                        <form method="post" action="{{ url_for('profile.toggle_follow', slug=user.slug) }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn {{ 'btn--secondary' if lo_sigo else 'btn--primary' }}"
-                                    aria-pressed="{{ 'true' if lo_sigo else 'false' }}">
-                                {{ "Dejar de seguir" if lo_sigo else "Seguir" }}
-                            </button>
-                        </form>
-                    {% endif %}
-                {% endif %}
 
-                <a href="{{ url_for('profile.reviews', slug=user.slug) }}" class="btn btn--secondary">
-                    Ver reseñas
-                </a>
-                {# Fuera del chequeo de dueño: cualquiera puede compartir un perfil ajeno. #}
-                {% with share_url=url_for('profile.view_profile', slug=user.slug, _external=True),
-                        share_title="Perfil de " ~ user.username %}
-                    {% include "partials/_compartir_boton.html" %}
-                {% endwith %}
+                    {# La mensajeria directa entre perfiles todavia no existe: los
+                       mensajes de hoy cuelgan de un emprendimiento (post_id +
+                       client_id), no de un usuario. Va el boton igual, porque es
+                       la accion que el perfil tiene que ofrecer, pero desactivado
+                       y diciendolo: mandarlo a WhatsApp o al telefono seria
+                       fingir que la mensajeria funciona. Secundario y no
+                       primario, para no ocupar el lugar de lo que si anda. #}
+                    {% if not es_dueno %}
+                        <button type="button" class="btn btn--secondary btn--proximamente" disabled>
+                            Enviar mensaje
+                            <span class="btn__nota">Próximamente</span>
+                        </button>
+                    {% endif %}
+
+                    <a href="{{ url_for('profile.reviews', slug=user.slug) }}" class="btn btn--secondary">
+                        Ver reseñas
+                    </a>
+                    {# Fuera del chequeo de dueño: cualquiera puede compartir un perfil ajeno. #}
+                    {% with share_url=url_for('profile.view_profile', slug=user.slug, _external=True),
+                            share_title="Perfil de " ~ user.username %}
+                        {% include "partials/_compartir_boton.html" %}
+                    {% endwith %}
+                </div>
+
+                {% if user.phone or user.instagram_url or user.facebook_url or user.twitter_url %}
+                    <div class="perfil-hero__canales">
+                        {% if user.phone %}
+                            <a href="tel:{{ user.phone }}" class="perfil-canal" title="Llamar al {{ user.phone }}"
+                               aria-label="Llamar al {{ user.phone }}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3z"/></svg>
+                            </a>
+                        {% endif %}
+                        {% if user.instagram_url %}
+                            <a href="{{ user.instagram_url }}" class="perfil-canal perfil-canal--instagram" target="_blank" rel="noopener noreferrer"
+                               title="Instagram" aria-label="Instagram de {{ user.username }}">
+                                <img src="{{ url_for('static', filename='icons/Instagram.png') }}" alt="">
+                            </a>
+                        {% endif %}
+                        {% if user.facebook_url %}
+                            <a href="{{ user.facebook_url }}" class="perfil-canal perfil-canal--facebook" target="_blank" rel="noopener noreferrer"
+                               title="Facebook" aria-label="Facebook de {{ user.username }}">
+                                <img src="{{ url_for('static', filename='icons/Facebook.png') }}" alt="">
+                            </a>
+                        {% endif %}
+                        {% if user.twitter_url %}
+                            <a href="{{ user.twitter_url }}" class="perfil-canal perfil-canal--twitter" target="_blank" rel="noopener noreferrer"
+                               title="Twitter" aria-label="Twitter de {{ user.username }}">
+                                <img src="{{ url_for('static', filename='icons/Twitter.png') }}" alt="">
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
         </div>
     </header>
@@ -123,30 +188,42 @@
 
             {% if estadisticas %}
                 {# Panel del dueño: va primero porque es lo que el dueño entra a
-                   mirar, y no existe para el visitante (la vista ni las calcula). #}
-                <section class="perfil-card perfil-card--propia">
-                    <div class="perfil-card__header">
-                        <h2 class="perfil-card__titulo">Tus estadísticas</h2>
-                        <span class="perfil-badge">Privado</span>
+                   mirar, y no existe para el visitante (la vista ni las calcula).
+
+                   Sobre el indigo profundo, como el panel de /login: es un
+                   bloque de marca y no una tarjeta mas, y asi se ve de una que
+                   eso que dice no lo esta viendo nadie mas. El mismo color en
+                   los dos temas, con el texto blanco fijo encima (ver
+                   .auth__panel, que explica por que es un token y no un
+                   color-mix sobre el primario). #}
+                <section class="perfil-panel">
+                    <div class="perfil-panel__header">
+                        <h2 class="perfil-panel__titulo">Tus números</h2>
+                        <span class="perfil-panel__chip">Solo lo ves vos</span>
                     </div>
-                    <div class="perfil-stats">
-                        <div class="perfil-stat">
-                            <span class="perfil-stat__valor">{{ estadisticas.vistas }}</span>
-                            <span class="perfil-stat__label">Vistas</span>
+                    <div class="perfil-panel__grid">
+                        <div class="perfil-panel__dato">
+                            <span class="perfil-panel__valor">{{ estadisticas.vistas }}</span>
+                            <span class="perfil-panel__label">Vistas</span>
                         </div>
-                        <div class="perfil-stat">
-                            <span class="perfil-stat__valor">{{ estadisticas.favoritos }}</span>
-                            <span class="perfil-stat__label">Favoritos</span>
+                        <div class="perfil-panel__dato">
+                            <span class="perfil-panel__valor">{{ estadisticas.favoritos }}</span>
+                            <span class="perfil-panel__label">Favoritos</span>
                         </div>
-                        <div class="perfil-stat">
-                            <span class="perfil-stat__valor">{{ estadisticas.seguidores }}</span>
-                            <span class="perfil-stat__label">Seguidores</span>
+                        <div class="perfil-panel__dato">
+                            <span class="perfil-panel__valor">{{ estadisticas.seguidores }}</span>
+                            <span class="perfil-panel__label">Seguidores</span>
                         </div>
-                        <div class="perfil-stat">
-                            <span class="perfil-stat__valor">
-                                {% if estadisticas.promedio %}⭐ {{ estadisticas.promedio }}{% else %}—{% endif %}
+                        <div class="perfil-panel__dato">
+                            <span class="perfil-panel__valor">
+                                {% if estadisticas.promedio %}
+                                    <svg class="perfil-panel__estrella" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.4l2.6 5.3 5.8.9-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.9z"/></svg>
+                                    {{ estadisticas.promedio }}
+                                {% else %}
+                                    —
+                                {% endif %}
                             </span>
-                            <span class="perfil-stat__label">
+                            <span class="perfil-panel__label">
                                 {% if estadisticas.promedio %}
                                     Promedio ({{ estadisticas.resenias }} reseña{{ "s" if estadisticas.resenias != 1 else "" }})
                                 {% else %}
@@ -187,19 +264,27 @@
                                     </a>
                                 {% endif %}
                                 <div class="card__body">
+                                    {# El rubro en la tarjeta, como en la grilla del home,
+                                       que ya lo dibuja con este mismo badge desde el JS
+                                       (ver static/js/main.js). #}
+                                    <div class="card__tags">
+                                        <span class="badge badge--category">{{ post.category_label }}</span>
+                                    </div>
                                     <h3 class="card__title">
                                         <a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a>
                                     </h3>
                                     {% if item.avg_rating %}
                                         <p class="card__rating">
-                                            ⭐ {{ item.avg_rating }} <span class="card__rating-count">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
+                                            <svg class="card__icono card__icono--estrella" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.4l2.6 5.3 5.8.9-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.9z"/></svg>
+                                            {{ item.avg_rating }} <span class="card__rating-count">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
                                         </p>
                                     {% else %}
                                         <p class="card__rating card__rating--vacio">Sin reseñas todavía</p>
                                     {% endif %}
                                     {% if es_dueno %}
                                         <p class="card__views">
-                                            👁 {{ post.views_count }} vista{{ "s" if post.views_count != 1 else "" }}
+                                            <svg class="card__icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+                                            {{ post.views_count }} vista{{ "s" if post.views_count != 1 else "" }}
                                         </p>
                                     {% endif %}
                                     <p class="card__description">
@@ -238,6 +323,7 @@
                             {% for evento in eventos_proximos %}
                                 <li class="eventos-lista__item">
                                     <div class="eventos-lista__fecha">
+                                        <span class="eventos-lista__diasem">{{ evento.fecha | dia_semana_corto }}</span>
                                         <span class="eventos-lista__dia">{{ evento.fecha.day }}</span>
                                         <span class="eventos-lista__mes">{{ evento.fecha | mes_corto }}</span>
                                     </div>
@@ -309,35 +395,6 @@
         </div>
 
         <aside class="perfil-layout__lateral">
-            {% if user.phone or user.twitter_url or user.instagram_url or user.facebook_url %}
-                <section class="perfil-card">
-                    <h2 class="perfil-card__titulo">Contacto</h2>
-                    {% if user.phone %}
-                        <a href="tel:{{ user.phone }}" class="perfil-dato">
-                            <span class="perfil-dato__icono">📞</span>{{ user.phone }}
-                        </a>
-                    {% endif %}
-                    {% if user.twitter_url or user.instagram_url or user.facebook_url %}
-                        <div class="perfil-redes">
-                            {% if user.twitter_url %}
-                                <a href="{{ user.twitter_url }}" class="social-icon twitter" target="_blank" rel="noopener noreferrer">
-                                    <img src="{{ url_for('static', filename='icons/Twitter.png') }}" alt="Twitter">
-                                </a>
-                            {% endif %}
-                            {% if user.instagram_url %}
-                                <a href="{{ user.instagram_url }}" class="social-icon instagram" target="_blank" rel="noopener noreferrer">
-                                    <img src="{{ url_for('static', filename='icons/Instagram.png') }}" alt="Instagram">
-                                </a>
-                            {% endif %}
-                            {% if user.facebook_url %}
-                                <a href="{{ user.facebook_url }}" class="social-icon facebook" target="_blank" rel="noopener noreferrer">
-                                    <img src="{{ url_for('static', filename='icons/Facebook.png') }}" alt="Facebook">
-                                </a>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </section>
-            {% endif %}
 
             {% if horarios or es_dueno %}
                 <section class="perfil-card">
@@ -350,26 +407,32 @@
                         {% endif %}
                     </div>
                     {% if horarios %}
-                        {# Plegado: el estado de ahora ya esta arriba, en el chip del
-                           hero. La grilla completa de siete dias es dato de consulta,
-                           no algo que tenga que ocupar media pantalla. #}
-                        <details class="perfil-plegable">
-                            <summary class="perfil-plegable__resumen">Ver la semana completa</summary>
-                            <ul class="horarios-lista">
-                                {% for horario in horarios %}
-                                    <li class="horarios-lista__item">
-                                        <span class="horarios-lista__dia">{{ etiquetas_dias[horario.dia_semana] }}</span>
-                                        <span class="horarios-lista__rango">
-                                            {% if horario.cerrado or not horario.abre %}
-                                                Cerrado
-                                            {% else %}
-                                                {{ horario.abre.strftime("%H:%M") }} a {{ horario.cierra.strftime("%H:%M") }}
-                                            {% endif %}
-                                        </span>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </details>
+                        {# A la vista y no plegado, como en el rediseño: son siete
+                           filas, entran en la lateral sin empujar nada, y la
+                           pregunta "¿a que hora abren el sabado?" no tiene por que
+                           costar un click. El chip del hero sigue diciendo el
+                           estado de ahora; esto dice el resto de la semana.
+                           La fila de hoy va resaltada para no tener que contar
+                           dias desde arriba. #}
+                        <ul class="horarios-lista">
+                            {% for horario in horarios %}
+                                <li class="horarios-lista__item{{ ' horarios-lista__item--hoy' if horario.dia_semana == dia_hoy }}">
+                                    <span class="horarios-lista__dia">
+                                        {{ etiquetas_dias[horario.dia_semana] }}
+                                        {% if horario.dia_semana == dia_hoy %}
+                                            <span class="horarios-lista__marca">hoy</span>
+                                        {% endif %}
+                                    </span>
+                                    <span class="horarios-lista__rango">
+                                        {% if horario.cerrado or not horario.abre %}
+                                            Cerrado
+                                        {% else %}
+                                            {{ horario.abre.strftime("%H:%M") }} a {{ horario.cierra.strftime("%H:%M") }}
+                                        {% endif %}
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
                     {% else %}
                         <p class="perfil-vacio">Todavía no cargaste tus horarios de atención.</p>
                     {% endif %}

@@ -514,6 +514,32 @@ main {
     border-color: var(--color-primary-soft);
 }
 
+/* Un boton que esta pero todavia no hace nada. Se ve apagado y lo dice con
+   todas las letras (.btn__nota), en vez de parecer disponible y no responder.
+   El cursor es el de "no se puede" y no el de mano: la pista llega antes del
+   click. */
+.btn--proximamente {
+    gap: 0.45rem;
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
+.btn--proximamente:hover {
+    background-color: var(--color-surface);
+    border-color: var(--color-border);
+}
+
+.btn__nota {
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    color: var(--color-muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
 .btn--ghost {
     background-color: transparent;
     color: var(--color-muted);
@@ -2068,6 +2094,35 @@ main {
     color: var(--color-muted);
 }
 
+/* La fila de hoy. Los margenes negativos son para que el fondo se pase del
+   ancho del texto y se lea como una pastilla, sin cambiar la grilla de las
+   otras seis filas (que si se movieran, la columna dejaria de alinear). */
+.horarios-lista__item--hoy {
+    margin: 0 -0.5rem;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+    border-radius: var(--radius-sm);
+    border-bottom-color: transparent;
+    background-color: var(--color-primary-soft);
+}
+
+.horarios-lista__item--hoy .horarios-lista__rango {
+    color: var(--color-text);
+}
+
+.horarios-lista__marca {
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: 0.05em;
+}
+
 .horario-fila {
     display: flex;
     align-items: center;
@@ -2132,6 +2187,16 @@ main {
     line-height: 1.1;
 }
 
+/* La linea de arriba del recuadro ("sab"). Chica y en mayusculas para que el
+   numero siga siendo lo que se lee primero. */
+.eventos-lista__diasem {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
 .eventos-lista__dia {
     font-size: 1.35rem;
     font-weight: 700;
@@ -2171,6 +2236,49 @@ main {
 .eventos-lista__acciones .btn {
     font-size: 0.8rem;
     padding: 0.3rem 0.8rem;
+}
+
+/* En el perfil cada evento es una fila cerrada con un filo violeta a la
+   izquierda y el recuadro de fecha pegado al borde, como en el rediseño. El
+   padding se va del <li> y pasa a las partes, para que el recuadro llegue a
+   tocar los bordes en vez de flotar adentro. */
+.perfil .eventos-lista__item {
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.perfil .eventos-lista__item:last-child {
+    margin-bottom: 0;
+}
+
+/* Sobre el fondo suave y no sobre el violeta pleno: en la fila entera, un
+   bloque saturado de 72px se lleva la mirada antes que el titulo. */
+.perfil .eventos-lista__fecha {
+    min-width: 72px;
+    padding: 0.85rem 0.5rem;
+    border-radius: 0;
+    border-right: 1px solid var(--color-border);
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.perfil .eventos-lista__cuerpo {
+    padding: 0.85rem 1rem;
+}
+
+.perfil .eventos-lista__acciones {
+    padding: 0 1rem;
+}
+
+/* Los que ya pasaron no llevan el filo violeta: no hay nada a lo que ir. */
+.perfil .eventos-lista--pasados .eventos-lista__item {
+    border-left-color: var(--color-border);
 }
 
 /* En la cartelera cada evento es una tarjeta suelta y no una fila de una lista
@@ -3231,7 +3339,7 @@ textarea.auth__input {
     width: 112px;
     height: 112px;
     margin-top: -56px;
-    border-radius: 50%;
+    border-radius: 24px;
     overflow: hidden;
     border: 4px solid var(--color-surface);
     background-color: var(--color-surface);
@@ -3286,21 +3394,59 @@ textarea.auth__input {
 .perfil-chip {
     display: inline-flex;
     align-items: center;
-    padding: 0.2rem 0.7rem;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
     border-radius: 999px;
-    font-size: 0.8rem;
-    background-color: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    font-size: 0.82rem;
+    background-color: var(--color-bg);
     color: var(--color-text-soft);
+}
+
+/* 16px y no 1em: los iconos de los tres chips tienen que medir lo mismo
+   aunque el texto de uno sea mas chico que el del otro. */
+.perfil-chip__icono {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+}
+
+.perfil-chip__icono--estrella {
+    color: var(--color-star);
+}
+
+/* El punto de estado hereda el color del chip (verde abierto, rojo cerrado):
+   sin el, "Abierto ahora" y "Cerrado" se diferencian solo por el fondo, que
+   es justo lo que no se distingue de un vistazo. */
+.perfil-chip__punto {
+    flex: 0 0 auto;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: currentColor;
+}
+
+/* El de reputacion es un link a /resenias, los otros dos son texto. */
+.perfil-chip--rating {
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.perfil-chip--rating:hover {
+    border-color: var(--color-primary);
+    color: var(--color-text);
 }
 
 .perfil-chip--abierto {
     background-color: var(--color-success-bg);
+    border-color: var(--color-success-bg);
     color: var(--color-success-text);
     font-weight: 600;
 }
 
 .perfil-chip--cerrado {
     background-color: var(--color-danger-bg);
+    border-color: var(--color-danger-border);
     color: var(--color-danger-text);
     font-weight: 600;
 }
@@ -3323,16 +3469,90 @@ textarea.auth__input {
    todo el espacio libre antes de que se repartan los margenes auto. */
 .perfil-hero__acciones {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: flex-end;
     gap: 0.6rem;
     padding-top: 1.25rem;
     margin-left: auto;
 }
 
+.perfil-hero__acciones-fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+}
+
 .perfil-hero__acciones form {
     margin: 0;
+}
+
+/* Los canales (telefono y redes) subieron aca desde la tarjeta "Contacto" de
+   la lateral. Son iconos y no botones con texto porque son secundarios: la
+   accion que se quiere es WhatsApp o Seguir, arriba. */
+.perfil-hero__canales {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* 44px es el minimo de area tactil, y el que ya usaban estos mismos iconos
+   cuando vivian en la lateral. */
+.perfil-canal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    color: var(--color-text-soft);
+    text-decoration: none;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.perfil-canal:hover {
+    background-color: var(--color-primary-soft);
+    border-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.perfil-canal svg {
+    width: 20px;
+    height: 20px;
+}
+
+.perfil-canal img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+/* WhatsApp con los tokens de exito y no con los de marca: es el unico boton
+   de la fila que sale de IMPULSAR hacia otra app, y el verde es lo que la
+   gente busca. Sigue siendo pastilla, como todos los .btn del sitio. */
+.btn--whatsapp {
+    gap: 0.45rem;
+    background-color: var(--color-success-bg);
+    border-color: var(--color-success-text);
+    color: var(--color-success-text);
+    font-weight: 600;
+}
+
+.btn--whatsapp:hover {
+    background-color: var(--color-success-text);
+    color: var(--color-surface);
+}
+
+.btn--whatsapp svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* --- 2. Cuerpo: principal + lateral --- */
@@ -3391,17 +3611,6 @@ textarea.auth__input {
     margin-bottom: 0.9rem;
 }
 
-.perfil-badge {
-    padding: 0.15rem 0.55rem;
-    border-radius: 999px;
-    background-color: var(--color-primary-soft);
-    color: var(--color-primary);
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
 .perfil-vacio {
     margin: 0;
     font-size: 0.9rem;
@@ -3429,33 +3638,88 @@ textarea.auth__input {
     margin-bottom: 0.6rem;
 }
 
-/* --- Panel de estadisticas (solo el dueño) --- */
+/* --- Panel de numeros del dueño (solo lo ve el) ---
 
-.perfil-stats {
+   Es el mismo bloque de marca que .auth__panel: indigo profundo fijo en los
+   dos temas y blanco encima. Antes era una .perfil-card mas, clara, con un
+   filo violeta a la izquierda, y se perdia entre el catalogo y los eventos
+   justo siendo lo unico privado de la pagina.
+
+   Los blancos con alfa (0.08 las cajas, 0.16 el chip, 0.72 las etiquetas)
+   salen de ese mismo panel: sobre un fondo fijo, un alfa sobre blanco da
+   siempre el mismo color, y no hay que inventar tokens nuevos por nivel. */
+.perfil-panel {
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--color-primary-deep);
+    color: #fff;
+    box-shadow: var(--shadow-card);
+}
+
+.perfil-panel__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.1rem;
+}
+
+.perfil-panel__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.perfil-panel__chip {
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.16);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.perfil-panel__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 0.75rem;
 }
 
-.perfil-stat {
+.perfil-panel__dato {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
-    padding: 0.85rem;
+    gap: 0.2rem;
+    padding: 0.9rem 1rem;
     border-radius: var(--radius-md);
-    background-color: var(--color-surface-alt);
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
-.perfil-stat__valor {
-    font-size: 1.5rem;
+.perfil-panel__valor {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.6rem;
     font-weight: 700;
     line-height: 1.1;
-    color: var(--color-primary);
+    letter-spacing: -0.02em;
 }
 
-.perfil-stat__label {
+/* La estrella acompaña al numero, no lo reemplaza: 0.6em la ata al tamaño del
+   valor, asi no hay que retocarla si el valor cambia de cuerpo. */
+.perfil-panel__estrella {
+    width: 0.6em;
+    height: 0.6em;
+    color: var(--color-star);
+}
+
+.perfil-panel__label {
+    /* Blanco al 72%: se lee como secundario sin irse a un gris que sobre
+       indigo se ensucia. Mismo criterio que .auth__panel-bajada. */
     font-size: 0.78rem;
-    color: var(--color-muted);
+    color: rgba(255, 255, 255, 0.72);
 }
 
 /* --- Lateral: contacto, redes, mapa --- */
@@ -3478,21 +3742,73 @@ a.perfil-dato:hover {
     color: var(--color-primary);
 }
 
-.perfil-redes {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    margin-top: 0.9rem;
-}
-
 /* El mapa en la lateral es una referencia, no el contenido: mas bajo que el
    de la ficha del emprendimiento, que si ocupa el ancho de la pagina. */
 .perfil-layout__lateral #map {
     height: 200px;
 }
 
-/* El catalogo hereda .card/.cards-grid del resto del sitio; lo unico propio
-   es que el titulo entero sea el link, sin subrayado. */
+/* El catalogo hereda .card/.cards-grid del resto del sitio, pero en el perfil
+   la tarjeta es horizontal: la columna principal es angosta y alta, y con la
+   foto arriba entraban dos emprendimientos por pantalla. Con la foto al
+   costado entra la grilla entera sin scrollear.
+
+   El minmax sube a 320px porque abajo de eso la foto de 126px deja el texto en
+   un hilo; ahi la tarjeta vuelve a ser vertical (mas abajo). */
+.perfil .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.perfil .card {
+    flex-direction: row;
+    align-items: stretch;
+    border: 1px solid var(--color-border);
+}
+
+.perfil .card__image-link {
+    flex: 0 0 126px;
+    display: block;
+}
+
+.perfil .card__image-wrapper {
+    height: 100%;
+    background-color: var(--color-image-bg);
+}
+
+.perfil .card__body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Abajo de 560px la foto al costado deja el texto en dos palabras por linea:
+   la tarjeta vuelve a ser vertical, como en el resto del sitio. */
+@media (max-width: 560px) {
+    .perfil .card {
+        flex-direction: column;
+    }
+
+    .perfil .card__image-link {
+        flex: 0 0 auto;
+    }
+
+    .perfil .card__image-wrapper {
+        height: 160px;
+    }
+}
+
+/* Los iconos de la tarjeta del perfil (estrella y ojo). Atados al tamaño del
+   texto de la linea, no a un px fijo, para que sigan al cuerpo si cambia. */
+.perfil .card__icono {
+    width: 1.05em;
+    height: 1.05em;
+    vertical-align: -0.16em;
+    margin-right: 0.1rem;
+}
+
+.perfil .card__icono--estrella {
+    color: var(--color-star);
+}
+
 .perfil .card__title a {
     color: inherit;
     text-decoration: none;
@@ -3559,8 +3875,13 @@ a.perfil-dato:hover {
     }
 
     .perfil-hero__acciones {
-        justify-content: flex-start;
+        align-items: flex-start;
         margin-left: 0;
+    }
+
+    .perfil-hero__acciones-fila,
+    .perfil-hero__canales {
+        justify-content: flex-start;
     }
 
     .perfil-card {
@@ -3591,67 +3912,34 @@ a.perfil-dato:hover {
        los eventos pasados no lo llevan, y con la sangria suelta quedaban
        corridos 72px contra nada. */
     .perfil .eventos-lista__fecha ~ .eventos-lista__acciones {
-        padding-left: calc(56px + 1rem);
+        padding-left: calc(72px + 1rem);
+        padding-bottom: 0.85rem;
     }
 }
 
 /* La accion principal (WhatsApp, Seguir, Editar perfil) ocupa el ancho
    completo, que es lo que se toca con el pulgar; las secundarias y el boton de
-   compartir se acomodan solos en la fila de abajo. */
+   compartir se acomodan solos en la fila de abajo. La fila tambien va al 100%:
+   ahora es ella la que contiene los botones, y sin esto el ancho completo del
+   contenedor no llegaba al boton. */
 @media (max-width: 480px) {
     .perfil-hero__acciones,
+    .perfil-hero__acciones-fila,
     .perfil-hero__acciones form {
         width: 100%;
     }
 
-    .perfil-hero__acciones .btn--primary {
+    .perfil-hero__acciones .btn--primary,
+    .perfil-hero__acciones .btn--whatsapp {
         width: 100%;
         justify-content: center;
     }
 
-    .perfil-stats {
+    .perfil-panel__grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
-
-/*  Redes Sociales  */
-/* El contenedor propio del perfil ahora es .perfil-redes, en la tarjeta de
-   contacto de la columna lateral; aca queda solo el boton en si. */
-.social-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--color-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-light);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-}
-
-.social-icon:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-soft);
-}
-
-.social-icon img {
-    width: 55%; /* 24px aprox */
-    height: 55%;
-    object-fit: contain;
-}
-
-.social-icon.twitter:hover {
-    background-color: #1DA1F2;
-}
-
-.social-icon.instagram:hover {
-    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
-}
-
-.social-icon.facebook:hover {
-    background-color: #1877F2;
-}
 
 /* Override global de .section__header que habia nacido para la seccion de
    emprendimientos del perfil. El perfil ya no lo usa (arma sus tarjetas con

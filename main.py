@@ -21,7 +21,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from config import get_config
 from db import db
-from services.eventos import formatear_fecha, mes_corto
+from services.eventos import dia_semana_corto, formatear_fecha, mes_corto
 from services.formatting import render_biography
 from services.precios import formatear as formatear_precio
 from services.precios import texto_para_formulario as precio_para_formulario
@@ -134,6 +134,7 @@ def _registrar_filtros_jinja(app):
     # como variable de contexto desde cada vista.
     app.jinja_env.filters["fecha_evento"] = formatear_fecha
     app.jinja_env.filters["mes_corto"] = mes_corto
+    app.jinja_env.filters["dia_semana_corto"] = dia_semana_corto
     # "$ 1.500,50", con los separadores de aca (ver services/precios.py).
     # Filtro y no property del modelo: como mostrar un precio es de la
     # vista, y asi lo usan igual el catalogo y el panel.

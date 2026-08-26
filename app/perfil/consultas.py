@@ -97,6 +97,31 @@ def resenias_recibidas_por(user_id, page, per_page):
     )
 
 
+def reputacion_de(user_id):
+    """Promedio y cantidad de reseñas del usuario, para el chip del hero.
+
+    Es la parte PUBLICA de lo que estadisticas_de_usuario() calcula para el
+    dueño: el promedio y el total ya se ven en cada tarjeta del catalogo y en
+    la pagina de reseñas, asi que mostrarlos juntos arriba no expone nada
+    nuevo. Vistas, favoritos y seguidores se quedan del lado privado.
+
+    Una sola consulta y no resumen_de_resenias_recibidas(), que hace cuatro:
+    aca no se dibuja la distribucion por puntaje, solo el chip.
+    """
+    promedio, total = (
+        db.session.query(func.avg(Review.rating), func.count(Review.id))
+        .join(Post, Post.id == Review.post_id)
+        .filter(Post.author == user_id)
+        .one()
+    )
+
+    return {
+        # None (y no 0) sin reseñas: mismo criterio que estadisticas_de_usuario.
+        "promedio": round(promedio, 1) if promedio else None,
+        "total": total or 0,
+    }
+
+
 def resumen_de_resenias_recibidas(user_id):
     """El resumen que el rediseño muestra al costado de "Reseñas recibidas".
 

@@ -173,7 +173,10 @@ def test_el_dueño_ve_sus_estadisticas_acumuladas(
     login(autor.id)
     html = client.get(f"/perfil/{autor.slug}").get_data(as_text=True)
 
-    assert "Tus estadísticas" in html
+    # El titulo del panel cambio con el rediseño ("Tus estadisticas" ->
+    # "Tus numeros"), junto con la etiqueta de privado.
+    assert "Tus números" in html
+    assert "Solo lo ves vos" in html
     assert "10" in html  # 7 + 3 vistas
     assert "4.5" in html  # promedio general
 

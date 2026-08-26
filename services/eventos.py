@@ -27,6 +27,10 @@ MESES = (
 )
 
 
+# Lunes = 0, igual que datetime.weekday() y que services.horarios.DIAS.
+DIAS_SEMANA = ("lun", "mar", "mie", "jue", "vie", "sab", "dom")
+
+
 def hoy_en_argentina():
     """La fecha de hoy segun el reloj de Argentina."""
     return datetime.now(ZONA_ARGENTINA).date()
@@ -57,6 +61,15 @@ def formatear_fecha(fecha):
 def mes_corto(fecha):
     """"sep", para el recuadro de fecha de las tarjetas."""
     return MESES[fecha.month - 1][:3] if fecha else ""
+
+
+def dia_semana_corto(fecha):
+    """"sab", para la linea de arriba del recuadro de fecha.
+
+    Escrito y no strftime("%a") por lo mismo que los meses: depende del locale
+    del sistema, que en el servidor puede dejar "Sat 13 sep" en pantalla.
+    """
+    return DIAS_SEMANA[fecha.weekday()] if fecha else ""
 
 
 def proximos(query, hoy=None):

@@ -20,7 +20,7 @@ from app.perfil import consultas, formulario, reglas
 from app.perfil.modelo_horario import Horario
 from app.perfil.modelo_follow import Follow
 from services.geocoding import get_coordinates_from_address
-from services.horarios import DIAS, esta_abierto
+from services.horarios import DIAS, ahora_en_argentina, esta_abierto
 from services.ratings import serializar_con_rating
 from services.uploads import carpeta_uploads, save_post_image
 from views.auth import login_required
@@ -65,6 +65,9 @@ def view_profile(slug):
         eventos_proximos=eventos_proximos,
         eventos_pasados=eventos_pasados,
         estadisticas=consultas.estadisticas_de_usuario(user.id) if es_dueño else None,
+        # Publica, a diferencia de estadisticas: el promedio y el total de
+        # reseñas ya se ven en cada tarjeta del catalogo y en /resenias.
+        reputacion=consultas.reputacion_de(user.id),
         lo_sigo=lo_sigo,
         siguiendo=siguiendo,
         horarios=horarios,
@@ -72,6 +75,10 @@ def view_profile(slug):
         # poder distinguir "cerrado ahora" de "este usuario no publico horarios".
         abierto_ahora=esta_abierto(horarios) if horarios else None,
         etiquetas_dias=dict(DIAS),
+        # Para resaltar la fila de hoy en la grilla de horarios. Sale del reloj
+        # de Argentina y no del servidor por lo mismo que esta_abierto: con la
+        # hora del servidor, un deploy en otra zona resalta el dia equivocado.
+        dia_hoy=ahora_en_argentina().weekday(),
         MAPTILER_KEY=current_app.config["MAPTILER_KEY"]
     )
 
