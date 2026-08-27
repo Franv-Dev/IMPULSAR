@@ -69,6 +69,7 @@ def _leer_formulario():
     """
     titulo = (request.form.get("titulo") or "").strip()
     descripcion = (request.form.get("descripcion") or "").strip()
+    lugar = (request.form.get("lugar") or "").strip()
     fecha_texto = (request.form.get("fecha") or "").strip()
     hora_texto = (request.form.get("hora") or "").strip()
 
@@ -89,10 +90,10 @@ def _leer_formulario():
     # parseado: si la fecha estaba mal, el formulario tiene que volver con lo
     # que puso, no vacio.
     datos = {
-        "titulo": titulo, "descripcion": descripcion,
+        "titulo": titulo, "descripcion": descripcion, "lugar": lugar,
         "fecha": fecha_texto, "hora": hora_texto,
     }
-    return datos, titulo, descripcion, fecha, hora, error
+    return datos, titulo, descripcion, lugar, fecha, hora, error
 
 
 @eventos.route("/nuevo", methods=("GET", "POST"))
@@ -105,7 +106,7 @@ def nuevo():
         return redirect(url_for("blog.my_posts"))
 
     if request.method == "POST":
-        datos, titulo, descripcion, fecha, hora, error = _leer_formulario()
+        datos, titulo, descripcion, lugar, fecha, hora, error = _leer_formulario()
         post_id = request.form.get("post_id", type=int)
         datos["post_id"] = post_id
 
@@ -123,13 +124,17 @@ def nuevo():
 
         db.session.add(Event(
             post_id=post_id, titulo=titulo,
-            descripcion=descripcion or None, fecha=fecha, hora=hora,
+            descripcion=descripcion or None, lugar=lugar or None,
+            fecha=fecha, hora=hora,
         ))
         db.session.commit()
         flash("Evento publicado correctamente.")
         return redirect(url_for("profile.view_profile", slug=g.user.slug))
 
-    datos = {"titulo": "", "descripcion": "", "fecha": "", "hora": "", "post_id": None}
+    datos = {
+        "titulo": "", "descripcion": "", "lugar": "",
+        "fecha": "", "hora": "", "post_id": None,
+    }
     return render_template("eventos/form.html", posts=posts, datos=datos, evento=None)
 
 
@@ -144,7 +149,7 @@ def editar(id):
     posts = _mis_emprendimientos()
 
     if request.method == "POST":
-        datos, titulo, descripcion, fecha, hora, error = _leer_formulario()
+        datos, titulo, descripcion, lugar, fecha, hora, error = _leer_formulario()
         post_id = request.form.get("post_id", type=int)
         datos["post_id"] = post_id
 
@@ -160,6 +165,7 @@ def editar(id):
         evento.post_id = post_id
         evento.titulo = titulo
         evento.descripcion = descripcion or None
+        evento.lugar = lugar or None
         evento.fecha = fecha
         evento.hora = hora
         db.session.commit()
@@ -169,6 +175,7 @@ def editar(id):
     datos = {
         "titulo": evento.titulo,
         "descripcion": evento.descripcion or "",
+        "lugar": evento.lugar or "",
         "fecha": evento.fecha.isoformat(),
         "hora": formatear_hora(evento.hora),
         "post_id": evento.post_id,

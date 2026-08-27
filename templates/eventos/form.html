@@ -48,6 +48,17 @@
                               rows="3" maxlength="300">{{ datos.descripcion }}</textarea>
                 </div>
 
+                {# Campo propio y no la direccion del emprendimiento: la feria de
+                   una panaderia normalmente no es en la panaderia (ver el
+                   comentario de Event.lugar). Si lo dejan vacio, la tarjeta no
+                   muestra la linea en vez de inventar un lugar. #}
+                <div class="auth__field">
+                    <label for="lugar" class="auth__label">Lugar (opcional)</label>
+                    <input type="text" name="lugar" id="lugar" class="auth__input"
+                           maxlength="120" value="{{ datos.lugar }}"
+                           placeholder="Plaza San Martín">
+                </div>
+
                 <div class="auth__field">
                     <label for="fecha" class="auth__label">Fecha</label>
                     <input type="date" name="fecha" id="fecha" class="auth__input"

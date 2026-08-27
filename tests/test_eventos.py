@@ -16,11 +16,13 @@ from views import eventos_api
 def crear_evento(db):
     """Fabrica de eventos. `dias` es a cuantos dias de hoy cae el evento."""
 
-    def _crear(post_id, titulo="Feria de la plaza", dias=7, hora=None, descripcion=None):
+    def _crear(post_id, titulo="Feria de la plaza", dias=7, hora=None,
+               descripcion=None, lugar=None):
         evento = Event(
             post_id=post_id,
             titulo=titulo,
             descripcion=descripcion,
+            lugar=lugar,
             fecha=hoy_en_argentina() + timedelta(days=dias),
             hora=hora,
         )
@@ -84,6 +86,81 @@ def test_la_hora_es_opcional(client, emprendedor_con_post):
     })
 
     assert Event.query.one().hora is None
+
+
+def test_publicar_un_evento_guarda_el_lugar(client, emprendedor_con_post):
+    _usuario, post = emprendedor_con_post()
+
+    client.post("/eventos/nuevo", data={
+        "post_id": post.id, "titulo": "Feria", "fecha": "2026-09-13",
+        "lugar": "Plaza San Martín",
+    })
+
+    assert Event.query.one().lugar == "Plaza San Martín"
+
+
+def test_el_lugar_es_opcional_y_queda_en_none(client, emprendedor_con_post):
+    """Vacio se guarda como NULL y no como "", que es "no lo dijo".
+
+    La tarjeta pregunta por `evento.lugar` para decidir si muestra la linea, y
+    una cadena vacia la haria mostrar un separador sin nada atras.
+    """
+    _usuario, post = emprendedor_con_post()
+
+    client.post("/eventos/nuevo", data={
+        "post_id": post.id, "titulo": "Feria", "fecha": "2026-09-13", "lugar": "",
+    })
+
+    assert Event.query.one().lugar is None
+
+
+def test_el_lugar_no_sale_de_la_direccion_del_emprendimiento(
+    client, db, emprendedor_con_post
+):
+    """Un evento sin lugar no hereda posts.address_street.
+
+    La feria de una panaderia normalmente no es en la panaderia: mostrar su
+    direccion como lugar del evento seria un dato equivocado con cara de dato
+    real (ver el comentario de Event.lugar).
+    """
+    _usuario, post = emprendedor_con_post()
+    post.address_street = "Av. San Martín 1240"
+    db.session.commit()
+
+    client.post("/eventos/nuevo", data={
+        "post_id": post.id, "titulo": "Feria", "fecha": "2026-09-13", "lugar": "",
+    })
+
+    evento = Event.query.one()
+    assert evento.lugar is None
+
+    html = client.get("/eventos/").get_data(as_text=True)
+    assert "Av. San Martín 1240" not in html
+
+
+def test_la_cartelera_muestra_el_lugar_cuando_esta(
+    client, emprendedor_con_post, crear_evento
+):
+    _usuario, post = emprendedor_con_post()
+    crear_evento(post.id, titulo="Feria", lugar="Plaza San Martín")
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert "Plaza San Martín" in html
+
+
+def test_editar_un_evento_actualiza_el_lugar(
+    client, emprendedor_con_post, crear_evento
+):
+    _usuario, post = emprendedor_con_post()
+    evento = crear_evento(post.id, lugar="Plaza San Martín")
+
+    client.post(f"/eventos/{evento.id}/editar", data={
+        "post_id": post.id, "titulo": evento.titulo,
+        "fecha": evento.fecha.isoformat(), "lugar": "Centro cultural",
+    })
+
+    assert Event.query.one().lugar == "Centro cultural"
 
 
 @pytest.mark.parametrize("campos, faltante", [
@@ -707,8 +784,11 @@ def test_api_no_expone_campos_de_mas(client, crear_usuario, crear_post, crear_ev
 
     item = client.get("/api/eventos/?mes=2026-08").get_json()["items"][0]
 
+    # `lugar` entra a proposito: es tan publico como el titulo o la
+    # descripcion, se muestra en la cartelera y dejarlo afuera del contrato
+    # seria arbitrario. El calendario del home todavia no lo pinta.
     assert set(item) == {
-        "id", "post_id", "titulo", "descripcion", "fecha", "hora",
+        "id", "post_id", "titulo", "descripcion", "fecha", "hora", "lugar",
         "emprendimiento", "url",
     }
 

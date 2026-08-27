@@ -330,7 +330,7 @@
                                     <div class="eventos-lista__cuerpo">
                                         <h3 class="eventos-lista__titulo">{{ evento.titulo }}</h3>
                                         <p class="eventos-lista__cuando">
-                                            {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora.strftime("%H:%M") }}{% endif %}
+                                            {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora.strftime("%H:%M") }}{% endif %}{% if evento.lugar %} · {{ evento.lugar }}{% endif %}
                                         </p>
                                         {% if evento.descripcion %}
                                             <p class="eventos-lista__descripcion">{{ evento.descripcion }}</p>

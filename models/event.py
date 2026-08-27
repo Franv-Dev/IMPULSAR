@@ -35,6 +35,18 @@ class Event(db.Model):
     fecha = db.Column(db.Date, nullable=False, index=True)
     # Opcional: "la feria es el sabado" es un evento valido sin hora.
     hora = db.Column(db.Time, nullable=True)
+    # Donde es. Texto libre y no una direccion estructurada (ni lat/lng, ni
+    # relacion a nada): lo que se anuncia es "Plaza San Martin" o "el patio de
+    # la escuela", no un domicilio que haya que geocodificar.
+    #
+    # Columna propia y NO heredada de Post.address_street a proposito: la feria
+    # de una panaderia normalmente no es en la panaderia. Mostrar la direccion
+    # del emprendimiento como lugar del evento seria un dato equivocado con
+    # cara de dato real, que es peor que no tenerlo.
+    #
+    # Nullable porque los eventos que ya estaban cargados no tienen lugar y no
+    # hay de donde sacarselo: cuando falta, la tarjeta no muestra la linea.
+    lugar = db.Column(db.String(120), nullable=True)
     created = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     def __repr__(self):
@@ -48,4 +60,5 @@ class Event(db.Model):
             "descripcion": self.descripcion,
             "fecha": self.fecha.isoformat() if self.fecha else None,
             "hora": self.hora.strftime("%H:%M") if self.hora else None,
+            "lugar": self.lugar,
         }
