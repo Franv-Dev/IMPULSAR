@@ -100,6 +100,41 @@ def delete_post(post_id):
     return redirect(url_for("admin.emprendimientos"))
 
 
+@admin.route("/resenias/<int:review_id>/eliminar", methods=["POST"])
+@admin_required
+def delete_review(review_id):
+    """Eliminar cualquier resenia (moderacion), sin importar quien la escribio.
+
+    Hasta ahora el unico borrado de resenia era blog.delete_review, que exige
+    ser SU autor (reglas.es_el_autor_de_la_resenia). O sea que un reporte de
+    tipo "Resena" se podia marcar resuelto pero no se podia actuar sobre el:
+    la unica salida era borrar el emprendimiento entero, que es de otro.
+
+    Es el espejo de delete_post y por eso repite su forma, incluido el
+    try/except: un borrado que falla tiene que dejar la sesion limpia y
+    avisar, no tumbar el panel.
+
+    El reporte no se marca resuelto a mano: reports.review_id es ON DELETE
+    CASCADE, asi que se va con la resenia y sale solo de la cola. Igual que
+    cuando se borra un emprendimiento reportado.
+    """
+    review = Review.query.get_or_404(review_id)
+    autor = review.user.username if review.user else "usuario borrado"
+
+    try:
+        db.session.delete(review)
+        db.session.commit()
+        flash(f"Se eliminó la reseña de «{autor}».")
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Error al eliminar la resenia %s desde el panel de admin", review_id
+        )
+        flash("Error al eliminar la reseña.")
+
+    return redirect(url_for("admin.reportes"))
+
+
 @admin.route("/reportes")
 @admin_required
 def reportes():

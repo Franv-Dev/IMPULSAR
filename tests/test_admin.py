@@ -1,6 +1,8 @@
 """Tests del panel de administrador: acceso, metricas, baneo y moderacion."""
 
 from app.blog.modelo_post import Post
+from app.blog.modelo_reporte import Report
+from app.blog.modelo_resenia import Review
 from models.user import Roles, User
 
 
@@ -161,3 +163,80 @@ def test_un_usuario_comun_no_puede_eliminar_desde_el_panel_de_admin(
 
     assert resp.status_code == 403
     assert Post.query.get(post.id) is not None
+
+
+# --- moderacion de resenias
+
+def _resenia_reportada(db, crear_usuario, crear_post):
+    """Una resenia de un tercero, ya reportada. Devuelve (post, review)."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    denunciante = crear_usuario(username="denunciante")
+    post = crear_post(autor.id)
+    review = Review(post_id=post.id, user_id=cliente.id, rating=1, comment="Insultos")
+    db.session.add(review)
+    db.session.commit()
+    db.session.add(Report(
+        reporter_id=denunciante.id, review_id=review.id, reason="Lenguaje ofensivo"
+    ))
+    db.session.commit()
+    return post, review
+
+
+def test_el_admin_puede_eliminar_cualquier_resenia(
+    client, db, crear_usuario, crear_post, login
+):
+    """El unico borrado de resenia era blog.delete_review, que pide ser su autor.
+
+    Sin esta ruta, un reporte de tipo "Reseña" se podia marcar resuelto pero
+    no se podia actuar sobre el.
+    """
+    _post, review = _resenia_reportada(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+
+    login(admin.id)
+    client.post(f"/admin/resenias/{review.id}/eliminar")
+
+    assert Review.query.get(review.id) is None
+
+
+def test_eliminar_una_resenia_reportada_la_saca_de_la_cola(
+    client, db, crear_usuario, crear_post, login
+):
+    """El reporte no se marca resuelto a mano: se va en cascada con la resenia.
+
+    reports.review_id es ON DELETE CASCADE, igual que reports.post_id.
+    """
+    _post, review = _resenia_reportada(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+
+    login(admin.id)
+    client.post(f"/admin/resenias/{review.id}/eliminar")
+
+    assert Report.query.filter_by(review_id=review.id).count() == 0
+
+
+def test_un_usuario_comun_no_puede_eliminar_una_resenia_desde_el_panel(
+    client, db, crear_usuario, crear_post, login
+):
+    _post, review = _resenia_reportada(db, crear_usuario, crear_post)
+    entrometido = crear_usuario(username="entrometido", rol=Roles.USUARIO)
+
+    login(entrometido.id)
+    resp = client.post(f"/admin/resenias/{review.id}/eliminar")
+
+    assert resp.status_code == 403
+    assert Review.query.get(review.id) is not None
+
+
+def test_la_cola_de_reportes_ofrece_eliminar_la_resenia(
+    client, db, crear_usuario, crear_post, login
+):
+    """Antes la fila de un reporte de resenia solo tenia "Marcar resuelto"."""
+    _post, review = _resenia_reportada(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+
+    login(admin.id)
+    html = client.get("/admin/reportes").get_data(as_text=True)
+
+    assert f"/admin/resenias/{review.id}/eliminar" in html

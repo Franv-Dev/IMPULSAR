@@ -64,10 +64,21 @@
                                         </form>
                                         {% if r.post %}
                                             <form method="post" action="{{ url_for('admin.delete_post', post_id=r.post.id) }}"
-                                                onsubmit="return confirm('¿Seguro que querés eliminar «{{ r.post.title }}»?');">
+                                                onsubmit="return confirm('¿Seguro que querés eliminar «{{ r.post.title }}»? Se borran también sus productos, servicios, reseñas y eventos.');">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="btn btn--ghost" style="font-size:0.8rem; padding:0.3rem 0.8rem;">
                                                     Eliminar emprendimiento
+                                                </button>
+                                            </form>
+                                        {% elif r.review %}
+                                            {# Antes esta rama no existia: un reporte de
+                                               resenia se podia marcar resuelto pero no
+                                               se podia actuar sobre el. #}
+                                            <form method="post" action="{{ url_for('admin.delete_review', review_id=r.review.id) }}"
+                                                onsubmit="return confirm('¿Seguro que querés eliminar esta reseña? No se puede deshacer.');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn--ghost" style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                                    Eliminar reseña
                                                 </button>
                                             </form>
                                         {% endif %}
