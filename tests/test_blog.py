@@ -1313,3 +1313,35 @@ def test_el_listado_no_dice_que_un_emprendimiento_esta_verificado(
 
     assert "Panadería sin verificar" in html
     assert "Verificado" not in html
+
+
+def test_el_detalle_no_dice_que_un_emprendimiento_esta_verificado(
+    client, crear_usuario, crear_post
+):
+    """Mismo criterio que el listado: sin dato de verificacion, sin sello.
+
+    La verificacion que existe es de cada Service (Service.verificado, que
+    pone un admin despues de mirar la matricula) y se muestra en las
+    pantallas de servicios, con su condicion.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería sin verificar")
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Panadería sin verificar" in html
+    assert "Verificado" not in html
+
+
+def test_mis_emprendimientos_no_dice_que_un_emprendimiento_esta_verificado(
+    client, crear_usuario, crear_post, login
+):
+    """El sello tampoco puede afirmarse en la pantalla del propio vendedor."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería sin verificar")
+
+    login(autor.id)
+    html = client.get("/blog/mis-emprendimientos").get_data(as_text=True)
+
+    assert "Panadería sin verificar" in html
+    assert "Verificado" not in html

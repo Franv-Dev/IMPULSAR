@@ -6,9 +6,9 @@
     izquierda y las filas anchas de cada emprendimiento a la derecha, con sus
     metricas y la columna de acciones.
 
-    El sello "Verificado" y el estado "Publicado / Borrador" son la pieza
-    visual del diseño: Post todavia no tiene ni verificacion ni borradores, asi
-    que van maquetados y avisados abajo de la lista, no omitidos. #}
+    El estado "Publicado / Borrador" es la pieza visual del diseño: Post
+    todavia no tiene borradores, asi que va maquetado y avisado abajo de la
+    lista, no omitido. #}
 
 {% block content %}
 <section class="section">
@@ -59,7 +59,16 @@
                                     <div class="mi-post__tags">
                                         <span class="badge badge--estado">Publicado</span>
                                         <span class="badge badge--category">{{ post.category_label }}</span>
-                                        <span class="badge badge--verificado">Verificado</span>
+                                        {# Aca iba el sello "Verificado" del
+                                           rediseño, sin ningun if: lo llevaban
+                                           todos. No hay verificacion de un
+                                           Post -- la que existe es de cada
+                                           Service (Service.verificado) y se
+                                           muestra con su condicion en las
+                                           pantallas de servicios. Se saca sin
+                                           reemplazo: no hay dato que mostrar.
+                                           Si algun dia se verifica un
+                                           emprendimiento, vuelve con su if. #}
                                     </div>
 
                                     <h2 class="mi-post__titulo">

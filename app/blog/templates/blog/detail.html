@@ -9,7 +9,7 @@
     donde queda y los horarios.
 
     Del diseño no esta el sello "Verificado por IMPULSAR": Post no tiene esa
-    marca (la verificacion hoy es de Service). #}
+    marca, la verificacion hoy es de Service. #}
 <section class="section">
     <div class="container">
 
@@ -56,10 +56,15 @@
             <div class="card__body">
                 <div class="card__tags">
                     <span class="badge badge--category">{{ post.category_label }}</span>
-                    {# El sello del rediseño. Todavia no hay una marca de
-                       verificacion sobre Post (la que existe es de Service),
-                       asi que hoy lo muestra cualquier emprendimiento. #}
-                    <span class="badge badge--verificado">Verificado por IMPULSAR</span>
+                    {# Aca iba el sello "Verificado por IMPULSAR" del
+                       rediseño, sin ningun if: lo mostraba cualquier
+                       emprendimiento. No hay verificacion de un Post -- la que
+                       existe es de cada Service (Service.verificado, que pone
+                       un admin despues de mirar la matricula) y esa si se
+                       muestra con su condicion en las pantallas de servicios.
+                       Se saca sin reemplazo: no hay dato que mostrar, ni
+                       siquiera negativo. Si algun dia se verifica un
+                       emprendimiento, el sello vuelve con su if. #}
                     {% if es_dueño %}
                         <span class="detalle__vistas">{{ post.views_count }} vista{{ '' if post.views_count == 1 else 's' }}</span>
                     {% endif %}
