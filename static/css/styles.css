@@ -6108,3 +6108,168 @@ a.perfil-dato:hover {
        cualquier proporcion. */
     height: 170px;
 }
+
+/* ==========================================================================
+   MI CATALOGO
+   --------------------------------------------------------------------------
+   Va dentro del layout de cuenta (.cuenta), como "Mis emprendimientos" y
+   "Presupuestos": el menu a la izquierda y el contenido a la derecha.
+
+   Los productos se agrupan por emprendimiento porque el tope es por
+   emprendimiento. Cada grupo lleva su encabezado con el conteo; el limite
+   aparece recien cerca del tope (ver UMBRAL_AVISO_LIMITE en models/product.py).
+   ========================================================================== */
+
+.catalogo__grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.catalogo__grupo + .catalogo__grupo {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.catalogo__grupo-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.catalogo__grupo-titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+}
+
+.catalogo__grupo-titulo a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.catalogo__grupo-titulo a:hover {
+    color: var(--color-primary);
+}
+
+.catalogo__conteo {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--color-muted);
+}
+
+/* El numero y el tope juntos, cuando falta poco: se destacan del resto de la
+   linea sin cambiar de color -- no es una alerta, es un dato. */
+.catalogo__conteo-limite {
+    font-weight: 600;
+    color: var(--color-text-soft);
+}
+
+.catalogo__grilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1rem;
+}
+
+.producto {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    overflow: hidden;
+}
+
+.producto__foto {
+    position: relative;
+    /* Alto fijo por lo mismo que las fichas del home: las fotos que suben los
+       usuarios vienen en cualquier proporcion y los titulos de una fila tienen
+       que arrancar a la misma altura. */
+    height: 150px;
+    background-color: var(--color-image-bg);
+}
+
+.producto__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* El producto sin stock no se esconde ni se tacha: se apaga la foto y se
+   rotula. El dueño lo sigue necesitando entero para editarlo. */
+.producto--sin-stock .producto__img {
+    opacity: 0.55;
+}
+
+.producto__sello {
+    position: absolute;
+    left: 0.6rem;
+    bottom: 0.6rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.producto__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.85rem 0.9rem 0.9rem;
+    flex: 1 1 auto;
+}
+
+.producto__nombre {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.98rem;
+    letter-spacing: -0.01em;
+}
+
+.producto__precio {
+    margin: 0;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.producto__desc {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--color-muted);
+}
+
+.producto__acciones {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    /* Pegadas abajo para que en una fila de tarjetas de alto distinto los
+       botones queden alineados entre si. */
+    margin-top: auto;
+    padding-top: 0.6rem;
+}
+
+.catalogo__vacio {
+    padding: 2rem 1.25rem;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    text-align: center;
+    color: var(--color-muted);
+}
+
+.catalogo__vacio p {
+    margin: 0;
+}
+
+@media (max-width: 560px) {
+    .catalogo__grilla {
+        grid-template-columns: 1fr;
+    }
+}

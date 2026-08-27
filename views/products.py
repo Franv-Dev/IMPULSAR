@@ -18,7 +18,9 @@ from sqlalchemy.orm import joinedload
 
 from db import db
 from app.blog.modelo_post import Post
-from models.product import MAX_PRODUCTOS_POR_POST, Product
+from models.product import (
+    MAX_PRODUCTOS_POR_POST, UMBRAL_AVISO_LIMITE, Product,
+)
 from services.precios import parsear_precio, texto_para_formulario
 from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
 from views.auth import login_required
@@ -81,11 +83,17 @@ def _leer_formulario():
 @products.route("/")
 @login_required
 def index():
-    """El panel: todos los productos de los emprendimientos propios.
+    """El panel: los productos de los emprendimientos propios, agrupados.
+
+    Agrupados por emprendimiento y no en una grilla suelta porque el tope es
+    por emprendimiento (MAX_PRODUCTOS_POR_POST): un contador global no diria
+    nada sobre el limite que se puede chocar.
 
     joinedload trae el emprendimiento en la misma consulta (y con el su autor,
     que ya es lazy="joined"), para no disparar un SELECT por producto al
     mostrar de cual es: es el mismo problema N+1 que la cartelera de eventos.
+    El agrupado se arma en memoria sobre esas mismas filas, sin una consulta
+    por emprendimiento.
     """
     productos = (
         Product.query
@@ -95,9 +103,24 @@ def index():
         .order_by(Post.title, Product.nombre)
         .all()
     )
+
+    grupos = []
+    for producto in productos:
+        if not grupos or grupos[-1]["post"].id != producto.post_id:
+            grupos.append({"post": producto.post, "productos": []})
+        grupos[-1]["productos"].append(producto)
+
+    for grupo in grupos:
+        total = len(grupo["productos"])
+        grupo["total"] = total
+        # El limite se muestra solo cerca del tope (ver UMBRAL_AVISO_LIMITE):
+        # el contador va siempre, el techo recien cuando falta poco.
+        grupo["cerca_del_limite"] = total >= UMBRAL_AVISO_LIMITE
+        grupo["completo"] = total >= MAX_PRODUCTOS_POR_POST
+
     return render_template(
         "products/index.html",
-        productos=productos,
+        grupos=grupos,
         posts=_mis_emprendimientos(),
         maximo=MAX_PRODUCTOS_POR_POST,
     )

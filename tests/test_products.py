@@ -5,7 +5,9 @@ from decimal import Decimal
 
 import pytest
 
-from models.product import MAX_PRODUCTOS_POR_POST, Product
+from models.product import (
+    MAX_PRODUCTOS_POR_POST, UMBRAL_AVISO_LIMITE, Product,
+)
 from services.precios import formatear, parsear_precio, texto_para_formulario
 
 
@@ -461,6 +463,74 @@ def test_el_panel_muestra_el_precio_formateado(
     html = client.get("/productos/").get_data(as_text=True)
 
     assert "$ 1.500,50" in html
+
+
+def test_el_panel_no_ofrece_planes(client, emprendedor_con_post, crear_producto):
+    """No hay planes en IMPULSAR: ni tabla, ni concepto, ni link.
+
+    El diseño ponia "Ver el límite por plan" al lado del contador. El tope es
+    MAX_PRODUCTOS_POR_POST, un numero fijo en el codigo.
+    """
+    _usuario, post = emprendedor_con_post()
+    crear_producto(post.id)
+
+    html = client.get("/productos/").get_data(as_text=True)
+
+    assert "plan" not in html.lower()
+
+
+def test_con_pocos_productos_el_panel_no_muestra_el_limite(
+    client, emprendedor_con_post, crear_producto
+):
+    """El contador va siempre; el tope, no.
+
+    "1 de 50" desde el primer producto anuncia un techo que un emprendimiento
+    de barrio no roza nunca y le da cara de gate de plan a algo que no lo es.
+    """
+    _usuario, post = emprendedor_con_post()
+    crear_producto(post.id, nombre="Pan de campo")
+
+    html = client.get("/productos/").get_data(as_text=True)
+
+    assert "1 producto" in html
+    assert f"de {MAX_PRODUCTOS_POR_POST} productos" not in html
+
+
+def test_cerca_del_tope_el_panel_si_muestra_el_limite(
+    client, emprendedor_con_post, crear_producto
+):
+    """Al que si lo choca hay que avisarle antes, no en el error del alta."""
+    _usuario, post = emprendedor_con_post()
+    for numero in range(UMBRAL_AVISO_LIMITE):
+        crear_producto(post.id, nombre=f"Pan {numero:02d}")
+
+    html = client.get("/productos/").get_data(as_text=True)
+
+    assert f"{UMBRAL_AVISO_LIMITE} de {MAX_PRODUCTOS_POR_POST} productos" in html
+    assert f"te quedan {MAX_PRODUCTOS_POR_POST - UMBRAL_AVISO_LIMITE}" in html
+
+
+def test_el_conteo_es_por_emprendimiento_y_no_global(
+    client, crear_usuario, crear_post, crear_producto, login
+):
+    """El tope es por emprendimiento, asi que el contador tambien.
+
+    Un contador global no diria nada sobre el limite que se puede chocar.
+    """
+    dueno = crear_usuario(username="dueno")
+    una = crear_post(dueno.id, title="Panadería")
+    otra = crear_post(dueno.id, title="Huerta")
+    crear_producto(una.id, nombre="Pan de campo")
+    crear_producto(otra.id, nombre="Lechuga")
+    crear_producto(otra.id, nombre="Tomate")
+    login(dueno.id)
+
+    html = client.get("/productos/").get_data(as_text=True)
+
+    # Uno en la panaderia y dos en la huerta, no "3 productos" en ningun lado.
+    assert "1 producto" in html
+    assert "2 productos" in html
+    assert "3 producto" not in html
 
 
 # --- catalogo publico
