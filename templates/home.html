@@ -178,7 +178,13 @@
                  devolvia la <section>, con lo cual el gris de "cargando" no se
                  le aplicaba nunca a la tarjeta. -->
             <div class="eventos__layout">
-                {% include "partials/_calendario.html" %}
+                {# El parcial trae DOS elementos (la tarjeta y su leyenda), y
+                   esto es una grilla de dos columnas: sueltos, la leyenda se
+                   comia la columna de la lista y la empujaba abajo. Van
+                   envueltos para que entren como una sola celda. #}
+                <div class="eventos__calendario">
+                    {% include "partials/_calendario.html" %}
+                </div>
 
                 <!-- JS inyecta acá la lista del mes, o la del día elegido.
                      Va fuera del parcial porque la cartelera reusa la misma

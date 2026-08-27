@@ -100,7 +100,10 @@ def index():
         .join(Post, Post.id == Product.post_id)
         .options(joinedload(Product.post))
         .filter(Post.author == g.user.id)
-        .order_by(Post.title, Product.nombre)
+        # Post.id desempata: dos emprendimientos propios con el mismo titulo
+        # quedaban intercalados y el agrupado (que corta por post_id) los
+        # partia en dos grupos, con el contador del tope mal.
+        .order_by(Post.title, Post.id, Product.nombre)
         .all()
     )
 
