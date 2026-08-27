@@ -337,3 +337,123 @@ def test_el_resumen_permite_actuar_sobre_la_cola_de_reportes(
     reporte = Report.query.filter_by(review_id=review.id).one()
     assert f"/admin/reportes/{reporte.id}/resolver" in html
     assert f"/admin/resenias/{review.id}/eliminar" in html
+
+
+# --- usuarios: buscador, filtros y paginado
+
+def test_el_listado_de_usuarios_pagina(client, crear_usuario, login):
+    """Antes hacia .all() y traia la tabla entera a memoria y al HTML."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    for numero in range(25):
+        crear_usuario(username=f"vecino{numero:02d}")
+
+    login(admin.id)
+    html = client.get("/admin/usuarios").get_data(as_text=True)
+
+    # 26 usuarios en total, 20 por pagina.
+    assert "Mostrando 20 de 26" in html
+    assert "vecino00" in html
+    assert "vecino23" not in html
+
+
+def test_el_buscador_de_usuarios_filtra_de_verdad(client, crear_usuario, login):
+    """Si la pantalla muestra un buscador, tiene que recortar la consulta."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    crear_usuario(username="panaderia.sur", email="hola@laespiga.com.ar")
+    crear_usuario(username="tallerbarro", email="taller@elbarro.ar")
+
+    login(admin.id)
+    html = client.get("/admin/usuarios?q=panaderia").get_data(as_text=True)
+
+    assert "panaderia.sur" in html
+    assert "tallerbarro" not in html
+
+
+def test_el_buscador_de_usuarios_tambien_busca_por_mail(client, crear_usuario, login):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    crear_usuario(username="panaderia.sur", email="hola@laespiga.com.ar")
+    crear_usuario(username="tallerbarro", email="taller@elbarro.ar")
+
+    login(admin.id)
+    html = client.get("/admin/usuarios?q=elbarro").get_data(as_text=True)
+
+    assert "tallerbarro" in html
+    assert "panaderia.sur" not in html
+
+
+def test_el_filtro_por_rol_recorta_la_lista(client, crear_usuario, login):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    crear_usuario(username="vendedora", rol=Roles.EMPRENDEDOR)
+    crear_usuario(username="visitante", rol=Roles.USUARIO)
+
+    login(admin.id)
+    html = client.get("/admin/usuarios?filtro=emprendedores").get_data(as_text=True)
+
+    assert "vendedora" in html
+    assert "visitante" not in html
+
+
+def test_el_filtro_de_baneados_es_por_estado_y_no_por_rol(
+    client, db, crear_usuario, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    castigado = crear_usuario(username="molesto", rol=Roles.EMPRENDEDOR)
+    crear_usuario(username="tranquilo", rol=Roles.EMPRENDEDOR)
+    castigado.is_banned = True
+    db.session.commit()
+
+    login(admin.id)
+    html = client.get("/admin/usuarios?filtro=baneados").get_data(as_text=True)
+
+    assert "molesto" in html
+    assert "tranquilo" not in html
+
+
+def test_el_buscador_y_el_filtro_se_combinan(client, crear_usuario, login):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    crear_usuario(username="pan.emprende", rol=Roles.EMPRENDEDOR)
+    crear_usuario(username="pan.visita", rol=Roles.USUARIO)
+
+    login(admin.id)
+    html = client.get("/admin/usuarios?filtro=emprendedores&q=pan").get_data(as_text=True)
+
+    assert "pan.emprende" in html
+    assert "pan.visita" not in html
+
+
+def test_un_filtro_inventado_no_rompe_la_pantalla(client, crear_usuario, login):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    crear_usuario(username="vecina")
+
+    login(admin.id)
+    resp = client.get("/admin/usuarios?filtro=marcianos")
+
+    assert resp.status_code == 200
+    assert "vecina" in resp.get_data(as_text=True)
+
+
+def test_el_panel_de_usuarios_no_promete_ocultar_publicaciones(
+    client, crear_usuario, login
+):
+    """is_banned corta la sesion, pero no filtra ningun listado.
+
+    El diseño decia "Banear cierra la sesión y oculta sus publicaciones". La
+    segunda mitad es falsa hoy: no hay ni un filtro por is_banned fuera del
+    login. Mismo criterio que el sello "Verificado".
+    """
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+
+    login(admin.id)
+    html = client.get("/admin/usuarios").get_data(as_text=True)
+
+    assert "Banear cierra la sesión" in html
+    assert "oculta sus publicaciones" not in html
+
+
+def test_el_panel_de_usuarios_no_ofrece_exportar_csv(client, crear_usuario, login):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+
+    login(admin.id)
+    html = client.get("/admin/usuarios").get_data(as_text=True)
+
+    assert "CSV" not in html

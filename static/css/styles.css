@@ -6566,3 +6566,89 @@ a.perfil-dato:hover {
         flex-wrap: wrap;
     }
 }
+
+/* --- Buscador, chips y tabla de la pantalla de usuarios --- */
+
+.admin-busqueda {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.admin-busqueda__input {
+    flex: 1 1 280px;
+    min-width: 0;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-input-bg);
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+.admin-busqueda__input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+}
+
+.admin-busqueda__limpiar {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+}
+
+/* Los chips de esta pantalla son links y no botones (cada filtro es una URL
+   propia, para que se pueda compartir y para que la paginacion lo conserve),
+   asi que hay que devolverles lo que .chip-filtro da por sentado de un
+   <button>. */
+.chip-filtro[href] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+}
+
+.chip-filtro__total {
+    font-weight: 600;
+    opacity: 0.75;
+}
+
+/* Se marca la fila entera y no solo el chip: en una tabla larga el estado
+   tiene que leerse sin recorrer hasta la columna de la derecha. */
+.admin-fila--baneado {
+    background-color: var(--color-warning-bg);
+}
+
+.admin-usuario {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.admin-usuario__avatar {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.admin-usuario__alta {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-muted);
+}
+
+.admin__pie {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}

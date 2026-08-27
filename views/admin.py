@@ -130,12 +130,92 @@ def dashboard():
     )
 
 
+# Los filtros de la pantalla de usuarios. La clave es lo que viaja en ?filtro=
+# y el valor, como se recorta la consulta. "baneados" no es un rol: es un
+# estado, y por eso no sale de Roles.
+FILTROS_DE_USUARIO = {
+    "todos": ("Todos", None),
+    "emprendedores": ("Emprendedores", Roles.EMPRENDEDOR),
+    "usuarios": ("Usuarios", Roles.USUARIO),
+    "administradores": ("Administradores", Roles.ADMIN),
+    "baneados": ("Baneados", None),
+}
+
+
+def _conteos_de_usuarios():
+    """Cuantos usuarios cae en cada filtro, para los chips de la pantalla.
+
+    Un GROUP BY y no un COUNT por chip: cinco consultas para cinco numeros de
+    la misma tabla es justamente el N+1 que ya se corrigio en otras pantallas.
+    Los baneados van aparte porque son un estado y no un rol, asi que no salen
+    del mismo agrupado.
+    """
+    por_rol = dict(
+        db.session.query(User.rol, func.count(User.id)).group_by(User.rol).all()
+    )
+    baneados = (
+        db.session.query(func.count(User.id)).filter(User.is_banned.is_(True)).scalar() or 0
+    )
+    return {
+        "todos": sum(por_rol.values()),
+        "emprendedores": por_rol.get(Roles.EMPRENDEDOR, 0),
+        "usuarios": por_rol.get(Roles.USUARIO, 0),
+        "administradores": por_rol.get(Roles.ADMIN, 0),
+        "baneados": baneados,
+    }
+
+
 @admin.route("/usuarios")
 @admin_required
 def usuarios():
-    """Listado de usuarios, con accion para banear/desbanear."""
-    lista = User.query.order_by(User.username.asc()).all()
-    return render_template("admin/usuarios.html", usuarios=lista, Roles=Roles)
+    """Listado de usuarios, con buscador, filtros y accion de banear/desbanear.
+
+    Pagina, a diferencia de antes: la version anterior hacia .all() y traia la
+    tabla entera a memoria y al HTML. Con una plataforma chica eso no se nota;
+    con mil usuarios es toda la base en cada carga del panel.
+
+    El buscador y los filtros son de verdad y no adorno: si la pantalla los
+    muestra, tienen que recortar la consulta. Los dos se combinan (se puede
+    buscar dentro de un rol) y los dos viajan en la URL, asi que la paginacion
+    los conserva.
+    """
+    filtro = request.args.get("filtro", "todos")
+    if filtro not in FILTROS_DE_USUARIO:
+        filtro = "todos"
+    busqueda = (request.args.get("q") or "").strip()
+
+    query = User.query
+
+    if filtro == "baneados":
+        query = query.filter(User.is_banned.is_(True))
+    else:
+        _etiqueta, rol = FILTROS_DE_USUARIO[filtro]
+        if rol is not None:
+            query = query.filter(User.rol == rol)
+
+    if busqueda:
+        # Por nombre o por mail, que son los dos datos con los que un admin
+        # llega a un usuario cuando alguien le reporta algo.
+        patron = f"%{busqueda}%"
+        query = query.filter(
+            db.or_(User.username.ilike(patron), User.email.ilike(patron))
+        )
+
+    paginacion = query.order_by(User.username.asc()).paginate(
+        page=request.args.get("page", 1, type=int),
+        per_page=20,
+        error_out=False,
+    )
+
+    return render_template(
+        "admin/usuarios.html",
+        paginacion=paginacion,
+        conteos=_conteos_de_usuarios(),
+        filtros=FILTROS_DE_USUARIO,
+        filtro_actual=filtro,
+        busqueda=busqueda,
+        Roles=Roles,
+    )
 
 
 @admin.route("/usuarios/<int:user_id>/ban", methods=["POST"])

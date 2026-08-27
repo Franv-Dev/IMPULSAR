@@ -2,68 +2,151 @@
 
 {% block title %}Usuarios – Admin – IMPULSAR{% endblock %}
 
+{#  La pantalla "Usuarios" del panel del rediseño: el menu del panel a la
+    izquierda y la tabla a la derecha, con buscador, filtros por rol y
+    paginado.
+
+    Los tres son de verdad y no maqueta: el buscador y los filtros recortan la
+    consulta (ver views/admin.py) y el paginado existe porque antes esta
+    pantalla traia la tabla de usuarios entera con .all().
+
+    Del diseño no esta el boton "Exportar CSV": no hay exportacion.
+
+    Y la bajada dice solo que banear cierra la sesion. El diseño agregaba "y
+    oculta sus publicaciones", que hoy es falso: is_banned corta la sesion en
+    cada request (ver views/auth.py load_logged_in_user) pero no filtra ningun
+    listado, asi que los emprendimientos de un baneado se siguen viendo. #}
+
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Usuarios</h2>
-                <p class="section__subtitle">{{ usuarios|length }} usuarios registrados.</p>
-            </div>
-            <a href="{{ url_for('admin.dashboard') }}" class="section__link">← Volver al panel</a>
-        </div>
+        <div class="admin">
+            {% with seccion = "Usuarios" %}
+                {% include "admin/_menu_admin.html" with context %}
+            {% endwith %}
 
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
-                    {% for message in messages %}
-                        <div class="auth__alert">{{ message }}</div>
+            <div class="admin__contenido">
+                <div class="admin__head">
+                    <div>
+                        <h1 class="admin__titulo">Usuarios</h1>
+                        <p class="admin__bajada">
+                            {{ conteos.todos }} registrado{{ '' if conteos.todos == 1 else 's' }}
+                            · {{ conteos.baneados }} baneado{{ '' if conteos.baneados == 1 else 's' }}.
+                            Banear cierra la sesión.
+                        </p>
+                    </div>
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <form method="get" action="{{ url_for('admin.usuarios') }}" class="admin-busqueda" role="search">
+                    {# El filtro viaja escondido para que buscar no lo pierda:
+                       las dos cosas se combinan. #}
+                    <input type="hidden" name="filtro" value="{{ filtro_actual }}">
+                    <label class="sr-only" for="admin-q">Buscar por usuario o email</label>
+                    <input type="search" name="q" id="admin-q" class="admin-busqueda__input"
+                           value="{{ busqueda }}" placeholder="Buscar por usuario o email">
+                    <button type="submit" class="btn btn--secondary btn--chico">Buscar</button>
+                    {% if busqueda %}
+                        <a href="{{ url_for('admin.usuarios', filtro=filtro_actual) }}"
+                           class="admin-busqueda__limpiar">Limpiar</a>
+                    {% endif %}
+                </form>
+
+                <div class="chips chips--filtro">
+                    {% for clave, par in filtros.items() %}
+                        <a href="{{ url_for('admin.usuarios', filtro=clave, q=busqueda or None) }}"
+                           class="chip-filtro {% if clave == filtro_actual %}chip-filtro--activo{% endif %}"
+                           {% if clave == filtro_actual %}aria-current="true"{% endif %}>
+                            {{ par[0] }} <span class="chip-filtro__total">{{ conteos[clave] }}</span>
+                        </a>
                     {% endfor %}
                 </div>
-            {% endif %}
-        {% endwith %}
 
-        <div class="admin-table-wrapper">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Usuario</th>
-                        <th>Email</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for u in usuarios %}
-                        <tr>
-                            <td><a href="{{ url_for('profile.view_profile', slug=u.slug) }}">{{ u.username }}</a></td>
-                            <td>{{ u.email }}</td>
-                            <td>{{ u.rol }}</td>
-                            <td>
-                                {% if u.is_banned %}
-                                    <span class="admin-badge admin-badge--danger">Baneado</span>
-                                {% else %}
-                                    <span class="admin-badge admin-badge--ok">Activo</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if u.rol != Roles.ADMIN %}
-                                    <form method="post" action="{{ url_for('admin.toggle_ban', user_id=u.id) }}"
-                                        onsubmit="return confirm('¿Seguro que querés {{ 'desbanear' if u.is_banned else 'banear' }} a {{ u.username }}?');">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn--ghost" style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                            {{ 'Desbanear' if u.is_banned else 'Banear' }}
-                                        </button>
-                                    </form>
-                                {% else %}
-                                    <span class="text-muted" style="font-size:0.85rem;">—</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                {% if paginacion.items %}
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in paginacion.items %}
+                                    <tr {% if u.is_banned %}class="admin-fila--baneado"{% endif %}>
+                                        <td>
+                                            <div class="admin-usuario">
+                                                <span class="admin-usuario__avatar" aria-hidden="true">
+                                                    {{ u.username[0]|upper }}
+                                                </span>
+                                                <div>
+                                                    <a href="{{ url_for('profile.view_profile', slug=u.slug) }}">{{ u.username }}</a>
+                                                    <span class="admin-usuario__alta">
+                                                        desde {{ u.created_at.strftime("%m/%Y") if u.created_at else "—" }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ u.email }}</td>
+                                        <td>{{ u.rol }}</td>
+                                        <td>
+                                            {% if u.is_banned %}
+                                                <span class="admin-badge admin-badge--danger">Baneado</span>
+                                            {% else %}
+                                                <span class="admin-badge admin-badge--ok">Activo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if u.rol != Roles.ADMIN %}
+                                                <form method="post" action="{{ url_for('admin.toggle_ban', user_id=u.id) }}"
+                                                    onsubmit="return confirm('¿Seguro que querés {{ 'desbanear' if u.is_banned else 'banear' }} a {{ u.username }}?');">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn--ghost btn--chico">
+                                                        {{ 'Desbanear' if u.is_banned else 'Banear' }}
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <span class="text-muted" style="font-size:0.85rem;">Sin acciones</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="admin__pie">
+                        Mostrando {{ paginacion.items|length }} de {{ paginacion.total }}.
+                        {# A un admin no se lo banea desde aca: la ruta lo rechaza
+                           igual, y decirlo evita buscar el boton que no esta. #}
+                        A los administradores no se los puede banear.
+                    </p>
+
+                    {% include "partials/_paginacion.html" %}
+                {% else %}
+                    <div class="catalogo__vacio">
+                        <p>
+                            {% if busqueda %}
+                                No hay usuarios que coincidan con «{{ busqueda }}».
+                            {% else %}
+                                No hay usuarios en este filtro.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </section>
