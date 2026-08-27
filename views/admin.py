@@ -7,10 +7,11 @@ solo paginas HTML protegidas con @admin_required (ver views/auth.py).
 from datetime import timedelta
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+import sqlalchemy as sa
 from sqlalchemy import func
 
 from db import db, utcnow
-from app.blog.modelo_post import Post
+from app.blog.modelo_post import Categorias, Post
 from app.blog.modelo_reporte import Report
 from app.blog.modelo_resenia import Review
 # Las verificaciones son del dominio de servicios: las consultas salen de su
@@ -234,20 +235,108 @@ def toggle_ban(user_id):
     return redirect(url_for("admin.usuarios"))
 
 
+def _conteos_de_la_pagina(ids):
+    """Reportes sin resolver y reseñas de cada emprendimiento de esta pagina.
+
+    Dos consultas AGRUPADAS acotadas a los ids que se van a dibujar, no un
+    COUNT por fila: contar dentro del for serian dos consultas por
+    emprendimiento, que es el mismo N+1 que ya se corrigio en "Mis
+    emprendimientos". Asi la pagina cuesta lo mismo con 3 filas que con 20.
+
+    Devuelve un dict por id con los dos numeros ya en cero cuando no hay nada,
+    para que la plantilla no tenga que preguntar.
+    """
+    if not ids:
+        return {}
+
+    reportes = dict(
+        db.session.query(Report.post_id, func.count(Report.id))
+        .filter(
+            Report.resolved.is_(False),
+            Report.post_id.in_(ids),
+        )
+        .group_by(Report.post_id)
+        .all()
+    )
+    resenias = dict(
+        db.session.query(Review.post_id, func.count(Review.id))
+        .filter(Review.post_id.in_(ids))
+        .group_by(Review.post_id)
+        .all()
+    )
+
+    return {
+        id_: {"reportes": reportes.get(id_, 0), "resenias": resenias.get(id_, 0)}
+        for id_ in ids
+    }
+
+
 @admin.route("/emprendimientos")
 @admin_required
 def emprendimientos():
-    """Listado de todos los emprendimientos, para moderacion."""
-    paginacion = (
-        Post.query
-        .order_by(Post.created.desc())
-        .paginate(
-            page=request.args.get("page", 1, type=int),
-            per_page=20,
-            error_out=False,
-        )
+    """Listado de emprendimientos para moderacion, los reportados primero.
+
+    Cada fila muestra cuantos reportes sin resolver tiene y cuantas reseñas
+    recibio. Los dos numeros salen de subconsultas AGRUPADAS que se unen a la
+    consulta principal, no de un COUNT por fila: contar dentro del for seria
+    dos consultas por emprendimiento, que es el mismo N+1 que ya se corrigio
+    en "Mis emprendimientos".
+
+    Que los reportados salgan primero es la razon de que el conteo entre en la
+    consulta y no se resuelva despues sobre la pagina ya paginada: para poder
+    ordenar por el, el motor tiene que conocerlo antes del LIMIT.
+
+    Se usa db.paginate() sobre un select() y no Post.query.paginate() porque
+    la consulta tiene que unirse a la subconsulta de reportes para poder
+    ORDENAR por ella: sin eso, "los reportados primero" solo valdria dentro de
+    la pagina que ya toco, no sobre el listado entero.
+    """
+    reportes_por_post = (
+        sa.select(Report.post_id, func.count(Report.id).label("total"))
+        .where(Report.resolved.is_(False), Report.post_id.isnot(None))
+        .group_by(Report.post_id)
+        .subquery()
     )
-    return render_template("admin/emprendimientos.html", paginacion=paginacion)
+
+    # coalesce porque el LEFT JOIN devuelve NULL para el emprendimiento que no
+    # tiene ninguno, y a la hora de ordenar eso es un cero.
+    reportes = func.coalesce(reportes_por_post.c.total, 0)
+
+    consulta = (
+        sa.select(Post)
+        .outerjoin(reportes_por_post, reportes_por_post.c.post_id == Post.id)
+    )
+
+    busqueda = (request.args.get("q") or "").strip()
+    if busqueda:
+        # Por titulo o por autor: son las dos formas de llegar a un
+        # emprendimiento cuando alguien lo reporta por afuera del panel.
+        patron = f"%{busqueda}%"
+        consulta = consulta.join(User, User.id == Post.author).where(
+            db.or_(Post.title.ilike(patron), User.username.ilike(patron))
+        )
+
+    categoria = request.args.get("categoria") or ""
+    if categoria in Categorias.TODAS:
+        consulta = consulta.where(Post.category == categoria)
+    else:
+        categoria = ""
+
+    paginacion = db.paginate(
+        consulta.order_by(reportes.desc(), Post.created.desc()),
+        page=request.args.get("page", 1, type=int),
+        per_page=20,
+        error_out=False,
+    )
+
+    return render_template(
+        "admin/emprendimientos.html",
+        paginacion=paginacion,
+        conteos=_conteos_de_la_pagina([post.id for post in paginacion.items]),
+        busqueda=busqueda,
+        categoria_actual=categoria,
+        categorias=Categorias.ETIQUETAS,
+    )
 
 
 @admin.route("/emprendimientos/<int:post_id>/eliminar", methods=["POST"])

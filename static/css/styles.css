@@ -6652,3 +6652,28 @@ a.perfil-dato:hover {
     font-size: 0.8rem;
     color: var(--color-muted);
 }
+
+/* --- Moderacion de emprendimientos --- */
+
+.admin-busqueda__select {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-input-bg);
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+/* Misma marca que la fila del usuario baneado: lo que necesita atencion se
+   lee de un vistazo sin llegar hasta la columna de la derecha. */
+.admin-fila--reportado {
+    background-color: var(--color-warning-bg);
+}
+
+.admin-aviso {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-warning-text);
+}

@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 from db import utcnow
-from app.blog.modelo_post import Post
+from app.blog.modelo_post import Categorias, Post
 from app.blog.modelo_reporte import Report
 from app.blog.modelo_resenia import Review
 from models.user import Roles, User
@@ -457,3 +457,174 @@ def test_el_panel_de_usuarios_no_ofrece_exportar_csv(client, crear_usuario, logi
     html = client.get("/admin/usuarios").get_data(as_text=True)
 
     assert "CSV" not in html
+
+
+# --- moderacion de emprendimientos
+
+def test_la_lista_de_moderacion_muestra_los_reportes_por_fila(
+    client, db, crear_usuario, crear_post, login
+):
+    """El conteo por fila sale de una subconsulta agrupada, no de un COUNT por fila."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    denunciante = crear_usuario(username="denunciante")
+    otro = crear_usuario(username="otro")
+    reportado = crear_post(autor.id, title="Ofertas Express")
+    crear_post(autor.id, title="Panadería tranquila")
+    db.session.add(Report(reporter_id=denunciante.id, post_id=reportado.id, reason="Precios falsos"))
+    db.session.add(Report(reporter_id=otro.id, post_id=reportado.id, reason="Fotos ajenas"))
+    db.session.commit()
+
+    login(admin.id)
+    html = client.get("/admin/emprendimientos").get_data(as_text=True)
+
+    assert "2 reportes sin resolver" in html
+
+
+def test_un_reporte_resuelto_no_cuenta_en_la_lista_de_moderacion(
+    client, db, crear_usuario, crear_post, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    denunciante = crear_usuario(username="denunciante")
+    post = crear_post(autor.id, title="Ya revisado")
+    db.session.add(Report(
+        reporter_id=denunciante.id, post_id=post.id, reason="x", resolved=True
+    ))
+    db.session.commit()
+
+    login(admin.id)
+    html = client.get("/admin/emprendimientos").get_data(as_text=True)
+
+    assert "Ya revisado" in html
+    assert "sin resolver" not in html
+
+
+def test_los_emprendimientos_reportados_aparecen_primero(
+    client, db, crear_usuario, crear_post, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    denunciante = crear_usuario(username="denunciante")
+    crear_post(autor.id, title="Tranquilo")
+    reportado = crear_post(autor.id, title="Denunciado")
+    db.session.add(Report(reporter_id=denunciante.id, post_id=reportado.id, reason="x"))
+    db.session.commit()
+
+    login(admin.id)
+    html = client.get("/admin/emprendimientos").get_data(as_text=True)
+
+    assert html.index("Denunciado") < html.index("Tranquilo")
+
+
+def test_la_lista_de_moderacion_avisa_que_borra_la_cascada(
+    client, crear_usuario, crear_post, login
+):
+    """Antes solo habia un confirm() generico de "no se puede deshacer".
+
+    El borrado en cascada es real: Post declara cascade="all, delete-orphan"
+    en imagenes, eventos, productos y servicios, y las FK de reviews y reports
+    son ON DELETE CASCADE. Si se lleva todo eso, hay que decirlo.
+    """
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id)
+
+    login(admin.id)
+    html = client.get("/admin/emprendimientos").get_data(as_text=True)
+
+    for cosa in ("productos", "servicios", "reseñas", "eventos"):
+        assert cosa in html
+
+
+def test_el_buscador_de_moderacion_filtra_por_titulo_y_por_autor(
+    client, crear_usuario, crear_post, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    una = crear_usuario(username="panaderia.sur")
+    otra = crear_usuario(username="tallerbarro")
+    crear_post(una.id, title="Panadería La Espiga")
+    crear_post(otra.id, title="Taller El Barro")
+
+    login(admin.id)
+
+    por_titulo = client.get("/admin/emprendimientos?q=Espiga").get_data(as_text=True)
+    assert "Panadería La Espiga" in por_titulo
+    assert "Taller El Barro" not in por_titulo
+
+    por_autor = client.get("/admin/emprendimientos?q=tallerbarro").get_data(as_text=True)
+    assert "Taller El Barro" in por_autor
+    assert "Panadería La Espiga" not in por_autor
+
+
+def test_el_filtro_por_categoria_de_moderacion_recorta(
+    client, db, crear_usuario, crear_post, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    comida = crear_post(autor.id, title="Panadería")
+    crear_post(autor.id, title="Reparo PC")
+    comida.category = Categorias.ALIMENTOS
+    db.session.commit()
+
+    login(admin.id)
+    html = client.get(
+        f"/admin/emprendimientos?categoria={Categorias.ALIMENTOS}"
+    ).get_data(as_text=True)
+
+    assert "Panadería" in html
+    assert "Reparo PC" not in html
+
+
+def test_una_categoria_inventada_no_rompe_la_moderacion(
+    client, crear_usuario, crear_post, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería")
+
+    login(admin.id)
+    resp = client.get("/admin/emprendimientos?categoria=marcianos")
+
+    assert resp.status_code == 200
+    assert "Panadería" in resp.get_data(as_text=True)
+
+
+def test_la_moderacion_no_consulta_de_mas_por_cada_fila(
+    app, client, db, crear_usuario, crear_post, login
+):
+    """El costo no puede depender de cuantos emprendimientos hay en la pagina.
+
+    Los conteos de reportes y reseñas por fila salen de subconsultas agrupadas.
+    Si se resolvieran con un COUNT por fila, la pagina crecería dos consultas
+    por emprendimiento -- el mismo N+1 que ya se corrigio en "Mis
+    emprendimientos".
+    """
+    from sqlalchemy import event
+
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    login(admin.id)
+
+    def contar_consultas():
+        consultas = []
+
+        def escuchar(conn, cursor, statement, params, context, many):
+            consultas.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", escuchar)
+        try:
+            client.get("/admin/emprendimientos")
+        finally:
+            event.remove(db.engine, "before_cursor_execute", escuchar)
+        return len(consultas)
+
+    for numero in range(3):
+        crear_post(autor.id, title=f"Emprendimiento {numero}")
+    con_tres = contar_consultas()
+
+    for numero in range(3, 9):
+        crear_post(autor.id, title=f"Emprendimiento {numero}")
+    con_nueve = contar_consultas()
+
+    assert con_nueve == con_tres
