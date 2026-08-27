@@ -4,6 +4,8 @@ Vista simple pensada para el rol admin: no hay nada de esto en la API JSON,
 solo paginas HTML protegidas con @admin_required (ver views/auth.py).
 """
 
+from datetime import timedelta
+
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from sqlalchemy import func
 
@@ -23,22 +25,109 @@ from views.auth import admin_required
 admin = Blueprint("admin", __name__, url_prefix="/admin")
 
 
+# La ventana de los "ultimos 30 dias" de las metricas del panel.
+DIAS_DE_LA_VENTANA = 30
+
+# Cuantos elementos de cada cola se muestran en el resumen. El panel es para
+# ver de un vistazo que hay pendiente, no para atender todo desde ahi: cada
+# cola tiene su pantalla, con la lista entera.
+COLA_EN_EL_RESUMEN = 3
+
+
+@admin.context_processor
+def _badges_del_menu():
+    """Los pendientes de cada cola, para el menu lateral del panel.
+
+    Va como context processor del blueprint y no como argumento de cada vista
+    porque el menu esta en las cinco pantallas: pasarlo a mano seria repetir lo
+    mismo cinco veces y olvidarselo en la sexta. Solo corre para las plantillas
+    que renderiza este blueprint.
+
+    Son dos COUNT por pagina del panel. Es el precio de que los numeros del
+    menu sean los de ahora y no los de cuando se cargo otra pantalla.
+    """
+    return {
+        "badge_reportes": (
+            db.session.query(func.count(Report.id))
+            .filter(Report.resolved.is_(False))
+            .scalar() or 0
+        ),
+        "badge_verificaciones": consultas_servicios.cuantas_verificaciones_pendientes(),
+    }
+
+
+def _cuantos(modelo, columna_fecha):
+    """(total, altas en la ventana) para un modelo con fecha de creacion.
+
+    Los dos son COUNT con WHERE, no una serie temporal: no hace falta una tabla
+    de historico para responder "cuantos se sumaron este mes", alcanza con la
+    fecha de alta que las filas ya tienen.
+    """
+    desde = utcnow() - timedelta(days=DIAS_DE_LA_VENTANA)
+    total = db.session.query(func.count(modelo.id)).scalar() or 0
+    nuevos = (
+        db.session.query(func.count(modelo.id))
+        .filter(columna_fecha >= desde)
+        .scalar() or 0
+    )
+    return total, nuevos
+
+
 @admin.route("/")
 @admin_required
 def dashboard():
-    """Metricas basicas de la plataforma."""
+    """Las colas pendientes primero, y abajo las metricas de la plataforma.
+
+    Las tres metricas llevan su delta de los ultimos 30 dias porque los tres
+    modelos guardan cuando se creo cada fila (User.created_at, Post.created,
+    Review.created). No hay un cuarto tile de "emprendimientos sin actividad":
+    "actividad" no esta definida en el modelo -- Post no tiene updated_at, y
+    habria que elegir entre su ultimo evento, su ultimo producto o su ultima
+    resenia -- asi que seria una metrica inventada.
+
+    Las dos colas se muestran recortadas (COLA_EN_EL_RESUMEN) y con las
+    acciones que ya existen, que son las mismas de sus pantallas propias. El
+    link "Ver todos" lleva a la lista entera.
+    """
+    usuarios_total, usuarios_nuevos = _cuantos(User, User.created_at)
+    posts_total, posts_nuevos = _cuantos(Post, Post.created)
+    resenias_total, resenias_nuevas = _cuantos(Review, Review.created)
+
+    reportes_pendientes = (
+        db.session.query(func.count(Report.id)).filter(Report.resolved.is_(False)).scalar() or 0
+    )
+    verificaciones_pendientes = consultas_servicios.cuantas_verificaciones_pendientes()
+
     metricas = {
-        "usuarios": db.session.query(func.count(User.id)).scalar() or 0,
-        "posts": db.session.query(func.count(Post.id)).scalar() or 0,
-        "resenias": db.session.query(func.count(Review.id)).scalar() or 0,
-        "reportes_pendientes": (
-            db.session.query(func.count(Report.id)).filter(Report.resolved.is_(False)).scalar() or 0
-        ),
-        "verificaciones_pendientes": (
-            consultas_servicios.cuantas_verificaciones_pendientes()
-        ),
+        "usuarios": usuarios_total,
+        "posts": posts_total,
+        "resenias": resenias_total,
+        "usuarios_nuevos": usuarios_nuevos,
+        "posts_nuevos": posts_nuevos,
+        "resenias_nuevas": resenias_nuevas,
+        "reportes_pendientes": reportes_pendientes,
+        "verificaciones_pendientes": verificaciones_pendientes,
     }
-    return render_template("admin/dashboard.html", metricas=metricas)
+
+    return render_template(
+        "admin/dashboard.html",
+        metricas=metricas,
+        dias_ventana=DIAS_DE_LA_VENTANA,
+        pendientes=reportes_pendientes + verificaciones_pendientes,
+        reportes=(
+            Report.query
+            .filter_by(resolved=False)
+            .order_by(Report.created.desc())
+            .limit(COLA_EN_EL_RESUMEN)
+            .all()
+        ),
+        # El slice es en memoria y no un LIMIT: verificaciones_pendientes()
+        # devuelve la lista entera, que es lo que ya hace la pantalla de la
+        # cola y por el mismo motivo (esa cola no deberia crecer).
+        verificaciones=(
+            consultas_servicios.verificaciones_pendientes()[:COLA_EN_EL_RESUMEN]
+        ),
+    )
 
 
 @admin.route("/usuarios")

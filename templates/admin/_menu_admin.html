@@ -1,0 +1,35 @@
+{#  La columna izquierda del panel de administracion del rediseño.
+
+    Va como parcial porque las cinco pantallas del panel la comparten. Quien la
+    incluya pasa `seccion` con el nombre del item activo.
+
+    Los dos badges son conteos reales y de ahora: los inyecta el context
+    processor del blueprint (ver views/admin.py), asi que no hay que pasarlos
+    desde cada vista. Cuando una cola esta vacia el badge no se dibuja, en vez
+    de mostrar un cero. #}
+<aside class="admin-menu">
+    <div class="admin-menu__marca">
+        <span class="admin-menu__rotulo">Administración</span>
+        <span class="admin-menu__usuario">{{ g.user.username }}</span>
+    </div>
+
+    <nav class="admin-menu__nav" aria-label="Panel de administración">
+        {% set items = [
+            ('Resumen', url_for('admin.dashboard'), None),
+            ('Reportes', url_for('admin.reportes'), badge_reportes),
+            ('Verificaciones', url_for('admin.verificaciones'), badge_verificaciones),
+            ('Usuarios', url_for('admin.usuarios'), None),
+            ('Emprendimientos', url_for('admin.emprendimientos'), None),
+        ] %}
+        {% for etiqueta, destino, badge in items %}
+            <a href="{{ destino }}"
+               class="admin-menu__item {% if etiqueta == seccion %}admin-menu__item--activo{% endif %}"
+               {% if etiqueta == seccion %}aria-current="page"{% endif %}>
+                <span>{{ etiqueta }}</span>
+                {% if badge %}
+                    <span class="admin-menu__badge">{{ badge }}</span>
+                {% endif %}
+            </a>
+        {% endfor %}
+    </nav>
+</aside>

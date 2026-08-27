@@ -1,5 +1,8 @@
 """Tests del panel de administrador: acceso, metricas, baneo y moderacion."""
 
+from datetime import timedelta
+
+from db import utcnow
 from app.blog.modelo_post import Post
 from app.blog.modelo_reporte import Report
 from app.blog.modelo_resenia import Review
@@ -239,4 +242,98 @@ def test_la_cola_de_reportes_ofrece_eliminar_la_resenia(
     login(admin.id)
     html = client.get("/admin/reportes").get_data(as_text=True)
 
+    assert f"/admin/resenias/{review.id}/eliminar" in html
+
+
+# --- resumen: metricas y colas
+
+def test_el_resumen_muestra_las_altas_del_periodo(
+    client, db, crear_usuario, crear_post, login
+):
+    """El delta sale de un COUNT con WHERE sobre la fecha de alta.
+
+    No hace falta ninguna tabla de historico: User.created_at, Post.created y
+    Review.created ya dicen cuando se creo cada fila.
+    """
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    reciente = crear_post(autor.id, title="Panadería nueva")
+    viejo = crear_post(autor.id, title="Panadería vieja")
+    viejo.created = utcnow() - timedelta(days=90)
+    db.session.commit()
+
+    login(admin.id)
+    html = client.get("/admin/").get_data(as_text=True)
+
+    # Dos emprendimientos en total, pero uno solo entra en la ventana.
+    assert "+1 en 30 días" in html
+    assert reciente.id and viejo.id
+
+
+def test_el_resumen_no_inventa_la_metrica_de_actividad(
+    client, crear_usuario, crear_post, login
+):
+    """El cuarto tile del diseño no va: "actividad" no existe en el modelo.
+
+    Post no tiene updated_at, asi que habria que elegir entre su ultimo
+    evento, su ultimo producto o su ultima resenia. Cualquiera de las tres
+    seria una definicion inventada presentada como dato.
+    """
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id)
+
+    login(admin.id)
+    html = client.get("/admin/").get_data(as_text=True)
+
+    assert "sin actividad" not in html.lower()
+    assert "sin publicar hace" not in html.lower()
+
+
+def test_el_resumen_no_ofrece_exportar(client, crear_usuario, login):
+    """No hay exportacion de metricas ni de nada: el boton no se dibuja."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+
+    login(admin.id)
+    html = client.get("/admin/").get_data(as_text=True)
+
+    assert "Exportar" not in html
+
+
+def test_el_resumen_cuenta_lo_que_hay_pendiente(
+    client, db, crear_usuario, crear_post, login
+):
+    _post, _review = _resenia_reportada(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+
+    login(admin.id)
+    html = client.get("/admin/").get_data(as_text=True)
+
+    assert "Hoy hay 1 cosa para revisar" in html
+
+
+def test_sin_nada_pendiente_el_resumen_no_dice_que_hay_cosas(
+    client, crear_usuario, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+
+    login(admin.id)
+    html = client.get("/admin/").get_data(as_text=True)
+
+    assert "No hay nada pendiente" in html
+    assert "cosas para revisar" not in html
+
+
+def test_el_resumen_permite_actuar_sobre_la_cola_de_reportes(
+    client, db, crear_usuario, crear_post, login
+):
+    """Las acciones del resumen son las mismas rutas de la pantalla de la cola."""
+    _post, review = _resenia_reportada(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+
+    login(admin.id)
+    html = client.get("/admin/").get_data(as_text=True)
+
+    reporte = Report.query.filter_by(review_id=review.id).one()
+    assert f"/admin/reportes/{reporte.id}/resolver" in html
     assert f"/admin/resenias/{review.id}/eliminar" in html

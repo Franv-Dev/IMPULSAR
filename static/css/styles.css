@@ -6273,3 +6273,296 @@ a.perfil-dato:hover {
         grid-template-columns: 1fr;
     }
 }
+
+/* ==========================================================================
+   PANEL DE ADMINISTRACION (rediseño)
+   --------------------------------------------------------------------------
+   El layout de dos columnas del panel: el menu propio a la izquierda y el
+   contenido a la derecha. Es hermano de .cuenta (el layout de las pantallas de
+   cuenta) pero no el mismo: el menu de aca lleva badges de las colas y las
+   cinco pantallas son de moderacion, no del usuario.
+
+   Las piezas viejas (.admin-metrics, .admin-table, .admin-badge) se conservan:
+   las siguen usando las pantallas de reportes y verificaciones.
+   ========================================================================== */
+
+.admin {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 1.75rem;
+    align-items: start;
+}
+
+.admin__contenido {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+}
+
+.admin__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.admin__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+}
+
+.admin__bajada {
+    margin: 5px 0 0;
+    max-width: 60ch;
+    font-size: 0.88rem;
+    color: var(--color-muted);
+}
+
+/* --- Menu lateral --- */
+
+.admin-menu {
+    position: sticky;
+    top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.admin-menu__marca {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.admin-menu__rotulo {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.admin-menu__usuario {
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.admin-menu__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.admin-menu__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: var(--color-text-soft);
+    text-decoration: none;
+}
+
+.admin-menu__item:hover {
+    background-color: var(--color-bg);
+}
+
+.admin-menu__item--activo {
+    background-color: var(--color-primary-soft);
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+/* El badge marca cantidad pendiente, no error: usa el naranja de "esperando"
+   y no el rojo de peligro. El token de TEXTO es el oscuro, que es el unico que
+   pasa AA en un chip chico (ver el comentario de --color-warning-text). */
+.admin-menu__badge {
+    min-width: 1.4rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* --- Colas y metricas --- */
+
+.admin-cola {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.admin-cola__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.admin-cola__titulo {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+}
+
+.admin-cola__pendiente {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-warning-text);
+}
+
+.admin-cola__link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.admin-cola__link:hover {
+    text-decoration: underline;
+}
+
+.admin-cola__link--muted {
+    color: var(--color-muted);
+    font-weight: 400;
+}
+
+.admin-cola__link--muted:hover {
+    text-decoration: none;
+}
+
+.admin-cola__items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.admin-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.admin-item__cabecera {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.admin-item__objetivo {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.admin-item__objetivo a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.admin-item__objetivo a:hover {
+    color: var(--color-primary);
+}
+
+.admin-item__fecha {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.admin-item__motivo {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--color-text-soft);
+}
+
+.admin-item__autor {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.admin-item__acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding-top: 0.35rem;
+}
+
+/* El motivo viaja en el mismo POST que el rechazo, en un campo al lado del
+   boton: pedirlo en otra pantalla agrega un paso a lo unico que el prestador
+   necesita para corregir y volver a mandarlo (ver views/admin.py). */
+.admin-item__rechazo {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1 1 260px;
+}
+
+.admin-item__motivo-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-input-bg);
+    font-size: 0.82rem;
+    font-family: inherit;
+    color: var(--color-text);
+}
+
+.admin-item__motivo-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+}
+
+/* El delta de altas del periodo. Sin flecha de tendencia: no hay con que
+   comparar contra el periodo anterior, solo el alta de cada fila. */
+.admin-metric__delta {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--color-success-text);
+}
+
+@media (max-width: 900px) {
+    .admin {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-menu {
+        position: static;
+    }
+
+    .admin-menu__nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}

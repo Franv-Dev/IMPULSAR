@@ -243,7 +243,10 @@ def test_el_dashboard_cuenta_los_reportes_pendientes(
     login(admin.id)
     html = client.get("/admin/").get_data(as_text=True)
 
-    assert "Reportes pendientes" in html
+    # El rediseño cambio el tile "Reportes pendientes" por la cola de reportes
+    # con su contador arriba. Lo que se fija es el numero, no el rotulo.
+    assert "1 sin resolver" in html
+    assert "/admin/reportes" in html
 
 
 # --------------------------------------------- ON DELETE CASCADE (FK 1451)

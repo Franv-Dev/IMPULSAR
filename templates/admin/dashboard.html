@@ -2,62 +2,212 @@
 
 {% block title %}Panel de administración – IMPULSAR{% endblock %}
 
+{#  La pantalla "Resumen" del panel de administracion del rediseño: el menu a
+    la izquierda, las colas pendientes primero y las metricas abajo.
+
+    Las tres metricas llevan su delta de los ultimos 30 dias, que sale de un
+    COUNT con WHERE sobre la fecha de alta que las filas ya tienen. Del diseño
+    NO esta el cuarto tile, "Emprendimientos sin actividad": Post no tiene
+    updated_at y "actividad" habria que definirla (¿su ultimo evento? ¿su
+    ultimo producto? ¿su ultima reseña?), asi que seria una metrica inventada.
+
+    Tampoco esta el boton "Exportar métricas": no hay exportacion de nada. #}
+
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Panel de administración</h2>
-                <p class="section__subtitle">Métricas básicas de la plataforma.</p>
-            </div>
-        </div>
+        <div class="admin">
+            {% with seccion = "Resumen" %}
+                {% include "admin/_menu_admin.html" with context %}
+            {% endwith %}
 
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
-                    {% for message in messages %}
-                        <div class="auth__alert">{{ message }}</div>
-                    {% endfor %}
+            <div class="admin__contenido">
+                <div class="admin__head">
+                    <div>
+                        <h1 class="admin__titulo">
+                            {% if pendientes %}
+                                Hoy hay {{ pendientes }} cosa{{ '' if pendientes == 1 else 's' }} para revisar
+                            {% else %}
+                                No hay nada pendiente
+                            {% endif %}
+                        </h1>
+                        <p class="admin__bajada">
+                            {% if pendientes %}
+                                Las colas pendientes van primero; las métricas de la plataforma, abajo.
+                            {% else %}
+                                Las dos colas están vacías. Abajo, las métricas de la plataforma.
+                            {% endif %}
+                        </p>
+                    </div>
                 </div>
-            {% endif %}
-        {% endwith %}
 
-        <div class="admin-metrics">
-            <div class="admin-metric">
-                <span class="admin-metric__value">{{ metricas.usuarios }}</span>
-                <span class="admin-metric__label">Usuarios</span>
-            </div>
-            <div class="admin-metric">
-                <span class="admin-metric__value">{{ metricas.posts }}</span>
-                <span class="admin-metric__label">Emprendimientos</span>
-            </div>
-            <div class="admin-metric">
-                <span class="admin-metric__value">{{ metricas.resenias }}</span>
-                <span class="admin-metric__label">Reseñas</span>
-            </div>
-            {% if "reportes_pendientes" in metricas %}
-                <div class="admin-metric admin-metric--alert">
-                    <span class="admin-metric__value">{{ metricas.reportes_pendientes }}</span>
-                    <span class="admin-metric__label">Reportes pendientes</span>
-                </div>
-            {% endif %}
-            {% if "verificaciones_pendientes" in metricas %}
-                <div class="admin-metric admin-metric--alert">
-                    <span class="admin-metric__value">{{ metricas.verificaciones_pendientes }}</span>
-                    <span class="admin-metric__label">Verificaciones pendientes</span>
-                </div>
-            {% endif %}
-        </div>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
 
-        <div class="admin-links">
-            <a href="{{ url_for('admin.usuarios') }}" class="btn btn--secondary">Gestionar usuarios</a>
-            <a href="{{ url_for('admin.emprendimientos') }}" class="btn btn--secondary">Moderar emprendimientos</a>
-            {% if "reportes_pendientes" in metricas %}
-                <a href="{{ url_for('admin.reportes') }}" class="btn btn--secondary">Ver reportes</a>
-            {% endif %}
-            {% if "verificaciones_pendientes" in metricas %}
-                <a href="{{ url_for('admin.verificaciones') }}" class="btn btn--secondary">Ver verificaciones</a>
-            {% endif %}
+                {# --- Cola de reportes --- #}
+                {% if reportes %}
+                    <section class="admin-cola">
+                        <div class="admin-cola__head">
+                            <h2 class="admin-cola__titulo">
+                                Reportes
+                                <span class="admin-cola__pendiente">
+                                    {{ metricas.reportes_pendientes }} sin resolver
+                                </span>
+                            </h2>
+                            <a href="{{ url_for('admin.reportes') }}" class="admin-cola__link">Ver todos</a>
+                        </div>
+
+                        <div class="admin-cola__items">
+                            {% for r in reportes %}
+                                <article class="admin-item">
+                                    <div class="admin-item__cabecera">
+                                        <span class="badge {{ 'badge--estado' if r.review_id else 'badge--category' }}">
+                                            {{ 'Reseña' if r.review_id else 'Emprendimiento' }}
+                                        </span>
+                                        <span class="admin-item__objetivo">
+                                            {% if r.post %}
+                                                <a href="{{ url_for('blog.detail', id=r.post.id) }}">{{ r.post.title }}</a>
+                                            {% elif r.review %}
+                                                <a href="{{ url_for('blog.detail', id=r.review.post_id) }}">
+                                                    Reseña de {{ r.review.user.username if r.review.user else 'usuario borrado' }}
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted">Contenido eliminado</span>
+                                            {% endif %}
+                                        </span>
+                                        <span class="admin-item__fecha">
+                                            {{ r.created.strftime("%d/%m") if r.created else "" }}
+                                        </span>
+                                    </div>
+
+                                    <p class="admin-item__motivo">«{{ r.reason }}»</p>
+                                    <p class="admin-item__autor">
+                                        Reportó {{ r.reporter.username if r.reporter else '—' }}
+                                    </p>
+
+                                    <div class="admin-item__acciones">
+                                        <form method="post" action="{{ url_for('admin.resolve_report', report_id=r.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn--secondary btn--chico">
+                                                Marcar resuelto
+                                            </button>
+                                        </form>
+                                        {% if r.post %}
+                                            <form method="post" action="{{ url_for('admin.delete_post', post_id=r.post.id) }}"
+                                                  onsubmit="return confirm('¿Seguro que querés eliminar «{{ r.post.title }}»? Se borran también sus productos, servicios, reseñas y eventos.');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn--ghost btn--chico">
+                                                    Eliminar emprendimiento
+                                                </button>
+                                            </form>
+                                        {% elif r.review %}
+                                            <form method="post" action="{{ url_for('admin.delete_review', review_id=r.review.id) }}"
+                                                  onsubmit="return confirm('¿Seguro que querés eliminar esta reseña? No se puede deshacer.');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn--ghost btn--chico">
+                                                    Eliminar reseña
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endif %}
+
+                {# --- Cola de verificaciones --- #}
+                {% if verificaciones %}
+                    <section class="admin-cola">
+                        <div class="admin-cola__head">
+                            <h2 class="admin-cola__titulo">
+                                Verificaciones
+                                <span class="admin-cola__pendiente">
+                                    {{ metricas.verificaciones_pendientes }} sin revisar
+                                </span>
+                            </h2>
+                            <a href="{{ url_for('admin.verificaciones') }}" class="admin-cola__link">Ver todas</a>
+                        </div>
+
+                        <div class="admin-cola__items">
+                            {% for v in verificaciones %}
+                                <article class="admin-item">
+                                    <div class="admin-item__cabecera">
+                                        <span class="badge badge--category">{{ v.servicio.rubro_label }}</span>
+                                        <span class="admin-item__objetivo">{{ v.servicio.titulo }}</span>
+                                        <span class="admin-item__fecha">
+                                            {{ v.created_at.strftime("%d/%m") if v.created_at else "" }}
+                                        </span>
+                                    </div>
+
+                                    <p class="admin-item__autor">
+                                        {{ v.servicio.post.title }} ·
+                                        <a href="{{ url_for('servicios.foto_de_verificacion', id=v.id) }}">Ver documento</a>
+                                    </p>
+
+                                    <div class="admin-item__acciones">
+                                        <form method="post" action="{{ url_for('admin.aprobar_verificacion', verificacion_id=v.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn--secondary btn--chico">Aprobar</button>
+                                        </form>
+                                        <form method="post" action="{{ url_for('admin.rechazar_verificacion', verificacion_id=v.id) }}"
+                                              class="admin-item__rechazo">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <label class="sr-only" for="motivo-{{ v.id }}">Motivo del rechazo (opcional)</label>
+                                            <input type="text" name="motivo_rechazo" id="motivo-{{ v.id }}"
+                                                   class="admin-item__motivo-input"
+                                                   placeholder="Motivo del rechazo (opcional)" maxlength="300">
+                                            <button type="submit" class="btn btn--ghost btn--chico">Rechazar</button>
+                                        </form>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endif %}
+
+                {# --- Metricas --- #}
+                <section class="admin-cola">
+                    <div class="admin-cola__head">
+                        <h2 class="admin-cola__titulo">La plataforma</h2>
+                        <span class="admin-cola__link admin-cola__link--muted">
+                            Altas de los últimos {{ dias_ventana }} días
+                        </span>
+                    </div>
+
+                    <div class="admin-metrics">
+                        {% set tiles = [
+                            ('Usuarios', metricas.usuarios, metricas.usuarios_nuevos),
+                            ('Emprendimientos', metricas.posts, metricas.posts_nuevos),
+                            ('Reseñas', metricas.resenias, metricas.resenias_nuevas),
+                        ] %}
+                        {% for etiqueta, valor, nuevos in tiles %}
+                            <div class="admin-metric">
+                                <span class="admin-metric__value">{{ valor }}</span>
+                                <span class="admin-metric__label">{{ etiqueta }}</span>
+                                {# Sin flecha de tendencia: no hay con que comparar
+                                   contra el periodo anterior, solo el alta de cada
+                                   fila. "+N" es lo que se puede sostener. #}
+                                <span class="admin-metric__delta">
+                                    +{{ nuevos }} en {{ dias_ventana }} días
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="admin-links">
+                        <a href="{{ url_for('admin.usuarios') }}" class="btn btn--secondary">Gestionar usuarios</a>
+                        <a href="{{ url_for('admin.emprendimientos') }}" class="btn btn--secondary">Moderar emprendimientos</a>
+                    </div>
+                </section>
+            </div>
         </div>
     </div>
 </section>

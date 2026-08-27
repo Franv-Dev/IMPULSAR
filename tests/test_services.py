@@ -1959,7 +1959,9 @@ def test_el_dashboard_cuenta_las_verificaciones_pendientes(
 
     html = client.get("/admin/").get_data(as_text=True)
 
-    assert "Verificaciones pendientes" in html
+    # El rediseño cambio el tile "Verificaciones pendientes" por la cola con
+    # su contador arriba. Lo que se fija es el numero, no el rotulo.
+    assert "1 sin revisar" in html
     assert "/admin/verificaciones" in html
 
 
