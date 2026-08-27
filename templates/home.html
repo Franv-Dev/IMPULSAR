@@ -178,41 +178,14 @@
                  devolvia la <section>, con lo cual el gris de "cargando" no se
                  le aplicaba nunca a la tarjeta. -->
             <div class="eventos__layout">
-                <div class="calendario" id="calendario-card">
-                    <div class="calendario__head">
-                        <h3 class="calendario__mes" id="calendario-mes" aria-live="polite">&nbsp;</h3>
-                        <div class="calendario__nav">
-                            <button type="button" class="calendario__nav-btn" id="calendario-prev" aria-label="Mes anterior">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-                            </button>
-                            <button type="button" class="calendario__nav-btn" id="calendario-next" aria-label="Mes siguiente">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
-                            </button>
-                        </div>
-                    </div>
+                {% include "partials/_calendario.html" %}
 
-                    <div class="calendario__weekdays" aria-hidden="true">
-                        <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
-                    </div>
-
-                    <!-- JS inyecta acá los días del mes -->
-                    <div class="calendario__grid" id="calendario-grid"></div>
-
-                    <p class="calendario__estado" id="calendario-estado" role="status" aria-live="polite" hidden></p>
-                </div>
-
-                <!-- JS inyecta acá la lista del mes, o la del día elegido -->
+                <!-- JS inyecta acá la lista del mes, o la del día elegido.
+                     Va fuera del parcial porque la cartelera reusa la misma
+                     tarjeta pero pone su lista en la columna principal. -->
                 <div class="eventos__panel" id="calendario-lista" aria-live="polite"></div>
             </div>
 
-            <p class="calendario__leyenda">
-                <span class="calendario__leyenda-item">
-                    <span class="calendario__punto" aria-hidden="true"></span> Día con eventos
-                </span>
-                <span class="calendario__leyenda-item">
-                    <span class="calendario__punto calendario__punto--hoy" aria-hidden="true"></span> Hoy
-                </span>
-            </p>
         </div>
     </section>
 

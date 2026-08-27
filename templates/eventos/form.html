@@ -1,84 +1,168 @@
 {% extends "base.html" %}
-{% block title %}{{ "Editar evento" if evento else "Nuevo evento" }}{% endblock %}
+{% block title %}{{ "Editar evento" if evento else "Publicar un evento" }} – IMPULSAR{% endblock %}
+
+{#  La pantalla "Publicar evento" del rediseño: el formulario a la izquierda y
+    al costado la vista previa de como va a quedar la tarjeta en la cartelera,
+    mas los tres pasos de que pasa despues.
+
+    La vista previa se arma con los mismos datos que ya estan en el formulario
+    y no adivina nada: si todavia no se escribio el titulo o la fecha, muestra
+    el hueco en gris.
+
+    Del diseño no esta "Guardar borrador": Event no tiene estado de borrador
+    (ni Post tampoco). Un boton que no guarda un borrador es peor que no
+    tenerlo. #}
 
 {% block content %}
 <section class="section">
-    <div class="container" style="max-width: 640px;">
-        <div class="auth__card">
-            <h1 class="auth__title">{{ "Editar evento" if evento else "Nuevo evento" }}</h1>
-            <p class="auth__subtitle">
-                Una feria, una pop-up, un taller. Solo la información con su fecha:
-                no se reservan lugares. La fecha y la hora son de Argentina.
-            </p>
-
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="auth__messages">
-                        {% for message in messages %}
-                            <div class="auth__alert">{{ message }}</div>
-                        {% endfor %}
+    <div class="container">
+        <div class="cuenta">
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">
+                            {{ "Editar evento" if evento else "Contanos qué pasa y cuándo" }}
+                        </h1>
+                        <p class="cuenta__bajada">
+                            Una feria, una pop-up, un taller. No se reservan lugares:
+                            publicás la información y la gente se acerca.
+                            La fecha y la hora son de Argentina.
+                        </p>
                     </div>
-                {% endif %}
-            {% endwith %}
-
-            <form method="post" class="auth__form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <div class="auth__field">
-                    <label for="post_id" class="auth__label">Emprendimiento</label>
-                    <select name="post_id" id="post_id" class="auth__input" required>
-                        {% for post in posts %}
-                            <option value="{{ post.id }}"
-                                    {% if datos.post_id == post.id %}selected{% endif %}>
-                                {{ post.title }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}"
+                       class="btn btn--secondary">Cancelar</a>
                 </div>
 
-                <div class="auth__field">
-                    <label for="titulo" class="auth__label">Título</label>
-                    <input type="text" name="titulo" id="titulo" class="auth__input"
-                           maxlength="120" required value="{{ datos.titulo }}">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <div class="form-empren">
+                    <div class="form-empren__principal">
+                        <form method="post" class="form-empren__form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                            <div class="auth__field">
+                                <label for="post_id" class="auth__label">Emprendimiento</label>
+                                <select name="post_id" id="post_id" class="auth__input" required>
+                                    {% for post in posts %}
+                                        <option value="{{ post.id }}"
+                                                {% if datos.post_id == post.id %}selected{% endif %}>
+                                            {{ post.title }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <p class="auth__ayuda">
+                                    El evento aparece en el perfil de este emprendimiento
+                                    y en la cartelera.
+                                </p>
+                            </div>
+
+                            <div class="auth__field">
+                                <label for="titulo" class="auth__label">Título</label>
+                                <input type="text" name="titulo" id="titulo" class="auth__input"
+                                       maxlength="120" required value="{{ datos.titulo }}"
+                                       placeholder="Feria de emprendedores de la plaza">
+                            </div>
+
+                            <div class="auth__field">
+                                <label for="descripcion" class="auth__label">Descripción corta (opcional)</label>
+                                <textarea name="descripcion" id="descripcion" class="auth__input"
+                                          rows="3" maxlength="300">{{ datos.descripcion }}</textarea>
+                            </div>
+
+                            {# Campo propio y no la direccion del emprendimiento: la feria de
+                               una panaderia normalmente no es en la panaderia (ver el
+                               comentario de Event.lugar). Si lo dejan vacio, la tarjeta no
+                               muestra la linea en vez de inventar un lugar. #}
+                            <div class="auth__field">
+                                <label for="lugar" class="auth__label">Lugar (opcional)</label>
+                                <input type="text" name="lugar" id="lugar" class="auth__input"
+                                       maxlength="120" value="{{ datos.lugar }}"
+                                       placeholder="Plaza San Martín">
+                            </div>
+
+                            <div class="form-evento__fila">
+                                <div class="auth__field">
+                                    <label for="fecha" class="auth__label">Fecha</label>
+                                    <input type="date" name="fecha" id="fecha" class="auth__input"
+                                           required value="{{ datos.fecha }}">
+                                </div>
+
+                                <div class="auth__field">
+                                    <label for="hora" class="auth__label">Hora (opcional)</label>
+                                    <input type="time" name="hora" id="hora" class="auth__input"
+                                           value="{{ datos.hora }}">
+                                </div>
+                            </div>
+
+                            <div class="form-empren__acciones">
+                                <button type="submit" class="btn btn--primary">
+                                    {{ "Guardar cambios" if evento else "Publicar evento" }}
+                                </button>
+                                <p class="cuenta__pendiente">
+                                    Podés editarlo o borrarlo cuando quieras.
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="form-empren__lateral">
+                        <div class="panel">
+                            <h2 class="panel__titulo">Así se va a ver en la cartelera</h2>
+                            <ul class="eventos-lista eventos-lista--cartelera">
+                                <li class="eventos-lista__item">
+                                    <div class="eventos-lista__fecha">
+                                        {# Se pregunta por la fecha YA PARSEADA y no por el
+                                           texto: cuando la validacion rechaza el alta, el
+                                           formulario vuelve con lo que escribio el usuario
+                                           tal cual ("13/09/2026"), que no es vacio pero
+                                           tampoco es una fecha. #}
+                                        {% set fecha = datos.fecha | fecha_desde_iso %}
+                                        {% if fecha %}
+                                            <span class="eventos-lista__diasem">{{ fecha | dia_semana_corto }}</span>
+                                            <span class="eventos-lista__dia">{{ fecha.day }}</span>
+                                            <span class="eventos-lista__mes">{{ fecha | mes_corto }}</span>
+                                        {% else %}
+                                            <span class="eventos-lista__dia">—</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="eventos-lista__cuerpo">
+                                        <h3 class="eventos-lista__titulo">
+                                            {{ datos.titulo or "Título del evento" }}
+                                        </h3>
+                                        <p class="eventos-lista__cuando">
+                                            {%- if datos.hora %}{{ datos.hora }} · {% endif -%}
+                                            {%- if datos.lugar %}{{ datos.lugar }} · {% endif -%}
+                                            {% for post in posts %}
+                                                {%- if post.id == datos.post_id %}{{ post.title }}{% endif -%}
+                                            {% endfor %}
+                                        </p>
+                                        {% if datos.descripcion %}
+                                            <p class="eventos-lista__descripcion">{{ datos.descripcion }}</p>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="panel">
+                            <h2 class="panel__titulo">Qué pasa después</h2>
+                            <ul class="panel__lista">
+                                <li>Aparece en la cartelera y en el perfil del emprendimiento.</li>
+                                <li>Los días con eventos se marcan en el calendario del inicio.</li>
+                                <li>Cuando pasa la fecha se archiva solo, no hace falta borrarlo.</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="auth__field">
-                    <label for="descripcion" class="auth__label">Descripción corta (opcional)</label>
-                    <textarea name="descripcion" id="descripcion" class="auth__input"
-                              rows="3" maxlength="300">{{ datos.descripcion }}</textarea>
-                </div>
-
-                {# Campo propio y no la direccion del emprendimiento: la feria de
-                   una panaderia normalmente no es en la panaderia (ver el
-                   comentario de Event.lugar). Si lo dejan vacio, la tarjeta no
-                   muestra la linea en vez de inventar un lugar. #}
-                <div class="auth__field">
-                    <label for="lugar" class="auth__label">Lugar (opcional)</label>
-                    <input type="text" name="lugar" id="lugar" class="auth__input"
-                           maxlength="120" value="{{ datos.lugar }}"
-                           placeholder="Plaza San Martín">
-                </div>
-
-                <div class="auth__field">
-                    <label for="fecha" class="auth__label">Fecha</label>
-                    <input type="date" name="fecha" id="fecha" class="auth__input"
-                           required value="{{ datos.fecha }}">
-                </div>
-
-                <div class="auth__field">
-                    <label for="hora" class="auth__label">Hora (opcional)</label>
-                    <input type="time" name="hora" id="hora" class="auth__input"
-                           value="{{ datos.hora }}">
-                </div>
-
-                <button type="submit" class="btn btn--primary auth__submit">
-                    {{ "Guardar cambios" if evento else "Publicar evento" }}
-                </button>
-            </form>
-
-            <p class="auth__footer">
-                Volver a <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}">mi perfil</a>.
-            </p>
+            </div>
         </div>
     </div>
 </section>

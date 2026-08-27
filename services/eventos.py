@@ -72,6 +72,37 @@ def dia_semana_corto(fecha):
     return DIAS_SEMANA[fecha.weekday()] if fecha else ""
 
 
+def mes_y_anio(fecha):
+    """"agosto 2026", para los encabezados de la cartelera.
+
+    Escrito y no strftime("%B %Y") por lo mismo que MESES: eso depende del
+    locale del sistema operativo, que en el servidor puede dejar "August 2026".
+    """
+    return f"{MESES[fecha.month - 1]} {fecha.year}" if fecha else ""
+
+
+def agrupar_por_mes(eventos):
+    """Los eventos en grupos consecutivos de mes, conservando el orden.
+
+    Devuelve [{"nombre": "agosto 2026", "eventos": [...]}, ...]. Se apoya en
+    que la lista YA viene ordenada por fecha (proximos()): agrupa cortando
+    cuando cambia el mes, no juntando por clave, asi que dos tramos del mismo
+    mes separados en la lista serian dos grupos -- y con la lista ordenada eso
+    no puede pasar.
+    """
+    grupos = []
+    for evento in eventos:
+        clave = (evento.fecha.year, evento.fecha.month)
+        if not grupos or grupos[-1]["clave"] != clave:
+            grupos.append({
+                "clave": clave,
+                "nombre": mes_y_anio(evento.fecha),
+                "eventos": [],
+            })
+        grupos[-1]["eventos"].append(evento)
+    return grupos
+
+
 def proximos(query, hoy=None):
     """Eventos que todavia no pasaron, del mas cercano al mas lejano.
 

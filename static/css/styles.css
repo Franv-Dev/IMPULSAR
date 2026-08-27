@@ -6677,3 +6677,135 @@ a.perfil-dato:hover {
     font-weight: 600;
     color: var(--color-warning-text);
 }
+
+/* ==========================================================================
+   CARTELERA DE EVENTOS Y PUBLICAR EVENTO
+   --------------------------------------------------------------------------
+   La cartelera es la lista agrupada por mes con el calendario al costado. El
+   calendario es el mismo del home (partials/_calendario.html), asi que no
+   necesita estilos propios: los suyos ya viven en la seccion del calendario.
+
+   El formulario reusa .form-empren, .panel y .cuenta de las tandas anteriores
+   -- son las mismas cajas del mismo rediseño -- y solo agrega la fila de
+   fecha + hora.
+   ========================================================================== */
+
+.cartelera {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 1.75rem;
+    align-items: start;
+}
+
+.cartelera__principal {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+}
+
+.cartelera__lateral {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: sticky;
+    top: 1.5rem;
+}
+
+.cartelera__mes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cartelera__mes-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.cartelera__mes-titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: -0.01em;
+    /* El nombre del mes sale en minuscula de services/eventos.MESES, que lo
+       escribe asi porque en el medio de una frase va en minuscula. Como
+       titulo, la primera va en mayuscula. */
+    text-transform: capitalize;
+}
+
+.cartelera__mes-total {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.cartelera__cta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1.25rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--color-primary-soft);
+}
+
+.cartelera__cta-titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+}
+
+.cartelera__cta-texto {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-soft);
+}
+
+.cartelera__cta .btn {
+    align-self: flex-start;
+}
+
+/* --- Formulario de evento --- */
+
+.form-evento__fila {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+/* Ayuda debajo de un campo: dice para que sirve, no repite la etiqueta. */
+.auth__ayuda {
+    margin: 0.35rem 0 0;
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+.panel__lista {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--color-text-soft);
+}
+
+@media (max-width: 900px) {
+    .cartelera {
+        grid-template-columns: 1fr;
+    }
+
+    .cartelera__lateral {
+        position: static;
+    }
+}
+
+@media (max-width: 560px) {
+    .form-evento__fila {
+        grid-template-columns: 1fr;
+    }
+}

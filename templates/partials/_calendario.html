@@ -1,0 +1,44 @@
+{#  La tarjeta del calendario mensual de eventos.
+
+    Va como parcial porque la usan el home y la cartelera. Todo lo de adentro
+    lo llena static/js/calendario.js contra /api/eventos/?mes=AAAA-MM, y los
+    ids con prefijo calendario- son sus ganchos: por eso hay UNA sola tarjeta
+    por pagina.
+
+    El panel con la lista de eventos NO esta acá. En el home va al lado de la
+    grilla, y en la cartelera la lista es la columna principal de la pantalla,
+    asi que cada una lo pone donde le corresponde. El JS ya lo trata como
+    opcional (ver su comentario en la funcion que lo dibuja).
+
+    Quien la incluya tiene que cargar js/calendario.js en su bloque scripts. #}
+<div class="calendario" id="calendario-card">
+    <div class="calendario__head">
+        <h3 class="calendario__mes" id="calendario-mes" aria-live="polite">&nbsp;</h3>
+        <div class="calendario__nav">
+            <button type="button" class="calendario__nav-btn" id="calendario-prev" aria-label="Mes anterior">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button type="button" class="calendario__nav-btn" id="calendario-next" aria-label="Mes siguiente">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="calendario__weekdays" aria-hidden="true">
+        <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+    </div>
+
+    {# JS inyecta acá los días del mes #}
+    <div class="calendario__grid" id="calendario-grid"></div>
+
+    <p class="calendario__estado" id="calendario-estado" role="status" aria-live="polite" hidden></p>
+</div>
+
+<p class="calendario__leyenda">
+    <span class="calendario__leyenda-item">
+        <span class="calendario__punto" aria-hidden="true"></span> Día con eventos
+    </span>
+    <span class="calendario__leyenda-item">
+        <span class="calendario__punto calendario__punto--hoy" aria-hidden="true"></span> Hoy
+    </span>
+</p>

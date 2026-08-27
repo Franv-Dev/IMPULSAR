@@ -1,59 +1,120 @@
 {% extends "base.html" %}
 
-{% block title %}Eventos y ferias – IMPULSAR{% endblock %}
+{% block title %}Ferias y eventos – IMPULSAR{% endblock %}
 {% block meta_description %}Ferias, pop-ups y talleres de los emprendimientos de IMPULSAR.{% endblock %}
+
+{#  La pantalla "Cartelera de eventos" del rediseño: la lista agrupada por mes
+    en la columna principal y el calendario al costado, que es el mismo del
+    home (partials/_calendario.html, cableado contra /api/eventos).
+
+    El numero del titulo es el conteo real de fechas anunciadas. El mockup
+    decia "18 fechas anunciadas por emprendimientos de San Rafael", pero la
+    ciudad no es un dato que Post tenga: misma decision que ya se tomo en
+    templates/auth/_panel.html, la frase se queda con lo que se puede sostener.
+
+    Del diseño NO estan, porque no hay con que:
+      - el tipo de evento (Feria / Taller / Encuentro) y sus colores: Event no
+        tiene tipo, y ponerselo es una taxonomia que hay que decidir antes;
+      - el chip "Entrada libre": no hay gratis/pago;
+      - los asistentes y el boton "Me interesa": no hay tabla de asistencia,
+        es una feature entera y no una etiqueta.
+    Los tres estan anotados como pendientes, no maquetados en falso. #}
 
 {% block content %}
 <section class="section">
     <div class="container">
         <div class="section__header">
             <div>
-                <h2 class="section__title">Eventos y ferias</h2>
+                <h1 class="section__title">Ferias y eventos</h1>
                 <p class="section__subtitle">
-                    Todo lo que están anunciando los emprendimientos de IMPULSAR.
+                    {% if paginacion.total == 1 -%}
+                        1 fecha anunciada por los emprendimientos.
+                    {%- else -%}
+                        {{ paginacion.total }} fechas anunciadas por los emprendimientos.
+                    {%- endif %}
+                    Primero lo más próximo.
                 </p>
             </div>
-            <a href="{{ url_for('blog.index') }}" class="section__link">Ver emprendimientos</a>
+            {% if g.user %}
+                <a href="{{ url_for('eventos.nuevo') }}" class="btn btn--primary">Publicar un evento</a>
+            {% endif %}
         </div>
 
-        {% if paginacion.items %}
-            <ul class="eventos-lista eventos-lista--cartelera">
-                {% for evento in paginacion.items %}
-                    <li class="eventos-lista__item">
-                        <div class="eventos-lista__fecha">
-                            <span class="eventos-lista__dia">{{ evento.fecha.day }}</span>
-                            <span class="eventos-lista__mes">{{ evento.fecha | mes_corto }}</span>
-                        </div>
-                        <div class="eventos-lista__cuerpo">
-                            <h3 class="eventos-lista__titulo">
-                                <a href="{{ url_for('blog.detail', id=evento.post.id) }}">{{ evento.titulo }}</a>
-                            </h3>
-                            <p class="eventos-lista__cuando">
-                                {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora.strftime("%H:%M") }}{% endif %}{% if evento.lugar %} · {{ evento.lugar }}{% endif %}
-                            </p>
-                            {% if evento.descripcion %}
-                                <p class="eventos-lista__descripcion">{{ evento.descripcion }}</p>
-                            {% endif %}
-                            {# El link al perfil de quien lo publico, que es de
-                               donde sale el resto de sus datos de contacto. #}
-                            <p class="eventos-lista__post">
-                                Publicado por
-                                <a href="{{ url_for('profile.view_profile', slug=evento.post.author_user.slug) }}">
-                                    {{ evento.post.author_user.username }}
-                                </a>
-                                · {{ evento.post.title }}
-                            </p>
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
+        <div class="cartelera">
+            <div class="cartelera__principal">
+                {% if meses %}
+                    {% for mes in meses %}
+                        <section class="cartelera__mes">
+                            <div class="cartelera__mes-head">
+                                <h2 class="cartelera__mes-titulo">{{ mes.nombre }}</h2>
+                                <span class="cartelera__mes-total">
+                                    {{ mes.eventos|length }} evento{{ '' if mes.eventos|length == 1 else 's' }}
+                                </span>
+                            </div>
 
-            {% include "partials/_paginacion.html" %}
-        {% else %}
-            <div class="emprendimientos__empty" style="margin-top:1rem;">
-                <p>No hay eventos anunciados por ahora.</p>
+                            <ul class="eventos-lista eventos-lista--cartelera">
+                                {% for evento in mes.eventos %}
+                                    <li class="eventos-lista__item">
+                                        <div class="eventos-lista__fecha">
+                                            <span class="eventos-lista__diasem">{{ evento.fecha | dia_semana_corto }}</span>
+                                            <span class="eventos-lista__dia">{{ evento.fecha.day }}</span>
+                                            <span class="eventos-lista__mes">{{ evento.fecha | mes_corto }}</span>
+                                        </div>
+                                        <div class="eventos-lista__cuerpo">
+                                            <h3 class="eventos-lista__titulo">
+                                                <a href="{{ url_for('blog.detail', id=evento.post.id) }}">{{ evento.titulo }}</a>
+                                            </h3>
+                                            <p class="eventos-lista__cuando">
+                                                {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora.strftime("%H:%M") }}{% endif %}{% if evento.lugar %} · {{ evento.lugar }}{% endif %}
+                                            </p>
+                                            {% if evento.descripcion %}
+                                                <p class="eventos-lista__descripcion">{{ evento.descripcion }}</p>
+                                            {% endif %}
+                                            {# El link al perfil de quien lo publico, que es de
+                                               donde sale el resto de sus datos de contacto. #}
+                                            <p class="eventos-lista__post">
+                                                Publicado por
+                                                <a href="{{ url_for('profile.view_profile', slug=evento.post.author_user.slug) }}">
+                                                    {{ evento.post.author_user.username }}
+                                                </a>
+                                                · {{ evento.post.title }}
+                                            </p>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </section>
+                    {% endfor %}
+
+                    {% include "partials/_paginacion.html" %}
+                {% else %}
+                    <div class="catalogo__vacio">
+                        <p>No hay eventos anunciados por ahora.</p>
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
+
+            <aside class="cartelera__lateral">
+                {% include "partials/_calendario.html" %}
+
+                <div class="cartelera__cta">
+                    <h2 class="cartelera__cta-titulo">¿Organizás una feria o un taller?</h2>
+                    <p class="cartelera__cta-texto">
+                        Publicalo gratis desde uno de tus emprendimientos. Tarda un minuto,
+                        y cuando pasa la fecha se archiva solo.
+                    </p>
+                    {% if g.user %}
+                        <a href="{{ url_for('eventos.nuevo') }}" class="btn btn--primary">Publicar evento</a>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn--primary">Entrar para publicar</a>
+                    {% endif %}
+                </div>
+            </aside>
+        </div>
     </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/calendario.js') }}"></script>
 {% endblock %}

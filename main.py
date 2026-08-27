@@ -21,7 +21,9 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from config import get_config
 from db import db
-from services.eventos import dia_semana_corto, formatear_fecha, mes_corto
+from services.eventos import (
+    dia_semana_corto, formatear_fecha, mes_corto, parsear_fecha,
+)
 from services.formatting import render_biography
 from services.precios import formatear as formatear_precio
 from services.precios import texto_para_formulario as precio_para_formulario
@@ -141,6 +143,10 @@ def _registrar_filtros_jinja(app):
     app.jinja_env.filters["fecha_evento"] = formatear_fecha
     app.jinja_env.filters["mes_corto"] = mes_corto
     app.jinja_env.filters["dia_semana_corto"] = dia_semana_corto
+    # "2026-09-13" -> date, para la vista previa del formulario de evento,
+    # que trabaja sobre el texto crudo que mando el usuario. Devuelve None
+    # si esta vacio o mal escrito, y la plantilla ya pregunta antes de usarlo.
+    app.jinja_env.filters["fecha_desde_iso"] = parsear_fecha
     # "$ 1.500,50", con los separadores de aca (ver services/precios.py).
     # Filtro y no property del modelo: como mostrar un precio es de la
     # vista, y asi lo usan igual el catalogo y el panel.

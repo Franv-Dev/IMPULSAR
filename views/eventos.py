@@ -16,7 +16,7 @@ from sqlalchemy.orm import joinedload
 from db import db
 from models.event import Event
 from app.blog.modelo_post import Post
-from services.eventos import parsear_fecha, proximos
+from services.eventos import agrupar_por_mes, parsear_fecha, proximos
 from services.horarios import formatear as formatear_hora, parsear_hora
 from views.auth import login_required
 
@@ -40,7 +40,14 @@ def index():
             error_out=False,
         )
     )
-    return render_template("eventos/index.html", paginacion=paginacion)
+    # Agrupados por mes para los encabezados de la cartelera. Se agrupa la
+    # pagina y no el total: un mes puede quedar partido entre dos paginas, que
+    # es lo mismo que ya pasa con cualquier corte por fecha.
+    return render_template(
+        "eventos/index.html",
+        paginacion=paginacion,
+        meses=agrupar_por_mes(paginacion.items),
+    )
 
 
 def _evento_propio(id):

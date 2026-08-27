@@ -6,8 +6,8 @@ import pytest
 
 from models.event import Event
 from services.eventos import (
-    en_rango, hoy_en_argentina, parsear_fecha, parsear_mes, pasados, proximos,
-    rango_del_mes,
+    agrupar_por_mes, en_rango, hoy_en_argentina, mes_y_anio, parsear_fecha,
+    parsear_mes, pasados, proximos, rango_del_mes,
 )
 from views import eventos_api
 
@@ -845,3 +845,112 @@ def test_el_home_no_repite_ids(client):
     # backspace y el test daba verde con el id duplicado puesto.
     assert ids, "el patron no encontro ningun id: el test no esta probando nada"
     assert repetidos == []
+
+
+# --- cartelera: agrupado por mes y honestidad de datos
+
+def test_mes_y_anio_no_depende_del_locale():
+    """Escrito a mano y no strftime("%B"), que en el servidor puede dar ingles."""
+    assert mes_y_anio(date(2026, 8, 22)) == "agosto 2026"
+    assert mes_y_anio(None) == ""
+
+
+def test_agrupar_por_mes_corta_cuando_cambia_el_mes(
+    db, crear_usuario, crear_post, crear_evento
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    # crear_evento toma dias desde hoy; se fuerzan las fechas para que caigan
+    # en meses distintos sin depender de cuando corre el test.
+    uno = crear_evento(post.id, titulo="Feria de agosto")
+    dos = crear_evento(post.id, titulo="Otra de agosto")
+    tres = crear_evento(post.id, titulo="Feria de septiembre")
+    uno.fecha = date(2026, 8, 22)
+    dos.fecha = date(2026, 8, 30)
+    tres.fecha = date(2026, 9, 5)
+    db.session.commit()
+
+    grupos = agrupar_por_mes([uno, dos, tres])
+
+    assert [g["nombre"] for g in grupos] == ["agosto 2026", "septiembre 2026"]
+    assert [len(g["eventos"]) for g in grupos] == [2, 1]
+
+
+def test_agrupar_por_mes_de_una_lista_vacia():
+    assert agrupar_por_mes([]) == []
+
+
+def test_la_cartelera_agrupa_por_mes(client, emprendedor_con_post, crear_evento):
+    _usuario, post = emprendedor_con_post()
+    crear_evento(post.id, titulo="Feria próxima", dias=3)
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    esperado = mes_y_anio(hoy_en_argentina() + timedelta(days=3))
+    assert esperado in html
+    assert "1 evento" in html
+
+
+def test_la_cartelera_cuenta_las_fechas_sin_inventar_la_ciudad(
+    client, emprendedor_con_post, crear_evento
+):
+    """El mockup decia "18 fechas anunciadas por emprendimientos de San Rafael".
+
+    La ciudad no es un dato que Post tenga: misma decision que ya se tomo en
+    templates/auth/_panel.html. Queda el numero, que si es real.
+    """
+    _usuario, post = emprendedor_con_post()
+    crear_evento(post.id, dias=3)
+    crear_evento(post.id, dias=5)
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert "2 fechas anunciadas" in html
+    assert "San Rafael" not in html
+
+
+def test_la_cartelera_no_maqueta_lo_que_no_existe(
+    client, emprendedor_con_post, crear_evento
+):
+    """Ni tipo de evento, ni gratis/pago, ni asistentes: nada de eso existe.
+
+    Los tres van a backlog como epica (taxonomia + tabla nueva), no
+    maquetados en falso.
+    """
+    _usuario, post = emprendedor_con_post()
+    crear_evento(post.id, titulo="Feria de la plaza")
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert "Entrada libre" not in html
+    assert "Me interesa" not in html
+    assert "van</" not in html
+
+
+def test_el_formulario_de_evento_no_ofrece_guardar_borrador(
+    client, emprendedor_con_post
+):
+    """Event no tiene estado de borrador, ni Post tampoco."""
+    emprendedor_con_post()
+
+    html = client.get("/eventos/nuevo").get_data(as_text=True)
+
+    assert "borrador" not in html.lower()
+
+
+def test_la_vista_previa_aguanta_una_fecha_mal_escrita(
+    client, emprendedor_con_post
+):
+    """Tras un error de validacion el formulario vuelve con el texto crudo.
+
+    La vista previa pregunta por la fecha ya parseada, asi que "13/09/2026"
+    -- que no es vacio pero tampoco es una fecha -- no la rompe.
+    """
+    _usuario, post = emprendedor_con_post()
+
+    respuesta = client.post("/eventos/nuevo", data={
+        "post_id": post.id, "titulo": "Feria", "fecha": "13/09/2026",
+    })
+
+    assert respuesta.status_code == 200
+    assert "Así se va a ver en la cartelera" in respuesta.get_data(as_text=True)
