@@ -491,7 +491,14 @@
    siempre y el JS la escondia despues, asi que un perfil sin direccion igual
    descargaba maplibre. #}
 {% if user.latitude and user.longitude %}
-<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+{# Version pineada a proposito. Sin el @5.24.0 unpkg sirve la ultima, y
+   maplibre 6 dejo de publicar el build UMD: en dist/ solo quedan .mjs, asi
+   que dist/maplibre-gl.js pasa a ser un 404 y maplibregl nunca llega a
+   existir. El mapa se caia sin decir nada, porque el codigo de abajo esta
+   adentro de un DOMContentLoaded y el ReferenceError se queda en la
+   consola. Para subir a la 6 hay que pasar este bloque a type="module" e
+   importar el .mjs; mientras tanto, 5.x sigue teniendo UMD. #}
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const mapContainer = document.getElementById("map");
