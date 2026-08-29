@@ -1085,6 +1085,13 @@ main {
 
 .orden {
     display: flex;
+    /* Que envuelva antes que apretar la pastilla. Sin esto, en 390px el grupo
+       recibe 263px y necesita 297 (manda "Mejor puntuados", que solo el
+       sale 130), asi que los botones se parten en dos renglones y la pastilla
+       -- que es un recuadro con fondo propio -- queda cortada al medio y se
+       lee como un error de render. Con el wrap baja el label a su renglon,
+       el grupo se queda con los 342 enteros y entra de una. */
+    flex-wrap: wrap;
     align-items: center;
     gap: 10px;
 }
@@ -1096,6 +1103,10 @@ main {
 
 .orden__grupo {
     display: flex;
+    /* Ultimo recurso, para pantallas mas angostas que ~360px: ahi ni con el
+       renglon entero (el que le deja el wrap de .orden, aca arriba) entran
+       los tres botones, y prefiero que bajen de linea antes que desbordar. */
+    flex-wrap: wrap;
     gap: 2px;
     padding: 3px;
     border-radius: var(--radius-sm);
@@ -1138,8 +1149,22 @@ main {
     gap: 18px;
 }
 
+/* El wrap es lo que evita que "Ordenar por" se vaya de pantalla en mobile.
+   El desborde no lo causaba el control en si -- necesita 321px y en un
+   viewport de 390 hay 342 disponibles -- sino esta fila: con space-between y
+   sin wrap, el titulo se queda con su ancho y empuja a .orden a arrancar en
+   x=263, asi que los tres botones terminan en 585px contra 390 de viewport.
+
+   Va sin media query a proposito. El primer intento fue un @media de 480px,
+   que es el breakpoint que usa el resto de la hoja, y quedaba corto: medido
+   con Playwright de 320 a 920, el desborde seguia hasta los ~590px. Cualquier
+   numero que eligiera iba a ser una constante atada al largo de estas tres
+   etiquetas, y se rompe sola el dia que alguien renombre "Mejor puntuados".
+   Con wrap el control baja de linea justo cuando deja de entrar, sea cual sea
+   el ancho. */
 .resultados__head {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 20px;
