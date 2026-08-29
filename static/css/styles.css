@@ -1297,8 +1297,11 @@ main {
     margin-top: 0.25rem;
 }
 
+/* Chico es el texto, no el area: hereda el inline-flex centrado de .btn y le
+   suma el piso de 32px. */
 .btn--chico {
     font-size: 0.8rem;
+    min-height: 32px;
     padding: 0.3rem 0.8rem;
 }
 
@@ -2249,8 +2252,11 @@ main {
     gap: 0.4rem;
 }
 
+/* Solo min-height: .btn ya viene inline-flex y centrado, asi que alcanza con
+   darle el piso de 32px de area clickeable sin tocar el tamaño del texto. */
 .eventos-lista__acciones .btn {
     font-size: 0.8rem;
+    min-height: 32px;
     padding: 0.3rem 0.8rem;
 }
 
@@ -4208,6 +4214,14 @@ a.perfil-dato:hover {
     cursor: pointer;
     font-size: 1rem;
     line-height: 1;
+    /* El alto lo fija min-height y no el padding, para que el area clickeable
+       llegue a 32px sin agrandar el icono. Como el <button> por default es
+       inline-block, hace falta el inline-flex para que el 🔗 quede centrado
+       adentro del alto extra en vez de apoyado arriba. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
     padding: 0.15rem 0.3rem;
     border-radius: var(--radius-sm);
     color: var(--color-muted);
