@@ -509,7 +509,7 @@
 
         map.addControl(new maplibregl.NavigationControl());
 
-        new maplibregl.Marker({ color: "var(--color-primary, #6C63FF)" })
+        new maplibregl.Marker({ color: "var(--color-primary, #3E2F94)" })
             .setLngLat([{{ user.longitude }}, {{ user.latitude }}])
             .setPopup(new maplibregl.Popup().setText("{{ user.address_street or 'Ubicación' }}"))
             .addTo(map);
