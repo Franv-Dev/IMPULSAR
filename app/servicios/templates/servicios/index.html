@@ -85,7 +85,7 @@
                                 <form method="post"
                                       action="{{ url_for('servicios.eliminar', id=servicio.id) }}"
                                       class="form-inline"
-                                      onsubmit="return confirm('¿Seguro que querés eliminar este servicio?');">
+                                      data-confirm="¿Seguro que querés eliminar este servicio?">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit"
                                             class="btn btn--ghost"

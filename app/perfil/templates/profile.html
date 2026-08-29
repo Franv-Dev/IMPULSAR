@@ -345,7 +345,7 @@
                                             {# POST y no un link: borrar no puede pasar por un GET. #}
                                             <form method="post" action="{{ url_for('eventos.eliminar', id=evento.id) }}"
                                                   class="form-inline"
-                                                  onsubmit="return confirm('¿Seguro que querés eliminar este evento?');">
+                                                  data-confirm="¿Seguro que querés eliminar este evento?">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="btn btn--ghost">Eliminar</button>
                                             </form>
@@ -379,7 +379,7 @@
                                                 <a href="{{ url_for('eventos.editar', id=evento.id) }}" class="btn btn--secondary">Editar</a>
                                                 <form method="post" action="{{ url_for('eventos.eliminar', id=evento.id) }}"
                                                       class="form-inline"
-                                                      onsubmit="return confirm('¿Seguro que querés eliminar este evento?');">
+                                                      data-confirm="¿Seguro que querés eliminar este evento?">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <button type="submit" class="btn btn--ghost">Eliminar</button>
                                                 </form>

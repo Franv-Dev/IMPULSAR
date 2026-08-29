@@ -111,7 +111,7 @@
                                         <td>
                                             {% if u.rol != Roles.ADMIN %}
                                                 <form method="post" action="{{ url_for('admin.toggle_ban', user_id=u.id) }}"
-                                                    onsubmit="return confirm('¿Seguro que querés {{ 'desbanear' if u.is_banned else 'banear' }} a {{ u.username }}?');">
+                                                    data-confirm="¿Seguro que querés {{ 'desbanear' if u.is_banned else 'banear' }} a {{ u.username }}?">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <button type="submit" class="btn btn--ghost btn--chico">
                                                         {{ 'Desbanear' if u.is_banned else 'Banear' }}
@@ -134,7 +134,6 @@
                         A los administradores no se los puede banear.
                     </p>
 
-                    {% include "partials/_paginacion.html" %}
                 {% else %}
                     <div class="catalogo__vacio">
                         <p>
@@ -146,6 +145,13 @@
                         </p>
                     </div>
                 {% endif %}
+
+                {# Fuera del if de arriba a proposito: con ?page=999 (escrito a
+                   mano, o un link viejo despues de que se borraran filas) la lista
+                   viene vacia, y adentro del if la paginacion desaparecia justo
+                   cuando es lo unico que sirve para volver. El propio partial no
+                   dibuja nada si hay una sola pagina. #}
+                {% include "partials/_paginacion.html" %}
             </div>
         </div>
     </div>

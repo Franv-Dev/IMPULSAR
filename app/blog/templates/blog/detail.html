@@ -326,7 +326,7 @@
                         action="{{ url_for('blog.delete_review', review_id=mi_review.id) }}"
                         class="form-inline"
                         style="margin-top:0.75rem;"
-                        onsubmit="return confirm('¿Seguro que querés eliminar tu reseña?');">
+                        data-confirm="¿Seguro que querés eliminar tu reseña?">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn--ghost" style="font-size:0.85rem;">
                             Eliminar mi reseña
@@ -358,7 +358,7 @@
                     </a>
                     <form method="post"
                           action="{{ url_for('blog.delete', id=post.id) }}"
-                          onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                          data-confirm="¿Seguro que querés eliminar este emprendimiento?">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn--ghost lateral__accion">Eliminar</button>
                     </form>

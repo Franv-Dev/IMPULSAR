@@ -116,7 +116,7 @@
                                                 <form method="post"
                                                       action="{{ url_for('products.eliminar', id=producto.id) }}"
                                                       class="form-inline"
-                                                      onsubmit="return confirm('¿Seguro que querés eliminar «{{ producto.nombre }}»?');">
+                                                      data-confirm="¿Seguro que querés eliminar «{{ producto.nombre }}»?">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <button type="submit" class="btn btn--ghost btn--chico">
                                                         Borrar

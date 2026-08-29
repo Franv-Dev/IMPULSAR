@@ -274,7 +274,7 @@
                                             <form method="post"
                                                   action="{{ url_for('blog.delete', id=post.id) }}"
                                                   class="form-inline"
-                                                  onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
+                                                  data-confirm="¿Seguro que querés eliminar este emprendimiento?">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="btn btn--ghost btn--chico">Eliminar</button>
                                             </form>

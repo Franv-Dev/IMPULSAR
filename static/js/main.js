@@ -543,3 +543,31 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
+
+/* Confirmacion de los formularios destructivos (borrar, banear).
+
+   El texto viaja en data-confirm y el confirm() se arma aca, en vez de ir
+   escrito adentro de un onsubmit="return confirm('...')" en el template.
+   No es cosmetico: ese patron era un XSS almacenado. Jinja escapa la comilla
+   simple de un titulo a &#39;, pero el parser HTML decodifica las entidades
+   del atributo ANTES de compilar el handler, asi que la comilla volvia a
+   aparecer del lado de JS y cerraba el string. Un emprendimiento llamado
+   X' + (codigo) + ' terminaba ejecutando ese codigo en la sesion del admin
+   que apretaba Eliminar.
+
+   Un atributo data- no tiene ese problema porque nunca se compila como JS:
+   el navegador lo decodifica una sola vez y queda como texto en el dataset.
+
+   Es un listener delegado en document y no uno por formulario, para que
+   tambien valga para lo que se agregue al DOM despues. Si el usuario
+   cancela, se frena el submit; sin JS no hay confirmacion y el formulario
+   manda directo, igual que antes (el onsubmit inline tampoco corria). */
+document.addEventListener("submit", (evento) => {
+    const formulario = evento.target.closest("form[data-confirm]");
+    if (!formulario) return;
+
+    if (!window.confirm(formulario.dataset.confirm)) {
+        evento.preventDefault();
+    }
+});

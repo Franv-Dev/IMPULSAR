@@ -183,7 +183,7 @@
                     <form method="post"
                           action="{{ url_for('servicios.cerrar', id=solicitud.id) }}"
                           class="form-inline detalle-solicitud__cerrar"
-                          onsubmit="return confirm('¿Cerrar esta solicitud? No se puede reabrir.');">
+                          data-confirm="¿Cerrar esta solicitud? No se puede reabrir.">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn--ghost">Cerrar solicitud</button>
                     </form>

@@ -628,3 +628,63 @@ def test_la_moderacion_no_consulta_de_mas_por_cada_fila(
     con_nueve = contar_consultas()
 
     assert con_nueve == con_tres
+def test_un_titulo_con_comilla_no_se_escapa_del_confirm(
+    client, crear_usuario, crear_post, login
+):
+    """Un titulo con comilla simple no puede terminar siendo codigo JS.
+
+    Esto era un XSS almacenado. El confirm de borrado se armaba dentro de un
+    onsubmit="return confirm('... «{{ post.title }}» ...')", y ahi el escape de
+    Jinja no alcanza: convierte la comilla a &#39;, pero el parser HTML
+    decodifica las entidades del atributo ANTES de compilar el handler, asi que
+    la comilla reaparecia del lado de JS y cerraba el string. Un emprendimiento
+    llamado  X' + (codigo) + '  ejecutaba ese codigo en la sesion del admin que
+    apretaba Eliminar.
+
+    Ahora el texto viaja en data-confirm, que nunca se compila como JS, y el
+    confirm lo arma el listener delegado de main.js. El test fija las dos
+    mitades: que el dato no vuelva a un atributo de evento, y que dentro de
+    data-confirm la comilla quede escapada.
+    """
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    autor = crear_usuario(username="autor")
+    payload = "X' + (window.__pwned = 1) + '"
+    crear_post(autor.id, title=payload)
+
+    login(admin.id)
+    html = client.get("/admin/emprendimientos").get_data(as_text=True)
+
+    # El titulo llega a la pagina (si no, el test pasaria por no probar nada).
+    assert "window.__pwned" in html
+
+    # No quedan atributos de evento inline donde el payload pudiera compilarse.
+    assert "onsubmit=" not in html
+    assert "onclick=" not in html
+
+    # Y en data-confirm la comilla esta escapada, asi que no corta el atributo.
+    assert payload not in html
+    assert "X&#39; + (window.__pwned = 1) + &#39;" in html
+
+
+def test_una_pagina_fuera_de_rango_deja_volver(client, crear_usuario, login):
+    """?page=999 tiene que seguir mostrando por donde salir.
+
+    Las vistas paginan con error_out=False, asi que una pagina inexistente no
+    da 404: devuelve la lista vacia. La paginacion estaba adentro del
+    {% if paginacion.items %}, asi que desaparecia justo cuando es lo unico
+    que sirve para volver, y encima quedaba el cartel de "no hay usuarios",
+    que es falso.
+
+    "Anterior" tiene que apuntar a la ultima pagina real (2), no a page - 1
+    (998), que estaria igual de vacia.
+    """
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    for numero in range(25):  # 25 + la admin = 26 usuarios, 20 por pagina => 2
+        crear_usuario(username=f"usuario{numero:02d}")
+
+    login(admin.id)
+    html = client.get("/admin/usuarios?page=999").get_data(as_text=True)
+
+    assert 'class="pagination"' in html
+    assert "/admin/usuarios?page=2" in html
+    assert "/admin/usuarios?page=998" not in html
