@@ -12,7 +12,7 @@ haya validado bien, asi que lo hace la vista.
 
 from flask import request
 
-from app.blog.reglas import RATING_MAXIMO, RATING_MINIMO
+from app.blog.reglas import RATING_MAXIMO, RATING_MINIMO, radio_valido
 
 
 def leer_post(pedir_descripcion=True):
@@ -110,17 +110,28 @@ def leer_busqueda():
 
 
 def leer_cercania():
-    """Los tres campos de la busqueda por cercania, sin resolver nada.
+    """Los campos de la busqueda por cercania, sin resolver nada.
+
+    Devuelve (cerca_de, lat, lon, radio_km).
 
     Se puede pasar lat/lon directamente (por ejemplo desde la geolocalizacion
     del navegador) o una direccion en texto para geocodificar. Traducir el texto
     a coordenadas es una llamada a MapTiler, o sea trabajo con red de por medio,
     y eso lo hace la vista: aca solo se lee lo que vino.
+
+    El radio si se valida aca, y no como la categoria (que se devuelve tal cual
+    vino para repintar el <select>): un radio raro no se le repinta a nadie
+    -- son tres botones, se marca el que coincida y listo -- y dejarlo pasar
+    mandaria un numero cualquiera de la URL a una cuenta en el WHERE. Cualquier
+    cosa que no sea uno de reglas.RADIOS_KM vuelve como None, que es "sin
+    radio", el mismo caso que no mandar nada.
     """
+    radio = request.args.get("radio", type=int)
     return (
         (request.args.get("near") or "").strip(),
         request.args.get("lat", type=float),
         request.args.get("lon", type=float),
+        radio if radio_valido(radio) else None,
     )
 
 

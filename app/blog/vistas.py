@@ -118,7 +118,7 @@ def index():
     """Lista pública de emprendimientos, paginada, con busqueda y filtro por categoria."""
     busqueda = formulario.leer_busqueda()
     categoria = formulario.leer_categoria_de_filtro()
-    cerca_de, lat, lon = formulario.leer_cercania()
+    cerca_de, lat, lon, radio_km = formulario.leer_cercania()
 
     # Geocodificar es una llamada a MapTiler: se hace solo si el usuario mando
     # una direccion en texto y no las coordenadas ya resueltas.
@@ -136,6 +136,9 @@ def index():
         categoria=categoria if reglas.categoria_valida(categoria) else None,
         lat=lat,
         lon=lon,
+        # Todavia no hay UI que lo mande: hoy solo entra por ?radio= en la URL.
+        # El checkbox y los botones los pone la pantalla nueva de Explorar.
+        radio_km=radio_km,
         pagina=formulario.leer_pagina(),
         por_pagina=current_app.config["POSTS_POR_PAGINA"],
     )

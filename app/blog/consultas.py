@@ -66,7 +66,10 @@ def _distancia_km(lat, lon):
     return 6371 * func.acos(argumento_acotado)
 
 
-def buscar_posts(busqueda, categoria, lat, lon, pagina, por_pagina):
+def buscar_posts(
+    busqueda, categoria, lat, lon, pagina, por_pagina,
+    con_resenias=False, radio_km=None,
+):
     """El listado publico, ya paginado.
 
     Devuelve (paginacion, ordenado_por_distancia). Cuando ordena por distancia
@@ -74,11 +77,20 @@ def buscar_posts(busqueda, categoria, lat, lon, pagina, por_pagina):
     que saber en cual de los dos modos vino; por eso el bool va en el retorno y
     no lo tiene que deducir la vista mirando lat y lon otra vez.
 
+    con_resenias deja solo los que tienen al menos una. Lo resuelve la misma
+    subquery que ya trae el promedio (ver services/ratings.py), no un join
+    aparte.
+
+    radio_km acota los resultados a esa distancia. Solo tiene efecto cuando hay
+    lat/lon: sin coordenadas no hay desde donde medir, asi que se ignora en vez
+    de vaciar el listado. Sin radio, el comportamiento es el mismo de siempre:
+    ordena por cercania y no descarta nada por lejos que este.
+
     La relacion author_user usa lazy="joined", asi que el autor viene en la
     misma consulta y no se dispara un SELECT por cada post (problema N+1). El
     promedio de reseñas se trae con el mismo criterio (ver services/ratings.py).
     """
-    query = query_posts_con_rating()
+    query = query_posts_con_rating(solo_con_resenias=con_resenias)
 
     if busqueda:
         patron = f"%{busqueda}%"
@@ -94,6 +106,10 @@ def buscar_posts(busqueda, categoria, lat, lon, pagina, por_pagina):
         query = query.filter(Post.latitude.isnot(None), Post.longitude.isnot(None))
         distancia = _distancia_km(lat, lon)
         query = query.add_columns(distancia.label("distance_km"))
+        if radio_km is not None:
+            # Va la expresion entera y no la etiqueta "distance_km": MySQL no
+            # deja usar un alias del SELECT adentro del WHERE.
+            query = query.filter(distancia <= radio_km)
         orden = distancia.asc()
     else:
         orden = Post.created.desc()

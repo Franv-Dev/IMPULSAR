@@ -18,6 +18,13 @@ TIPOS_REPORTABLES = ("post", "review")
 RATING_MINIMO = 1
 RATING_MAXIMO = 5
 
+# Los radios que ofrece la busqueda por cercania, en km. Es una lista corta y
+# cerrada y no un numero libre a proposito: el filtro va al WHERE como una
+# cuenta de trigonometria sobre toda la tabla, asi que aceptar cualquier valor
+# es dejar que desde la URL se pidan consultas arbitrarias. Ademas la pantalla
+# lo muestra como tres botones, no como un campo.
+RADIOS_KM = (1, 5, 10)
+
 
 def es_el_autor(post, user_id):
     """Si ese emprendimiento es de ese usuario.
@@ -93,6 +100,11 @@ def entran_las_fotos(cuantas_pide, ya_ocupados=0):
 def lugares_libres(ya_ocupados):
     """Cuantas fotos mas acepta el emprendimiento. Nunca negativo."""
     return max(0, MAX_IMAGENES_POR_POST - ya_ocupados)
+
+
+def radio_valido(radio):
+    """Si ese radio es uno de los que se ofrecen."""
+    return radio in RADIOS_KM
 
 
 def categoria_valida(categoria):

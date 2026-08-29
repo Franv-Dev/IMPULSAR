@@ -5,7 +5,7 @@ import re
 import pytest
 from sqlalchemy import event
 
-from app.blog import reglas
+from app.blog import consultas, reglas
 from app.blog.modelo_post import Categorias, Post
 from app.blog.modelo_resenia import Review
 from models.user import User
@@ -661,6 +661,164 @@ def test_sin_filtro_de_cercania_el_orden_por_defecto_no_cambia(
 
     # Orden por fecha de creacion (mas nuevo primero), no por distancia.
     assert html.index("Segundo") < html.index("Primero")
+
+
+# ------------------------------------------------- filtro "con reseñas"
+
+def _con_resenia(db, post, usuario, puntaje=4):
+    db.session.add(Review(post_id=post.id, user_id=usuario.id, rating=puntaje))
+    db.session.commit()
+
+
+def test_con_resenias_deja_solo_los_que_tienen_alguna(
+    app, db, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    resenado = crear_post(autor.id, title="Con reseñas")
+    crear_post(autor.id, title="Sin reseñas")
+    _con_resenia(db, resenado, cliente)
+
+    paginacion, _ = consultas.buscar_posts(
+        busqueda=None, categoria=None, lat=None, lon=None,
+        pagina=1, por_pagina=20, con_resenias=True,
+    )
+
+    titulos = [fila[0].title for fila in paginacion.items]
+    assert titulos == ["Con reseñas"]
+
+
+def test_sin_el_filtro_vuelven_tambien_los_que_no_tienen_resenias(
+    app, db, crear_usuario, crear_post
+):
+    """El default no cambia lo que ya hacia el listado."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    resenado = crear_post(autor.id, title="Con reseñas")
+    crear_post(autor.id, title="Sin reseñas")
+    _con_resenia(db, resenado, cliente)
+
+    paginacion, _ = consultas.buscar_posts(
+        busqueda=None, categoria=None, lat=None, lon=None,
+        pagina=1, por_pagina=20,
+    )
+
+    titulos = sorted(fila[0].title for fila in paginacion.items)
+    assert titulos == ["Con reseñas", "Sin reseñas"]
+
+
+def test_con_resenias_no_duplica_filas_cuando_hay_varias(
+    app, db, crear_usuario, crear_post
+):
+    """El filtro va sobre la subquery agrupada, asi que el post viene una vez.
+
+    Si en vez de eso se joineara reviews directo, un post con tres reseñas
+    apareceria tres veces en el listado.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Muy reseñado")
+    for numero in range(3):
+        cliente = crear_usuario(username=f"cliente{numero}")
+        _con_resenia(db, post, cliente)
+
+    paginacion, _ = consultas.buscar_posts(
+        busqueda=None, categoria=None, lat=None, lon=None,
+        pagina=1, por_pagina=20, con_resenias=True,
+    )
+
+    assert [fila[0].title for fila in paginacion.items] == ["Muy reseñado"]
+
+
+# ------------------------------------------------------ radio de distancia
+
+# Referencia de todos estos: Ciudad de Mendoza. "Cerca" queda a metros y
+# "Lejos" a unos 90 km, los mismos puntos que usan los tests de orden.
+CERCA = {"latitude": -32.891, "longitude": -68.841}
+LEJOS = {"latitude": -33.5, "longitude": -69.5}
+DESDE = "lat=-32.89&lon=-68.84"
+
+
+def test_el_radio_deja_afuera_lo_que_esta_mas_lejos(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Acá nomás", **CERCA)
+    crear_post(autor.id, title="A noventa km", **LEJOS)
+
+    html = client.get(f"/blog/?{DESDE}&radio=5").get_data(as_text=True)
+
+    assert "Acá nomás" in html
+    assert "A noventa km" not in html
+
+
+def test_el_radio_mas_grande_alcanza_para_los_dos(client, crear_usuario, crear_post):
+    """Que el de 5 km lo excluya tiene que ser por la distancia, no porque si."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Acá nomás", **CERCA)
+    crear_post(autor.id, title="A ocho km", latitude=-32.96, longitude=-68.841)
+
+    html = client.get(f"/blog/?{DESDE}&radio=10").get_data(as_text=True)
+
+    assert "Acá nomás" in html
+    assert "A ocho km" in html
+
+
+def test_sin_radio_no_se_descarta_nada_por_lejos(client, crear_usuario, crear_post):
+    """El comportamiento de hoy: ordena por cercania pero los trae a todos."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Acá nomás", **CERCA)
+    crear_post(autor.id, title="A noventa km", **LEJOS)
+
+    html = client.get(f"/blog/?{DESDE}").get_data(as_text=True)
+
+    assert "Acá nomás" in html
+    assert "A noventa km" in html
+    assert html.index("Acá nomás") < html.index("A noventa km")
+
+
+def test_el_radio_sin_coordenadas_no_hace_nada(client, crear_usuario, crear_post):
+    """Sin lat/lon no hay desde donde medir: se ignora en vez de vaciar todo."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Acá nomás", **CERCA)
+    crear_post(autor.id, title="A noventa km", **LEJOS)
+
+    html = client.get("/blog/?radio=1").get_data(as_text=True)
+
+    assert "Acá nomás" in html
+    assert "A noventa km" in html
+
+
+@pytest.mark.parametrize("radio", ["7", "0", "-5", "99999", "abc", ""])
+def test_un_radio_que_no_esta_en_la_lista_se_ignora(
+    client, crear_usuario, crear_post, radio
+):
+    """Vale lo mismo que no mandar radio, no filtrar con un numero cualquiera."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Acá nomás", **CERCA)
+    crear_post(autor.id, title="A noventa km", **LEJOS)
+
+    html = client.get(f"/blog/?{DESDE}&radio={radio}").get_data(as_text=True)
+
+    assert "Acá nomás" in html
+    assert "A noventa km" in html
+
+
+def test_el_radio_se_combina_con_el_filtro_de_resenias(
+    app, db, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    cerca_con = crear_post(autor.id, title="Cerca y reseñado", **CERCA)
+    crear_post(autor.id, title="Cerca sin reseñas", **CERCA)
+    lejos_con = crear_post(autor.id, title="Lejos y reseñado", **LEJOS)
+    _con_resenia(db, cerca_con, cliente)
+    _con_resenia(db, lejos_con, cliente)
+
+    paginacion, ordenado = consultas.buscar_posts(
+        busqueda=None, categoria=None, lat=-32.89, lon=-68.84,
+        pagina=1, por_pagina=20, con_resenias=True, radio_km=5,
+    )
+
+    assert ordenado is True
+    assert [fila[0].title for fila in paginacion.items] == ["Cerca y reseñado"]
 
 
 # ------------------------------------------------------------------ compartir
