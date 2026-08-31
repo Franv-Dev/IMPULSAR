@@ -869,6 +869,23 @@ def test_solo_verificados_sigue_apagado(client):
     assert re.search(r'name="abierto_ahora"[^>]*disabled', html) is None
 
 
+def test_el_aviso_del_grupo_nombra_al_filtro_que_falta(client):
+    """"Estos dos todavía no filtran" no decia cuales eran los dos.
+
+    Ahora ademas quedo uno solo, asi que el aviso tiene que nombrarlo. Se
+    escribe "Solo verificados" (la etiqueta del control, en minuscula) y no
+    "Verificado": esa palabra en el listado es justamente la que fija
+    test_el_listado_no_dice_que_un_emprendimiento_esta_verificado, porque un
+    Post no tiene verificacion que afirmar.
+    """
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert "Solo verificados» todavía no filtra" in html
+    assert "Estos dos" not in html
+    # La misma regla del otro test, para que el aviso no la rompa de costado.
+    assert "Verificado" not in html
+
+
 def test_sin_radio_en_la_url_queda_marcado_toda(client):
     html = client.get("/blog/").get_data(as_text=True)
 
