@@ -135,5 +135,14 @@ def leer_cercania():
     )
 
 
+def leer_con_resenias():
+    """Si el listado tiene que dejar solo los emprendimientos con resenias.
+
+    Es un checkbox: lo que importa es si vino o no, no que dice. Un checkbox
+    sin marcar directamente no viaja en el GET, asi que "no esta" es "no".
+    """
+    return request.args.get("con_resenias") is not None
+
+
 def leer_pagina():
     return request.args.get("page", 1, type=int)

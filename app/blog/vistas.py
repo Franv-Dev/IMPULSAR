@@ -119,6 +119,7 @@ def index():
     busqueda = formulario.leer_busqueda()
     categoria = formulario.leer_categoria_de_filtro()
     cerca_de, lat, lon, radio_km = formulario.leer_cercania()
+    con_resenias = formulario.leer_con_resenias()
 
     # Geocodificar es una llamada a MapTiler: se hace solo si el usuario mando
     # una direccion en texto y no las coordenadas ya resueltas.
@@ -136,9 +137,8 @@ def index():
         categoria=categoria if reglas.categoria_valida(categoria) else None,
         lat=lat,
         lon=lon,
-        # Todavia no hay UI que lo mande: hoy solo entra por ?radio= en la URL.
-        # El checkbox y los botones los pone la pantalla nueva de Explorar.
         radio_km=radio_km,
+        con_resenias=con_resenias,
         pagina=formulario.leer_pagina(),
         por_pagina=current_app.config["POSTS_POR_PAGINA"],
     )
@@ -169,6 +169,11 @@ def index():
         busqueda_actual=busqueda,
         cerca_de_actual=cerca_de,
         ordenado_por_distancia=ordenado_por_distancia,
+        # Ya validado: es uno de reglas.RADIOS_KM o None ("Toda"). El template
+        # lo usa solo para marcar el chip que corresponde.
+        radio_actual=radio_km,
+        radios_km=reglas.RADIOS_KM,
+        con_resenias_actual=con_resenias,
         # Los numeros que van al lado de cada rubro en la columna de filtros.
         # Son de toda la plataforma y no de la busqueda actual, a proposito:
         # dicen cuanto hay si te movés a ese rubro, que es para lo que se

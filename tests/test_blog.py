@@ -821,6 +821,116 @@ def test_el_radio_se_combina_con_el_filtro_de_resenias(
     assert [fila[0].title for fila in paginacion.items] == ["Cerca y reseñado"]
 
 
+# --------------------------------------- el panel de filtros contra la query
+
+# Los dos controles que la pantalla dibujaba apagados y ahora mandan. Lo que se
+# prueba aca no es el filtro (eso esta mas arriba, contra buscar_posts) sino el
+# cableado: que el formulario mande lo que la consulta espera y que la pantalla
+# se repinte con lo que quedo aplicado.
+
+
+def _marcado(html, name):
+    """El value del input `name` que viene checked, o None si no hay ninguno."""
+    for etiqueta in re.findall(r'<input[^>]*\bname="{}"[^>]*>'.format(name), html):
+        if "checked" in etiqueta:
+            return re.search(r'value="([^"]*)"', etiqueta).group(1)
+    return None
+
+
+def test_el_radio_viaja_en_km_enteros_y_no_como_etiqueta(client):
+    """El backend espera reglas.RADIOS_KM. Un value de "5 km" no filtra nada.
+
+    Y no falla en ningun lado: leer_cercania lo lee con type=int, "5 km" vuelve
+    None y el listado sale sin acotar, como si el usuario no hubiera elegido.
+    """
+    html = client.get("/blog/").get_data(as_text=True)
+
+    for km in reglas.RADIOS_KM:
+        assert 'name="radio" value="{}"'.format(km) in html
+    assert 'value="1 km"' not in html
+
+
+def test_los_dos_filtros_nuevos_ya_no_estan_apagados(client):
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert '<fieldset class="filtros__radios">' in html
+    assert re.search(r'name="con_resenias"[^>]*disabled', html) is None
+
+
+def test_los_otros_dos_del_grupo_siguen_apagados(client):
+    """Solo verificados y Abierto ahora no tienen backend: no pueden viajar."""
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert re.search(r'name="solo_verificados"[^>]*disabled', html)
+    assert re.search(r'name="abierto_ahora"[^>]*disabled', html)
+
+
+def test_sin_radio_en_la_url_queda_marcado_toda(client):
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert _marcado(html, "radio") == ""
+
+
+def test_el_radio_de_la_url_queda_marcado(client):
+    html = client.get("/blog/?{}&radio=5".format(DESDE)).get_data(as_text=True)
+
+    assert _marcado(html, "radio") == "5"
+
+
+def test_un_radio_invalido_repinta_toda(client):
+    """Se ignora para filtrar (mas arriba) y tampoco se le repinta al usuario."""
+    html = client.get("/blog/?{}&radio=7".format(DESDE)).get_data(as_text=True)
+
+    assert _marcado(html, "radio") == ""
+
+
+def test_el_checkbox_de_resenias_llega_hasta_la_consulta(
+    app, db, client, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    resenado = crear_post(autor.id, title="Panadería reseñada")
+    crear_post(autor.id, title="Panadería recién abierta")
+    _con_resenia(db, resenado, cliente)
+
+    html = client.get("/blog/?con_resenias=1").get_data(as_text=True)
+
+    assert "Panadería reseñada" in html
+    assert "Panadería recién abierta" not in html
+
+
+def test_sin_el_checkbox_el_listado_los_trae_a_los_dos(
+    app, db, client, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    resenado = crear_post(autor.id, title="Panadería reseñada")
+    crear_post(autor.id, title="Panadería recién abierta")
+    _con_resenia(db, resenado, cliente)
+
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert "Panadería reseñada" in html
+    assert "Panadería recién abierta" in html
+
+
+def test_el_checkbox_de_resenias_queda_marcado(client):
+    html = client.get("/blog/?con_resenias=1").get_data(as_text=True)
+
+    assert _marcado(html, "con_resenias") == "1"
+
+
+def test_los_dos_filtros_nuevos_se_pueden_sacar_de_a_uno(client):
+    """Aplicados salen como chip, igual que el texto, el rubro y la cercania."""
+    html = client.get(
+        "/blog/?{}&radio=5&con_resenias=1".format(DESDE)
+    ).get_data(as_text=True)
+
+    assert "Hasta 5 km" in html
+    assert 'aria-label="Quitar el filtro de radio"' in html
+    assert 'aria-label="Quitar el filtro de reseñas"' in html
+
+
 # ------------------------------------------------------------------ compartir
 
 def test_la_tarjeta_incluye_el_link_para_compartir(client, crear_usuario, crear_post):

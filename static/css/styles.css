@@ -1027,16 +1027,11 @@ main {
     cursor: pointer;
 }
 
-/* Los grupos que todavia no filtran van con <fieldset disabled>: el navegador
-   les baja la opacidad solo en algunos casos, asi que se explicita para que se
-   lea como apagado y no como roto. */
-.filtros__grupo:disabled,
-.filtros__radios:disabled {
+/* Las opciones que todavia no filtran van con el input disabled: el navegador
+   no le baja la opacidad a la etiqueta, asi que se explicita para que se lea
+   como apagado y no como roto. */
+.filtro-opcion:has(input:disabled) {
     opacity: 0.65;
-}
-
-.filtros__grupo:disabled .filtro-opcion,
-.filtros__radios:disabled .radio-chip {
     cursor: default;
 }
 

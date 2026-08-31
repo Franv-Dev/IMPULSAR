@@ -6,11 +6,10 @@
     izquierda y los resultados a la derecha, con el conteo arriba y los chips de
     lo que esta aplicado.
 
-    Del diseño quedaron afuera tres controles que no tienen con que funcionar
-    todavia: los radios de distancia (la consulta ordena por cercania pero no
-    filtra por radio), "Solo verificados" (Post no tiene esa marca; la
-    verificacion hoy es de Service) y "Abierto ahora" (los horarios no entran en
-    la query del listado). Un filtro que no filtra es peor que no tenerlo.
+    Del diseño quedaron afuera dos controles que no tienen con que funcionar
+    todavia: "Solo verificados" (Post no tiene esa marca; la verificacion hoy es
+    de Service) y "Abierto ahora" (los horarios no entran en la query del
+    listado). Un filtro que no filtra es peor que no tenerlo.
 
     El filtro por rubro es de a uno y no con checkboxes como el mockup, porque
     la consulta acepta una sola categoria: se dibujan como radios para que se
@@ -35,6 +34,10 @@
 {%- endmacro %}
 
 {% block content %}
+{# Si hay algo aplicado, para el "Limpiar" y la fila de chips. Se dice una sola
+   vez y no en cada if. #}
+{% set hay_filtros = busqueda_actual or categoria_actual or cerca_de_actual
+                     or radio_actual or con_resenias_actual %}
 <section class="section">
     <div class="container">
         <div class="explorar">
@@ -42,7 +45,7 @@
             <aside class="filtros">
                 <div class="filtros__head">
                     <h2 class="filtros__titulo">Filtros</h2>
-                    {% if busqueda_actual or categoria_actual or cerca_de_actual %}
+                    {% if hay_filtros %}
                         <a href="{{ url_for('blog.index') }}" class="filtros__limpiar">Limpiar</a>
                     {% endif %}
                 </div>
@@ -98,47 +101,58 @@
                         <input type="hidden" name="lat" id="near-lat" value="{{ request.args.get('lat', '') }}">
                         <input type="hidden" name="lon" id="near-lon" value="{{ request.args.get('lon', '') }}">
 
-                        {# Radio de distancia. La UI del rediseño ya esta, pero
-                           la consulta todavia no filtra por radio (ordena por
-                           cercania y nada mas), asi que va deshabilitada: un
-                           control apagado no se puede tocar y ademas no viaja
-                           en el GET, con lo cual no puede devolver un
-                           resultado que no corresponda. Cuando el backend lo
-                           soporte, se saca el `disabled` y el aviso. #}
-                        <fieldset class="filtros__radios" disabled>
+                        {# Radio de distancia. Los value son los km enteros que
+                           espera la consulta (reglas.RADIOS_KM), no la etiqueta
+                           que se ve; la lista la manda la vista para no tener
+                           los numeros escritos dos veces. "Toda" viaja vacio,
+                           que es lo mismo que no mandar radio: leer_cercania lo
+                           lee con type=int y "" vuelve None.
+
+                           El radio solo acota si hay coordenadas: sin "Dónde"
+                           cargado viaja igual pero la consulta lo ignora, en vez
+                           de vaciar el listado. #}
+                        <fieldset class="filtros__radios">
                             <legend class="sr-only">Radio de distancia</legend>
-                            {% for etiqueta in ['1 km', '5 km', '10 km', 'Toda'] %}
+                            {% for km in radios_km %}
                                 <label class="radio-chip">
-                                    <input type="radio" name="radio_km" value="{{ etiqueta }}">
-                                    <span>{{ etiqueta }}</span>
+                                    <input type="radio" name="radio" value="{{ km }}"
+                                           {% if km == radio_actual %}checked{% endif %}>
+                                    <span>{{ km }} km</span>
                                 </label>
                             {% endfor %}
+                            <label class="radio-chip">
+                                <input type="radio" name="radio" value=""
+                                       {% if radio_actual is none %}checked{% endif %}>
+                                <span>Toda</span>
+                            </label>
                         </fieldset>
-                        <p class="filtros__pendiente">El radio todavía no filtra.</p>
                     </div>
 
                     <div class="filtros__separador" role="presentation"></div>
 
-                    {# Igual que los radios: dibujados y apagados. "Solo
-                       verificados" ademas necesita una marca que Post no
-                       tiene todavia (la verificacion hoy es de Service), y
-                       "Abierto ahora" necesita meter los horarios en la
-                       consulta del listado. #}
-                    <fieldset class="filtros__grupo" disabled>
+                    {# De los tres, el unico que tiene con que funcionar es "Con
+                       reseñas". El `disabled` va en cada input y no en el
+                       fieldset: "Solo verificados" necesita una marca que Post
+                       no tiene todavia (la verificacion hoy es de Service) y
+                       "Abierto ahora" necesita meter los horarios en la consulta
+                       del listado. Apagados no viajan en el GET, con lo cual no
+                       pueden devolver un resultado que no corresponda. #}
+                    <fieldset class="filtros__grupo">
                         <legend class="filtros__label">Otros</legend>
                         <label class="filtro-opcion">
-                            <input type="checkbox" name="solo_verificados">
+                            <input type="checkbox" name="solo_verificados" disabled>
                             <span class="filtro-opcion__nombre">Solo verificados</span>
                         </label>
                         <label class="filtro-opcion">
-                            <input type="checkbox" name="con_resenias">
+                            <input type="checkbox" name="con_resenias" value="1"
+                                   {% if con_resenias_actual %}checked{% endif %}>
                             <span class="filtro-opcion__nombre">Con reseñas</span>
                         </label>
                         <label class="filtro-opcion">
-                            <input type="checkbox" name="abierto_ahora">
+                            <input type="checkbox" name="abierto_ahora" disabled>
                             <span class="filtro-opcion__nombre">Abierto ahora</span>
                         </label>
-                        <p class="filtros__pendiente">Estos tres todavía no filtran.</p>
+                        <p class="filtros__pendiente">Estos dos todavía no filtran.</p>
                     </fieldset>
 
                     <button type="submit" class="btn btn--primary filtros__aplicar">Aplicar filtros</button>
@@ -179,7 +193,7 @@
                     </div>
                 </div>
 
-                {% if busqueda_actual or categoria_actual or cerca_de_actual %}
+                {% if hay_filtros %}
                     <div class="chips">
                         {% if busqueda_actual %}
                             <span class="chip">
@@ -197,6 +211,18 @@
                             <span class="chip">
                                 Cerca de {{ cerca_de_actual }}
                                 <a href="{{ url_sin('near') }}" class="chip__quitar" aria-label="Quitar el filtro de cercanía">×</a>
+                            </span>
+                        {% endif %}
+                        {% if radio_actual %}
+                            <span class="chip">
+                                Hasta {{ radio_actual }} km
+                                <a href="{{ url_sin('radio') }}" class="chip__quitar" aria-label="Quitar el filtro de radio">×</a>
+                            </span>
+                        {% endif %}
+                        {% if con_resenias_actual %}
+                            <span class="chip">
+                                Con reseñas
+                                <a href="{{ url_sin('con_resenias') }}" class="chip__quitar" aria-label="Quitar el filtro de reseñas">×</a>
                             </span>
                         {% endif %}
                     </div>
