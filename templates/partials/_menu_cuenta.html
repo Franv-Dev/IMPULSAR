@@ -1,8 +1,8 @@
 {# La columna izquierda de las pantallas de cuenta del rediseño: el avatar y
-   los siete accesos a lo propio. Va como parcial porque las cuatro pantallas
+   los ocho accesos a lo propio. Va como parcial porque las pantallas
    de "Cuenta" la comparten.
 
-   Los siete llevan a rutas que ya existen; ninguno es decorativo. Quien la
+   Los ocho llevan a rutas que ya existen; ninguno es decorativo. Quien la
    incluya pasa `seccion` con el nombre del item activo, o nada si esa pantalla
    no esta en el menu.
 
@@ -24,6 +24,7 @@
         {% set items = [
             ('Mis emprendimientos', url_for('blog.my_posts')),
             ('Mi catálogo', url_for('products.index')),
+            ('Mis servicios', url_for('servicios.index')),
             ('Presupuestos', url_for('servicios.solicitudes')),
             ('Mensajes', url_for('messages.inbox')),
             ('Reseñas recibidas', url_for('profile.reviews', slug=g.user.slug)),

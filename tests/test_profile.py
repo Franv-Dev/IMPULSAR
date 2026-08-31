@@ -600,9 +600,10 @@ def test_las_pantallas_de_cuenta_marcan_su_item_en_el_menu(
         ("/blog/mis-emprendimientos", "Mis emprendimientos"),
         ("/perfil/tomy/resenias", "Reseñas recibidas"),
         ("/perfil/edit", "Ajustes"),
+        ("/servicios/", "Mis servicios"),
     )
 
-    # Los siete items del menu, activo o no. Ajustes ademas tiene sus propias
+    # Los ocho items del menu, activo o no. Ajustes ademas tiene sus propias
     # solapas con aria-current, asi que contar aria-current sobre la pagina
     # entera daria dos y no diria nada del menu.
     items = re.compile(
@@ -613,7 +614,7 @@ def test_las_pantallas_de_cuenta_marcan_su_item_en_el_menu(
         html = client.get(ruta).get_data(as_text=True)
 
         encontrados = items.findall(html)
-        assert len(encontrados) == 7, (ruta, len(encontrados))
+        assert len(encontrados) == 8, (ruta, len(encontrados))
 
         activos = [
             (clases, atributos, texto.strip())
@@ -623,6 +624,6 @@ def test_las_pantallas_de_cuenta_marcan_su_item_en_el_menu(
         assert len(activos) == 1, (ruta, activos)
 
         _clases, atributos, texto = activos[0]
-        # El marcado tiene que caer en SU item, no en cualquiera de los siete.
+        # El marcado tiene que caer en SU item, no en cualquiera de los ocho.
         assert texto == etiqueta, (ruta, texto)
         assert 'aria-current="page"' in atributos, (ruta, atributos)

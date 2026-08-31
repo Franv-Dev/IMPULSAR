@@ -5,107 +5,110 @@
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Mis servicios</h2>
-                <p class="section__subtitle">
-                    Los trabajos que ofrecés en cada uno de tus emprendimientos.
-                    Hasta {{ maximo }} servicios por emprendimiento.
-                </p>
-            </div>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                <a href="{{ url_for('servicios.solicitudes') }}" class="btn btn--secondary">
-                    Solicitudes
-                </a>
-                {% if posts %}
-                    <a href="{{ url_for('servicios.nuevo') }}" class="btn btn--primary">
-                        + Agregar servicio
-                    </a>
+        <div class="cuenta">
+            {% with seccion = "Mis servicios" %}
+                {% include "partials/_menu_cuenta.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Mis servicios</h1>
+                        <p class="cuenta__bajada">
+                            Los trabajos que ofrecés en cada uno de tus emprendimientos.
+                            Hasta {{ maximo }} servicios por emprendimiento.
+                        </p>
+                    </div>
+                    {% if posts %}
+                        <a href="{{ url_for('servicios.nuevo') }}" class="btn btn--primary">
+                            + Agregar servicio
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages" style="margin-bottom:1rem;">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% if not posts %}
+                    <div class="emprendimientos__empty" style="margin-top:1rem;">
+                        <p>
+                            Todavía no registraste ningún emprendimiento.
+                            <a href="{{ url_for('blog.create') }}">Creá el primero acá</a>
+                            y después vas a poder cargarle servicios.
+                        </p>
+                    </div>
+                {% elif servicios %}
+                    <div class="cards-grid">
+                        {# Ya vienen ordenados por emprendimiento y titulo desde la vista. #}
+                        {% for servicio in servicios %}
+                            <article class="card">
+                                <div class="card__body">
+                                    <div class="card__tags">
+                                        <span class="badge badge--category">{{ servicio.post.title }}</span>
+                                        <span class="badge">{{ servicio.rubro_label }}</span>
+                                        {% if servicio.verificado %}
+                                            <span class="badge badge--verificado">✓ Verificado</span>
+                                        {% endif %}
+                                        {% if not servicio.disponible %}
+                                            <span class="badge">No disponible</span>
+                                        {% endif %}
+                                    </div>
+                                    <h3 class="card__title">{{ servicio.titulo }}</h3>
+                                    <p class="card__price" style="font-weight:600;">
+                                        {# None no es cero: un servicio sin precio se cotiza. #}
+                                        {{ servicio.precio_estimado | precio if servicio.precio_estimado else "A presupuestar" }}
+                                    </p>
+                                    {% if servicio.zona_cobertura %}
+                                        <p class="card__description">📍 {{ servicio.zona_cobertura }}</p>
+                                    {% endif %}
+                                    {% if servicio.descripcion %}
+                                        <p class="card__description">{{ servicio.descripcion }}</p>
+                                    {% endif %}
+
+                                    <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                        <a href="{{ url_for('servicios.editar', id=servicio.id) }}"
+                                           class="btn btn--secondary"
+                                           style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                            Editar
+                                        </a>
+                                        <a href="{{ url_for('servicios.verificar', id=servicio.id) }}"
+                                           class="btn btn--secondary"
+                                           style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                            {{ "Ver verificación" if servicio.verificado else "Pedir verificación" }}
+                                        </a>
+                                        <form method="post"
+                                              action="{{ url_for('servicios.eliminar', id=servicio.id) }}"
+                                              class="form-inline"
+                                              data-confirm="¿Seguro que querés eliminar este servicio?">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit"
+                                                    class="btn btn--ghost"
+                                                    style="font-size:0.8rem; padding:0.3rem 0.8rem;">
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="emprendimientos__empty" style="margin-top:1rem;">
+                        <p>
+                            Todavía no cargaste ningún servicio.
+                            <a href="{{ url_for('servicios.nuevo') }}">Agregá el primero acá.</a>
+                        </p>
+                    </div>
                 {% endif %}
             </div>
         </div>
-
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
-                    {% for message in messages %}
-                        <div class="auth__alert">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        {% if not posts %}
-            <div class="emprendimientos__empty" style="margin-top:1rem;">
-                <p>
-                    Todavía no registraste ningún emprendimiento.
-                    <a href="{{ url_for('blog.create') }}">Creá el primero acá</a>
-                    y después vas a poder cargarle servicios.
-                </p>
-            </div>
-        {% elif servicios %}
-            <div class="cards-grid">
-                {# Ya vienen ordenados por emprendimiento y titulo desde la vista. #}
-                {% for servicio in servicios %}
-                    <article class="card">
-                        <div class="card__body">
-                            <div class="card__tags">
-                                <span class="badge badge--category">{{ servicio.post.title }}</span>
-                                <span class="badge">{{ servicio.rubro_label }}</span>
-                                {% if servicio.verificado %}
-                                    <span class="badge badge--verificado">✓ Verificado</span>
-                                {% endif %}
-                                {% if not servicio.disponible %}
-                                    <span class="badge">No disponible</span>
-                                {% endif %}
-                            </div>
-                            <h3 class="card__title">{{ servicio.titulo }}</h3>
-                            <p class="card__price" style="font-weight:600;">
-                                {# None no es cero: un servicio sin precio se cotiza. #}
-                                {{ servicio.precio_estimado | precio if servicio.precio_estimado else "A presupuestar" }}
-                            </p>
-                            {% if servicio.zona_cobertura %}
-                                <p class="card__description">📍 {{ servicio.zona_cobertura }}</p>
-                            {% endif %}
-                            {% if servicio.descripcion %}
-                                <p class="card__description">{{ servicio.descripcion }}</p>
-                            {% endif %}
-
-                            <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                <a href="{{ url_for('servicios.editar', id=servicio.id) }}"
-                                   class="btn btn--secondary"
-                                   style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                    Editar
-                                </a>
-                                <a href="{{ url_for('servicios.verificar', id=servicio.id) }}"
-                                   class="btn btn--secondary"
-                                   style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                    {{ "Ver verificación" if servicio.verificado else "Pedir verificación" }}
-                                </a>
-                                <form method="post"
-                                      action="{{ url_for('servicios.eliminar', id=servicio.id) }}"
-                                      class="form-inline"
-                                      data-confirm="¿Seguro que querés eliminar este servicio?">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit"
-                                            class="btn btn--ghost"
-                                            style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                        Eliminar
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </article>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="emprendimientos__empty" style="margin-top:1rem;">
-                <p>
-                    Todavía no cargaste ningún servicio.
-                    <a href="{{ url_for('servicios.nuevo') }}">Agregá el primero acá.</a>
-                </p>
-            </div>
-        {% endif %}
     </div>
 </section>
 {% endblock %}
