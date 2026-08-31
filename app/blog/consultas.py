@@ -10,7 +10,7 @@ resuelta, porque cada uno de esos filtros es una decision sobre la consulta, no
 sobre la pantalla.
 """
 
-from sqlalchemy import case, func
+from sqlalchemy import and_, case, func, or_
 
 from app.blog.modelo_favorito import Favorite
 from app.blog.modelo_post import Post
@@ -20,6 +20,7 @@ from app.perfil.modelo_horario import Horario
 from app.servicios.modelo import Service
 from db import db
 from models.product import Product
+from services.horarios import ventana_actual
 from services.ratings import query_posts_con_rating
 
 
@@ -66,9 +67,52 @@ def _distancia_km(lat, lon):
     return 6371 * func.acos(argumento_acotado)
 
 
+def _abierto_ahora_sql(ahora=None):
+    """EXISTS que deja solo los posts cuyo autor esta atendiendo en este momento.
+
+    Es la misma regla de services.horarios.esta_abierto() escrita en SQL, y va
+    en SQL a proposito: resuelto en Python habria que traer los horarios de
+    cada fila (un SELECT por emprendimiento, el N+1 clasico) y ademas filtrar
+    despues de paginar, con lo cual el total de arriba contaria los cerrados y
+    una pagina de doce podria mostrar tres. Como EXISTS, el filtro entra en el
+    WHERE: una sola consulta y un total que dice la verdad.
+
+    Las tres ramas son las mismas de esta_abierto(): el rango normal de hoy, la
+    primera mitad de un rango que cruza medianoche (abre hoy y cierra mañana) y
+    la segunda mitad, que la aporta el horario de AYER.
+    """
+    hoy, ayer, momento = ventana_actual(ahora)
+
+    rango_normal = and_(
+        Horario.cierra > Horario.abre,
+        Horario.abre <= momento,
+        Horario.cierra > momento,
+    )
+    # Cruza medianoche: hoy cuenta desde que abre hasta las 23:59...
+    cruza_hoy = and_(Horario.cierra < Horario.abre, Horario.abre <= momento)
+    # ...y la madrugada de hoy la cubre el rango de ayer, hasta que cierra.
+    cruza_ayer = and_(Horario.cierra < Horario.abre, Horario.cierra > momento)
+
+    return (
+        db.session.query(Horario.id)
+        .filter(
+            Horario.user_id == Post.author,
+            # Un dia marcado cerrado, o sin horas cargadas, no abre nunca.
+            Horario.cerrado.is_(False),
+            Horario.abre.isnot(None),
+            Horario.cierra.isnot(None),
+            or_(
+                and_(Horario.dia_semana == hoy, or_(rango_normal, cruza_hoy)),
+                and_(Horario.dia_semana == ayer, cruza_ayer),
+            ),
+        )
+        .exists()
+    )
+
+
 def buscar_posts(
     busqueda, categoria, lat, lon, pagina, por_pagina,
-    con_resenias=False, radio_km=None,
+    con_resenias=False, radio_km=None, abierto_ahora=False,
 ):
     """El listado publico, ya paginado.
 
@@ -86,6 +130,10 @@ def buscar_posts(
     de vaciar el listado. Sin radio, el comportamiento es el mismo de siempre:
     ordena por cercania y no descarta nada por lejos que este.
 
+    abierto_ahora deja solo los que estan atendiendo en este momento, segun
+    los horarios del emprendedor y el reloj de Argentina. Lo resuelve un EXISTS
+    sobre horarios (ver _abierto_ahora_sql), no un bucle sobre las filas.
+
     La relacion author_user usa lazy="joined", asi que el autor viene en la
     misma consulta y no se dispara un SELECT por cada post (problema N+1). El
     promedio de reseñas se trae con el mismo criterio (ver services/ratings.py).
@@ -98,6 +146,9 @@ def buscar_posts(
 
     if categoria:
         query = query.filter(Post.category == categoria)
+
+    if abierto_ahora:
+        query = query.filter(_abierto_ahora_sql())
 
     ordenar_por_distancia = lat is not None and lon is not None
     if ordenar_por_distancia:

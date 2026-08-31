@@ -144,5 +144,13 @@ def leer_con_resenias():
     return request.args.get("con_resenias") is not None
 
 
+def leer_abierto_ahora():
+    """Si el listado tiene que dejar solo los que estan atendiendo ahora.
+
+    Checkbox, igual que con_resenias: se lee por presencia y no por valor.
+    """
+    return request.args.get("abierto_ahora") is not None
+
+
 def leer_pagina():
     return request.args.get("page", 1, type=int)

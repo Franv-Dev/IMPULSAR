@@ -120,6 +120,7 @@ def index():
     categoria = formulario.leer_categoria_de_filtro()
     cerca_de, lat, lon, radio_km = formulario.leer_cercania()
     con_resenias = formulario.leer_con_resenias()
+    abierto_ahora = formulario.leer_abierto_ahora()
 
     # Geocodificar es una llamada a MapTiler: se hace solo si el usuario mando
     # una direccion en texto y no las coordenadas ya resueltas.
@@ -139,6 +140,7 @@ def index():
         lon=lon,
         radio_km=radio_km,
         con_resenias=con_resenias,
+        abierto_ahora=abierto_ahora,
         pagina=formulario.leer_pagina(),
         por_pagina=current_app.config["POSTS_POR_PAGINA"],
     )
@@ -174,6 +176,7 @@ def index():
         radio_actual=radio_km,
         radios_km=reglas.RADIOS_KM,
         con_resenias_actual=con_resenias,
+        abierto_ahora_actual=abierto_ahora,
         # Los numeros que van al lado de cada rubro en la columna de filtros.
         # Son de toda la plataforma y no de la busqueda actual, a proposito:
         # dicen cuanto hay si te movés a ese rubro, que es para lo que se

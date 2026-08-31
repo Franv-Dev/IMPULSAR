@@ -42,6 +42,24 @@ def parsear_hora(texto):
         return None
 
 
+def ventana_actual(ahora=None):
+    """(hoy, ayer, momento) en hora argentina, para preguntar "esta abierto".
+
+    Lo usan las dos formas de contestar la misma pregunta: esta_abierto(), que
+    la resuelve en Python sobre los horarios de un emprendedor, y el filtro
+    "Abierto ahora" del listado, que la resuelve en SQL sobre toda la tabla.
+    Las dos necesitan los mismos tres datos y ninguna puede sacarlos de
+    datetime.now() a secas: la hora de referencia es la del local, no la del
+    servidor ni la del visitante.
+
+    `ayer` viene junto porque un rango que cruza medianoche se atiende de a dos
+    dias: a la 01:00 del martes el bar sigue abierto por el horario del lunes.
+    """
+    ahora = ahora or ahora_en_argentina()
+    hoy = ahora.weekday()
+    return hoy, (hoy - 1) % 7, ahora.time()
+
+
 def _abierto_en(horario, momento):
     """Si un horario puntual cubre `momento` (un time), sin cruzar medianoche."""
     return horario.abre <= momento < horario.cierra
@@ -57,10 +75,7 @@ def esta_abierto(horarios, ahora=None):
     el del martes. Sin esto, todo lo que cierra pasada la medianoche figuraba
     cerrado justo en sus horas de mas movimiento.
     """
-    ahora = ahora or ahora_en_argentina()
-    momento = ahora.time()
-    hoy = ahora.weekday()
-    ayer = (hoy - 1) % 7
+    hoy, ayer, momento = ventana_actual(ahora)
 
     por_dia = {h.dia_semana: h for h in horarios if not h.cerrado and h.abre and h.cierra}
 

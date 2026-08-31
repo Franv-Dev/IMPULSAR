@@ -6,10 +6,9 @@
     izquierda y los resultados a la derecha, con el conteo arriba y los chips de
     lo que esta aplicado.
 
-    Del diseño quedaron afuera dos controles que no tienen con que funcionar
+    Del diseño queda afuera un solo control que no tiene con que funcionar
     todavia: "Solo verificados" (Post no tiene esa marca; la verificacion hoy es
-    de Service) y "Abierto ahora" (los horarios no entran en la query del
-    listado). Un filtro que no filtra es peor que no tenerlo.
+    de Service). Un filtro que no filtra es peor que no tenerlo.
 
     El filtro por rubro es de a uno y no con checkboxes como el mockup, porque
     la consulta acepta una sola categoria: se dibujan como radios para que se
@@ -37,7 +36,8 @@
 {# Si hay algo aplicado, para el "Limpiar" y la fila de chips. Se dice una sola
    vez y no en cada if. #}
 {% set hay_filtros = busqueda_actual or categoria_actual or cerca_de_actual
-                     or radio_actual or con_resenias_actual %}
+                     or radio_actual or con_resenias_actual
+                     or abierto_ahora_actual %}
 <section class="section">
     <div class="container">
         <div class="explorar">
@@ -130,13 +130,13 @@
 
                     <div class="filtros__separador" role="presentation"></div>
 
-                    {# De los tres, el unico que tiene con que funcionar es "Con
-                       reseñas". El `disabled` va en cada input y no en el
-                       fieldset: "Solo verificados" necesita una marca que Post
-                       no tiene todavia (la verificacion hoy es de Service) y
-                       "Abierto ahora" necesita meter los horarios en la consulta
-                       del listado. Apagados no viajan en el GET, con lo cual no
-                       pueden devolver un resultado que no corresponda. #}
+                    {# De los tres, el unico que todavia no tiene con que
+                       funcionar es "Solo verificados": necesita una marca que
+                       Post no tiene (la verificacion hoy es de Service). El
+                       `disabled` va en ese input y no en el fieldset, para no
+                       apagar a los otros dos. Apagado no viaja en el GET, con
+                       lo cual no puede devolver un resultado que no
+                       corresponda. #}
                     <fieldset class="filtros__grupo">
                         <legend class="filtros__label">Otros</legend>
                         <label class="filtro-opcion">
@@ -149,10 +149,11 @@
                             <span class="filtro-opcion__nombre">Con reseñas</span>
                         </label>
                         <label class="filtro-opcion">
-                            <input type="checkbox" name="abierto_ahora" disabled>
+                            <input type="checkbox" name="abierto_ahora" value="1"
+                                   {% if abierto_ahora_actual %}checked{% endif %}>
                             <span class="filtro-opcion__nombre">Abierto ahora</span>
                         </label>
-                        <p class="filtros__pendiente">Estos dos todavía no filtran.</p>
+                        <p class="filtros__pendiente">«Solo verificados» todavía no filtra.</p>
                     </fieldset>
 
                     <button type="submit" class="btn btn--primary filtros__aplicar">Aplicar filtros</button>
@@ -223,6 +224,12 @@
                             <span class="chip">
                                 Con reseñas
                                 <a href="{{ url_sin('con_resenias') }}" class="chip__quitar" aria-label="Quitar el filtro de reseñas">×</a>
+                            </span>
+                        {% endif %}
+                        {% if abierto_ahora_actual %}
+                            <span class="chip">
+                                Abierto ahora
+                                <a href="{{ url_sin('abierto_ahora') }}" class="chip__quitar" aria-label="Quitar el filtro de horario">×</a>
                             </span>
                         {% endif %}
                     </div>

@@ -857,12 +857,16 @@ def test_los_dos_filtros_nuevos_ya_no_estan_apagados(client):
     assert re.search(r'name="con_resenias"[^>]*disabled', html) is None
 
 
-def test_los_otros_dos_del_grupo_siguen_apagados(client):
-    """Solo verificados y Abierto ahora no tienen backend: no pueden viajar."""
+def test_solo_verificados_sigue_apagado(client):
+    """Post no tiene marca de verificacion, asi que ese filtro no puede viajar.
+
+    "Abierto ahora" ya no esta en la lista: se cableo contra los horarios del
+    autor (ver los tests de mas abajo) y por eso ahora si puede viajar.
+    """
     html = client.get("/blog/").get_data(as_text=True)
 
     assert re.search(r'name="solo_verificados"[^>]*disabled', html)
-    assert re.search(r'name="abierto_ahora"[^>]*disabled', html)
+    assert re.search(r'name="abierto_ahora"[^>]*disabled', html) is None
 
 
 def test_sin_radio_en_la_url_queda_marcado_toda(client):
@@ -1613,3 +1617,140 @@ def test_mis_emprendimientos_no_dice_que_un_emprendimiento_esta_verificado(
 
     assert "Panadería sin verificar" in html
     assert "Verificado" not in html
+
+
+# ------------------------------------------------- filtro "Abierto ahora"
+
+def _abierto_todo_el_dia(user_id):
+    """Un horario del dia de hoy (hora argentina) que cubre cualquier momento."""
+    from datetime import time as _time
+
+    from app.perfil.modelo_horario import Horario
+    from services.horarios import ventana_actual
+
+    hoy, _ayer, _momento = ventana_actual()
+    return Horario(
+        user_id=user_id, dia_semana=hoy,
+        abre=_time(0, 0, 0), cierra=_time(23, 59, 59),
+    )
+
+
+def _cerrado_hoy(user_id):
+    from app.perfil.modelo_horario import Horario
+    from services.horarios import ventana_actual
+
+    hoy, _ayer, _momento = ventana_actual()
+    return Horario(user_id=user_id, dia_semana=hoy, cerrado=True)
+
+
+def test_abierto_ahora_deja_solo_a_los_que_atienden(
+    client, db, crear_usuario, crear_post
+):
+    """El filtro mira los horarios del autor, no una marca del post.
+
+    Los tres casos que tienen que quedar afuera o adentro son distintos entre
+    si: quien atiende, quien tiene el dia marcado cerrado y quien nunca cargo
+    horarios. Sin horarios NO es "abierto": seria afirmar algo que no se sabe.
+    """
+    abierta = crear_usuario(username="abierta")
+    cerrada = crear_usuario(username="cerrada")
+    sin_datos = crear_usuario(username="sindatos")
+    db.session.add_all([_abierto_todo_el_dia(abierta.id), _cerrado_hoy(cerrada.id)])
+    db.session.commit()
+
+    crear_post(abierta.id, title="Panadería que atiende")
+    crear_post(cerrada.id, title="Panadería con franco")
+    crear_post(sin_datos.id, title="Panadería sin horarios")
+
+    html = client.get("/blog/?abierto_ahora=1").get_data(as_text=True)
+
+    assert "Panadería que atiende" in html
+    assert "Panadería con franco" not in html
+    assert "Panadería sin horarios" not in html
+
+
+def test_sin_el_parametro_el_listado_no_filtra_por_horario(
+    client, db, crear_usuario, crear_post
+):
+    """Un checkbox sin marcar no viaja: el listado tiene que verse entero."""
+    cerrada = crear_usuario(username="cerrada")
+    db.session.add(_cerrado_hoy(cerrada.id))
+    db.session.commit()
+    crear_post(cerrada.id, title="Panadería con franco")
+
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert "Panadería con franco" in html
+
+
+def test_abierto_ahora_pinta_su_chip_y_queda_marcado(
+    client, db, crear_usuario, crear_post
+):
+    html = client.get("/blog/?abierto_ahora=1").get_data(as_text=True)
+
+    assert re.search(r'name="abierto_ahora"[^>]*checked', html)
+    assert "Quitar el filtro de horario" in html
+
+
+def test_el_total_cuenta_solo_los_abiertos(client, db, crear_usuario, crear_post):
+    """El numero de arriba tiene que ser el de la consulta, no el de todos.
+
+    Es lo que se rompe si el filtro se resuelve en Python despues de paginar:
+    el listado muestra uno y el titulo sigue diciendo dos.
+    """
+    abierta = crear_usuario(username="abierta")
+    cerrada = crear_usuario(username="cerrada")
+    db.session.add_all([_abierto_todo_el_dia(abierta.id), _cerrado_hoy(cerrada.id)])
+    db.session.commit()
+    crear_post(abierta.id, title="Panadería que atiende")
+    crear_post(cerrada.id, title="Panadería con franco")
+
+    html = client.get("/blog/?abierto_ahora=1").get_data(as_text=True)
+
+    assert re.search(r"1 emprendimiento\s*<", html)
+    assert "Panadería con franco" not in html
+
+
+def test_el_listado_no_consulta_de_mas_por_cada_fila(
+    app, client, db, crear_usuario, crear_post
+):
+    """El costo del listado no puede depender de cuantas filas trae la pagina.
+
+    "Abierto ahora" se resuelve con un EXISTS dentro del WHERE. Si en cambio se
+    resolviera iterando las filas y mirando post.author_user.horarios, la
+    relacion Horario<-User es lazy="select" y cada emprendimiento agregaria un
+    SELECT propio: el N+1 que ya se corrigio en la moderacion y en "Mis
+    emprendimientos".
+
+    Se vacia el identity map antes de cada medicion: con los objetos ya
+    cargados en la sesion del test, un lazy load no llega a la base y el
+    contador daria un falso negativo.
+    """
+    def contar_consultas(url):
+        db.session.expunge_all()
+        consultas_vistas = []
+
+        def escuchar(conn, cursor, statement, params, context, many):
+            consultas_vistas.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", escuchar)
+        try:
+            client.get(url)
+        finally:
+            event.remove(db.engine, "before_cursor_execute", escuchar)
+        return len(consultas_vistas)
+
+    def sumar_posts(desde, hasta):
+        for numero in range(desde, hasta):
+            autor = crear_usuario(username=f"autor{numero}")
+            db.session.add(_abierto_todo_el_dia(autor.id))
+            db.session.commit()
+            crear_post(autor.id, title=f"Emprendimiento {numero}")
+
+    sumar_posts(0, 3)
+    con_tres = contar_consultas("/blog/?abierto_ahora=1")
+
+    sumar_posts(3, 9)
+    con_nueve = contar_consultas("/blog/?abierto_ahora=1")
+
+    assert con_nueve == con_tres
