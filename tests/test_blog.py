@@ -1969,3 +1969,143 @@ def test_reordenar_no_acepta_get(client, crear_usuario, crear_post, login):
     post = crear_post(autor.id, image="principal.png")
 
     assert client.get(f"/blog/{post.id}/fotos/reordenar").status_code == 405
+
+
+# ------------------------------------ la pantalla de edicion: mover fotos
+
+def test_la_edicion_dibuja_el_formulario_de_reordenar(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    _con_fotos(db, post, "b.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert f'action="/blog/{post.id}/fotos/reordenar"' in html
+    assert 'id="form-reordenar"' in html
+
+
+def test_el_formulario_de_reordenar_no_queda_anidado_en_el_grande(
+    client, db, crear_usuario, crear_post, login
+):
+    """Un <form> dentro de otro no es HTML valido: el navegador cierra el
+    primero al abrir el segundo y pierde el resto de los campos.
+
+    Se chequea contando: entre el <form> del alta/edicion y el de reordenar hay
+    que tener dos aperturas y dos cierres, y el cierre del grande tiene que
+    venir ANTES de la apertura del de reordenar.
+    """
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    _con_fotos(db, post, "b.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    apertura_grande = html.index('class="form-empren__form"')
+    apertura_reordenar = html.index('id="form-reordenar"')
+    cierre_del_grande = html.index("</form>", apertura_grande)
+
+    assert cierre_del_grande < apertura_reordenar
+
+
+def test_cada_foto_trae_sus_botones_con_el_orden_ya_calculado(
+    client, db, crear_usuario, crear_post, login
+):
+    """Los botones son submits comunes: andan sin una linea de JavaScript.
+
+    Cada value es el orden COMPLETO que resulta de ese movimiento, asi que la
+    ruta recibe lo mismo venga del boton o del arrastre.
+    """
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    # Subir la segunda (y bajar la principal) dan el mismo orden: b, principal, c.
+    assert f'value="{ids[0]},principal,{ids[1]}"' in html
+    # Bajar la segunda (y subir la tercera): principal, c, b.
+    assert f'value="principal,{ids[1]},{ids[0]}"' in html
+    # La ultima se hace principal de una, sin pasar por el medio: c, principal, b.
+    assert f'value="{ids[1]},principal,{ids[0]}"' in html
+    # Y todos apuntan al form de afuera.
+    assert 'form="form-reordenar"' in html
+
+
+def test_los_botones_que_no_tienen_a_donde_mover_no_se_dibujan(
+    client, db, crear_usuario, crear_post, login
+):
+    """Un control apagado que no hace nada es peor que no tenerlo."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    _con_fotos(db, post, "b.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    # La primera no puede subir y la ultima no puede bajar: con dos fotos hay
+    # una sola flecha de cada lado.
+    assert html.count("un lugar antes") == 1
+    assert html.count("un lugar después") == 1
+    # "Hacer principal" tampoco va en la que ya es principal.
+    assert html.count("Hacer principal la foto") == 1
+
+
+def test_con_una_sola_foto_no_hay_nada_que_reordenar(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert 'id="form-reordenar"' not in html
+    assert 'form="form-reordenar"' not in html
+
+
+def test_el_alta_no_dibuja_controles_de_reordenar(client, crear_usuario, login):
+    """En el alta todavia no hay fotos, asi que no hay nada que mover."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    html = client.get("/blog/create").get_data(as_text=True)
+
+    assert 'id="form-reordenar"' not in html
+    assert "Hacer principal" not in html
+
+
+def test_ya_no_se_avisa_que_no_se_puede_reordenar(
+    client, db, crear_usuario, crear_post, login
+):
+    """El aviso decia la verdad hasta esta tanda; ahora seria falso."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    _con_fotos(db, post, "b.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert "Todavía no se pueden reordenar" not in html
+    assert "el orden es el de carga" not in html
+
+
+def test_el_arrastre_es_un_agregado_y_no_el_unico_camino(
+    client, db, crear_usuario, crear_post, login
+):
+    """fotos.js se carga, pero los botones estan en el HTML sin depender de el."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    _con_fotos(db, post, "b.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert "js/fotos.js" in html
+    # Los submits ya vienen servidos, no los crea el script.
+    assert 'form="form-reordenar"' in html
+    assert "un lugar antes" in html

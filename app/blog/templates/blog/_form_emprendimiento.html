@@ -26,9 +26,6 @@
       - "Borrador guardado hace 1 min": no hay borradores. El indicador se
         omite, porque afirmaria algo falso; el boton "Guardar borrador" si va,
         maquetado y apagado, porque eso es cableado pendiente.
-      - Reordenar las fotos arrastrando y elegir cual es la principal:
-        PostImage.posicion existe pero la asigna la vista sola y no hay ruta
-        que la cambie. Los slots muestran el orden real y se avisa.
       - "No mostrar la dirección exacta": no hay columna en Post. Va apagado.
       - Mapa con el pin arrastrable: la direccion se geocodifica al guardar, no
         mientras se escribe. El panel queda con el aviso en vez del mapa.
@@ -132,26 +129,68 @@
                 </div>
 
                 {#  Los slots muestran las fotos REALES que tiene el post: la
-                    principal marcada, despues las de la galeria, y al final los
-                    lugares que quedan libres. En el alta estan todos vacios. #}
-                <div class="slots-foto">
-                    <div class="slot-foto {{ 'slot-foto--principal' if post and post.image }}">
-                        {% if post and post.image %}
-                            <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
-                                 alt="Foto principal de {{ post.title }}" class="slot-foto__img">
-                            <span class="slot-foto__sello">Principal</span>
-                        {% else %}
-                            <span class="slot-foto__vacio">Foto principal</span>
-                        {% endif %}
-                    </div>
+                    principal primero, despues las de la galeria, y al final los
+                    lugares que quedan libres. En el alta estan todos vacios.
 
-                    {% if post %}
-                        {% for imagen in post.imagenes %}
-                            <div class="slot-foto">
-                                <img src="{{ url_for('static', filename='uploads/' ~ imagen.filename) }}"
-                                     alt="Foto de {{ post.title }}" class="slot-foto__img">
+                    Cada slot lleva sus botones de mover. Son submits comunes
+                    de #form-reordenar, que vive FUERA de este formulario
+                    porque anidar dos <form> no es HTML valido; los une el
+                    atributo form= de cada boton. Cada uno lleva en su value el
+                    orden COMPLETO que resulta de ese movimiento, ya calculado
+                    en reglas.fotos_para_reordenar, asi que funcionan sin una
+                    linea de JavaScript. Ese es el punto: arrastrar no puede
+                    ser la unica forma de reordenar.
+
+                    El drag and drop de fotos.js se monta encima de esto y
+                    escribe en el mismo campo, con lo cual la ruta recibe
+                    siempre la misma forma de dato. #}
+                <div class="slots-foto" data-slots-foto>
+                    {% for foto in fotos %}
+                        <div class="slot-foto {{ 'slot-foto--principal' if foto.es_principal }}"
+                             data-token="{{ foto.token }}">
+                            <img src="{{ url_for('static', filename='uploads/' ~ foto.filename) }}"
+                                 alt="{{ 'Foto principal de' if foto.es_principal else 'Foto de' }} {{ post.title }}"
+                                 class="slot-foto__img">
+                            {% if foto.es_principal %}
+                                <span class="slot-foto__sello">Principal</span>
+                            {% endif %}
+
+                            {#  aria-label y no solo la flecha: un lector de
+                                pantalla que anuncia "boton arriba" cuatro
+                                veces seguidas no dice cual es cual. #}
+                            <div class="slot-foto__mover">
+                                {% if foto.orden_subiendo %}
+                                    <button type="submit" form="form-reordenar"
+                                            name="orden" value="{{ foto.orden_subiendo | join(',') }}"
+                                            class="slot-foto__accion"
+                                            aria-label="Mover la foto {{ foto.posicion + 1 }} un lugar antes">
+                                        <span aria-hidden="true">&uarr;</span>
+                                    </button>
+                                {% endif %}
+                                {% if foto.orden_bajando %}
+                                    <button type="submit" form="form-reordenar"
+                                            name="orden" value="{{ foto.orden_bajando | join(',') }}"
+                                            class="slot-foto__accion"
+                                            aria-label="Mover la foto {{ foto.posicion + 1 }} un lugar después">
+                                        <span aria-hidden="true">&darr;</span>
+                                    </button>
+                                {% endif %}
+                                {% if foto.orden_como_principal %}
+                                    <button type="submit" form="form-reordenar"
+                                            name="orden" value="{{ foto.orden_como_principal | join(',') }}"
+                                            class="slot-foto__accion slot-foto__accion--principal"
+                                            aria-label="Hacer principal la foto {{ foto.posicion + 1 }}">
+                                        Hacer principal
+                                    </button>
+                                {% endif %}
                             </div>
-                        {% endfor %}
+                        </div>
+                    {% endfor %}
+
+                    {% if not fotos %}
+                        <div class="slot-foto">
+                            <span class="slot-foto__vacio">Foto principal</span>
+                        </div>
                     {% endif %}
 
                     {% set libres = post.lugares_de_imagen_libres if post else maximo_fotos - 1 %}
@@ -161,6 +200,13 @@
                         </div>
                     {% endfor %}
                 </div>
+
+                {% if fotos | length > 1 %}
+                    <p class="auth__hint">
+                        La primera es la que se ve en las búsquedas. Movelas con
+                        los botones de cada foto, o arrastrándolas si preferís.
+                    </p>
+                {% endif %}
 
                 <div class="form-empren__archivos">
                     <div class="auth__field">
@@ -197,11 +243,7 @@
                     </div>
                 </div>
 
-                <p class="cuenta__pendiente">
-                    PNG, JPG o GIF. Todavía no se pueden reordenar las fotos ni
-                    elegir cuál es la principal: el orden es el de carga y la
-                    principal es la de arriba.
-                </p>
+                <p class="auth__hint">PNG, JPG o GIF.</p>
             </section>
 
             <section class="panel panel--tramo" id="tramo-ubicacion">
@@ -270,6 +312,25 @@
                 apretás “{{ accion }}”.
             </p>
         </form>
+
+        {#  El formulario que recibe el orden de las fotos. Va aca afuera y no
+            adentro del de arriba porque un <form> dentro de otro no es HTML
+            valido: el navegador cierra el primero al abrir el segundo y el
+            resto de los campos se pierde. Los botones de cada slot lo apuntan
+            con form="form-reordenar", que es justamente para esto.
+
+            Aparte tambien por lo que hace: reordenar se guarda solo, sin pasar
+            por "Guardar cambios", asi que no puede arrastrar consigo una
+            edicion a medio escribir del formulario grande.
+
+            Sin fotos que mover no se dibuja: seria un form que no puede
+            mandar nada. #}
+        {% if fotos | length > 1 %}
+            <form method="post" id="form-reordenar" class="form-reordenar"
+                  action="{{ url_for('blog.reordenar_fotos', id=post.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            </form>
+        {% endif %}
     </div>
 
     <aside class="form-empren__lateral">

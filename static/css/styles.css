@@ -5741,6 +5741,75 @@ a.perfil-dato:hover {
     text-transform: uppercase;
 }
 
+/* Los controles de mover de cada slot.
+
+   Aparecen al pasar el mouse o al enfocar con el teclado, pero NUNCA se ocultan
+   con display:none ni visibility:hidden: eso los sacaria del orden de tabulacion
+   y quien navega con teclado se quedaria sin la unica alternativa al arrastre.
+   Se atenuan con opacity, que los deja enfocables. */
+.slot-foto__mover {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px;
+    justify-content: center;
+    background: linear-gradient(to top, rgb(0 0 0 / 65%), transparent);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.slot-foto:hover .slot-foto__mover,
+.slot-foto:focus-within .slot-foto__mover {
+    opacity: 1;
+}
+
+/* Sin puntero fino (celular, tablet) no hay hover que revele nada, asi que los
+   controles van siempre visibles. */
+@media (hover: none) {
+    .slot-foto__mover {
+        opacity: 1;
+    }
+}
+
+.slot-foto__accion {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0 0.4rem;
+    border: 1px solid rgb(255 255 255 / 45%);
+    border-radius: var(--radius-sm);
+    background-color: rgb(0 0 0 / 55%);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.slot-foto__accion:hover {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.slot-foto__accion:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 1px;
+}
+
+.slot-foto--arrastrable {
+    cursor: grab;
+}
+
+.slot-foto--arrastrando {
+    opacity: 0.4;
+}
+
+.slot-foto--destino {
+    outline: 2px dashed var(--color-primary);
+    outline-offset: -2px;
+}
+
 .form-empren__archivos {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

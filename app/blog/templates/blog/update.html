@@ -41,3 +41,10 @@
     </div>
 </section>
 {% endblock %}
+
+{#  Solo en la edicion: en el alta todavia no hay fotos que arrastrar. El
+    reordenar funciona igual sin este script (los botones de cada slot son
+    submits comunes), asi que va al final y sin defer especial. #}
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/fotos.js') }}"></script>
+{% endblock %}
