@@ -35,9 +35,11 @@
 {% block content %}
 {# Si hay algo aplicado, para el "Limpiar" y la fila de chips. Se dice una sola
    vez y no en cada if. #}
+{# El radio cuenta solo cuando hay coordenadas: sin ellas no acota nada, y
+   listarlo dejaria la fila de chips dibujada y vacia. #}
 {% set hay_filtros = busqueda_actual or categoria_actual or cerca_de_actual
-                     or radio_actual or con_resenias_actual
-                     or abierto_ahora_actual %}
+                     or (radio_actual and ordenado_por_distancia)
+                     or con_resenias_actual or abierto_ahora_actual %}
 <section class="section">
     <div class="container">
         <div class="explorar">
@@ -214,7 +216,15 @@
                                 <a href="{{ url_sin('near') }}" class="chip__quitar" aria-label="Quitar el filtro de cercanía">×</a>
                             </span>
                         {% endif %}
-                        {% if radio_actual %}
+                        {# Solo si de verdad acoto algo. El radio viaja aunque no
+                           haya coordenadas y ahi la consulta lo ignora (no hay
+                           desde donde medir), asi que pintar el chip igual seria
+                           anunciar un filtro que no se aplico.
+                           Se mira ordenado_por_distancia y no request.args.lat:
+                           cuando el usuario escribe una direccion, las
+                           coordenadas las resuelve la vista y nunca estan en la
+                           URL. #}
+                        {% if radio_actual and ordenado_por_distancia %}
                             <span class="chip">
                                 Hasta {{ radio_actual }} km
                                 <a href="{{ url_sin('radio') }}" class="chip__quitar" aria-label="Quitar el filtro de radio">×</a>

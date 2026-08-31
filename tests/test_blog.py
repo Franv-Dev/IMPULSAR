@@ -935,6 +935,40 @@ def test_los_dos_filtros_nuevos_se_pueden_sacar_de_a_uno(client):
     assert 'aria-label="Quitar el filtro de reseñas"' in html
 
 
+def test_sin_coordenadas_el_radio_no_pinta_su_chip(client):
+    """Un chip que anuncia un filtro que no se aplico es peor que no tenerlo.
+
+    /blog/?radio=1 sin lat ni lon mostraba "Hasta 1 km" pero la consulta
+    ignoraba el radio (sin coordenadas no hay desde donde medir), asi que el
+    listado venia entero y el chip decia otra cosa.
+    """
+    html = client.get("/blog/?radio=1").get_data(as_text=True)
+
+    assert "Hasta 1 km" not in html
+    assert 'aria-label="Quitar el filtro de radio"' not in html
+    # Y sin ningun otro filtro puesto, tampoco queda la fila de chips vacia
+    # con su "Limpiar" al lado.
+    assert 'class="filtros__limpiar"' not in html
+
+
+def test_con_una_direccion_geocodificada_el_radio_si_pinta_su_chip(
+    client, monkeypatch
+):
+    """Las coordenadas de una direccion las resuelve la vista y no estan en la URL.
+
+    Por eso la condicion del chip mira si la consulta ordeno por distancia y no
+    request.args: con "near" cargado el radio SI acota, y el chip corresponde.
+    """
+    monkeypatch.setattr(
+        "app.blog.vistas.get_coordinates_from_address",
+        lambda direccion, clave: (-34.6, -58.4),
+    )
+
+    html = client.get("/blog/?near=Obelisco&radio=5").get_data(as_text=True)
+
+    assert "Hasta 5 km" in html
+
+
 # ------------------------------------------------------------------ compartir
 
 def test_la_tarjeta_incluye_el_link_para_compartir(client, crear_usuario, crear_post):
