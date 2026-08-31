@@ -12,6 +12,7 @@ sobre la pantalla.
 
 from sqlalchemy import and_, case, func, or_
 
+from app.blog import reglas
 from app.blog.modelo_favorito import Favorite
 from app.blog.modelo_post import Post
 from app.blog.modelo_reporte import Report
@@ -365,6 +366,50 @@ def tiene_horarios_cargados(user_id):
     return db.session.query(
         Horario.query.filter(Horario.user_id == user_id).exists()
     ).scalar()
+
+
+def reordenar_fotos(post, tokens):
+    """Aplica el orden nuevo de las fotos, incluida cual pasa a ser la principal.
+
+    `tokens` ya viene validado (ver reglas.orden_de_fotos_valido): es una
+    permutacion exacta de las fotos del post. El primero es la principal.
+
+    NO se toca ningun archivo del disco ni se crea ninguna fila: las filas de
+    post_images que ya existen se quedan y lo unico que cambia es a que archivo
+    apunta cada una. Mover la principal a la galeria (o al reves) es entonces
+    intercambiar dos strings, no mover un archivo de una carpeta a otra ni
+    borrar y volver a subir. Un archivo perdido no se recupera; un `filename`
+    reasignado si.
+
+    El unico caso con filas de mas es un post SIN principal (Post.image en
+    NULL) que promueve una de la galeria: ahi el total de fotos no cambia pero
+    una pasa a vivir en Post.image, asi que sobra exactamente una fila de
+    post_images y se borra. Su archivo no se toca: lo referencia Post.image
+    desde ese momento.
+    """
+    por_token = {str(imagen.id): imagen for imagen in post.imagenes}
+    nombres = [
+        post.image if token == reglas.TOKEN_PRINCIPAL else por_token[token].filename
+        for token in tokens
+    ]
+
+    principal, resto = nombres[0], nombres[1:]
+    filas = list(post.imagenes)
+    # Nunca puede faltar fila: `resto` tiene a lo sumo tantos elementos como
+    # filas hay (una foto mas que filas solo existe si hay principal, y esa se
+    # va en `principal`). Si esto no se cumpliera estariamos por perder una
+    # foto en silencio.
+    assert len(resto) <= len(filas)
+
+    for posicion, (fila, nombre) in enumerate(zip(filas, resto)):
+        fila.filename = nombre
+        fila.posicion = posicion
+
+    for sobrante in filas[len(resto):]:
+        db.session.delete(sobrante)
+
+    post.image = principal
+    db.session.commit()
 
 
 def guardar(fila=None):

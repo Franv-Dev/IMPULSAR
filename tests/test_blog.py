@@ -1805,3 +1805,167 @@ def test_el_listado_no_consulta_de_mas_por_cada_fila(
     con_nueve = contar_consultas("/blog/?abierto_ahora=1")
 
     assert con_nueve == con_tres
+
+
+# --------------------------------------------- reordenar fotos / principal
+
+def _con_fotos(db, post, *nombres):
+    """Le cuelga fotos de galeria al post, en ese orden."""
+    from app.blog.modelo_imagen import PostImage
+
+    for posicion, nombre in enumerate(nombres):
+        db.session.add(
+            PostImage(post_id=post.id, filename=nombre, posicion=posicion)
+        )
+    db.session.commit()
+    return [
+        img.id
+        for img in PostImage.query.filter_by(post_id=post.id)
+        .order_by(PostImage.posicion)
+    ]
+
+
+def test_los_tokens_salen_en_el_mismo_orden_que_la_galeria(db, crear_usuario, crear_post):
+    """tokens_de_fotos y post.galeria se recorren juntos: tienen que alinear."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    assert reglas.tokens_de_fotos(post) == ["principal", str(ids[0]), str(ids[1])]
+    assert post.galeria == ["principal.png", "b.png", "c.png"]
+
+
+def test_un_orden_que_no_es_permutacion_exacta_se_rechaza(db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png")
+    completo = ["principal", str(ids[0])]
+
+    assert reglas.orden_de_fotos_valido(post, completo)
+    # Falta una: seria un borrado encubierto.
+    assert not reglas.orden_de_fotos_valido(post, ["principal"])
+    # Repetida: duplicaria un archivo y perderia el otro.
+    assert not reglas.orden_de_fotos_valido(post, ["principal", "principal"])
+    # De otro emprendimiento.
+    assert not reglas.orden_de_fotos_valido(post, ["principal", "99999"])
+    # Vacia.
+    assert not reglas.orden_de_fotos_valido(post, [])
+
+
+def test_reordenar_la_galeria_no_toca_la_principal(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    client.post(
+        f"/blog/{post.id}/fotos/reordenar",
+        data={"orden": f"principal,{ids[1]},{ids[0]}"},
+    )
+
+    db.session.expire_all()
+    assert post.image == "principal.png"
+    assert post.galeria == ["principal.png", "c.png", "b.png"]
+
+
+def test_promover_una_foto_de_la_galeria_intercambia_los_archivos(
+    client, db, crear_usuario, crear_post, login
+):
+    """La principal vieja baja a la galeria: es un swap de strings, no de archivos.
+
+    Lo que se fija es que no se pierda ni se duplique ningun archivo, y que la
+    cantidad de filas de post_images no cambie.
+    """
+    from app.blog.modelo_imagen import PostImage
+
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    client.post(
+        f"/blog/{post.id}/fotos/reordenar",
+        data={"orden": f"{ids[1]},principal,{ids[0]}"},
+    )
+
+    db.session.expire_all()
+    assert post.image == "c.png"
+    assert post.galeria == ["c.png", "principal.png", "b.png"]
+    # Las mismas tres fotos, ninguna perdida ni repetida.
+    assert sorted(post.galeria) == ["b.png", "c.png", "principal.png"]
+    # Y las mismas dos filas de siempre: no se creo ni se borro ninguna.
+    assert PostImage.query.filter_by(post_id=post.id).count() == 2
+
+
+def test_un_post_sin_principal_promueve_y_le_sobra_una_fila(
+    client, db, crear_usuario, crear_post, login
+):
+    """Sin Post.image, promover una foto la saca de post_images.
+
+    El total de fotos no cambia, pero una pasa a vivir en Post.image, asi que
+    sobra exactamente una fila. El archivo no se toca: pasa a referenciarlo
+    Post.image.
+    """
+    from app.blog.modelo_imagen import PostImage
+
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image=None)
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    client.post(
+        f"/blog/{post.id}/fotos/reordenar",
+        data={"orden": f"{ids[1]},{ids[0]}"},
+    )
+
+    db.session.expire_all()
+    assert post.image == "c.png"
+    assert post.galeria == ["c.png", "b.png"]
+    assert PostImage.query.filter_by(post_id=post.id).count() == 1
+
+
+def test_reordenar_las_fotos_de_otro_no_se_puede(
+    client, db, crear_usuario, crear_post, login
+):
+    """El chequeo de dueño, que es lo que esta ruta no puede no tener."""
+    autor = crear_usuario(username="autor")
+    intruso = crear_usuario(username="intruso")
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png")
+
+    login(intruso.id)
+    respuesta = client.post(
+        f"/blog/{post.id}/fotos/reordenar",
+        data={"orden": f"{ids[0]},principal"},
+    )
+
+    assert respuesta.status_code == 302
+    db.session.expire_all()
+    assert post.image == "principal.png"
+    assert post.galeria == ["principal.png", "b.png"]
+
+
+def test_un_orden_invalido_no_aplica_nada(client, db, crear_usuario, crear_post, login):
+    """Ni siquiera la parte que cerraba: o entra entero o no entra."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    # Sobra una foto ajena, aunque el resto sea una reordenacion legitima.
+    client.post(
+        f"/blog/{post.id}/fotos/reordenar",
+        data={"orden": f"{ids[1]},principal,{ids[0]},99999"},
+    )
+
+    db.session.expire_all()
+    assert post.galeria == ["principal.png", "b.png", "c.png"]
+
+
+def test_reordenar_no_acepta_get(client, crear_usuario, crear_post, login):
+    """Un GET con efectos se dispara desde un <img src> ajeno."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+
+    assert client.get(f"/blog/{post.id}/fotos/reordenar").status_code == 405

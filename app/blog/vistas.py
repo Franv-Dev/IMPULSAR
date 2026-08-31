@@ -273,6 +273,9 @@ def _contexto_del_formulario(post=None):
         "checklist": reglas.checklist_de_publicacion(
             post, consultas.tiene_horarios_cargados(g.user.id)
         ),
+        # Cada foto con el orden que resultaria de cada movimiento, ya
+        # calculado. Vacio en el alta: todavia no hay fotos que mover.
+        "fotos": reglas.fotos_para_reordenar(post) if post else [],
     }
 
 
@@ -414,6 +417,38 @@ def update(id):
             return redirect(url_for("blog.my_posts"))
 
     return render_template("blog/update.html", **_contexto_del_formulario(post))
+
+
+@blog.route("/<int:id>/fotos/reordenar", methods=("POST",))
+@login_required
+def reordenar_fotos(id):
+    """Cambia el orden de las fotos y cual es la principal.
+
+    Recibe `orden`: los tokens de TODAS las fotos del post separados por coma,
+    en el orden deseado, y el primero es la principal (ver
+    reglas.tokens_de_fotos). Los mandan tanto los botones "Subir"/"Bajar" --
+    cada uno lleva el resultado ya calculado, asi que andan sin JavaScript --
+    como el drag and drop, que escribe en el mismo campo oculto.
+
+    Solo POST y con el chequeo de dueño de siempre: esto escribe datos del
+    usuario, y un GET reordenable desde un <img src> ajeno seria un CSRF con
+    forma de bug cosmetico.
+    """
+    post, denegado = _post_propio(id, "reordenar las fotos de")
+    if denegado:
+        return denegado
+
+    tokens = [t for t in (request.form.get("orden") or "").split(",") if t]
+    if not reglas.orden_de_fotos_valido(post, tokens):
+        # Un orden que no cuadra casi siempre es una pantalla vieja: el usuario
+        # tenia el formulario abierto y las fotos cambiaron en otra pestaña. No
+        # se aplica nada, ni siquiera la parte que si cerraba.
+        flash("No pudimos reordenar las fotos: volvé a intentarlo con la página actualizada.")
+        return redirect(url_for("blog.update", id=id))
+
+    consultas.reordenar_fotos(post, tokens)
+    flash("Listo, cambiamos el orden de las fotos.")
+    return redirect(url_for("blog.update", id=id))
 
 
 @blog.route("/delete/<int:id>", methods=("POST",))
