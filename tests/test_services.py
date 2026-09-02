@@ -2313,3 +2313,53 @@ def test_el_upload_publico_si_se_sigue_bajando_por_static(client):
     respuesta = client.get("/static/css/styles.css")
 
     assert respuesta.status_code == 200
+
+
+# --- los CHECK de precios de la base
+
+def test_la_base_rechaza_un_precio_estimado_de_cero(
+    db, crear_usuario, crear_post
+):
+    """ck_services_precio_estimado_positivo: "sin cargo" en un servicio no se
+    escribe con un cero sino dejando la columna en NULL, que es "a
+    presupuestar". Un 0 seria un precio cerrado de cero pesos."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    db.session.add(Service(
+        post_id=post.id, titulo="Destapaciones", rubro=Rubros.PLOMERIA,
+        precio_estimado=Decimal("0.00"),
+    ))
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()
+
+
+def test_la_base_sigue_aceptando_un_servicio_a_presupuestar(
+    db, crear_usuario, crear_post
+):
+    """El control del anterior: el NULL es parte de la regla, no un descuido."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    db.session.add(Service(
+        post_id=post.id, titulo="Destapaciones", rubro=Rubros.PLOMERIA,
+        precio_estimado=None,
+    ))
+    db.session.commit()
+
+    assert Service.query.one().precio_estimado is None
+
+
+def test_la_base_rechaza_una_respuesta_con_precio_negativo(
+    db, servicio_y_cliente, crear_solicitud
+):
+    """ck_service_requests_respuesta_precio_positivo, la misma red que en el
+    servicio: la respuesta puede no traer precio, pero no uno negativo."""
+    _prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+
+    solicitud.respuesta_precio = Decimal("-100.00")
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()

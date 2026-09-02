@@ -80,6 +80,18 @@ class ServiceRequest(db.Model):
             "service_id", "cliente_id", "cupo_pendiente",
             name="uq_service_requests_pendiente",
         ),
+        # Mismo criterio que ck_services_precio_estimado_positivo: el precio
+        # que contesta el prestador se valida en services/precios.py, y esto es
+        # la red de abajo para lo que no entra por el formulario.
+        #
+        # NULL sigue siendo valido y no es un descuido: la respuesta puede no
+        # traer precio ("pasame una foto", "no llego a esa zona"), que es lo
+        # que dice el comentario de la columna. Lo que no puede es traer un
+        # cero o un negativo, porque eso ya es un presupuesto de cero pesos.
+        db.CheckConstraint(
+            "respuesta_precio IS NULL OR respuesta_precio > 0",
+            name="ck_service_requests_respuesta_precio_positivo",
+        ),
     )
 
     id = db.Column(db.Integer, primary_key=True)

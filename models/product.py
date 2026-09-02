@@ -40,6 +40,22 @@ class Product(db.Model):
 
     __tablename__ = "products"
 
+    # Un precio negativo no es un precio. Se valida en services/precios.py
+    # (parsear_precio corta en <= 0 con un mensaje entendible), y esto es la
+    # red de abajo, con el mismo criterio que ck_review_rating: el formulario
+    # no es el unico camino a la tabla -- estan el seed, un script suelto, una
+    # consola de la base -- y una fila con precio -500 no se nota hasta que
+    # alguien suma un catalogo.
+    #
+    # Es >= 0 y no > 0 a proposito, al reves que el servicio: un producto
+    # gratis ("primera consulta sin cargo") es una oferta real, y la que decide
+    # que el formulario no acepte el cero es parsear_precio, que se puede
+    # cambiar sin migracion. La base solo corta lo que no tiene sentido en
+    # ningun caso.
+    __table_args__ = (
+        db.CheckConstraint("precio >= 0", name="ck_products_precio_no_negativo"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     # ondelete="CASCADE" y con nombre explicito desde el principio: son las dos
     # cosas que hubo que arreglar despues en el resto de las tablas (ver las

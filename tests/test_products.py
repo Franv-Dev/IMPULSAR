@@ -4,6 +4,7 @@ import os
 from decimal import Decimal
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from models.product import (
     MAX_PRODUCTOS_POR_POST, UMBRAL_AVISO_LIMITE, Product,
@@ -680,3 +681,35 @@ def test_el_catalogo_no_dispara_una_consulta_por_producto(
         event.remove(db.engine, "before_cursor_execute", contar)
 
     assert len(consultas) == 1
+
+
+# --- el CHECK de la base
+
+def test_la_base_rechaza_un_producto_con_precio_negativo(
+    db, crear_usuario, crear_post
+):
+    """La red de abajo de parsear_precio (ck_products_precio_no_negativo).
+
+    El formulario ya corta el negativo con un mensaje, pero no es el unico
+    camino a la tabla: estan el seed, un script suelto y la consola de la base.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    db.session.add(Product(post_id=post.id, nombre="Pan", precio=Decimal("-500.00")))
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()
+
+
+def test_la_base_acepta_un_producto_gratis(db, crear_usuario, crear_post):
+    """Es >= 0 y no > 0 a proposito: "primera consulta sin cargo" es una oferta
+    real. Que el formulario no acepte el cero lo decide parsear_precio, que se
+    puede cambiar sin migracion."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    db.session.add(Product(post_id=post.id, nombre="Muestra", precio=Decimal("0.00")))
+    db.session.commit()
+
+    assert Product.query.filter_by(nombre="Muestra").one().precio == Decimal("0.00")

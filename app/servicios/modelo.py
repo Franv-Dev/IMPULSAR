@@ -83,6 +83,28 @@ class Service(db.Model):
 
     __tablename__ = "services"
 
+    # Mismo criterio que ck_products_precio_no_negativo y que ck_review_rating:
+    # la validacion de verdad esta arriba (services/precios.py corta en <= 0
+    # con un mensaje), y esto es la red de abajo para lo que no entra por el
+    # formulario (el seed, un script, la consola de la base).
+    #
+    # Aca es > 0 y no >= 0, al reves que el producto: "sin cargo" en un
+    # servicio no se escribe con un cero sino dejando precio_estimado en NULL,
+    # que es "a presupuestar" y es justamente lo que distingue esta tabla de
+    # products. Un 0 guardado seria un precio cerrado de cero pesos, que no es
+    # lo que nadie quiso decir.
+    #
+    # El "IS NULL OR" es parte de la regla y no una excusa: la columna es
+    # nullable a proposito. Ojo que un CHECK con condicion en MySQL recien se
+    # valida desde 8.0.16; en las versiones anteriores se guarda y se ignora,
+    # asi que la garantia dura es en SQLite y en MySQL moderno.
+    __table_args__ = (
+        db.CheckConstraint(
+            "precio_estimado IS NULL OR precio_estimado > 0",
+            name="ck_services_precio_estimado_positivo",
+        ),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     # ondelete="CASCADE" y con nombre explicito, igual que products: sin el
     # CASCADE, MySQL usa RESTRICT y borrar un emprendimiento con servicios
