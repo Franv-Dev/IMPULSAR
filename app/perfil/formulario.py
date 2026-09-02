@@ -9,6 +9,7 @@ proyecto: Flask-WTF esta instalado pero solo se usa para el CSRF.
 from flask import request
 
 from app.perfil.reglas import DURACION_MINIMA_MINUTOS
+from services.validation import validate_telefono
 from services.horarios import (
     DIAS, duracion_minutos, formatear as formatear_hora, parsear_hora,
 )
@@ -22,12 +23,19 @@ def leer_bio():
 
 
 def leer_perfil():
-    """Los campos del perfil completo, ya limpios.
+    """Los campos del perfil completo, ya limpios: (datos, error).
 
     Ojo con dos que se parecen y no son lo mismo: `location` es texto libre que
     solo se muestra, y `address_street` es la direccion que se geocodifica.
+
+    De los ocho campos, los dos telefonos son los unicos que se validan, y no
+    por capricho: son datos de CONTACTO, o sea que existen para que alguien los
+    marque. Un telefono con letras o con cuatro digitos no falla en ningun
+    lado, se publica en el perfil y el cliente que lo intente no llega a
+    nadie. Los tres links y los dos textos libres se guardan como vengan, que
+    es como venia funcionando.
     """
-    return {
+    datos = {
         "biography": request.form.get("biography", "").strip(),
         "location": request.form.get("location", "").strip(),
         "address_street": request.form.get("address_street", "").strip(),
@@ -37,6 +45,13 @@ def leer_perfil():
         "facebook_url": request.form.get("facebook_url", "").strip(),
         "twitter_url": request.form.get("twitter_url", "").strip(),
     }
+
+    error = (
+        validate_telefono(datos["phone"])
+        or validate_telefono(datos["whatsapp"], etiqueta="WhatsApp")
+    )
+
+    return datos, error
 
 
 def fila_de_horario(dia, etiqueta, cerrado, abre, cierra):

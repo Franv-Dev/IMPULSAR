@@ -1,5 +1,6 @@
 """Tests de registro, login y autorizacion por roles."""
 
+import pytest
 from flask import jsonify
 from flask_jwt_extended import jwt_required
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -343,3 +344,37 @@ def test_login_por_formulario_inicia_sesion(client, crear_usuario):
     assert resp.status_code == 302
     with client.session_transaction() as sesion:
         assert sesion.get("user_id") is not None
+
+
+# --- formato del email
+
+@pytest.mark.parametrize("email", ["tomy", "tomy@", "@ejemplo.com", "a@b", "to my@b.com"])
+def test_no_se_registra_con_un_email_que_no_tiene_forma_de_email(client, email):
+    """Se valida la FORMA y no la existencia: la unica manera de saber que una
+    direccion existe es mandarle un mail, y el proyecto no manda mails. Con
+    esto alcanza para que nadie quede registrado sin forma de contactarlo."""
+    client.post("/auth/register", data={
+        "username": "tomy", "email": email, "password": "secreta123",
+    })
+
+    assert User.query.count() == 0
+
+
+def test_la_api_tambien_rechaza_un_email_mal_escrito(client):
+    """Los dos registros usan la misma regla, que es para lo que existe
+    services/validation.py."""
+    respuesta = client.post("/auth/api/register", json={
+        "username": "tomy", "email": "tomy@", "password": "secreta123",
+    })
+
+    assert respuesta.status_code == 400
+    assert User.query.count() == 0
+
+
+def test_un_email_valido_se_sigue_registrando(client):
+    """El control de los dos anteriores."""
+    client.post("/auth/register", data={
+        "username": "tomy", "email": "tomy@ejemplo.com.ar", "password": "secreta123",
+    })
+
+    assert User.query.count() == 1

@@ -6,7 +6,9 @@ from models.user import Roles, User
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.exc import IntegrityError
 from db import db
-from services.validation import validate_password, validate_username
+from services.validation import (
+    validate_email, validate_password, validate_username,
+)
 import functools
 
 # --- JWT ---
@@ -37,10 +39,8 @@ def register():
             error = username_error
         elif not password:
             error = "Se requiere una contraseña"
-        elif not email:
-            error = "Se requiere un email"
         else:
-            error = validate_password(password)
+            error = validate_email(email) or validate_password(password)
 
         # Unicidad
         if error is None and User.existe_username_equivalente(username):
@@ -163,7 +163,8 @@ def api_register():
     errors = []
     username_error = validate_username(username)
     if username_error: errors.append(username_error)
-    if not email: errors.append("email requerido")
+    email_error = validate_email(email)
+    if email_error: errors.append(email_error)
     if not password:
         errors.append("password requerido")
     else:

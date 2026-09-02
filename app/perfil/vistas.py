@@ -219,7 +219,15 @@ def edit():
     """Permite al usuario logueado editar su perfil: foto, bio, contacto y dirección."""
 
     if request.method == "POST":
-        datos = formulario.leer_perfil()
+        datos, error = formulario.leer_perfil()
+        if error:
+            # Se corta antes de tocar nada, al reves que los errores de las dos
+            # imagenes de mas abajo, que solo descartan su archivo y dejan
+            # guardar el resto. Un telefono mal escrito es texto del mismo
+            # formulario: guardar los otros siete campos y no ese dejaria el
+            # perfil a medio actualizar sin que se note cual falto.
+            flash(error)
+            return render_template("profile/edit.html", user=g.user)
 
         # Usamos los datos existentes como fallback
         latitude = g.user.latitude

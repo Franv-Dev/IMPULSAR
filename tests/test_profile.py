@@ -627,3 +627,84 @@ def test_las_pantallas_de_cuenta_marcan_su_item_en_el_menu(
         # El marcado tiene que caer en SU item, no en cualquiera de los ocho.
         assert texto == etiqueta, (ruta, texto)
         assert 'aria-current="page"' in atributos, (ruta, atributos)
+
+
+# --- formato de los datos de contacto
+
+def test_un_telefono_con_letras_no_se_guarda(client, db, crear_usuario, login):
+    """El telefono existe para que alguien lo marque: uno con letras no falla
+    en ningun lado, se publica en el perfil y el cliente no llega a nadie."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    respuesta = client.post("/perfil/edit", data={
+        "biography": "Hago pan artesanal", "phone": "llamame", "address_street": "",
+    })
+
+    db.session.refresh(usuario)
+    assert respuesta.status_code == 200
+    assert usuario.phone is None
+
+
+def test_un_whatsapp_demasiado_corto_no_se_guarda(client, db, crear_usuario, login):
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    client.post("/perfil/edit", data={
+        "biography": "Hago pan artesanal", "whatsapp": "1234", "address_street": "",
+    })
+
+    db.session.refresh(usuario)
+    assert usuario.whatsapp is None
+
+
+def test_un_telefono_mal_escrito_no_guarda_el_resto_del_formulario(
+    client, db, crear_usuario, login
+):
+    """Se corta antes de tocar nada: guardar los otros campos y no el telefono
+    dejaria el perfil a medio actualizar sin que se note cual falto."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    client.post("/perfil/edit", data={
+        "biography": "Hago pan artesanal", "location": "Maipú",
+        "phone": "llamame", "address_street": "",
+    })
+
+    db.session.refresh(usuario)
+    assert usuario.location is None
+
+
+def test_los_telefonos_con_separadores_se_siguen_guardando(
+    client, db, crear_usuario, login
+):
+    """El control de los anteriores: se acepta el numero como se escribe de
+    verdad, y se guarda tal cual, sin normalizar a E.164."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    client.post("/perfil/edit", data={
+        "biography": "Hago pan artesanal",
+        "phone": "+54 9 261 123-4567", "whatsapp": "(261) 4-123456",
+        "address_street": "",
+    })
+
+    db.session.refresh(usuario)
+    assert usuario.phone == "+54 9 261 123-4567"
+    assert usuario.whatsapp == "(261) 4-123456"
+
+
+def test_borrar_el_telefono_sigue_siendo_valido(client, db, crear_usuario, login):
+    """Vacio no es un error: los dos campos son opcionales y quien los borra lo
+    hace a proposito."""
+    usuario = crear_usuario(username="tomy")
+    usuario.phone = "2611234567"
+    db.session.commit()
+    login(usuario.id)
+
+    client.post("/perfil/edit", data={
+        "biography": "Hago pan artesanal", "phone": "", "address_street": "",
+    })
+
+    db.session.refresh(usuario)
+    assert usuario.phone is None
