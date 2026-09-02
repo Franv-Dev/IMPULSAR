@@ -54,6 +54,28 @@ def leer_perfil():
     return datos, error
 
 
+def campos_guardados(user):
+    """Los ocho campos del perfil tal como estan guardados hoy.
+
+    La contraparte de leer_perfil(), y la razon de que exista es la misma que
+    la de filas_guardadas() en los horarios: el template se pinta SIEMPRE desde
+    un dict con estas ocho claves, venga de la base (al entrar) o del POST (al
+    volver por un error). Si el GET leyera user.* y el error leyera el POST,
+    serian dos formas de armar la misma pantalla y una de las dos se iba a
+    quedar atras.
+    """
+    return {
+        "biography": user.biography or "",
+        "location": user.location or "",
+        "address_street": user.address_street or "",
+        "phone": user.phone or "",
+        "whatsapp": user.whatsapp or "",
+        "instagram_url": user.instagram_url or "",
+        "facebook_url": user.facebook_url or "",
+        "twitter_url": user.twitter_url or "",
+    }
+
+
 def fila_de_horario(dia, etiqueta, cerrado, abre, cierra):
     """Una linea del formulario de horarios, con las horas ya como texto "HH:MM"."""
     return {

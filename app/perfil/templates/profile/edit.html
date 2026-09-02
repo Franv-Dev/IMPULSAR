@@ -90,7 +90,7 @@
                         class="auth__input"
                         placeholder="Aquí es donde tu historia brilla..."
                         rows="6"
-                    >{{ user.biography or '' }}</textarea>
+                    >{{ campos.biography }}</textarea>
                     <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
                         Podés usar **negrita**, [texto](https://link.com) y renglones nuevos.
                     </small>
@@ -104,7 +104,7 @@
                         name="phone"
                         class="auth__input"
                         placeholder="Ej: 261 555-1234"
-                        value="{{ user.phone or '' }}"
+                        value="{{ campos.phone }}"
                     >
                 </div>
 
@@ -116,7 +116,7 @@
                         name="whatsapp"
                         class="auth__input"
                         placeholder="Ej: 5492615551234 (con código de país, sin espacios)"
-                        value="{{ user.whatsapp or '' }}"
+                        value="{{ campos.whatsapp }}"
                     >
                 </div>
 
@@ -128,7 +128,7 @@
                         name="instagram_url"
                         class="auth__input"
                         placeholder="https://instagram.com/tu-usuario"
-                        value="{{ user.instagram_url or '' }}"
+                        value="{{ campos.instagram_url }}"
                     >
                 </div>
 
@@ -140,7 +140,7 @@
                         name="facebook_url"
                         class="auth__input"
                         placeholder="https://facebook.com/tu-pagina"
-                        value="{{ user.facebook_url or '' }}"
+                        value="{{ campos.facebook_url }}"
                     >
                 </div>
 
@@ -152,7 +152,7 @@
                         name="twitter_url"
                         class="auth__input"
                         placeholder="https://twitter.com/tu-usuario"
-                        value="{{ user.twitter_url or '' }}"
+                        value="{{ campos.twitter_url }}"
                     >
                 </div>
 
@@ -164,7 +164,7 @@
                         name="location"
                         class="auth__input"
                         placeholder="Ej: Maipú, Mendoza"
-                        value="{{ user.location or '' }}"
+                        value="{{ campos.location }}"
                     >
                     <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
                         Solo se muestra como texto en tu perfil. No mueve el mapa:
@@ -180,7 +180,7 @@
                         name="address_street"
                         class="auth__input"
                         placeholder="Ej: Calle, Nº, Distrito, Provincia (Ej: Av. San Martín 123, Maipú, Mendoza)"
-                        value="{{ user.address_street or '' }}"
+                        value="{{ campos.address_street }}"
                     >
                     <small class="auth__hint" style="font-size: 0.85rem; margin-top: 5px;">
                         Ingresá la dirección completa para el mapa: Calle, Nº, Distrito y Provincia.

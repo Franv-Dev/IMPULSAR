@@ -708,3 +708,51 @@ def test_borrar_el_telefono_sigue_siendo_valido(client, db, crear_usuario, login
 
     db.session.refresh(usuario)
     assert usuario.phone is None
+
+
+def test_un_telefono_mal_escrito_no_borra_lo_que_ya_se_habia_escrito(
+    client, crear_usuario, login
+):
+    """Se repinta con lo que la persona escribio y no con lo que hay guardado.
+
+    Si el formulario vuelve pintado desde user.*, corregir el teléfono cuesta
+    reescribir los otros siete campos, incluido el WhatsApp que estaba bien.
+    Es el mismo patron que ya usa el panel de horarios, que devuelve los
+    pendientes y no las filas guardadas.
+    """
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    respuesta = client.post("/perfil/edit", data={
+        "biography": "Hago pan artesanal",
+        "location": "Maipú",
+        "instagram_url": "https://instagram.com/tomy",
+        "whatsapp": "2611234567",
+        "phone": "llamame",
+        "address_street": "",
+    })
+
+    html = respuesta.get_data(as_text=True)
+    assert "Hago pan artesanal" in html
+    assert "Maipú" in html
+    assert "https://instagram.com/tomy" in html
+    assert "2611234567" in html
+    # Y el que fallo tambien vuelve, para que se vea que hay que corregir.
+    assert "llamame" in html
+
+
+def test_el_formulario_de_edicion_se_precarga_con_lo_guardado(
+    client, db, crear_usuario, login
+):
+    """El control del anterior: al entrar (GET) se sigue viendo lo que hay en
+    la base, que es de donde salen los campos cuando no hubo POST."""
+    usuario = crear_usuario(username="tomy")
+    usuario.location = "Maipú"
+    usuario.phone = "2611234567"
+    db.session.commit()
+    login(usuario.id)
+
+    html = client.get("/perfil/edit").get_data(as_text=True)
+
+    assert "Maipú" in html
+    assert "2611234567" in html

@@ -224,10 +224,16 @@ def edit():
             # Se corta antes de tocar nada, al reves que los errores de las dos
             # imagenes de mas abajo, que solo descartan su archivo y dejan
             # guardar el resto. Un telefono mal escrito es texto del mismo
-            # formulario: guardar los otros siete campos y no ese dejaria el
+            # formulario, y guardar los otros siete campos y no ese dejaria el
             # perfil a medio actualizar sin que se note cual falto.
+            #
+            # Se repinta con lo que la persona escribio y no con lo que hay
+            # guardado, igual que el panel de horarios de mas arriba: si se
+            # vuelve a pintar desde g.user, corregir el telefono cuesta
+            # reescribir los otros siete campos, incluido el WhatsApp que
+            # estaba bien.
             flash(error)
-            return render_template("profile/edit.html", user=g.user)
+            return render_template("profile/edit.html", user=g.user, campos=datos)
 
         # Usamos los datos existentes como fallback
         latitude = g.user.latitude
@@ -291,4 +297,7 @@ def edit():
         flash("Perfil actualizado correctamente.")
         return redirect(url_for("profile.view_profile", slug=g.user.slug))
 
-    return render_template("profile/edit.html", user=g.user)
+    return render_template(
+        "profile/edit.html", user=g.user,
+        campos=formulario.campos_guardados(g.user),
+    )
