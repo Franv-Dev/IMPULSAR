@@ -424,6 +424,28 @@ def guardar(fila=None):
     db.session.commit()
 
 
+def sumar_una_vista(post):
+    """Suma uno al contador de vistas del post, en la base y no en Python.
+
+    Se hace con un UPDATE (views_count = views_count + 1) y no con el
+    read-modify-write que habia antes (post.views_count += 1 y commit): con dos
+    visitas al mismo emprendimiento a la vez, los dos procesos leian el mismo
+    numero, los dos escribian ese numero mas uno, y una de las dos vistas se
+    perdia. Con la suma adentro del UPDATE la hace el motor sobre la fila
+    bloqueada, asi que las dos cuentan.
+
+    Despues del UPDATE se expira el atributo en vez de refrescarlo: el objeto
+    de la sesion todavia tiene el valor viejo, y expirarlo hace que se relea
+    solo si alguien lo mira -- que en el detalle no pasa, porque el contador es
+    dato del dueño y del dueño no se cuentan las vistas.
+    """
+    Post.query.filter_by(id=post.id).update(
+        {Post.views_count: Post.views_count + 1}, synchronize_session=False
+    )
+    db.session.commit()
+    db.session.expire(post, ["views_count"])
+
+
 def borrar(fila):
     db.session.delete(fila)
     db.session.commit()

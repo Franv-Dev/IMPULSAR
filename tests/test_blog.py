@@ -2142,3 +2142,47 @@ def test_el_arrastre_es_un_agregado_y_no_el_unico_camino(
     # Los submits ya vienen servidos, no los crea el script.
     assert 'form="form-reordenar"' in html
     assert "un lugar antes" in html
+
+
+def test_la_vista_se_suma_en_la_base_y_no_en_python(db, crear_usuario, crear_post):
+    """Sin esto se perdian vistas cuando dos personas abrian el mismo
+    emprendimiento a la vez.
+
+    El read-modify-write que habia antes (post.views_count += 1 y commit) leia
+    el contador en Python, y con dos visitas simultaneas los dos procesos leian
+    el mismo numero y los dos escribian ese numero mas uno: una vista se
+    perdia.
+
+    La carrera se reproduce sin hilos, que en SQLite en memoria no serviria:
+    se deja que la sesion cargue el contador (el "read"), se lo cambia por
+    detras como lo haria el otro proceso, y recien ahi se suma. Con la version
+    vieja el resultado era 1, el valor viejo mas uno; con el UPDATE de la base
+    es 6.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    assert post.views_count == 0  # el "read" de la sesion, ya en el identity map
+
+    # El otro proceso, que escribe sin que esta sesion se entere.
+    db.session.connection().exec_driver_sql(
+        f"UPDATE posts SET views_count = 5 WHERE id = {post.id}"
+    )
+
+    consultas.sumar_una_vista(post)
+
+    guardado = db.session.connection().exec_driver_sql(
+        f"SELECT views_count FROM posts WHERE id = {post.id}"
+    ).scalar()
+    assert guardado == 6
+
+
+def test_el_contador_no_queda_viejo_en_la_sesion(db, crear_usuario, crear_post):
+    """El UPDATE no toca el objeto que ya esta en la sesion, asi que se expira
+    el atributo para que se relea si alguien lo mira."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    assert post.views_count == 0
+
+    consultas.sumar_una_vista(post)
+
+    assert post.views_count == 1

@@ -193,8 +193,7 @@ def detail(id):
 
     # No cuenta las vistas del propio dueño revisando su publicacion.
     if not es_dueño:
-        post.views_count += 1
-        consultas.guardar()
+        consultas.sumar_una_vista(post)
 
     return render_template(
         "blog/detail.html",
