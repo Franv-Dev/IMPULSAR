@@ -8,7 +8,10 @@ proyecto: Flask-WTF esta instalado pero solo se usa para el CSRF.
 
 from flask import request
 
-from services.horarios import DIAS, formatear as formatear_hora, parsear_hora
+from app.perfil.reglas import DURACION_MINIMA_MINUTOS
+from services.horarios import (
+    DIAS, duracion_minutos, formatear as formatear_hora, parsear_hora,
+)
 
 
 def leer_bio():
@@ -63,6 +66,10 @@ def leer_horarios():
     `pendientes` son tuplas (dia, etiqueta, cerrado, abre, cierra) con lo que
     mando el usuario, y se devuelven aunque haya error: perder el formulario
     entero por un dia mal cargado obliga a rehacer los siete.
+
+    Se reporta el PRIMER error y no el ultimo: antes cada dia pisaba el mensaje
+    del anterior, asi que con dos dias mal cargados se veia el del ultimo y el
+    usuario corregia ese, mandaba, y le aparecia el otro.
     """
     error = None
     pendientes = []
@@ -71,17 +78,58 @@ def leer_horarios():
         abre = parsear_hora(request.form.get(f"abre_{dia}"))
         cierra = parsear_hora(request.form.get(f"cierra_{dia}"))
 
-        if not cerrado and (abre is None) != (cierra is None):
-            error = (
-                f"{etiqueta}: cargá la hora de apertura y la de cierre, o marcá "
-                "el día como cerrado."
-            )
-        elif not cerrado and abre and cierra and abre == cierra:
-            error = (
-                f"{etiqueta}: la hora de apertura y la de cierre no pueden ser "
-                "iguales."
-            )
+        if error is None and not cerrado:
+            if (abre is None) != (cierra is None):
+                error = (
+                    f"{etiqueta}: cargá la hora de apertura y la de cierre, o "
+                    "marcá el día como cerrado."
+                )
+            elif abre and cierra:
+                error = _error_de_rango(etiqueta, abre, cierra)
 
         pendientes.append((dia, etiqueta, cerrado, abre, cierra))
 
     return pendientes, error
+
+
+def _error_de_rango(etiqueta, abre, cierra):
+    """El mensaje si ese rango de atencion no tiene sentido, o None.
+
+    El rango se lee como lo lee services/horarios: si `cierra` es menor que
+    `abre`, el cierre es del dia siguiente (un bar de 20:00 a 02:00). Por eso
+    NO se pide que la apertura sea anterior al cierre: eso rechazaria todos los
+    horarios nocturnos, que son validos y que el resto del proyecto ya
+    contempla (esta_abierto y el filtro "Abierto ahora" del listado).
+
+    Lo que si se puede pedir son las dos cosas que no dependen de si cruza
+    medianoche:
+
+    - que las dos horas no sean la misma, que es el caso ambiguo: nadie sabe si
+      "de 09:00 a 09:00" es cerrado siempre o abierto las 24 horas, y hoy los
+      dos lectores del horario lo toman como cerrado, sin avisar. El mensaje
+      dice como escribir el dia completo, que es lo que casi siempre se quiso.
+    - que el rango no sea absurdamente corto. Con el cruce de medianoche, un
+      "de 18:00 a 09:00" es un rango largo y valido, pero un "de 09:00 a 09:05"
+      son cinco minutos de atencion: es un error de tipeo en los minutos, y sin
+      esto se guardaba y dejaba el negocio cerrado casi todo el dia sin que
+      nadie se enterara.
+
+    Lo que queda afuera, y no por olvido: el caso inverso, alguien que quiso
+    poner "de 09:00 a 18:00" y escribio "de 18:00 a 09:00". Es indistinguible
+    de un horario nocturno legitimo, asi que rechazarlo seria romper el caso
+    real para atajar un typo.
+    """
+    if abre == cierra:
+        return (
+            f"{etiqueta}: la hora de apertura y la de cierre no pueden ser "
+            "iguales. Si atendés todo el día, cargá de 00:00 a 23:59."
+        )
+
+    duracion = duracion_minutos(abre, cierra)
+    if duracion < DURACION_MINIMA_MINUTOS:
+        return (
+            f"{etiqueta}: de {formatear_hora(abre)} a {formatear_hora(cierra)} "
+            f"son {duracion} minutos de atención. Revisá las horas."
+        )
+
+    return None

@@ -4,8 +4,13 @@ from datetime import datetime, time, timedelta, timezone
 
 import pytest
 
+import sqlalchemy.exc
+
 from app.perfil.modelo_horario import Horario
-from services.horarios import ZONA_ARGENTINA, esta_abierto, parsear_hora
+from app.perfil.reglas import DURACION_MINIMA_MINUTOS
+from services.horarios import (
+    ZONA_ARGENTINA, duracion_minutos, esta_abierto, parsear_hora,
+)
 
 
 def _horario(dia, abre="09:00", cierra="18:00", cerrado=False):
@@ -179,5 +184,150 @@ def test_los_horarios_se_borran_con_el_usuario(client, db, crear_usuario):
 
 def _horario_de(user_id, dia):
     horario = _horario(dia)
+    horario.user_id = user_id
+    return horario
+
+
+# --- duracion de un rango
+
+@pytest.mark.parametrize("abre, cierra, esperado", [
+    ("09:00", "18:00", 540),
+    # Cruza medianoche: son seis horas, no menos veintiuna.
+    ("20:00", "02:00", 360),
+    ("09:00", "09:05", 5),
+    # El caso ambiguo da 0 y no 1440, para que caiga del lado corto.
+    ("09:00", "09:00", 0),
+])
+def test_duracion_minutos_cuenta_el_cruce_de_medianoche(abre, cierra, esperado):
+    assert duracion_minutos(parsear_hora(abre), parsear_hora(cierra)) == esperado
+
+
+def test_duracion_minutos_sin_una_de_las_horas_es_none():
+    """Un dia a medio cargar no es un rango de cero."""
+    assert duracion_minutos(parsear_hora("09:00"), None) is None
+
+
+# --- validacion del formulario de horarios
+
+def test_un_horario_nocturno_se_guarda(client, db, crear_usuario, login):
+    """El control de todo lo demas: NO se pide que la apertura sea anterior al
+    cierre, porque un bar de 20:00 a 02:00 cierra al dia siguiente."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    client.post("/perfil/horarios", data={"abre_0": "20:00", "cierra_0": "02:00"})
+
+    db.session.refresh(usuario)
+    del_lunes = [h for h in usuario.horarios if h.dia_semana == 0][0]
+    assert (del_lunes.abre, del_lunes.cierra) == (time(20, 0), time(2, 0))
+
+
+def test_las_dos_horas_iguales_es_un_error(client, db, crear_usuario, login):
+    """"De 09:00 a 09:00" no se puede leer: los dos lectores del horario lo
+    toman como cerrado, sin avisar."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    respuesta = client.post(
+        "/perfil/horarios", data={"abre_0": "09:00", "cierra_0": "09:00"}
+    )
+
+    db.session.refresh(usuario)
+    assert respuesta.status_code == 200
+    assert not usuario.horarios
+    assert "00:00 a 23:59" in respuesta.get_data(as_text=True)
+
+
+def test_un_rango_absurdamente_corto_es_un_error(client, db, crear_usuario, login):
+    """Cinco minutos de atencion es un tipeo en los minutos, no un horario."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    respuesta = client.post(
+        "/perfil/horarios", data={"abre_0": "09:00", "cierra_0": "09:05"}
+    )
+
+    db.session.refresh(usuario)
+    assert respuesta.status_code == 200
+    assert not usuario.horarios
+
+
+def test_el_minimo_de_duracion_se_acepta(client, db, crear_usuario, login):
+    """El borde del anterior: el minimo entra, no se rechaza por empatar."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    client.post(
+        "/perfil/horarios",
+        data={"abre_0": "09:00", "cierra_0": f"09:{DURACION_MINIMA_MINUTOS:02d}"},
+    )
+
+    db.session.refresh(usuario)
+    assert [h for h in usuario.horarios if h.dia_semana == 0]
+
+
+def test_se_reporta_el_primer_dia_mal_cargado_y_no_el_ultimo(
+    client, crear_usuario, login
+):
+    """Antes cada dia pisaba el mensaje del anterior: con dos dias mal cargados
+    se veia el del ultimo, el usuario corregia ese y le aparecia el otro."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    respuesta = client.post("/perfil/horarios", data={
+        "abre_0": "09:00", "cierra_0": "09:00",
+        "abre_3": "10:00",
+    })
+
+    html = respuesta.get_data(as_text=True)
+    assert "Lunes:" in html
+    assert "Jueves:" not in html
+
+
+# --- los CHECK de la base
+
+def test_la_base_rechaza_un_dia_con_las_dos_horas_iguales(db, crear_usuario):
+    """ck_horarios_abre_distinto_de_cierra, la red de abajo del formulario."""
+    usuario = crear_usuario(username="tomy")
+
+    db.session.add(_horario_de_usuario(usuario.id, 0, "09:00", "09:00"))
+    with pytest.raises(sqlalchemy.exc.IntegrityError):
+        db.session.commit()
+    db.session.rollback()
+
+
+def test_la_base_rechaza_un_dia_abierto_sin_horas(db, crear_usuario):
+    """ck_horarios_dia_abierto_con_horas: un dia a medio cargar que
+    esta_abierto() saltearia en silencio."""
+    usuario = crear_usuario(username="tomy")
+
+    db.session.add(_horario_de_usuario(usuario.id, 0, None, None))
+    with pytest.raises(sqlalchemy.exc.IntegrityError):
+        db.session.commit()
+    db.session.rollback()
+
+
+def test_la_base_acepta_un_horario_nocturno(db, crear_usuario):
+    """El control de los dos anteriores: el CHECK no dice abre < cierra."""
+    usuario = crear_usuario(username="tomy")
+
+    db.session.add(_horario_de_usuario(usuario.id, 0, "20:00", "02:00"))
+    db.session.commit()
+
+    assert Horario.query.one().cierra == time(2, 0)
+
+
+def test_la_base_acepta_un_dia_cerrado_sin_horas(db, crear_usuario):
+    """El otro control: un dia cerrado no tiene horas y eso es correcto."""
+    usuario = crear_usuario(username="tomy")
+
+    db.session.add(_horario_de_usuario(usuario.id, 0, None, None, cerrado=True))
+    db.session.commit()
+
+    assert Horario.query.one().cerrado is True
+
+
+def _horario_de_usuario(user_id, dia, abre, cierra, cerrado=False):
+    horario = _horario(dia, abre=abre, cierra=cierra, cerrado=cerrado)
     horario.user_id = user_id
     return horario

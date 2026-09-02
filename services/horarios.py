@@ -97,6 +97,31 @@ def esta_abierto(horarios, ahora=None):
     return False
 
 
+MINUTOS_POR_DIA = 24 * 60
+
+
+def duracion_minutos(abre, cierra):
+    """Cuanto dura ese rango, en minutos, contando el cruce de medianoche.
+
+    De 09:00 a 18:00 son 540; de 20:00 a 02:00 son 360, no -1080. La cuenta es
+    modulo 24 horas, que es la misma lectura que hace esta_abierto(): cuando
+    `cierra` es menor que `abre`, el cierre es del dia siguiente.
+
+    Devuelve None si falta alguna de las dos horas, que es el dia a medio
+    cargar y no un rango de cero.
+
+    Ojo con el caso `abre == cierra`: da 0 y no 1440. Es a proposito, porque es
+    justo el caso ambiguo que nadie puede leer (¿cerrado siempre o abierto las
+    24 horas?) y por eso el formulario lo rechaza; devolver 1440 lo haria pasar
+    por el rango mas largo posible en vez de por el mas corto.
+    """
+    if abre is None or cierra is None:
+        return None
+    minutos_abre = abre.hour * 60 + abre.minute
+    minutos_cierra = cierra.hour * 60 + cierra.minute
+    return (minutos_cierra - minutos_abre) % MINUTOS_POR_DIA
+
+
 def formatear(hora):
     """Un time como "09:30", o cadena vacia si no hay hora cargada."""
     return hora.strftime("%H:%M") if isinstance(hora, time) else ""

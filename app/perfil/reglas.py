@@ -28,6 +28,19 @@ def puede_seguir(user, visitante):
     return bool(visitante) and visitante.id != user.id
 
 
+# Cuanto tiene que durar, como minimo, un dia de atencion. Es un piso contra el
+# tipeo, no una regla de negocio: con el cruce de medianoche un "de 18:00 a
+# 09:00" es un rango largo y legitimo, pero un "de 09:00 a 09:05" son cinco
+# minutos y es alguien que se equivoco en los minutos. Un cuarto de hora es lo
+# mas corto que se puede defender como atencion real (una guardia, un retiro de
+# pedidos) sin dejar pasar el typo.
+#
+# Vive aca y no en la base: la cuenta necesita el modulo de 24 horas del cruce
+# de medianoche, que no es lo mismo en MySQL que en SQLite, y ademas es el tipo
+# de numero que se va a querer mover sin una migracion.
+DURACION_MINIMA_MINUTOS = 15
+
+
 def horario_del_dia(cerrado, abre, cierra):
     """Como queda guardado un dia del panel de horarios: (cerrado, abre, cierra).
 
