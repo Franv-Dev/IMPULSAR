@@ -12,7 +12,9 @@ haya validado bien, asi que lo hace la vista.
 
 from flask import request
 
-from app.blog.reglas import RATING_MAXIMO, RATING_MINIMO, radio_valido
+from app.blog.reglas import (
+    MAX_TITULO, RATING_MAXIMO, RATING_MINIMO, radio_valido,
+)
 
 
 def leer_post(pedir_descripcion=True):
@@ -41,6 +43,11 @@ def leer_post(pedir_descripcion=True):
     error = None
     if not valores["title"]:
         error = "Se requiere un título."
+    elif len(valores["title"]) > MAX_TITULO:
+        error = (
+            f"El título no puede tener más de {MAX_TITULO} caracteres "
+            f"(escribiste {len(valores['title'])})."
+        )
     elif pedir_descripcion and not valores["body"]:
         error = "Se requiere una descripción."
 

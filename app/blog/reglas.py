@@ -6,7 +6,19 @@ separacion es la que hace que las reglas se puedan leer (y probar) sin levantar
 un request.
 """
 
-from app.blog.modelo_post import MAX_IMAGENES_POR_POST, Categorias
+from app.blog.modelo_post import MAX_IMAGENES_POR_POST, Categorias, Post
+
+# Largo maximo del nombre de un emprendimiento. Sale de la columna y no de un
+# numero escrito a mano: son el mismo limite, y dos copias se despegan la
+# primera vez que alguien agranda la columna.
+#
+# Hace falta chequearlo antes del INSERT y no confiar en que la base corte:
+# MySQL trunca o falla segun el sql_mode con el que este levantado, asi que sin
+# esto un nombre largo o se guarda cortado a la mitad sin avisar, o muere con
+# un DataError que nadie atrapa y el usuario ve como un 500 en vez de como un
+# error del formulario. Es el mismo caso que MAX_USERNAME_LENGTH en
+# services/validation.py.
+MAX_TITULO = Post.title.type.length
 
 # Los dos tipos de contenido que se pueden reportar. Viven aca y no sueltos en
 # la ruta porque son el dominio de lo reportable, no un detalle de la URL.

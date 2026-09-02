@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy import event
 
 from app.blog import consultas, reglas
+from app.blog.reglas import MAX_TITULO
 from app.blog.modelo_post import Categorias, Post
 from app.blog.modelo_resenia import Review
 from models.user import User
@@ -201,6 +202,38 @@ def test_crear_sin_titulo_no_guarda_nada(client, crear_usuario, login):
     client.post("/blog/create", data={"title": "", "body": "Una descripción"})
 
     assert Post.query.count() == 0
+
+
+def test_crear_con_un_titulo_mas_largo_que_la_columna_no_guarda_nada(
+    client, crear_usuario, login
+):
+    """Se corta antes del INSERT y no se confia en que la base avise: MySQL
+    trunca o falla segun el sql_mode con el que este levantado, asi que el
+    nombre se guardaria cortado a la mitad sin aviso, o el usuario veria un 500
+    en vez de un error del formulario."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    respuesta = client.post("/blog/create", data={
+        "title": "a" * (MAX_TITULO + 1), "body": "Una descripción",
+    })
+
+    assert Post.query.count() == 0
+    assert str(MAX_TITULO) in respuesta.get_data(as_text=True)
+
+
+def test_crear_con_un_titulo_del_largo_exacto_de_la_columna_guarda(
+    client, crear_usuario, login
+):
+    """El borde del anterior: el maximo entra, no se rechaza por empatar."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    client.post("/blog/create", data={
+        "title": "a" * MAX_TITULO, "body": "Una descripción",
+    })
+
+    assert Post.query.count() == 1
 
 
 # --------------------------------------------------------------------- resenas
