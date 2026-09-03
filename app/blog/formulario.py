@@ -159,5 +159,15 @@ def leer_abierto_ahora():
     return request.args.get("abierto_ahora") is not None
 
 
+def leer_orden_de_favoritos():
+    """El orden elegido en "Mis favoritos", tal como vino.
+
+    Se devuelve crudo y no validado, igual que leer_categoria_de_filtro: quien
+    decide que hacer con un valor que no existe es la vista (cae al default), y
+    el template igual necesita repintar el <select> con lo que habia en la URL.
+    """
+    return (request.args.get("orden") or "").strip()
+
+
 def leer_pagina():
     return request.args.get("page", 1, type=int)

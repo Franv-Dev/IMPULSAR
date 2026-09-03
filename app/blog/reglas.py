@@ -38,6 +38,34 @@ RATING_MAXIMO = 5
 RADIOS_KM = (1, 5, 10)
 
 
+class OrdenesFavoritos:
+    """Como se puede ordenar la pantalla "Mis favoritos".
+
+    Una clase de constantes con su tupla y su dict de etiquetas, igual que
+    Categorias y que Roles: los strings viven en un solo lugar y el <select>
+    del template se arma del mismo lado del que se valida lo que llega, asi
+    que no se pueden despegar.
+
+    RECIENTE es el default y ordena por cuando se marco el favorito, no por
+    cuando se publico el emprendimiento: la pantalla es la lista de marcas del
+    usuario, y lo ultimo que marco es lo que viene a buscar.
+
+    NOMBRE existe porque la otra forma de usar esta pantalla es al reves: no
+    "que guarde recien" sino "donde esta aquel que se llamaba algo con P", y
+    para eso el orden por fecha no ayuda.
+    """
+
+    RECIENTE = "reciente"
+    NOMBRE = "nombre"
+
+    TODOS = (RECIENTE, NOMBRE)
+
+    ETIQUETAS = {
+        RECIENTE: "Agregados recientemente",
+        NOMBRE: "Nombre (A-Z)",
+    }
+
+
 def es_el_autor(post, user_id):
     """Si ese emprendimiento es de ese usuario.
 
@@ -205,6 +233,17 @@ def fotos_para_reordenar(post):
 def radio_valido(radio):
     """Si ese radio es uno de los que se ofrecen."""
     return radio in RADIOS_KM
+
+
+def orden_de_favoritos_valido(orden):
+    """Si es uno de los ordenes que ofrece la pantalla.
+
+    Se valida por lo mismo que la categoria: llega de un <select> pero viaja
+    en la URL, y cualquiera puede escribir ahi otra cosa. Lo que no se valida
+    aca es que hacer con lo invalido -- eso lo decide quien llama, y en esta
+    pantalla es caer al default en vez de fallar.
+    """
+    return orden in OrdenesFavoritos.TODOS
 
 
 def categoria_valida(categoria):

@@ -340,13 +340,53 @@ def metricas_de_posts(post_ids):
     }
 
 
-def favoritos_de(user_id, pagina, por_pagina):
-    """Los emprendimientos que ese usuario marco como favoritos, paginados."""
-    return (
+def _orden_de_favoritos_sql(orden):
+    """La clausula ORDER BY de "Mis favoritos", segun lo que eligio el usuario.
+
+    Aparte de favoritos_de() por lo mismo que _abierto_ahora_sql: es una
+    decision con ramas propias, y adentro de la consulta obligaria a leer todo
+    el armado para entender cual es el orden.
+
+    NOMBRE ordena por lower(title) y no por title a secas: en SQLite un ORDER
+    BY de texto es sensible a mayusculas y pone "Zapateria" antes que
+    "alfajores", mientras que MySQL con su collation ci no. Sin el lower(), el
+    "A-Z" que promete la etiqueta seria distinto en los tests que en
+    produccion, y en produccion seria el unico correcto por accidente.
+
+    Cualquier valor que no sea uno de los dos cae en RECIENTE, que es el
+    default de la pantalla; validarlo es de reglas.orden_de_favoritos_valido y
+    elegir el default es de la vista, asi que esto solo traduce.
+    """
+    if orden == reglas.OrdenesFavoritos.NOMBRE:
+        return func.lower(Post.title).asc()
+    # POR CUANDO SE MARCO EL FAVORITO, no por cuando se publico el
+    # emprendimiento (Post.created, que es lo que ordenaba antes). Son cosas
+    # distintas y la que importa aca es la marca: alguien que acaba de guardar
+    # una panaderia de 2024 la quiere ver arriba, y con el orden viejo aparecia
+    # sepultada bajo todo lo que se publico despues.
+    return Favorite.created.desc()
+
+
+def favoritos_de(user_id, pagina, por_pagina, categoria=None, orden=None):
+    """Los emprendimientos que ese usuario marco como favoritos, paginados.
+
+    categoria acota a un rubro. Mismo trato que en buscar_posts: se espera ya
+    validada (None es "todos"), porque quien sabe que hacer con una categoria
+    que no existe es la vista, que ademas tiene que repintar el <select>.
+
+    orden elige entre los de reglas.OrdenesFavoritos; ver
+    _orden_de_favoritos_sql para el criterio de cada uno y para el default.
+    """
+    consulta = (
         query_posts_con_rating(Post.query.join(Favorite, Favorite.post_id == Post.id))
         .filter(Favorite.user_id == user_id)
-        .order_by(Post.created.desc())
-        .paginate(page=pagina, per_page=por_pagina, error_out=False)
+    )
+
+    if categoria:
+        consulta = consulta.filter(Post.category == categoria)
+
+    return consulta.order_by(_orden_de_favoritos_sql(orden)).paginate(
+        page=pagina, per_page=por_pagina, error_out=False
     )
 
 

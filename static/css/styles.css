@@ -4227,6 +4227,49 @@ a.perfil-dato:hover {
     color: var(--color-heart);
 }
 
+/* La fila de filtros de "Mis favoritos". Es una barra chica de dos <select>,
+   no la columna de filtros de Explorar: esta pantalla ya es corta y una barra
+   lateral entera para dos controles seria mas cromo que contenido. */
+.favoritos__filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 1.25rem;
+}
+
+.favoritos__filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+/* Mismos valores que .filtros__label, que es el rotulo de la columna de
+   Explorar: los dos rotulan un filtro y tienen que verse igual. */
+.favoritos__filtro-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.favoritos__filtro select {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-input-bg);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.favoritos__filtro select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+}
+
 /* === Compartir === */
 .share-btn {
     background: none;

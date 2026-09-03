@@ -25,6 +25,48 @@
             {% endif %}
         {% endwith %}
 
+        {# Los dos <select> mandan solos al cambiar (onchange), asi que el
+           boton es el fallback para quien tenga JS apagado: sin el, esa
+           persona no tendria como aplicar el filtro.
+           No se pinta cuando la pantalla esta vacia porque no hay filtro que
+           tenga sentido aplicar sobre cero favoritos -- salvo que sea el
+           propio filtro el que la vacio, y ahi si hay que poder sacarlo. #}
+        {% if posts or categoria_actual %}
+            {# El form NO lleva un <input hidden> con la pagina, y es a
+               proposito: al cambiar un filtro hay que volver a la primera.
+               Con ?page=3 conservado, filtrar puede dejar al usuario en una
+               pagina que con menos resultados ya no existe, viendo la
+               pantalla vacia sin entender por que. #}
+            <form method="get" action="{{ url_for('blog.my_favorites') }}" class="favoritos__filtros">
+                <label class="favoritos__filtro">
+                    <span class="favoritos__filtro-label">Rubro</span>
+                    <select name="category" onchange="this.form.submit()">
+                        <option value="">Todos</option>
+                        {# El mismo Categorias.ETIQUETAS que usa Explorar: si
+                           mañana se agrega un rubro, aparece en los dos. #}
+                        {% for valor, etiqueta in categorias.items() %}
+                            <option value="{{ valor }}" {% if valor == categoria_actual %}selected{% endif %}>
+                                {{ etiqueta }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label class="favoritos__filtro">
+                    <span class="favoritos__filtro-label">Ordenar por</span>
+                    <select name="orden" onchange="this.form.submit()">
+                        {% for valor, etiqueta in ordenes.items() %}
+                            <option value="{{ valor }}" {% if valor == orden_actual %}selected{% endif %}>
+                                {{ etiqueta }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <button type="submit" class="btn btn--secondary">Aplicar</button>
+            </form>
+        {% endif %}
+
         {% if posts %}
             <div class="cards-grid">
                 {% for item in posts %}
@@ -84,10 +126,17 @@
             {% include "partials/_paginacion.html" %}
         {% else %}
             <div class="emprendimientos__empty" style="margin-top:1rem;">
-                <p>
-                    Todavía no marcaste ningún emprendimiento como favorito.
-                    <a href="{{ url_for('blog.index') }}">Explorá los emprendimientos</a> y tocá el corazón del que te interese.
-                </p>
+                {% if categoria_actual %}
+                    <p>
+                        No tenés favoritos en ese rubro.
+                        <a href="{{ url_for('blog.my_favorites', orden=orden_actual) }}">Ver todos tus favoritos</a>.
+                    </p>
+                {% else %}
+                    <p>
+                        Todavía no marcaste ningún emprendimiento como favorito.
+                        <a href="{{ url_for('blog.index') }}">Explorá los emprendimientos</a> y tocá el corazón del que te interese.
+                    </p>
+                {% endif %}
             </div>
         {% endif %}
     </div>

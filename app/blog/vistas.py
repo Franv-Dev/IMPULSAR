@@ -587,16 +587,46 @@ def toggle_favorite(id):
 @blog.route("/favoritos")
 @login_required
 def my_favorites():
-    """Emprendimientos que el usuario marco como favoritos."""
+    """Emprendimientos que el usuario marco como favoritos.
+
+    Los dos filtros se leen y se validan con las mismas piezas que el listado
+    publico: leer_categoria_de_filtro/categoria_valida son literalmente las de
+    index(), y el catalogo de rubros que se le pasa al template es el mismo
+    Categorias.ETIQUETAS. No hay una lista de rubros propia de esta pantalla.
+    """
+    categoria = formulario.leer_categoria_de_filtro()
+    orden = formulario.leer_orden_de_favoritos()
+
     paginacion = consultas.favoritos_de(
         g.user.id,
+        # Igual que en index(): la que no existe no filtra nada, pero se le
+        # devuelve al template tal cual para repintar el <select> con lo que
+        # el usuario tenia en la URL.
+        categoria=categoria if reglas.categoria_valida(categoria) else None,
+        # Un orden que no existe cae al default en vez de vaciar la pantalla o
+        # tirar un error: no es un filtro, es una preferencia de como mirar lo
+        # mismo, y no hay nada que avisarle a nadie.
+        orden=orden if reglas.orden_de_favoritos_valido(orden) else None,
         pagina=formulario.leer_pagina(),
         por_pagina=current_app.config["POSTS_POR_PAGINA"],
     )
     posts = serializar_con_rating(
         paginacion.items, favoritos=consultas.ids_favoritos(g.user.id)
     )
-    return render_template("blog/favorites.html", posts=posts, paginacion=paginacion)
+    return render_template(
+        "blog/favorites.html",
+        posts=posts,
+        paginacion=paginacion,
+        categorias=Categorias.ETIQUETAS,
+        categoria_actual=categoria,
+        ordenes=reglas.OrdenesFavoritos.ETIQUETAS,
+        # Ya normalizado a uno valido, para que el <select> siempre tenga una
+        # opcion marcada aunque la URL traiga cualquier cosa.
+        orden_actual=(
+            orden if reglas.orden_de_favoritos_valido(orden)
+            else reglas.OrdenesFavoritos.RECIENTE
+        ),
+    )
 
 
 # ------------------------------------------------------------------ reportes
