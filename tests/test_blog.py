@@ -1703,6 +1703,217 @@ def test_mis_emprendimientos_no_dice_que_un_emprendimiento_esta_verificado(
     assert "Verificado" not in html
 
 
+# ------------------------------------------- la busqueda mira tambien el catalogo
+
+def _buscar(texto):
+    """buscar_posts con lo demas en su default, que es como la usa el listado."""
+    paginacion, _ = consultas.buscar_posts(
+        busqueda=texto, categoria=None, lat=None, lon=None,
+        pagina=1, por_pagina=20,
+    )
+    return paginacion
+
+
+def test_la_busqueda_encuentra_por_nombre_de_producto(db, crear_usuario, crear_post):
+    """El caso que motiva el cambio: la palabra no esta en el emprendimiento.
+
+    Ni el titulo ni el cuerpo del post dicen "alfajores"; lo dice un producto
+    suyo, que es donde la gente espera que este.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    crear_post(autor.id, title="Taller mecánico", body="Arreglamos autos")
+    db.session.add(Product(post_id=post.id, nombre="Alfajores de maicena", precio=100))
+    db.session.commit()
+
+    paginacion = _buscar("alfajor")
+
+    assert [fila[0].title for fila in paginacion.items] == ["Panadería del barrio"]
+    assert paginacion.total == 1
+
+
+def test_la_busqueda_encuentra_por_descripcion_de_producto(db, crear_usuario, crear_post):
+    """La descripcion tambien, no solo el nombre."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    db.session.add(Product(
+        post_id=post.id, nombre="Caja surtida", precio=100,
+        descripcion="Doce piezas sin TACC",
+    ))
+    db.session.commit()
+
+    assert [fila[0].title for fila in _buscar("sin tacc").items] == ["Panadería del barrio"]
+
+
+def test_la_busqueda_encuentra_por_titulo_de_servicio(db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    crear_post(autor.id, title="Taller mecánico", body="Arreglamos autos")
+    db.session.add(Service(post_id=post.id, titulo="Catering para eventos"))
+    db.session.commit()
+
+    paginacion = _buscar("catering")
+
+    assert [fila[0].title for fila in paginacion.items] == ["Panadería del barrio"]
+    assert paginacion.total == 1
+
+
+def test_la_busqueda_encuentra_por_descripcion_de_servicio(db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    db.session.add(Service(
+        post_id=post.id, titulo="Delivery", descripcion="Llegamos hasta Maipú",
+    ))
+    db.session.commit()
+
+    assert [fila[0].title for fila in _buscar("maipú").items] == ["Panadería del barrio"]
+
+
+def test_un_post_sin_catalogo_se_sigue_encontrando_por_lo_suyo(
+    db, crear_usuario, crear_post
+):
+    """El EXISTS es una rama mas del OR, no un reemplazo.
+
+    Si el catalogo pasara a ser obligatorio para matchear, un emprendimiento
+    recien publicado -- que todavia no cargo ni un producto -- desapareceria de
+    la busqueda. Es la regresion mas cara que podria tener este cambio.
+    """
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+
+    assert [fila[0].title for fila in _buscar("panader").items] == ["Panadería del barrio"]
+    assert [fila[0].title for fila in _buscar("artesanal").items] == ["Panadería del barrio"]
+
+
+def test_un_post_con_varios_productos_que_matchean_vuelve_una_sola_vez(
+    db, crear_usuario, crear_post
+):
+    """Lo que rompe un JOIN y no rompe un EXISTS.
+
+    Cuatro productos con la palabra buscada: joineando, el mismo
+    emprendimiento vuelve cuatro veces y la grilla lo repite.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    for sabor in ("maicena", "chocolate", "dulce de leche", "coco"):
+        db.session.add(Product(
+            post_id=post.id, nombre=f"Alfajores de {sabor}", precio=100,
+        ))
+    db.session.commit()
+
+    paginacion = _buscar("alfajor")
+
+    assert len(paginacion.items) == 1
+    assert paginacion.total == 1
+
+
+def test_un_post_que_matchea_por_los_dos_lados_tampoco_se_duplica(
+    db, crear_usuario, crear_post
+):
+    """El peor caso para la duplicacion: matchea por title, por un producto Y
+    por un servicio a la vez. Son las tres ramas del OR ciertas en la misma
+    fila, y aun asi tiene que volver una sola."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Todo sobre pan", body="x")
+    db.session.add(Product(post_id=post.id, nombre="Pan de campo", precio=100))
+    db.session.add(Product(post_id=post.id, nombre="Pan dulce", precio=100))
+    db.session.add(Service(post_id=post.id, titulo="Taller de pan casero"))
+    db.session.commit()
+
+    paginacion = _buscar("pan")
+
+    assert len(paginacion.items) == 1
+    assert paginacion.total == 1
+
+
+def test_el_total_sigue_exacto_con_el_filtro_nuevo(client, db, crear_usuario, crear_post):
+    """El numero de arriba tiene que ser el de la consulta, mismo criterio que
+    "abierto ahora": si el catalogo se joinea, el titulo dice cuatro y la
+    grilla muestra una."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    crear_post(autor.id, title="Taller mecánico", body="Arreglamos autos")
+    for sabor in ("maicena", "chocolate", "dulce de leche"):
+        db.session.add(Product(
+            post_id=post.id, nombre=f"Alfajores de {sabor}", precio=100,
+        ))
+    db.session.commit()
+
+    html = client.get("/blog/?q=alfajor").get_data(as_text=True)
+
+    assert re.search(r"1 emprendimiento\s*<", html)
+    assert html.count('class="ficha"') == 1
+    assert "Taller mecánico" not in html
+
+
+def test_un_producto_no_disponible_no_hace_aparecer_al_emprendimiento(
+    db, crear_usuario, crear_post
+):
+    """Lo apagado no se lo muestra a nadie salvo al dueño, asi que tampoco
+    puede traer al emprendimiento a los resultados: se entraria a la panaderia
+    para no encontrar ni un alfajor."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    db.session.add(Product(
+        post_id=post.id, nombre="Alfajores de maicena", precio=100, disponible=False,
+    ))
+    db.session.commit()
+
+    assert _buscar("alfajor").total == 0
+
+
+def test_un_servicio_no_disponible_tampoco(db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    db.session.add(Service(
+        post_id=post.id, titulo="Catering para eventos", disponible=False,
+    ))
+    db.session.commit()
+
+    assert _buscar("catering").total == 0
+
+
+def test_lo_apagado_no_esconde_al_post_que_matchea_por_otra_via(
+    db, crear_usuario, crear_post
+):
+    """El filtro de disponible acota UNA rama del OR, no el resultado entero.
+
+    Los tres caminos por los que el mismo emprendimiento tiene que seguir
+    apareciendo aunque tenga un producto apagado con la palabra buscada: su
+    propio titulo, su propio cuerpo, y otro item del catalogo que si esta
+    disponible.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Alfajores del barrio", body="Los mejores")
+    otro = crear_post(autor.id, title="Kiosco", body="Golosinas")
+    db.session.add(Product(
+        post_id=post.id, nombre="Alfajor de maicena", precio=100, disponible=False,
+    ))
+    # El del otro post esta apagado, pero tiene un servicio vivo que matchea.
+    db.session.add(Product(
+        post_id=otro.id, nombre="Alfajor triple", precio=100, disponible=False,
+    ))
+    db.session.add(Service(post_id=otro.id, titulo="Cajas de alfajores por mayor"))
+    db.session.commit()
+
+    titulos = sorted(fila[0].title for fila in _buscar("alfajor").items)
+    assert titulos == ["Alfajores del barrio", "Kiosco"]
+    assert _buscar("alfajor").total == 2
+
+
+def test_una_busqueda_que_no_esta_en_ningun_lado_no_trae_nada(
+    db, crear_usuario, crear_post
+):
+    """Que el OR nuevo no convierta el filtro en un pasa-todo."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    db.session.add(Product(post_id=post.id, nombre="Alfajores", precio=100))
+    db.session.add(Service(post_id=post.id, titulo="Catering"))
+    db.session.commit()
+
+    assert _buscar("zzzzz").total == 0
+
+
 # ------------------------------------------------- filtro "Abierto ahora"
 
 def _abierto_todo_el_dia(user_id):

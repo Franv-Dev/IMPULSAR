@@ -111,6 +111,57 @@ def _abierto_ahora_sql(ahora=None):
     )
 
 
+def _coincide_en_catalogo_sql(patron):
+    """EXISTS que dan True si el texto buscado aparece en el catalogo del post.
+
+    Uno por tabla -- products y services -- correlacionados con Post por
+    post_id, igual que _abierto_ahora_sql se correlaciona por author.
+
+    DOS EXISTS Y NO UN JOIN, que es lo que sale primero. Joineando products y
+    services, un emprendimiento con cuatro productos que matchean vuelve
+    cuatro veces: la grilla lo muestra repetido y, peor, paginacion.total lo
+    cuenta cuatro. El EXISTS pregunta "hay alguno?" y corta ahi, asi que cada
+    post sigue siendo una fila pase lo que pase. Lo mismo que ya se resolvio
+    en metricas_de_posts, donde tres joins a la vez inflaban los COUNT.
+
+    Las dos descripciones son nullable, y eso no necesita un chequeo aparte:
+    un ILIKE contra NULL da NULL, que dentro de un OR no aporta nada y no
+    descarta nada.
+
+    SOLO LO DISPONIBLE. Un producto o un servicio apagado no se le muestra a
+    nadie salvo al dueño (ver productos_de y servicios_de, que filtran igual
+    para el que no es dueño), asi que tampoco puede hacer aparecer al
+    emprendimiento en una busqueda: quien busca "alfajores" entraria a la
+    panaderia para no encontrar ni un alfajor. El filtro va con .is_(True) y
+    no con == True por el mismo motivo que Horario.cerrado.is_(False) unas
+    lineas arriba; las dos columnas son NOT NULL con default True, asi que no
+    hay tercer estado del que preocuparse.
+
+    Esto NO esconde el emprendimiento: es una rama del OR. Si el post matchea
+    por su titulo, por su cuerpo o por otro item que si esta disponible, sigue
+    apareciendo igual.
+    """
+    en_productos = (
+        db.session.query(Product.id)
+        .filter(
+            Product.post_id == Post.id,
+            Product.disponible.is_(True),
+            or_(Product.nombre.ilike(patron), Product.descripcion.ilike(patron)),
+        )
+        .exists()
+    )
+    en_servicios = (
+        db.session.query(Service.id)
+        .filter(
+            Service.post_id == Post.id,
+            Service.disponible.is_(True),
+            or_(Service.titulo.ilike(patron), Service.descripcion.ilike(patron)),
+        )
+        .exists()
+    )
+    return or_(en_productos, en_servicios)
+
+
 def buscar_posts(
     busqueda, categoria, lat, lon, pagina, por_pagina,
     con_resenias=False, radio_km=None, abierto_ahora=False,
@@ -135,6 +186,13 @@ def buscar_posts(
     los horarios del emprendedor y el reloj de Argentina. Lo resuelve un EXISTS
     sobre horarios (ver _abierto_ahora_sql), no un bucle sobre las filas.
 
+    La busqueda por texto mira el titulo y el cuerpo del emprendimiento y
+    tambien su catalogo disponible: el nombre y la descripcion de sus
+    productos, y el titulo y la descripcion de sus servicios (ver
+    _coincide_en_catalogo_sql). Alguien que busca "alfajores" encuentra la
+    panaderia aunque la palabra no este en la descripcion del emprendimiento
+    sino en un producto suyo, que es como la gente busca.
+
     La relacion author_user usa lazy="joined", asi que el autor viene en la
     misma consulta y no se dispara un SELECT por cada post (problema N+1). El
     promedio de reseñas se trae con el mismo criterio (ver services/ratings.py).
@@ -143,7 +201,14 @@ def buscar_posts(
 
     if busqueda:
         patron = f"%{busqueda}%"
-        query = query.filter(Post.title.ilike(patron) | Post.body.ilike(patron))
+        # El catalogo es UNA RAMA MAS DEL OR, no un reemplazo: un post sin
+        # productos ni servicios se sigue encontrando por su propio titulo o
+        # cuerpo, exactamente como antes.
+        query = query.filter(or_(
+            Post.title.ilike(patron),
+            Post.body.ilike(patron),
+            _coincide_en_catalogo_sql(patron),
+        ))
 
     if categoria:
         query = query.filter(Post.category == categoria)
