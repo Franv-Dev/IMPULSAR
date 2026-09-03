@@ -1,9 +1,118 @@
 """Tests de favoritos: marcar/desmarcar emprendimientos y "Mis favoritos"."""
 
+import os
 import re
+from datetime import datetime
+from types import SimpleNamespace
+
+import pytest
+from sqlalchemy import create_engine, text
+from werkzeug.security import generate_password_hash
 
 from app.blog.modelo_favorito import Favorite
 from app.blog.modelo_post import Categorias, Post
+from config import TestingConfig
+from db import db as _db
+from main import create_app
+from models.user import User
+
+
+def _servidor_mysql():
+    """La URI del MySQL local SIN base, armada como la arma config.py."""
+    return (
+        f"mysql+pymysql://{os.getenv('DB_USER', '')}:{os.getenv('DB_PASSWORD', '')}"
+        f"@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '3306')}"
+    )
+
+
+def _entorno(client, db, crear_usuario, crear_post, login):
+    """Junta en un objeto lo que necesita un test para armar un escenario.
+
+    Existe para que el mismo escenario se pueda correr con las fixtures de
+    siempre (SQLite) o con las que arma app_en_mysql, sin duplicar el test.
+    """
+    return SimpleNamespace(
+        client=client,
+        db=db,
+        crear_usuario=crear_usuario,
+        crear_post=crear_post,
+        login=login,
+    )
+
+
+@pytest.fixture
+def app_en_mysql():
+    """La app de testing, pero contra un MySQL de verdad.
+
+    Se saltea el test si no hay servidor a mano: la suite corre en SQLite y el
+    CI no levanta uno (ver .github/workflows/tests.yml).
+
+    La base es DESCARTABLE y tiene nombre propio: se crea vacia y se borra al
+    terminar, asi que correr los tests nunca toca la base de desarrollo.
+
+    NO USA LAS FIXTURES DE conftest (app, client, crear_usuario...) y arma todo
+    de nuevo, que es lo unico que da control del orden de limpieza. Con
+    aquellas, la app se destruye DESPUES de esta fixture y el DROP DATABASE se
+    queda esperando para siempre a una conexion que todavia no se cerro. Aca el
+    orden es explicito: cerrar la sesion, soltar los motores, y recien
+    entonces borrar la base.
+    """
+    try:
+        motor = create_engine(_servidor_mysql())
+        conexion = motor.connect()
+    except Exception as error:  # servidor apagado, credenciales, driver
+        pytest.skip(f"sin MySQL local: {error}")
+
+    base = "impulsar_test_favoritos"
+    with conexion:
+        conexion.execute(text(f"DROP DATABASE IF EXISTS {base}"))
+        conexion.execute(
+            text(
+                f"CREATE DATABASE {base} "
+                "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            )
+        )
+
+    with pytest.MonkeyPatch.context() as parche:
+        parche.setattr(
+            TestingConfig, "SQLALCHEMY_DATABASE_URI", f"{_servidor_mysql()}/{base}"
+        )
+        app = create_app("testing")
+
+    with app.app_context():
+        _db.create_all()
+        client = app.test_client()
+
+        def crear_usuario(username):
+            usuario = User(
+                username=username,
+                email=f"{username}@test.com",
+                password=generate_password_hash("secreta123"),
+            )
+            _db.session.add(usuario)
+            _db.session.commit()
+            return usuario
+
+        def crear_post(author_id, title):
+            post = Post(author=author_id, title=title, body="Pan artesanal")
+            _db.session.add(post)
+            _db.session.commit()
+            return post
+
+        def login(user_id):
+            with client.session_transaction() as sesion:
+                sesion["user_id"] = user_id
+
+        yield _entorno(client, _db, crear_usuario, crear_post, login)
+
+        _db.session.remove()
+        motores = list(app.extensions["sqlalchemy"].engines.values())
+
+    for motor_de_la_app in motores:
+        motor_de_la_app.dispose()
+    with motor.connect() as conexion:
+        conexion.execute(text(f"DROP DATABASE IF EXISTS {base}"))
+    motor.dispose()
 
 
 def test_marcar_como_favorito(client, db, crear_usuario, crear_post, login):
@@ -354,3 +463,88 @@ def test_el_vacio_por_filtro_ofrece_sacar_el_filtro(
 
     assert "No tenés favoritos en ese rubro" in html
     assert "Todavía no marcaste ningún emprendimiento" not in html
+
+
+# ------------------------------------------- el desempate del orden (empate de fecha)
+#
+# Los dos tests de abajo son el mismo caso visto en los dos motores: cinco
+# favoritos marcados con la misma fecha. El de MySQL es el que reproduce el
+# bug tal cual pasa en produccion (la columna es DATETIME(0) y empata sola,
+# asi que basta con marcar cinco seguidos), pero necesita un servidor y en el
+# CI no hay, asi que ahi se saltea. El de SQLite arma el empate a mano para
+# que la regresion igual quede cubierta en cada push.
+
+def _cinco_favoritos_empatados(entorno):
+    """Marca A..E y les deja a los cinco la MISMA fecha. Devuelve los titulos."""
+    usuario = entorno.crear_usuario(username="tomy")
+    autor = entorno.crear_usuario(username="autor")
+    titulos = ["Favorito A", "Favorito B", "Favorito C", "Favorito D", "Favorito E"]
+    posts = [entorno.crear_post(autor.id, title=titulo) for titulo in titulos]
+
+    entorno.login(usuario.id)
+    for post in posts:
+        _marcar(entorno.client, post.id)
+
+    # Distinto microsegundo dentro del MISMO segundo, que es lo que escribe la
+    # ruta cuando alguien marca varios seguidos. En MySQL los cinco caen en el
+    # mismo segundo y quedan empatados; en SQLite hay que empatarlos a mano (lo
+    # hace el test de abajo) porque guarda el microsegundo entero.
+    #
+    # Todos por debajo del medio segundo a proposito: MySQL no trunca el
+    # DATETIME(0), lo REDONDEA, asi que un .5 se guardaria como el segundo
+    # siguiente y romperia el empate que el test necesita.
+    base = datetime(2026, 9, 3, 12, 0, 0)
+    for i, favorito in enumerate(Favorite.query.order_by(Favorite.id).all()):
+        favorito.created = base.replace(microsecond=50000 * (i + 1))
+    entorno.db.session.commit()
+    return titulos
+
+
+def test_en_mysql_los_favoritos_del_mismo_segundo_salen_del_ultimo_al_primero(
+    app_en_mysql,
+):
+    """El hallazgo: en produccion la fecha del favorito no desempata sola.
+
+    Es DATETIME(0), asi que marcar cinco emprendimientos seguidos (un segundo
+    alcanza de sobra) deja cinco filas con la MISMA fecha, y sin desempate
+    MySQL las devuelve en el orden que quiere: en la practica, el de la clave
+    primaria, o sea del primero marcado al ultimo, justo al reves de lo que
+    promete "Recientes". Ademas es inestable entre consultas, y eso paginado
+    se ve como una tarjeta repetida en dos paginas.
+
+    Corre contra un MySQL de verdad y no con el dialecto compilado a mano
+    (como test_turnos) porque lo que se prueba no es el SQL que se emite sino
+    el resultado que devuelve el motor.
+    """
+    titulos = _cinco_favoritos_empatados(app_en_mysql)
+
+    # Que el empate exista de verdad, y por la razon que dice el docstring: si
+    # algun dia la columna pasa a DATETIME(6) esto avisa que el test dejo de
+    # probar lo que cree.
+    fechas = {f.created for f in Favorite.query.all()}
+    assert len(fechas) == 1, f"MySQL no redondeo al segundo: {fechas}"
+
+    html = app_en_mysql.client.get("/blog/favoritos").get_data(as_text=True)
+    assert _titulos_en(html) == list(reversed(titulos))
+
+
+def test_los_favoritos_con_la_misma_fecha_salen_del_ultimo_al_primero(
+    client, db, crear_usuario, crear_post, login
+):
+    """El mismo caso que el de MySQL, con el empate armado a mano.
+
+    Existe para que el CI, que corre en SQLite y no tiene servidor MySQL,
+    tambien frene la regresion. Sin el desempate SQLite devuelve las filas por
+    rowid, o sea de la primera marcada a la ultima, y el assert falla.
+    """
+    titulos = _cinco_favoritos_empatados(
+        _entorno(client, db, crear_usuario, crear_post, login)
+    )
+
+    misma = datetime(2026, 9, 3, 12, 0, 0)
+    for favorito in Favorite.query.all():
+        favorito.created = misma
+    db.session.commit()
+
+    html = client.get("/blog/favoritos").get_data(as_text=True)
+    assert _titulos_en(html) == list(reversed(titulos))

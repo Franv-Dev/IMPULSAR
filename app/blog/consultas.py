@@ -341,7 +341,7 @@ def metricas_de_posts(post_ids):
 
 
 def _orden_de_favoritos_sql(orden):
-    """La clausula ORDER BY de "Mis favoritos", segun lo que eligio el usuario.
+    """Las clausulas del ORDER BY de "Mis favoritos", segun lo que eligio el usuario.
 
     Aparte de favoritos_de() por lo mismo que _abierto_ahora_sql: es una
     decision con ramas propias, y adentro de la consulta obligaria a leer todo
@@ -356,15 +356,29 @@ def _orden_de_favoritos_sql(orden):
     Cualquier valor que no sea uno de los dos cae en RECIENTE, que es el
     default de la pantalla; validarlo es de reglas.orden_de_favoritos_valido y
     elegir el default es de la vista, asi que esto solo traduce.
+
+    LOS DOS ORDENES TERMINAN EN Favorite.id.desc(), que es el desempate. Sin
+    el, dos filas con la misma clave de orden quedan en el orden que quiera el
+    motor, y no es un caso raro: en MySQL la columna es DATETIME(0), asi que
+    todo lo que se marca dentro del mismo segundo empata (marcar varios
+    favoritos seguidos es exactamente eso). Empatados, el resultado no solo es
+    arbitrario sino inestable entre consultas, y con paginado eso se ve como
+    una tarjeta repetida en dos paginas o una que no aparece en ninguna.
+    Alcanza con el id porque es autoincremental: mayor id es favorito marcado
+    despues, que es el mismo criterio que RECIENTE quiere. En SQLite no se
+    nota porque guarda los microsegundos y casi nunca hay empate; la que
+    importa es produccion.
     """
     if orden == reglas.OrdenesFavoritos.NOMBRE:
-        return func.lower(Post.title).asc()
+        # El desempate tambien aca: dos emprendimientos distintos pueden
+        # llamarse igual, y ahi el A-Z solo no alcanza para fijar el orden.
+        return (func.lower(Post.title).asc(), Favorite.id.desc())
     # POR CUANDO SE MARCO EL FAVORITO, no por cuando se publico el
     # emprendimiento (Post.created, que es lo que ordenaba antes). Son cosas
     # distintas y la que importa aca es la marca: alguien que acaba de guardar
     # una panaderia de 2024 la quiere ver arriba, y con el orden viejo aparecia
     # sepultada bajo todo lo que se publico despues.
-    return Favorite.created.desc()
+    return (Favorite.created.desc(), Favorite.id.desc())
 
 
 def favoritos_de(user_id, pagina, por_pagina, categoria=None, orden=None):
@@ -385,7 +399,7 @@ def favoritos_de(user_id, pagina, por_pagina, categoria=None, orden=None):
     if categoria:
         consulta = consulta.filter(Post.category == categoria)
 
-    return consulta.order_by(_orden_de_favoritos_sql(orden)).paginate(
+    return consulta.order_by(*_orden_de_favoritos_sql(orden)).paginate(
         page=pagina, per_page=por_pagina, error_out=False
     )
 
