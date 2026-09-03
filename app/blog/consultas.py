@@ -516,9 +516,21 @@ def reordenar_fotos(post, tokens):
     filas = list(post.imagenes)
     # Nunca puede faltar fila: `resto` tiene a lo sumo tantos elementos como
     # filas hay (una foto mas que filas solo existe si hay principal, y esa se
-    # va en `principal`). Si esto no se cumpliera estariamos por perder una
-    # foto en silencio.
-    assert len(resto) <= len(filas)
+    # va en `principal`).
+    #
+    # ES UN raise Y NO UN assert, que es lo que era antes: `python -O` saca los
+    # asserts del bytecode, y sin este chequeo el zip() de abajo corta en la
+    # lista mas corta, se queda sin asignar los ultimos nombres y despues borra
+    # las filas "sobrantes". O sea: en produccion con -O, el unico caso que
+    # esto vigila se convierte justamente en fotos perdidas en silencio, que es
+    # lo que el chequeo existe para evitar. Cortar con una excepcion deja la
+    # transaccion sin commitear y las fotos donde estaban.
+    if len(resto) > len(filas):
+        raise ValueError(
+            f"El orden pide {len(resto)} fotos de galeria y el post tiene "
+            f"{len(filas)}: reordenar asi perderia fotos. Los tokens tienen "
+            "que venir por reglas.orden_de_fotos_valido."
+        )
 
     for posicion, (fila, nombre) in enumerate(zip(filas, resto)):
         fila.filename = nombre

@@ -2096,6 +2096,37 @@ def test_un_orden_que_no_es_permutacion_exacta_se_rechaza(db, crear_usuario, cre
     assert not reglas.orden_de_fotos_valido(post, [])
 
 
+def test_reordenar_con_un_orden_no_validado_corta_y_no_pierde_fotos(
+    db, crear_usuario, crear_post
+):
+    """La red de abajo de reordenar_fotos(), que antes era un assert.
+
+    La funcion confia en que los tokens ya pasaron por
+    reglas.orden_de_fotos_valido. Si alguna vez la llaman sin eso, un orden con
+    mas fotos que filas hace que el zip() interno corte en la mas corta y que
+    despues se borren las filas "sobrantes": fotos perdidas y sin aviso. Con un
+    assert eso quedaba tapado corriendo con `python -O`, que los saca del
+    bytecode; con el raise pasa siempre.
+
+    Se llama a la consulta directamente y no por la ruta a proposito: por la
+    ruta este orden no llega nunca, que es justamente lo que se esta cubriendo.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png")
+
+    # Una foto de galeria repetida: pide dos filas donde hay una sola.
+    orden_roto = ["principal", str(ids[0]), str(ids[0])]
+    assert not reglas.orden_de_fotos_valido(post, orden_roto)
+
+    with pytest.raises(ValueError):
+        consultas.reordenar_fotos(post, orden_roto)
+
+    db.session.rollback()
+    assert post.image == "principal.png"
+    assert post.galeria == ["principal.png", "b.png"]
+
+
 def test_reordenar_la_galeria_no_toca_la_principal(client, db, crear_usuario, crear_post, login):
     autor = crear_usuario(username="autor")
     login(autor.id)
