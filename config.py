@@ -122,6 +122,15 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+    # APAGADO EXPLICITO, Y NO ES UN DEFAULT REDUNDANTE. Flask-Mail, cuando no
+    # encuentra MAIL_DEBUG, usa el DEBUG de la app: en desarrollo eso vale True
+    # y smtplib pasa a volcar la conversacion SMTP entera por consola, que
+    # incluye el AUTH con el usuario y la contraseña de aplicacion en base64 (o
+    # sea, en limpio para cualquiera que lea la terminal o el log) y ademas el
+    # cuerpo de cada mail, que son mensajes privados entre dos usuarios. El
+    # escenario no es raro: pasa apenas alguien carga sus credenciales reales
+    # en su .env para probar un envio.
+    MAIL_DEBUG = False
     # De que direccion salen los avisos. Por defecto la misma casilla que
     # autentica: Gmail reescribe el From si no coincide con la cuenta, asi que
     # poner otra cosa no serviria de nada.
@@ -168,11 +177,17 @@ class TestingConfig(Config):
 
     # Sin credenciales de correo, pase lo que pase. Config las lee del entorno,
     # asi que una maquina con el .env real cargado las heredaria y la suite
-    # dependeria de que archivo tiene cada uno delante. Con estas dos en None,
+    # dependeria de que archivo tiene cada uno delante. Con las tres en None,
     # services/notificaciones_email.py corta antes de tocar la red en cualquier
     # maquina, y el test que necesita probar el envio se las pone a mano.
     MAIL_USERNAME = None
     MAIL_PASSWORD = None
+    # Tambien el remitente, que si no se hereda de Config y ahi sale de
+    # os.getenv(...) or MAIL_USERNAME: con el .env real cargado, la direccion
+    # de Tomy se filtraba a la config de los tests. No se llegaba a mandar
+    # nada, pero "sin credenciales pase lo que pase" tiene que valer entero, y
+    # una de las tres es una credencial igual.
+    MAIL_DEFAULT_SENDER = None
     # El freno de abajo, por si algun dia un test las setea y se olvida de
     # sacarlas: con esto Flask-Mail arma el mensaje pero no abre el socket.
     MAIL_SUPPRESS_SEND = True
@@ -182,6 +197,31 @@ class ProductionConfig(Config):
     """Para el servidor real."""
 
     DEBUG = False
+
+    # EL DOMINIO REAL, Y ES UNA CUESTION DE SEGURIDAD, no de prolijidad. Los
+    # mails de notificacion llevan un link armado con url_for(_external=True),
+    # y sin SERVER_NAME ese link sale con el host que venga en el header Host
+    # de la request. O sea: alguien manda un mensaje con "Host:
+    # sitio-falso.example" y el link que le llega por mail a la otra persona
+    # apunta a sitio-falso.example, con la ruta correcta de IMPULSAR. Es un
+    # phishing firmado por nosotros y mandado desde nuestra casilla.
+    #
+    # Con SERVER_NAME puesto, url_for ignora el header y usa este valor (esta
+    # verificado, no es lo que dice la doc y nada mas). Lo que NO hace en esta
+    # version de Werkzeug es filtrar el ruteo: una request con otro Host sigue
+    # respondiendo normal, asi que esto no deja afuera al health check que
+    # pega por IP ni a nada que hoy funcione.
+    #
+    # Sale del entorno porque el dominio lo sabe el deploy, no el repo. Si
+    # falta, init_app avisa por log y los links vuelven al comportamiento
+    # viejo; no corta el arranque, que seria dejar la app abajo por algo que
+    # no le impide funcionar.
+    SERVER_NAME = os.getenv("SERVER_NAME")
+    # Que esos links salgan en https. Sin esto toman el esquema con el que
+    # llego la request, que detras de un proxy suele ser http aunque el
+    # usuario haya entrado por https.
+    PREFERRED_URL_SCHEME = "https"
+
     # Cookies de sesion mas seguras: solo por HTTPS, no accesibles desde JS y
     # no enviadas en requests que vienen de otro sitio.
     SESSION_COOKIE_SECURE = True
@@ -206,6 +246,17 @@ class ProductionConfig(Config):
             raise RuntimeError(
                 "Faltan variables de entorno obligatorias en produccion: "
                 + ", ".join(faltantes)
+            )
+
+        # Avisa, no corta: sin SERVER_NAME la app anda igual, lo que queda mal
+        # es el link de los mails (ver el comentario de la constante). Se
+        # loguea al arrancar para que aparezca una sola vez y arriba de todo,
+        # y no escondido en el log de un request cualquiera.
+        if not app.config.get("SERVER_NAME"):
+            app.logger.warning(
+                "SERVER_NAME no esta configurado: los links de los mails de "
+                "notificacion van a salir con el host que mande cada request, "
+                "que se puede falsear."
             )
 
 

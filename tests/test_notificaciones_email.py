@@ -23,7 +23,9 @@ from app.perfil.modelo_horario import Horario
 from app.servicios.modelo import Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from app.turnos.modelo_turno import EstadosTurno, QuienCancela, Turno
+from config import TestingConfig
 from db import db as _db
+from main import create_app
 from models.message import Message
 from services import notificaciones_email
 from services.eventos import hoy_en_argentina
@@ -368,3 +370,66 @@ def test_si_falla_el_envio_el_turno_igual_queda_cancelado(
     # cupo_activo en NULL es lo que devuelve el horario a la lista de libres.
     assert cancelado.cupo_activo is None
 
+
+# --------------------------------------- lo que no puede filtrarse ni falsearse
+
+def test_en_desarrollo_smtplib_no_vuelca_la_conversacion():
+    """Con DEBUG=True, Flask-Mail hereda ese debug si nadie le dice otra cosa,
+    y ahi smtplib escupe por consola el AUTH (usuario y contraseña de
+    aplicacion en base64) y el cuerpo de cada mail. Se chequea el valor que le
+    llega a la extension, no la constante de config: es el que termina en el
+    smtplib.SMTP.set_debuglevel().
+    """
+    app = create_app("development")
+
+    assert app.debug is True
+    assert app.extensions["mail"].debug == 0
+
+
+def test_la_config_de_testing_no_hereda_ninguna_credencial_real():
+    """Las tres juntas, que es lo que hace valer "sin credenciales pase lo que
+    pase": Config las lee del entorno, asi que sin estos tres None una maquina
+    con el .env cargado corre la suite con los datos reales de alguien."""
+    assert TestingConfig.MAIL_USERNAME is None
+    assert TestingConfig.MAIL_PASSWORD is None
+    assert TestingConfig.MAIL_DEFAULT_SENDER is None
+
+
+def test_el_link_del_mail_no_toma_el_host_que_manda_el_atacante(
+    app, db, buzon, conversacion
+):
+    """El header Host lo escribe quien manda la request. Sin SERVER_NAME,
+    url_for(_external=True) lo cree, y el link que le llega por mail a la otra
+    persona apunta adonde diga: un phishing con la ruta correcta, nuestro
+    remitente y nuestro texto. Con SERVER_NAME puesto (lo que hace
+    ProductionConfig) url_for lo ignora.
+
+    Se llama a la funcion adentro de un test_request_context con el Host ya
+    falseado, en vez de postear con el client: cambiarle el Host al client hace
+    que no mande la cookie de sesion, con lo cual no habria ni mensaje que
+    notificar y el test pasaria sin probar nada.
+    """
+    mensaje = Message(
+        post_id=conversacion.post.id, client_id=conversacion.cliente.id,
+        sender_id=conversacion.cliente.id, body="Hola",
+    )
+    db.session.add(mensaje)
+    db.session.commit()
+
+    falso = {"Host": "sitio-falso.example"}
+
+    # Primero el agujero, para que el test diga por que existe la config: sin
+    # SERVER_NAME el link sale con el host inventado.
+    with app.test_request_context(headers=falso):
+        notificaciones_email.notificar_mensaje_nuevo(mensaje)
+    assert "sitio-falso.example" in buzon[-1].body
+
+    app.config["SERVER_NAME"] = "impulsar.com.ar"
+    app.config["PREFERRED_URL_SCHEME"] = "https"
+
+    with app.test_request_context(headers=falso):
+        notificaciones_email.notificar_mensaje_nuevo(mensaje)
+
+    cuerpo = buzon[-1].body
+    assert "sitio-falso.example" not in cuerpo
+    assert "https://impulsar.com.ar/mensajes/" in cuerpo
