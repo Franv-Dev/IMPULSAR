@@ -132,6 +132,60 @@ def test_cargar_solo_una_de_las_dos_horas_es_un_error(client, db, crear_usuario,
     assert not [h for h in usuario.horarios if h.dia_semana == 0 and h.abre]
 
 
+def test_una_hora_imposible_no_pide_lo_que_ya_se_cargo(client, db, crear_usuario, login):
+    """"25:00" no es "no cargaste nada": el mensaje tiene que decir cual es.
+
+    El input es type="time" y no deja mandarlo, pero un navegador viejo lo
+    degrada a texto libre y un POST a mano no tiene ningun freno.
+    """
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    respuesta = client.post(
+        "/perfil/horarios", data={"abre_0": "25:00", "cierra_0": "18:00"}
+    )
+    html = respuesta.get_data(as_text=True)
+
+    assert "25:00" in html and "no es una hora de apertura válida" in html
+    assert "cargá la hora de apertura y la de cierre" not in html
+
+
+def test_dos_horas_imposibles_no_borran_el_dia_en_silencio(
+    client, db, crear_usuario, login
+):
+    """Las dos ilegibles se leian como dia en blanco: ni error ni horario.
+
+    Es el caso que mas escondia el mensaje viejo, porque no llegaba a haber
+    mensaje: las dos horas quedaban en None, que es lo mismo que se ve cuando
+    el dia se dejo vacio, y el formulario se guardaba como si nada.
+    """
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    respuesta = client.post(
+        "/perfil/horarios", data={"abre_0": "25:00", "cierra_0": "26:30"}
+    )
+
+    db.session.refresh(usuario)
+    assert "no es una hora de apertura válida" in respuesta.get_data(as_text=True)
+    assert not usuario.horarios
+
+
+def test_el_dia_marcado_como_cerrado_no_mira_las_horas(client, db, crear_usuario, login):
+    """Cerrado gana: las horas de ese dia no se usan, asi que no se validan."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    client.post(
+        "/perfil/horarios",
+        data={"abre_0": "25:00", "cierra_0": "no es una hora", "cerrado_0": "on"},
+    )
+
+    db.session.refresh(usuario)
+    guardados = {h.dia_semana: h for h in usuario.horarios}
+    assert guardados[0].cerrado is True
+
+
 def test_guardar_los_horarios_dos_veces_no_duplica_filas(client, db, crear_usuario, login):
     usuario = crear_usuario(username="tomy")
     login(usuario.id)

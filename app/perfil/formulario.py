@@ -112,21 +112,65 @@ def leer_horarios():
     pendientes = []
     for dia, etiqueta in DIAS:
         cerrado = request.form.get(f"cerrado_{dia}") == "on"
-        abre = parsear_hora(request.form.get(f"abre_{dia}"))
-        cierra = parsear_hora(request.form.get(f"cierra_{dia}"))
+        texto_abre = request.form.get(f"abre_{dia}")
+        texto_cierra = request.form.get(f"cierra_{dia}")
+        abre = parsear_hora(texto_abre)
+        cierra = parsear_hora(texto_cierra)
 
         if error is None and not cerrado:
-            if (abre is None) != (cierra is None):
+            # Primero lo ilegible: parsear_hora devuelve None tanto para el
+            # campo vacio como para "25:00", y los dos casos se corrigen de
+            # maneras distintas (ver _error_de_hora_ilegible).
+            error = _error_de_hora_ilegible(
+                etiqueta, texto_abre, abre, texto_cierra, cierra
+            )
+            if error is None and (abre is None) != (cierra is None):
                 error = (
                     f"{etiqueta}: cargá la hora de apertura y la de cierre, o "
                     "marcá el día como cerrado."
                 )
-            elif abre and cierra:
+            if error is None and abre and cierra:
                 error = _error_de_rango(etiqueta, abre, cierra)
 
         pendientes.append((dia, etiqueta, cerrado, abre, cierra))
 
     return pendientes, error
+
+
+def _error_de_hora_ilegible(etiqueta, texto_abre, abre, texto_cierra, cierra):
+    """El mensaje si lo que escribio no se entiende como hora, o None.
+
+    parsear_hora() devuelve None para dos cosas muy distintas: el campo vacio y
+    el campo con algo que no es una hora ("25:00", "mediodia"). Sin separarlas,
+    una hora imposible caia en el mensaje de mas abajo, que dice "cargá la hora
+    de apertura y la de cierre" cuando el usuario SI la cargo: le pide lo que
+    ya hizo y no le dice que es lo que esta mal.
+
+    Peor todavia cuando las dos horas del dia son imposibles: ahi las dos
+    quedaban en None, que es exactamente lo que se ve cuando el dia se dejo en
+    blanco, no habia error de ninguna clase y el dia se guardaba sin horario.
+    Lo que escribio desaparecia sin una palabra.
+
+    El texto se devuelve al usuario tal como lo mando para que sepa cual de los
+    dos campos mirar; Jinja lo escapa al pintarlo.
+
+    Nada de esto se ve con un navegador normal, porque el input es type="time"
+    y no deja mandar "25:00". Se ve con uno viejo (que lo degrada a un campo de
+    texto libre) o con un POST armado a mano, y esos dos merecen la misma
+    respuesta clara que el resto del formulario.
+    """
+    for texto, hora, cual in (
+        (texto_abre, abre, "apertura"),
+        (texto_cierra, cierra, "cierre"),
+    ):
+        texto = (texto or "").strip()
+        if texto and hora is None:
+            return (
+                f"{etiqueta}: «{texto}» no es una hora de {cual} válida. "
+                "Usá el formato de 24 horas, de 00:00 a 23:59."
+            )
+
+    return None
 
 
 def _error_de_rango(etiqueta, abre, cierra):
