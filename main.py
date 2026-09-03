@@ -25,6 +25,7 @@ from services.eventos import (
     dia_semana_corto, formatear_fecha, mes_corto, parsear_fecha,
 )
 from services.formatting import render_biography
+from services.notificaciones_email import mail
 from services.precios import formatear as formatear_precio
 from services.precios import texto_para_formulario as precio_para_formulario
 from services.uploads import MAX_IMAGE_BYTES
@@ -86,6 +87,11 @@ def _registrar_extensiones(app):
     migrate.init_app(app, db)
     jwt.init_app(app)
     csrf.init_app(app)
+    # El correo saliente de las notificaciones (ver
+    # services/notificaciones_email.py). Se enlaza siempre, aunque no haya
+    # credenciales: sin ellas la app arranca igual y los avisos no se mandan,
+    # que es lo que pasa en los tests y en una copia local recien clonada.
+    mail.init_app(app)
 
     # La API JSON queda exenta de CSRF: se autentica con el header
     # Authorization, que el navegador no manda solo, asi que no es vulnerable

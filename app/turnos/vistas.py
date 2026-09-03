@@ -33,6 +33,7 @@ from app.turnos.modelo_turno import EstadosTurno, QuienCancela, Turno
 from services.eventos import formatear_fecha, hoy_en_argentina, parsear_fecha
 from services.horarios import ahora_en_argentina, formatear as formatear_hora
 from services.horarios import parsear_hora
+from services.notificaciones_email import notificar_turno_cancelado
 from views.auth import login_required
 
 turnos = Blueprint(
@@ -207,6 +208,14 @@ def cancelar(id):
     # viniera del POST, cualquiera podria decir que lo cancelo el otro.
     turno.cancelado_por = reglas.quien_cancela(turno, g.user.id)
     consultas.guardar()
+
+    # A la otra parte, que es la que se entera tarde: el que cancelo ya sabe.
+    # Quien es "la otra parte" lo deduce la funcion de turno.cancelado_por, que
+    # es la misma columna que acaba de escribirse arriba, asi que no hay dos
+    # criterios que mantener sincronizados. Va despues del commit y no lanza
+    # aunque falle el envio (ver services/notificaciones_email.py): el slot ya
+    # quedo liberado y eso es lo que no se puede perder.
+    notificar_turno_cancelado(turno)
 
     flash("Turno cancelado.")
     return volver

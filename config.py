@@ -102,6 +102,31 @@ class Config:
 
     MAPTILER_KEY = os.getenv("MAPTILER_KEY")
 
+    # --- Correo saliente (notificaciones) ---------------------------------
+    #
+    # SMTP de Gmail, que es la decision de esta vuelta: no hay servicio de
+    # correo transaccional contratado y el volumen es de unos pocos mails por
+    # dia. Si algun dia hay que mandar de a miles esto se cambia por un
+    # proveedor con API, y lo unico que se toca son las variables de abajo.
+    #
+    # USUARIO Y CLAVE SALEN DEL ENTORNO Y NO TIENEN DEFAULT, a proposito y por
+    # el mismo motivo que SECRET_KEY: una credencial hardcodeada termina en el
+    # repositorio. La clave ademas NO es la del correo, es una "contraseña de
+    # aplicacion" de Google, que se genera y se revoca sin tocar la cuenta.
+    #
+    # Si faltan, la app arranca igual y las notificaciones no se mandan: lo
+    # chequea services/notificaciones_email.py antes de intentar conectar. Es
+    # lo que deja correr los tests y una copia local sin credenciales.
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+    # De que direccion salen los avisos. Por defecto la misma casilla que
+    # autentica: Gmail reescribe el From si no coincide con la cuenta, asi que
+    # poner otra cosa no serviria de nada.
+    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER") or MAIL_USERNAME
+
     # Tamanio maximo de subida: sin esto un archivo enorme puede agotar la
     # memoria y el disco del servidor.
     MAX_CONTENT_LENGTH = MAX_IMAGE_BYTES
@@ -140,6 +165,17 @@ class TestingConfig(Config):
     # Los tests postean formularios directamente; el CSRF se prueba aparte,
     # en su propio test, activandolo a mano.
     WTF_CSRF_ENABLED = False
+
+    # Sin credenciales de correo, pase lo que pase. Config las lee del entorno,
+    # asi que una maquina con el .env real cargado las heredaria y la suite
+    # dependeria de que archivo tiene cada uno delante. Con estas dos en None,
+    # services/notificaciones_email.py corta antes de tocar la red en cualquier
+    # maquina, y el test que necesita probar el envio se las pone a mano.
+    MAIL_USERNAME = None
+    MAIL_PASSWORD = None
+    # El freno de abajo, por si algun dia un test las setea y se olvida de
+    # sacarlas: con esto Flask-Mail arma el mensaje pero no abre el socket.
+    MAIL_SUPPRESS_SEND = True
 
 
 class ProductionConfig(Config):

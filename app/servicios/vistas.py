@@ -26,6 +26,7 @@ from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from app.servicios.modelo_verificacion import EstadosVerificacion, VerificationRequest
 from db import utcnow
+from services.notificaciones_email import notificar_solicitud_respondida
 from services.precios import texto_para_formulario
 from models.user import Roles
 from services.uploads import borrar_de_disco, carpeta_privada, save_post_image
@@ -464,11 +465,26 @@ def responder(id):
         flash(error)
         return redirect(url_for("servicios.solicitud", id=id))
 
+    # Se mira ANTES de tocar el estado: es lo que distingue la primera
+    # respuesta de una correccion posterior. El prestador puede volver a
+    # contestar la misma solicitud todas las veces que quiera (arreglar el
+    # precio, agregar un dato), y de eso no se avisa: el cliente ya recibio el
+    # mail que le decia que le habian contestado, y mandarle uno por cada
+    # retoque es spam. Un aviso por cambio de estado, ver
+    # services/notificaciones_email.py.
+    era_la_primera_respuesta = solicitud.estado == EstadosSolicitud.PENDIENTE
+
     solicitud.respuesta_precio = precio
     solicitud.respuesta_mensaje = mensaje
     solicitud.estado = EstadosSolicitud.RESPONDIDA
     solicitud.responded_at = utcnow()
     consultas.guardar()
+
+    if era_la_primera_respuesta:
+        # Despues del commit, y sin envolver en try: la funcion no lanza
+        # aunque el SMTP este caido, asi que la respuesta ya guardada no se
+        # pierde por un problema de mail.
+        notificar_solicitud_respondida(solicitud)
 
     flash("Respuesta enviada.")
     return redirect(url_for("servicios.solicitud", id=id))

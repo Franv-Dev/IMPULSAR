@@ -16,6 +16,7 @@ from app.blog.modelo_resenia import Review
 from app.servicios.modelo import Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from models.user import User
+from services.notificaciones_email import notificar_mensaje_nuevo
 from views.auth import login_required
 
 messages = Blueprint("messages", __name__, url_prefix="/mensajes")
@@ -68,10 +69,17 @@ def conversation(post_id, client_id):
         if not body:
             flash("Escribí un mensaje antes de enviarlo.")
         else:
-            db.session.add(Message(
+            mensaje = Message(
                 post_id=post_id, client_id=client_id, sender_id=g.user.id, body=body,
-            ))
+            )
+            db.session.add(mensaje)
             db.session.commit()
+            # Despues del commit y no antes: si el mail se manda primero y el
+            # INSERT despues falla, el otro queda con un aviso de un mensaje
+            # que no existe. Al reves no pasa nada malo -- el mensaje ya esta
+            # guardado y visible, el mail es el extra. La funcion no lanza
+            # aunque el SMTP este caido (ver services/notificaciones_email.py).
+            notificar_mensaje_nuevo(mensaje)
         return redirect(url_for("messages.conversation", post_id=post_id, client_id=client_id))
 
     historial = (
