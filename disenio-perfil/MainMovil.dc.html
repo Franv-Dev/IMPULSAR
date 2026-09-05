@@ -1,0 +1,337 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-tira { scrollbar-width: none; -ms-overflow-style: none; }
+    .u-tira::-webkit-scrollbar { display: none; }
+    .u-plegable > summary { list-style: none; cursor: pointer; }
+    .u-plegable > summary::-webkit-details-marker { display: none; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; background: #F5F7FA">
+
+  <!-- Portada a sangre, sin barra de estado ni chrome dibujado: eso lo pone el
+       telefono de verdad. -->
+  <div style="position: relative; height: 168px; background: linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)">
+    <span style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,8,28,.4) 0%, transparent 45%, rgba(10,8,28,.2) 100%)"></span>
+    <button type="button" aria-label="Volver" style="position: absolute; left: 12px; top: 12px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: rgba(10,8,28,.5); color: #FFFFFF; cursor: pointer; padding: 0">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5-7 7 7 7"/></svg>
+    </button>
+    <button type="button" aria-label="Compartir" style="position: absolute; right: 12px; top: 12px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: rgba(10,8,28,.5); color: #FFFFFF; cursor: pointer; padding: 0">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17.5" cy="6" r="2.8"/><circle cx="6.5" cy="12" r="2.8"/><circle cx="17.5" cy="18" r="2.8"/><path d="m9 10.6 6-3.2M9 13.4l6 3.2"/></svg>
+    </button>
+  </div>
+
+  <!-- IDENTIDAD -->
+  <section style="display: flex; flex-direction: column; gap: 11px; padding: 0 16px 18px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="display: flex; align-items: flex-end; gap: 12px; margin-top: -42px">
+      <div style="flex-shrink: 0; width: 92px; height: 92px; border-radius: 999px; border: 4px solid #FFFFFF; background: linear-gradient(150deg, #6E5FC8 0%, #4A3AA8 100%); display: flex; align-items: center; justify-content: center">
+        <span style="font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #FFFFFF">VR</span>
+      </div>
+      <span style="display: inline-flex; align-items: center; gap: 5px; margin-bottom: 10px; padding: 5px 10px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+        Emprendedora
+      </span>
+    </div>
+
+    <h1 style="font-size: 25px; line-height: 1.12; letter-spacing: -.03em">Valentina Ruiz</h1>
+
+    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 7px">
+      <a href="#" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-size: 12.5px; font-weight: 600">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+        4,6 · 23 reseñas
+      </a>
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.5px; font-weight: 500">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5248AE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        a 400 m
+      </span>
+    </div>
+
+    <p style="margin: 2px 0 0; font-size: 14.5px; line-height: 1.65; color: #4A5666">Ceramista. Trabajo el gres a torno en el taller de Güemes y salgo a la feria de Plaza Mitre casi todos los fines de semana.</p>
+
+    <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px">
+      <a href="#" aria-label="WhatsApp" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/><path d="M8.8 9.4c0 3 2.4 5.2 5 5.4"/></svg>
+      </a>
+      <a href="#" aria-label="Instagram" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+      </a>
+      <a href="#" aria-label="Facebook" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 21v-8h2.7l.5-3.2h-3.2V7.7c0-.9.3-1.6 1.7-1.6h1.7V3.2A22 22 0 0 0 15.3 3c-2.5 0-4.2 1.5-4.2 4.3v2.5H8.3V13h2.8v8Z"/></svg>
+      </a>
+      <a href="#" aria-label="Teléfono" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.5h3l1.5 4-2 1.4a11.5 11.5 0 0 0 5.4 5.4l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.2 5.7a2 2 0 0 1 2-2.2Z"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- HORARIOS plegados: los siete dias abiertos se comian media pantalla sin
+       que nadie los pidiera. Queda el estado, que es lo que se mira. -->
+  <details class="u-plegable" style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <summary style="display: flex; align-items: center; gap: 11px; padding: 15px 16px">
+      <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: #1C7B53">
+        <span style="width: 7px; height: 7px; border-radius: 999px; background: #1C7B53"></span>
+        Abierto ahora
+      </span>
+      <span style="font-size: 13.5px; color: #5F6B7C">cierra 19:00</span>
+      <span style="flex: 1"></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #33267C">
+        Ver horarios
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </span>
+    </summary>
+    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 12px 14px">
+      <sc-for list="{{ horarios }}" as="h" hint-placeholder-count="7">
+        <span style="{{ h.fila }}">
+          <span>{{ h.dia }}</span>
+          <span style="{{ h.horaEstilo }}">{{ h.hora }}</span>
+        </span>
+      </sc-for>
+    </div>
+  </details>
+
+  <!-- La direccion es un renglon que abre el mapa aparte: el bloque de 140 px
+       ocupaba lugar sin ser tocable. -->
+  <a href="#" style="display: flex; align-items: center; gap: 11px; padding: 14px 16px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; color: #1B2430">
+    <span style="flex-shrink: 0; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 11px; background: #ECEAF7; color: #33267C">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+    </span>
+    <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <span style="font-size: 14px; font-weight: 600">Güemes 1480, Godoy Cruz</span>
+      <span style="font-size: 12.5px; color: #5F6B7C">A 400 m tuyo · abrir el mapa</span>
+    </span>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9AA3B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg>
+  </a>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 12px 0 96px">
+
+    <div class="u-tira" style="display: flex; gap: 8px; padding: 0 16px 2px; overflow-x: auto">
+      <sc-for list="{{ pestanias }}" as="t" hint-placeholder-count="3">
+        <button type="button" onClick="{{ t.elegir }}" style="{{ t.estilo }}">
+          {{ t.etiqueta }}
+          <span style="{{ t.contadorEstilo }}">{{ t.contador }}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <!-- EMPRENDIMIENTOS: tarjeta horizontal compacta, el mismo criterio que en
+         resultados: comparar sin scrollear de mas. -->
+    <div style="{{ panelEmprendimientos }}">
+      <sc-for list="{{ emprendimientos }}" as="e" hint-placeholder-count="2">
+        <article style="display: flex; gap: 13px; padding: 13px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <span style="flex-shrink: 0; width: 104px; height: 104px; border-radius: 14px; background: {{ e.foto }}"></span>
+          <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1">
+            <span style="{{ e.rubroChip }}">{{ e.rubro }}</span>
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 600; letter-spacing: -.01em">{{ e.nombre }}</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #4A5666">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+              <strong style="color: #1B2430">{{ e.puntaje }}</strong> · {{ e.resenias }}
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #1C7B53">
+              <span style="width: 5px; height: 5px; border-radius: 999px; background: #1C7B53"></span>{{ e.abierto }}
+            </span>
+          </span>
+        </article>
+      </sc-for>
+    </div>
+
+    <!-- RESEÑAS: el resumen, dos reseñas, y el resto en su pantalla. -->
+    <div style="{{ panelResenias }}">
+      <div style="display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+        <span style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding-right: 16px; border-right: 1px solid #E2E6EE">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 30px; font-weight: 700; line-height: 1; letter-spacing: -.03em">4,6</span>
+          <span style="font-size: 11.5px; color: #5F6B7C">23 reseñas</span>
+        </span>
+        <span style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+          <sc-for list="{{ barras }}" as="b" hint-placeholder-count="5">
+            <span style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #5F6B7C">
+              <span style="width: 10px; text-align: right">{{ b.puntos }}</span>
+              <span style="flex: 1; height: 6px; border-radius: 999px; background: #EEF1F7; overflow: hidden">
+                <span style="{{ b.relleno }}"></span>
+              </span>
+              <span style="width: 18px">{{ b.cantidad }}</span>
+            </span>
+          </sc-for>
+        </span>
+      </div>
+      <sc-for list="{{ resenias }}" as="r" hint-placeholder-count="2">
+        <div style="display: flex; flex-direction: column; gap: 7px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <span style="display: flex; align-items: center; gap: 10px">
+            <span style="flex-shrink: 0; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">{{ r.iniciales }}</span>
+            <span style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1">
+              <span style="font-size: 13.5px; font-weight: 600">{{ r.nombre }}</span>
+              <span style="font-size: 12px; color: #5F6B7C">{{ r.cuando }} · {{ r.sobre }}</span>
+            </span>
+            <span style="display: flex; gap: 2px">
+              <sc-for list="{{ r.estrellas }}" as="e" hint-placeholder-count="5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="{{ e.color }}"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+              </sc-for>
+            </span>
+          </span>
+          <span style="font-size: 13.5px; line-height: 1.6; color: #4A5666">{{ r.texto }}</span>
+        </div>
+      </sc-for>
+      <a href="#" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; font-size: 14px; font-weight: 600">
+        Ver las 23 reseñas
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+      </a>
+    </div>
+
+    <!-- FERIAS -->
+    <div style="{{ panelEventos }}">
+      <sc-for list="{{ eventos }}" as="v" hint-placeholder-count="2">
+        <div style="display: flex; align-items: center; gap: 13px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <span style="flex-shrink: 0; width: 50px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0; border-radius: 12px; background: #ECEAF7">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; line-height: 1; color: #33267C">{{ v.dia }}</span>
+            <span style="font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #5F6B7C">{{ v.mes }}</span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; letter-spacing: -.01em">{{ v.titulo }}</span>
+            <span style="font-size: 12.5px; line-height: 1.5; color: #5F6B7C">{{ v.cuando }}</span>
+          </span>
+          <span style="{{ v.chip }}">{{ v.estado }}</span>
+        </div>
+      </sc-for>
+      <a href="#" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; font-size: 14px; font-weight: 600">
+        Ver las 3 ferias
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- El contacto va fijo abajo: es la accion de la pantalla y no puede vivir
+       al final del scroll. -->
+  <div style="position: sticky; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 12px 16px 16px; background: rgba(255,255,255,.96); border-top: 1px solid #E2E6EE">
+    <button type="button" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 50px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+      Enviar un mensaje
+    </button>
+    <button type="button" aria-label="Seguir" onClick="{{ alternarSeguir }}" style="{{ seguirEstilo }}">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{ seguirIcono }}"/></svg>
+    </button>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { pestania: "emprendimientos", sigo: false };
+  }
+
+  renderVals() {
+    const PLANCHA = "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)";
+    const activa = this.state.pestania;
+
+    const baseChip = "flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; height: 44px; padding: 0 17px; border: 0; border-radius: 999px; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer; ";
+    const pestanias = [
+      { id: "emprendimientos", etiqueta: "Emprendimientos", contador: "2" },
+      { id: "resenias", etiqueta: "Reseñas", contador: "23" },
+      { id: "eventos", etiqueta: "Ferias", contador: "3" }
+    ].map((t) => Object.assign({}, t, {
+      elegir: () => this.setState({ pestania: t.id }),
+      estilo: baseChip + (activa === t.id
+        ? "background: #ECEAF7; color: #33267C"
+        : "background: #FFFFFF; color: #4A5666"),
+      contadorEstilo: "display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; "
+        + (activa === t.id ? "background: #FFFFFF; color: #33267C" : "background: #EEF1F7; color: #5F6B7C")
+    }));
+
+    const panel = (id) => activa === id
+      ? "display: flex; flex-direction: column; gap: 10px; padding: 0 16px"
+      : "display: none";
+
+    const rubroPar = { "Artesanías": ["#EEEFFE", "#635EA3"], "Hogar": ["#E5F5EC", "#1C7B53"] };
+    const emprendimientos = [
+      { nombre: "Estudio Verde Cerámica", rubro: "Artesanías", puntaje: "4,6", resenias: "23 reseñas", abierto: "Abierto ahora" },
+      { nombre: "Verde Deco", rubro: "Hogar", puntaje: "4,8", resenias: "9 reseñas", abierto: "Cierra 14:00" }
+    ].map((e) => {
+      const par = rubroPar[e.rubro];
+      return Object.assign({}, e, {
+        foto: PLANCHA,
+        rubroChip: "display: inline-flex; align-items: center; align-self: flex-start; padding: 4px 9px; border-radius: 999px; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: "
+          + par[0] + "; color: " + par[1]
+      });
+    });
+
+    const estrellas = (n) => {
+      const salida = [];
+      for (let k = 0; k < 5; k++) salida.push({ color: k < n ? "#E8A33D" : "#E2E6EE" });
+      return salida;
+    };
+
+    const barras = [
+      { puntos: "5", cantidad: 16 }, { puntos: "4", cantidad: 5 },
+      { puntos: "3", cantidad: 1 }, { puntos: "2", cantidad: 1 }, { puntos: "1", cantidad: 0 }
+    ].map((b) => Object.assign({}, b, {
+      relleno: "display: block; height: 100%; border-radius: 999px; background: #E8A33D; width: "
+        + Math.round((b.cantidad / 16) * 100) + "%"
+    }));
+
+    const resenias = [
+      { nombre: "Camila Suárez", iniciales: "CS", cuando: "hace 2 semanas", sobre: "Estudio Verde", puntos: 5,
+        texto: "Encargué una bajada de platos para el restaurante y salió mejor de lo que esperaba. Fue mandando fotos del proceso." },
+      { nombre: "Julián Ortiz", iniciales: "JO", cuando: "hace 1 mes", sobre: "Verde Deco", puntos: 4,
+        texto: "Las macetas son hermosas y aguantan el sol. Tardó una semana más de lo hablado, pero avisó." }
+    ].map((r) => Object.assign({}, r, { estrellas: estrellas(r.puntos) }));
+
+    const eventos = [
+      { dia: "6", mes: "Sep", titulo: "Feria de Plaza Mitre", cuando: "Sábado y domingo, de 10 a 19. Puesto 14.", estado: "Este finde", proximo: true },
+      { dia: "21", mes: "Sep", titulo: "Mercado de diseño en la Nave", cuando: "Domingo, de 11 a 20. Stand 7.", estado: "En 17 días", proximo: false }
+    ].map((v) => Object.assign({}, v, {
+      chip: "flex-shrink: 0; display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; "
+        + (v.proximo ? "background: #FBEDE4; color: #8C4A22" : "background: #EEF1F7; color: #4A5666")
+    }));
+
+    const HOY = 3;
+    const horarios = [
+      { dia: "Lunes", hora: "Cerrado", abre: false },
+      { dia: "Martes", hora: "10:00 – 19:00", abre: true },
+      { dia: "Miércoles", hora: "10:00 – 19:00", abre: true },
+      { dia: "Jueves", hora: "10:00 – 19:00", abre: true },
+      { dia: "Viernes", hora: "10:00 – 19:00", abre: true },
+      { dia: "Sábado", hora: "10:00 – 14:00", abre: true },
+      { dia: "Domingo", hora: "Cerrado", abre: false }
+    ].map((h, n) => Object.assign({}, h, {
+      fila: "display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 32px; padding: 0 12px; border-radius: 9px; font-size: 13px; "
+        + (n === HOY ? "background: #ECEAF7; color: #1B2430; font-weight: 600" : "color: #4A5666"),
+      horaEstilo: h.abre ? "color: inherit" : "color: #5F6B7C"
+    }));
+
+    const sigo = this.state.sigo;
+    return {
+      pestanias: pestanias,
+      panelEmprendimientos: panel("emprendimientos"),
+      panelResenias: panel("resenias"),
+      panelEventos: panel("eventos"),
+      emprendimientos: emprendimientos,
+      barras: barras,
+      resenias: resenias,
+      eventos: eventos,
+      horarios: horarios,
+      alternarSeguir: () => this.setState({ sigo: !this.state.sigo }),
+      seguirIcono: sigo ? "m5 12.5 4.5 4.5L19 7.5" : "M12 5.5v13M5.5 12h13",
+      seguirEstilo: "flex-shrink: 0; width: 50px; height: 50px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; cursor: pointer; padding: 0; "
+        + (sigo
+          ? "border: 1px solid #ECEAF7; background: #ECEAF7; color: #33267C"
+          : "border: 1px solid #E2E6EE; background: #FFFFFF; color: #33267C")
+    };
+  }
+}
+</script>
+</body>
+</html>

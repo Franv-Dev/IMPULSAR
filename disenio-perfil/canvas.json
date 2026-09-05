@@ -1,0 +1,57 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Perfil del emprendedor · visitante", "x": 0, "y": 0, "w": 1440, "h": 1800, "is_interactive": true, "page": "page-1" },
+    { "file": "MainMovil.dc.html", "title": "Visitante · teléfono", "x": 1560, "y": 0, "w": 390, "h": 1150, "is_interactive": true, "page": "page-1" },
+    { "file": "Duenio.dc.html", "title": "Perfil del emprendedor · dueña", "x": 2070, "y": 0, "w": 1440, "h": 2050, "is_interactive": true, "page": "page-1" },
+    { "file": "DuenioMovil.dc.html", "title": "Dueña · teléfono", "x": 3630, "y": 0, "w": 390, "h": 1250, "is_interactive": true, "page": "page-1" },
+    { "file": "Cliente.dc.html", "title": "Perfil del cliente", "x": 0, "y": 0, "w": 1440, "h": 1600, "is_interactive": true, "page": "page-2" },
+    { "file": "ClienteMovil.dc.html", "title": "Cliente · teléfono", "x": 1560, "y": 0, "w": 390, "h": 1200, "is_interactive": true, "page": "page-2" }
+  ],
+  "annotations": [
+    {
+      "id": "nota-emprendedor",
+      "x": 0,
+      "y": -230,
+      "w": 620,
+      "page": "page-1",
+      "text": "El perfil del emprendedor, rediseñado.\n\nTres cambios de fondo respecto de lo que hay hoy en profile.html:\n\n1. Identidad y contacto en una sola tarjeta: dónde queda, si está abierto y cómo puntúa se leen juntos, y el botón de mensaje no vive al final del scroll.\n2. Emprendimientos, reseñas y ferias dejan de apilarse: van en pestañas. Tocalas.\n3. Horarios, mapa y lo más pedido quedan fijos a la derecha — es lo que Mercado Libre y Marketplace no tienen."
+    },
+    {
+      "id": "nota-visitante",
+      "x": 1560,
+      "y": -190,
+      "w": 380,
+      "page": "page-1",
+      "text": "El mismo perfil en teléfono, más corto a propósito.\n\nLos siete días de horarios y el bloque del mapa se comían media pantalla sin que nadie los pidiera: ahora los horarios son una fila que se despliega y la dirección un renglón que abre el mapa aparte. Cada pestaña muestra dos cosas y manda el resto a su pantalla.\n\nEl contacto va en barra fija abajo."
+    },
+    {
+      "id": "nota-duenio",
+      "x": 2070,
+      "y": -160,
+      "w": 620,
+      "page": "page-1",
+      "text": "La misma pantalla cuando la mira su dueña. Hoy la app no dice en ningún lado que estás viendo tu propio perfil ni qué ves de más: acá lo dice una barra, y el interruptor \"Ver como visitante\" apaga de verdad todo lo privado. Probalo.\n\nTus números son los cuatro que ya calcula consultas.estadisticas_de_usuario; la variación del mes es lo único agregado, porque un número suelto no significa nada.\n\nEn teléfono esos números quedan detrás de un desplegable: dos en la fila y los cuatro al abrirlo."
+    },
+    {
+      "id": "nota-cliente",
+      "x": 0,
+      "y": -260,
+      "w": 640,
+      "page": "page-2",
+      "text": "El perfil de un cliente (rol \"usuario\").\n\nHoy comparte template con el del emprendedor, así que muestra \"Mis emprendimientos\" vacío y una grilla de horarios que nunca va a tener: lee como una pantalla rota. Acá cambia de forma: sin portada de marca, avatar más chico, y lo que llena la página es lo que el cliente sí tiene en el modelo — turnos (app/turnos), presupuestos pedidos (service_requests), reseñas escritas, guardados y a quién sigue.\n\nEl hueco de \"no tenés emprendimientos\" pasa a ser la invitación a publicar uno.\n\nEl interruptor de arriba muestra la otra mitad: de un cliente sólo son públicas sus reseñas."
+    },
+    {
+      "id": "nota-cliente-movil",
+      "x": 1560,
+      "y": -150,
+      "w": 380,
+      "page": "page-2",
+      "text": "El cliente en teléfono. Turnos y presupuestos se funden en una sola lista \"en curso\" de dos líneas, con el resto en su pantalla; cada pestaña muestra dos ítems y termina en un botón."
+    }
+  ],
+  "pages": [
+    { "id": "page-1", "name": "Emprendedor" },
+    { "id": "page-2", "name": "Cliente" }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

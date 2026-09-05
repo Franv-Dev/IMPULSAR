@@ -1,0 +1,362 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-tira { scrollbar-width: none; -ms-overflow-style: none; }
+    .u-tira::-webkit-scrollbar { display: none; }
+    .u-plegable > summary { list-style: none; cursor: pointer; }
+    .u-plegable > summary::-webkit-details-marker { display: none; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; background: #F5F7FA">
+
+  <div style="position: relative; height: 168px; background: linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)">
+    <span style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,8,28,.4) 0%, transparent 45%, rgba(10,8,28,.2) 100%)"></span>
+    <button type="button" aria-label="Volver" style="position: absolute; left: 12px; top: 12px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: rgba(10,8,28,.5); color: #FFFFFF; cursor: pointer; padding: 0">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5-7 7 7 7"/></svg>
+    </button>
+    <button type="button" aria-label="Cambiar portada" style="{{ botonPortada }}">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+    </button>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 11px; padding: 0 16px 18px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="display: flex; align-items: flex-end; gap: 12px; margin-top: -42px">
+      <div style="position: relative; flex-shrink: 0">
+        <div style="width: 92px; height: 92px; border-radius: 999px; border: 4px solid #FFFFFF; background: linear-gradient(150deg, #6E5FC8 0%, #4A3AA8 100%); display: flex; align-items: center; justify-content: center">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #FFFFFF">VR</span>
+        </div>
+        <button type="button" aria-label="Cambiar foto" style="{{ botonAvatar }}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="12" cy="12" r="3.4"/></svg>
+        </button>
+      </div>
+      <span style="display: inline-flex; align-items: center; gap: 5px; margin-bottom: 10px; padding: 5px 10px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+        Emprendedora
+      </span>
+    </div>
+
+    <h1 style="font-size: 25px; line-height: 1.12; letter-spacing: -.03em">Valentina Ruiz</h1>
+
+    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 7px">
+      <a href="#" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-size: 12.5px; font-weight: 600">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+        4,6 · 23 reseñas
+      </a>
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.5px; font-weight: 500">Godoy Cruz</span>
+    </div>
+
+    <p style="margin: 2px 0 0; font-size: 14.5px; line-height: 1.65; color: #4A5666">Ceramista. Trabajo el gres a torno en el taller de Güemes y salgo a la feria de Plaza Mitre casi todos los fines de semana.</p>
+
+    <!-- Barra de dueña: la app no dice en ningun lado que estas viendo tu
+         propio perfil ni que ves de mas. El interruptor anda. -->
+    <div style="display: flex; align-items: center; gap: 11px; margin-top: 4px; padding: 11px 11px 11px 14px; border: 1px solid #D9D2F0; border-radius: 14px; background: #ECEAF7">
+      <span style="flex: 1; font-size: 12.5px; line-height: 1.4; color: #4A5666; min-width: 0">{{ avisoTexto }}</span>
+      <button type="button" onClick="{{ alternarVista }}" style="{{ botonVista }}">{{ botonVistaTexto }}</button>
+    </div>
+  </section>
+
+  <!-- TUS NÚMEROS: dos en la fila y los cuatro detras del desplegable. Cuatro
+       tarjetas apiladas se comian la pantalla antes de llegar al contenido. -->
+  <details class="u-plegable" style="{{ panelNumeros }}">
+    <summary style="display: flex; align-items: center; gap: 14px; padding: 15px 16px">
+      <span style="display: flex; flex-direction: column; gap: 1px">
+        <span style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -.02em">1.204</span>
+        <span style="font-size: 11.5px; color: #5F6B7C">vistas</span>
+      </span>
+      <span style="width: 1px; height: 26px; background: #E2E6EE"></span>
+      <span style="display: flex; flex-direction: column; gap: 1px">
+        <span style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -.02em">34</span>
+        <span style="font-size: 11.5px; color: #5F6B7C">te siguen</span>
+      </span>
+      <span style="flex: 1"></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #33267C">
+        Tus números
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </span>
+    </summary>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px 16px">
+      <sc-for list="{{ numeros }}" as="n" hint-placeholder-count="4">
+        <div style="display: flex; flex-direction: column; gap: 5px; padding: 13px 14px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+          <span style="display: flex; align-items: baseline; gap: 7px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 21px; font-weight: 700; line-height: 1; letter-spacing: -.03em">{{ n.valor }}</span>
+            <span style="{{ n.variacionEstilo }}">{{ n.variacion }}</span>
+          </span>
+          <span style="font-size: 12px; line-height: 1.4; color: #5F6B7C">{{ n.etiqueta }}</span>
+        </div>
+      </sc-for>
+      <span style="grid-column: span 2; font-size: 12px; color: #5F6B7C">Últimos 30 días · solo los ves vos</span>
+    </div>
+  </details>
+
+  <details class="u-plegable" style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <summary style="display: flex; align-items: center; gap: 11px; padding: 15px 16px">
+      <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: #1C7B53">
+        <span style="width: 7px; height: 7px; border-radius: 999px; background: #1C7B53"></span>
+        Abierto ahora
+      </span>
+      <span style="font-size: 13.5px; color: #5F6B7C">cierra 19:00</span>
+      <span style="flex: 1"></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #33267C">
+        {{ textoHorarios }}
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </span>
+    </summary>
+    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 12px 14px">
+      <sc-for list="{{ horarios }}" as="h" hint-placeholder-count="7">
+        <span style="{{ h.fila }}">
+          <span>{{ h.dia }}</span>
+          <span style="{{ h.horaEstilo }}">{{ h.hora }}</span>
+        </span>
+      </sc-for>
+    </div>
+  </details>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 12px 0 96px">
+
+    <div class="u-tira" style="display: flex; gap: 8px; padding: 0 16px 2px; overflow-x: auto">
+      <sc-for list="{{ pestanias }}" as="t" hint-placeholder-count="3">
+        <button type="button" onClick="{{ t.elegir }}" style="{{ t.estilo }}">
+          {{ t.etiqueta }}
+          <span style="{{ t.contadorEstilo }}">{{ t.contador }}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="{{ panelEmprendimientos }}">
+      <sc-for list="{{ emprendimientos }}" as="e" hint-placeholder-count="2">
+        <article style="display: flex; flex-direction: column; gap: 11px; padding: 13px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <span style="display: flex; gap: 13px">
+            <span style="flex-shrink: 0; width: 96px; height: 96px; border-radius: 14px; background: {{ e.foto }}"></span>
+            <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1">
+              <span style="{{ e.rubroChip }}">{{ e.rubro }}</span>
+              <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 600; letter-spacing: -.01em">{{ e.nombre }}</span>
+              <span style="{{ e.estadoChip }}">{{ e.estado }}</span>
+              <span style="font-size: 12.5px; color: #4A5666">{{ e.vistas }} · {{ e.favoritos }}</span>
+            </span>
+          </span>
+          <span style="{{ e.acciones }}">
+            <button type="button" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 44px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-size: 13.5px; font-weight: 600; cursor: pointer">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16Zm10.5-13.5 3 3"/></svg>
+              Editar
+            </button>
+            <button type="button" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; height: 44px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 13.5px; font-weight: 600; cursor: pointer">Catálogo</button>
+          </span>
+        </article>
+      </sc-for>
+    </div>
+
+    <div style="{{ panelResenias }}">
+      <div style="{{ avisoResenias }}">
+        <span style="font-size: 13.5px; line-height: 1.5; color: #8C4A22"><strong>3 reseñas sin responder.</strong> Responder la floja es lo que más cambia lo que ve el que llega después.</span>
+      </div>
+      <sc-for list="{{ resenias }}" as="r" hint-placeholder-count="2">
+        <div style="display: flex; flex-direction: column; gap: 7px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <span style="display: flex; align-items: center; gap: 10px">
+            <span style="flex-shrink: 0; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">{{ r.iniciales }}</span>
+            <span style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1">
+              <span style="font-size: 13.5px; font-weight: 600">{{ r.nombre }}</span>
+              <span style="font-size: 12px; color: #5F6B7C">{{ r.cuando }} · {{ r.sobre }}</span>
+            </span>
+            <span style="display: flex; gap: 2px">
+              <sc-for list="{{ r.estrellas }}" as="e" hint-placeholder-count="5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="{{ e.color }}"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+              </sc-for>
+            </span>
+          </span>
+          <span style="font-size: 13.5px; line-height: 1.6; color: #4A5666">{{ r.texto }}</span>
+          <button type="button" style="{{ r.botonResponder }}">Responder</button>
+        </div>
+      </sc-for>
+      <a href="#" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; font-size: 14px; font-weight: 600">
+        Ver las 23 reseñas
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+      </a>
+    </div>
+
+    <div style="{{ panelEventos }}">
+      <sc-for list="{{ eventos }}" as="v" hint-placeholder-count="2">
+        <div style="display: flex; align-items: center; gap: 13px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <span style="flex-shrink: 0; width: 50px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0; border-radius: 12px; background: #ECEAF7">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; line-height: 1; color: #33267C">{{ v.dia }}</span>
+            <span style="font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #5F6B7C">{{ v.mes }}</span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; letter-spacing: -.01em">{{ v.titulo }}</span>
+            <span style="font-size: 12.5px; line-height: 1.5; color: #5F6B7C">{{ v.cuando }}</span>
+          </span>
+          <button type="button" aria-label="Editar" style="{{ botonEditarEvento }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16Zm10.5-13.5 3 3"/></svg>
+          </button>
+        </div>
+      </sc-for>
+      <button type="button" style="{{ botonAnunciar }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5v13M5.5 12h13"/></svg>
+        Anunciar una feria
+      </button>
+    </div>
+  </div>
+
+  <div style="position: sticky; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 12px 16px 16px; background: rgba(255,255,255,.96); border-top: 1px solid #E2E6EE">
+    <button type="button" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 50px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ barraIcono }}"/></svg>
+      {{ barraTexto }}
+    </button>
+    <button type="button" aria-label="{{ barraSecundariaEtiqueta }}" style="flex-shrink: 0; width: 50px; height: 50px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #33267C; cursor: pointer; padding: 0">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{ barraSecundariaIcono }}"/></svg>
+    </button>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":1280}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { pestania: "emprendimientos", comoVisitante: false };
+  }
+
+  renderVals() {
+    const PLANCHA = "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)";
+    const activa = this.state.pestania;
+    const visitante = this.state.comoVisitante;
+    const soloDueno = (estilo) => visitante ? "display: none" : estilo;
+
+    const baseChip = "flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; height: 44px; padding: 0 17px; border: 0; border-radius: 999px; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer; ";
+    const pestanias = [
+      { id: "emprendimientos", etiqueta: "Emprendimientos", contador: "2" },
+      { id: "resenias", etiqueta: "Reseñas", contador: "23" },
+      { id: "eventos", etiqueta: "Ferias", contador: "3" }
+    ].map((t) => Object.assign({}, t, {
+      elegir: () => this.setState({ pestania: t.id }),
+      estilo: baseChip + (activa === t.id
+        ? "background: #ECEAF7; color: #33267C"
+        : "background: #FFFFFF; color: #4A5666"),
+      contadorEstilo: "display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; "
+        + (activa === t.id ? "background: #FFFFFF; color: #33267C" : "background: #EEF1F7; color: #5F6B7C")
+    }));
+
+    const panel = (id) => activa === id
+      ? "display: flex; flex-direction: column; gap: 10px; padding: 0 16px"
+      : "display: none";
+
+    const numeros = [
+      { valor: "1.204", etiqueta: "Vistas", variacion: "+18%", sube: true },
+      { valor: "86", etiqueta: "En favoritos", variacion: "+9", sube: true },
+      { valor: "34", etiqueta: "Te siguen", variacion: "+3", sube: true },
+      { valor: "4,6", etiqueta: "De 23 reseñas", variacion: "igual", sube: false }
+    ].map((n) => Object.assign({}, n, {
+      variacionEstilo: "display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; "
+        + (n.sube ? "background: #E6F4EC; color: #1C7B53" : "background: #EEF1F7; color: #5F6B7C")
+    }));
+
+    const rubroPar = { "Artesanías": ["#EEEFFE", "#635EA3"], "Hogar": ["#E5F5EC", "#1C7B53"] };
+    const emprendimientos = [
+      { nombre: "Estudio Verde Cerámica", rubro: "Artesanías", estado: "Publicado", publicado: true, vistas: "1.204 vistas", favoritos: "62 favoritos" },
+      { nombre: "Verde Deco", rubro: "Hogar", estado: "Sin fotos hace 3 meses", publicado: false, vistas: "318 vistas", favoritos: "24 favoritos" }
+    ].map((e) => {
+      const par = rubroPar[e.rubro];
+      return Object.assign({}, e, {
+        foto: PLANCHA,
+        rubroChip: "display: inline-flex; align-items: center; align-self: flex-start; padding: 4px 9px; border-radius: 999px; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: "
+          + par[0] + "; color: " + par[1],
+        estadoChip: "display: inline-flex; align-items: center; align-self: flex-start; padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; "
+          + (e.publicado ? "background: #E6F4EC; color: #1C7B53" : "background: #FBEDE4; color: #8C4A22"),
+        acciones: soloDueno("display: flex; gap: 9px")
+      });
+    });
+
+    const estrellas = (n) => {
+      const salida = [];
+      for (let k = 0; k < 5; k++) salida.push({ color: k < n ? "#E8A33D" : "#E2E6EE" });
+      return salida;
+    };
+
+    const resenias = [
+      { nombre: "Julián Ortiz", iniciales: "JO", cuando: "hace 3 días", sobre: "Verde Deco", puntos: 3,
+        texto: "Las macetas están buenas pero tardó una semana más de lo hablado y me enteré porque pregunté.", respondida: false },
+      { nombre: "Camila Suárez", iniciales: "CS", cuando: "hace 2 semanas", sobre: "Estudio Verde", puntos: 5,
+        texto: "Encargué una bajada de platos para el restaurante y salió mejor de lo que esperaba.", respondida: true }
+    ].map((r) => Object.assign({}, r, {
+      estrellas: estrellas(r.puntos),
+      botonResponder: (r.respondida || visitante)
+        ? "display: none"
+        : "align-self: flex-start; margin-top: 2px; display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-size: 13.5px; font-weight: 600; cursor: pointer"
+    }));
+
+    const eventos = [
+      { dia: "6", mes: "Sep", titulo: "Feria de Plaza Mitre", cuando: "Sábado y domingo, de 10 a 19. Puesto 14." },
+      { dia: "21", mes: "Sep", titulo: "Mercado de diseño en la Nave", cuando: "Domingo, de 11 a 20. Stand 7." }
+    ];
+
+    const HOY = 3;
+    const horarios = [
+      { dia: "Lunes", hora: "Cerrado", abre: false },
+      { dia: "Martes", hora: "10:00 – 19:00", abre: true },
+      { dia: "Miércoles", hora: "10:00 – 19:00", abre: true },
+      { dia: "Jueves", hora: "10:00 – 19:00", abre: true },
+      { dia: "Viernes", hora: "10:00 – 19:00", abre: true },
+      { dia: "Sábado", hora: "10:00 – 14:00", abre: true },
+      { dia: "Domingo", hora: "Cerrado", abre: false }
+    ].map((h, n) => Object.assign({}, h, {
+      fila: "display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 32px; padding: 0 12px; border-radius: 9px; font-size: 13px; "
+        + (n === HOY ? "background: #ECEAF7; color: #1B2430; font-weight: 600" : "color: #4A5666"),
+      horaEstilo: h.abre ? "color: inherit" : "color: #5F6B7C"
+    }));
+
+    return {
+      pestanias: pestanias,
+      panelEmprendimientos: panel("emprendimientos"),
+      panelResenias: panel("resenias"),
+      panelEventos: panel("eventos"),
+      numeros: numeros,
+      emprendimientos: emprendimientos,
+      resenias: resenias,
+      eventos: eventos,
+      horarios: horarios,
+
+      alternarVista: () => this.setState({ comoVisitante: !this.state.comoVisitante }),
+      avisoTexto: visitante
+        ? "Así te ve cualquiera: sin tus números ni los botones de editar."
+        : "Estás viendo tu propio perfil. Lo privado está marcado.",
+      botonVista: "flex-shrink: 0; display: inline-flex; align-items: center; height: 40px; padding: 0 15px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; "
+        + (visitante
+          ? "border: 1px solid #33267C; background: #33267C; color: #FFFFFF"
+          : "border: 1px solid #FFFFFF; background: #FFFFFF; color: #33267C"),
+      botonVistaTexto: visitante ? "Volver" : "Ver como visitante",
+
+      panelNumeros: soloDueno("display: block; background: #FFFFFF; border-bottom: 1px solid #E2E6EE"),
+      avisoResenias: soloDueno("display: flex; padding: 14px 16px; border: 1px solid #F0DCCB; border-radius: 18px; background: #FBEDE4"),
+      textoHorarios: visitante ? "Ver horarios" : "Editar horarios",
+      botonPortada: soloDueno("position: absolute; right: 12px; top: 12px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: rgba(10,8,28,.5); color: #FFFFFF; cursor: pointer; padding: 0"),
+      botonAvatar: soloDueno("position: absolute; right: -2px; bottom: 0; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 3px solid #FFFFFF; border-radius: 999px; background: #5248AE; color: #FFFFFF; cursor: pointer; padding: 0"),
+      botonEditarEvento: soloDueno("flex-shrink: 0; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; cursor: pointer; padding: 0"),
+      botonAnunciar: soloDueno("display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-size: 14px; font-weight: 600; cursor: pointer"),
+
+      barraTexto: visitante ? "Enviar un mensaje" : "Publicar emprendimiento",
+      barraIcono: visitante
+        ? "M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"
+        : "M12 5.5v13M5.5 12h13",
+      barraSecundariaEtiqueta: visitante ? "Seguir" : "Editar perfil",
+      barraSecundariaIcono: visitante
+        ? "M12 5.5v13M5.5 12h13"
+        : "M4 20h4l10-10-4-4L4 16Zm10.5-13.5 3 3"
+    };
+  }
+}
+</script>
+</body>
+</html>
