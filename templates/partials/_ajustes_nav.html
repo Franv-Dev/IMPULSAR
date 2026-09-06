@@ -1,0 +1,25 @@
+{# Las solapas de Ajustes. Quien incluya este parcial pasa `activa` con el
+   nombre de la suya.
+
+   De las cinco, tres son pantallas de verdad (perfil público, contacto y
+   horarios) y dos siguen maquetadas y apagadas: no hay ruta ni backend para
+   cambiar la contraseña ni para elegir qué avisos llegan. Se dibujan igual,
+   con el aviso abajo, porque esconderlas sería fingir que Ajustes es sólo
+   esto. #}
+<nav class="ajustes__nav" aria-label="Secciones de ajustes">
+    {% set solapas = [
+        ('Perfil público', url_for('profile.edit')),
+        ('Contacto y redes', url_for('profile.edit_contacto')),
+        ('Horarios', url_for('profile.horarios')),
+    ] %}
+    {% for etiqueta, destino in solapas %}
+        {% if etiqueta == activa %}
+            <a href="{{ destino }}" class="ajustes__tab ajustes__tab--activa" aria-current="page">{{ etiqueta }}</a>
+        {% else %}
+            <a href="{{ destino }}" class="ajustes__tab">{{ etiqueta }}</a>
+        {% endif %}
+    {% endfor %}
+    <span class="ajustes__tab ajustes__tab--pendiente" aria-disabled="true">Cuenta y contraseña</span>
+    <span class="ajustes__tab ajustes__tab--pendiente" aria-disabled="true">Notificaciones</span>
+</nav>
+<p class="cuenta__pendiente">Las dos últimas todavía no tienen pantalla.</p>

@@ -2,143 +2,227 @@
 
 {% block title %}Mis favoritos – IMPULSAR{% endblock %}
 
+{#  "Mis favoritos" del rediseño: entra al layout de cuenta, con el menu a la
+    izquierda, y las fichas pasan a ser las mismas .tarjeta del listado de
+    emprendimientos.
+
+    Antes era una pantalla suelta con .section__header y la grilla de .card
+    genericas: al lado de Mis emprendimientos y Mis servicios, que ya estan
+    rediseñadas, se notaba que era otra epoca. El acceso ya estaba en el menu
+    de cuenta ("Favoritos"), asi que lo unico que faltaba era que la pantalla
+    se pareciera a las otras.
+
+    Los filtros siguen siendo los mismos dos parametros de la URL. El rubro
+    queda como <select> con onchange (con su boton de fallback para quien
+    tenga JS apagado) y el orden pasa a ser una fila de enlaces, igual que en
+    la busqueda de servicios: son dos opciones y un enlace se lee de un
+    vistazo. #}
+
+{# La misma URL de ahora con un parametro cambiado, sin la pagina: al cambiar
+   un filtro hay que volver a la primera, porque con ?page=3 conservado se
+   puede caer en una pagina que con menos resultados ya no existe. Mismo
+   criterio (y misma forma) que en blog/index.html y en servicios/buscar.html. #}
+{% macro url_con(param, valor) -%}
+    {%- set args = request.args.to_dict() -%}
+    {%- set _ = args.pop('page', None) -%}
+    {%- if valor -%}
+        {%- set _ = args.update({param: valor}) -%}
+    {%- else -%}
+        {%- set _ = args.pop(param, None) -%}
+    {%- endif -%}
+    {{- url_for('blog.my_favorites', **args) -}}
+{%- endmacro %}
+
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Mis favoritos</h2>
-                <p class="section__subtitle">
-                    Los emprendimientos que marcaste para encontrar rápido después.
-                </p>
-            </div>
-            <a href="{{ url_for('blog.index') }}" class="section__link">Ver todos los emprendimientos</a>
-        </div>
+        <div class="cuenta">
+            {% with seccion = "Favoritos" %}
+                {% include "partials/_menu_cuenta.html" with context %}
+            {% endwith %}
 
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
-                    {% for message in messages %}
-                        <div class="auth__alert">{{ message }}</div>
-                    {% endfor %}
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Mis favoritos</h1>
+                        <p class="cuenta__bajada">
+                            {{ paginacion.total }} guardado{{ '' if paginacion.total == 1 else 's' }}.
+                            Los emprendimientos que marcaste para encontrar rápido después.
+                        </p>
+                    </div>
+                    <a href="{{ url_for('blog.index') }}" class="btn btn--secondary">
+                        Explorar emprendimientos
+                    </a>
                 </div>
-            {% endif %}
-        {% endwith %}
 
-        {# Los dos <select> mandan solos al cambiar (onchange), asi que el
-           boton es el fallback para quien tenga JS apagado: sin el, esa
-           persona no tendria como aplicar el filtro.
-           No se pinta cuando la pantalla esta vacia porque no hay filtro que
-           tenga sentido aplicar sobre cero favoritos -- salvo que sea el
-           propio filtro el que la vacio, y ahi si hay que poder sacarlo. #}
-        {% if posts or categoria_actual %}
-            {# El form NO lleva un <input hidden> con la pagina, y es a
-               proposito: al cambiar un filtro hay que volver a la primera.
-               Con ?page=3 conservado, filtrar puede dejar al usuario en una
-               pagina que con menos resultados ya no existe, viendo la
-               pantalla vacia sin entender por que. #}
-            <form method="get" action="{{ url_for('blog.my_favorites') }}" class="favoritos__filtros">
-                <label class="favoritos__filtro">
-                    <span class="favoritos__filtro-label">Rubro</span>
-                    <select name="category" onchange="this.form.submit()">
-                        <option value="">Todos</option>
-                        {# El mismo Categorias.ETIQUETAS que usa Explorar: si
-                           mañana se agrega un rubro, aparece en los dos. #}
-                        {% for valor, etiqueta in categorias.items() %}
-                            <option value="{{ valor }}" {% if valor == categoria_actual %}selected{% endif %}>
-                                {{ etiqueta }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </label>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
 
-                <label class="favoritos__filtro">
-                    <span class="favoritos__filtro-label">Ordenar por</span>
-                    <select name="orden" onchange="this.form.submit()">
-                        {% for valor, etiqueta in ordenes.items() %}
-                            <option value="{{ valor }}" {% if valor == orden_actual %}selected{% endif %}>
-                                {{ etiqueta }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </label>
-
-                <button type="submit" class="btn btn--secondary">Aplicar</button>
-            </form>
-        {% endif %}
-
-        {% if posts %}
-            <div class="cards-grid">
-                {% for item in posts %}
-                    {% set post = item.post %}
-                    {% set is_favorite = item.is_favorite %}
-                    <article class="card">
-                        {% if post.image %}
-                            <a href="{{ url_for('blog.detail', id=post.id) }}" class="card__image-link">
-                                <div class="card__image-wrapper">
-                                    <img
-                                        src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
-                                        alt="Imagen de {{ post.title }}"
-                                        class="card__image"
-                                    >
-                                </div>
-                            </a>
-                        {% endif %}
-                        <div class="card__body">
-                            <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <span class="badge badge--category">{{ post.category_label }}</span>
-                                <div style="display:flex; gap:0.35rem; align-items:center;">
-                                    {% include "partials/_compartir_boton.html" %}
-                                    {% include "partials/_favorito_boton.html" %}
-                                </div>
-                            </div>
-
-                            <h3 class="card__title">
-                                <a href="{{ url_for('blog.detail', id=post.id) }}" style="text-decoration:none; color:inherit;">
-                                    {{ post.title }}
-                                </a>
-                            </h3>
-
-                            {% if item.avg_rating %}
-                                <p class="card__rating">
-                                    ⭐ {{ item.avg_rating }} <span class="text-muted">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
-                                </p>
-                            {% else %}
-                                <p class="card__rating text-muted">Sin reseñas todavía</p>
+                {# No se pinta con la pantalla vacia porque no hay filtro que
+                   tenga sentido aplicar sobre cero favoritos -- salvo que sea
+                   el propio filtro el que la vacio, y ahi si hay que poder
+                   sacarlo. #}
+                {% if posts or categoria_actual %}
+                    <div class="resultados__head">
+                        {# El form NO lleva un hidden con la pagina, a proposito
+                           (ver el macro de arriba). #}
+                        <form method="get" action="{{ url_for('blog.my_favorites') }}"
+                              class="favoritos__filtros">
+                            <label class="favoritos__filtro">
+                                <span class="favoritos__filtro-label">Rubro</span>
+                                {# El mismo Categorias.ETIQUETAS que usa Explorar: si
+                                   mañana se agrega un rubro, aparece en los dos. #}
+                                <select name="category" class="filtros__input"
+                                        onchange="this.form.submit()">
+                                    <option value="">Todos</option>
+                                    {% for valor, etiqueta in categorias.items() %}
+                                        <option value="{{ valor }}" {% if valor == categoria_actual %}selected{% endif %}>
+                                            {{ etiqueta }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                            {# El orden que este puesto tiene que viajar tambien
+                               cuando se manda este form, o cambiar el rubro lo
+                               perderia. #}
+                            {% if orden_actual %}
+                                <input type="hidden" name="orden" value="{{ orden_actual }}">
                             {% endif %}
+                            {# El fallback para quien tenga JS apagado: sin el, esa
+                               persona no tendria como aplicar el filtro. #}
+                            <button type="submit" class="btn btn--secondary btn--chico">Aplicar</button>
+                        </form>
 
-                            <p class="card__description">
-                                {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
-                            </p>
-
-                            <div style="margin-top:0.75rem; text-align:right;">
-                                <a href="{{ url_for('blog.detail', id=post.id) }}"
-                                    class="btn btn--secondary"
-                                    style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                    Ver detalle / Reseñas
-                                </a>
+                        <div class="orden">
+                            <span class="orden__label">Ordenar por</span>
+                            <div class="orden__grupo">
+                                {% for valor, etiqueta in ordenes.items() %}
+                                    <a href="{{ url_con('orden', valor) }}"
+                                       class="orden__opcion {{ 'orden__opcion--activa' if valor == orden_actual }}"
+                                       {% if valor == orden_actual %}aria-current="true"{% endif %}>
+                                        {{ etiqueta }}
+                                    </a>
+                                {% endfor %}
                             </div>
                         </div>
-                    </article>
-                {% endfor %}
-            </div>
+                    </div>
 
-            {% include "partials/_paginacion.html" %}
-        {% else %}
-            <div class="emprendimientos__empty" style="margin-top:1rem;">
-                {% if categoria_actual %}
-                    <p>
-                        No tenés favoritos en ese rubro.
-                        <a href="{{ url_for('blog.my_favorites', orden=orden_actual) }}">Ver todos tus favoritos</a>.
-                    </p>
+                    {% if categoria_actual %}
+                        <div class="chips">
+                            <span class="chip">
+                                {{ categorias.get(categoria_actual, categoria_actual) }}
+                                <a href="{{ url_con('category', '') }}" class="chip__quitar"
+                                   aria-label="Quitar el filtro de rubro">×</a>
+                            </span>
+                        </div>
+                    {% endif %}
+                {% endif %}
+
+                {% if posts %}
+                    <div class="resultados__lista">
+                        {% for item in posts %}
+                            {% set post = item.post %}
+                            {% set is_favorite = item.is_favorite %}
+                            <article class="tarjeta">
+                                <a href="{{ url_for('blog.detail', id=post.id) }}"
+                                   class="tarjeta__foto" tabindex="-1" aria-hidden="true">
+                                    {% if post.image %}
+                                        <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                             alt="" class="tarjeta__img" loading="lazy">
+                                    {% endif %}
+                                </a>
+
+                                <div class="tarjeta__cuerpo">
+                                    <div class="tarjeta__encabezado">
+                                        <span class="rubro-pastilla rubro-pastilla--{{ post.category }}">
+                                            {{ post.category_label }}
+                                        </span>
+                                        <div class="tarjeta__acciones">
+                                            {% include "partials/_compartir_boton.html" %}
+                                            {# El corazon siempre lleno acá: esta pantalla
+                                               son justamente los que estan marcados, y
+                                               tocarlo lo saca de la lista. #}
+                                            {% include "partials/_favorito_boton.html" %}
+                                        </div>
+                                    </div>
+
+                                    <h2 class="tarjeta__titulo">
+                                        <a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a>
+                                    </h2>
+
+                                    <p class="tarjeta__desc">
+                                        {{ post.body[:170] }}{% if post.body|length > 170 %}…{% endif %}
+                                    </p>
+
+                                    <div class="tarjeta__datos">
+                                        {% if item.avg_rating %}
+                                            <span class="dato dato--rating"
+                                                  aria-label="Calificación promedio: {{ item.avg_rating }} de 5">
+                                                <span class="dato__estrella" aria-hidden="true">★</span>
+                                                {{ item.avg_rating }} · {{ item.review_count }}
+                                                reseña{{ '' if item.review_count == 1 else 's' }}
+                                            </span>
+                                        {% else %}
+                                            <span class="dato">Sin reseñas todavía</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="tarjeta__pie">
+                                        {% if post.author_user %}
+                                            <span class="tarjeta__persona">
+                                                <span class="tarjeta__avatar" aria-hidden="true">
+                                                    {{ post.author_user.username[:2] | upper }}
+                                                </span>
+                                                {{ post.author_user.username }}
+                                            </span>
+                                        {% endif %}
+                                        <a href="{{ url_for('blog.detail', id=post.id) }}"
+                                           class="btn btn--secondary btn--chico">Ver el emprendimiento</a>
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+
+                    {% include "partials/_paginacion.html" %}
                 {% else %}
-                    <p>
-                        Todavía no marcaste ningún emprendimiento como favorito.
-                        <a href="{{ url_for('blog.index') }}">Explorá los emprendimientos</a> y tocá el corazón del que te interese.
-                    </p>
+                    <div class="vacio">
+                        <span class="vacio__icono" aria-hidden="true">
+                            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 7.5a4 4 0 0 1 7-.9c0 4.8-7 13.4-7 13.4Z"/>
+                            </svg>
+                        </span>
+                        {% if categoria_actual %}
+                            <h2 class="vacio__titulo">No tenés favoritos en ese rubro</h2>
+                            <p class="vacio__texto">
+                                Guardaste emprendimientos, pero ninguno de
+                                {{ categorias.get(categoria_actual, categoria_actual) | lower }}.
+                            </p>
+                            <a href="{{ url_con('category', '') }}" class="btn btn--secondary">
+                                Ver todos tus favoritos
+                            </a>
+                        {% else %}
+                            <h2 class="vacio__titulo">Todavía no guardaste ninguno</h2>
+                            <p class="vacio__texto">
+                                Tocá el corazón de un emprendimiento y va a quedar acá, para
+                                encontrarlo sin volver a buscarlo.
+                            </p>
+                            <a href="{{ url_for('blog.index') }}" class="btn btn--primary">
+                                Explorá los emprendimientos
+                            </a>
+                        {% endif %}
+                    </div>
                 {% endif %}
             </div>
-        {% endif %}
+        </div>
     </div>
 </section>
 {% endblock %}

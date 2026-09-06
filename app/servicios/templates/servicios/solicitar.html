@@ -1,66 +1,202 @@
 {% extends "base.html" %}
 {% block title %}Pedir presupuesto – {{ servicio.titulo }}{% endblock %}
 
+{#  El pedido de presupuesto, rediseñado: el formulario a la izquierda y la
+    ficha del servicio al costado.
+
+    Antes eran tres campos sueltos en una tarjeta angosta, sin nada que dijera
+    a quien le estabas escribiendo ni que pasaba despues del boton. Los tres
+    pasos que se listan son los que la app de verdad ejecuta: le llega el mail
+    (services/notificaciones_email.py), le aparece pendiente en Presupuestos y
+    la conversacion queda ahi.
+
+    El campo de la zona ya no es mudo: dice que zona atiende el servicio, asi
+    que se entiende que solo hay que escribir algo si la tuya es otra. #}
+
 {% block content %}
 <section class="section">
-    <div class="container" style="max-width: 640px;">
-        <div class="auth__card">
-            <h1 class="auth__title">Pedir presupuesto</h1>
-            <p class="auth__subtitle">
-                {{ servicio.titulo }} · {{ servicio.rubro_label }}
-                {%- if servicio.zona_cobertura %} · {{ servicio.zona_cobertura }}{% endif %}
-                <br>
-                {{ servicio.post.title }}
-            </p>
+    <div class="container">
+        <p class="volver">
+            <a href="{{ url_for('blog.detail', id=servicio.post_id) }}">
+                ‹ Volver a {{ servicio.post.title }}
+            </a>
+        </p>
 
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="auth__messages">
-                        {% for message in messages %}
-                            <div class="auth__alert">{{ message }}</div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-
-            <form method="post" class="auth__form" enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <div class="auth__field">
-                    <label for="descripcion" class="auth__label">¿Qué necesitás?</label>
-                    <textarea name="descripcion" id="descripcion" class="auth__input"
-                              rows="5" required
-                              placeholder="Contale el problema con el mayor detalle que puedas.">{{ datos.descripcion }}</textarea>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
                 </div>
+            {% endif %}
+        {% endwith %}
 
-                <div class="auth__field">
-                    <label for="zona" class="auth__label">Zona (opcional)</label>
-                    <input type="text" name="zona" id="zona" class="auth__input"
-                           maxlength="120" value="{{ datos.zona }}"
-                           placeholder="Solo si es distinta de la que atiende">
-                </div>
-
-                <div class="auth__field">
-                    <label for="foto" class="auth__label">Foto (opcional)</label>
-                    <input type="file" name="foto" id="foto" class="auth__input"
-                           accept="image/png, image/jpeg, image/gif">
-                    <small>
-                        Una foto del problema ayuda a que el presupuesto sea más
-                        preciso. Se la mostramos al prestador, y no la publicamos
-                        en ningún listado; tené en cuenta igual que el enlace a
-                        la imagen lo puede abrir cualquiera que lo tenga.
-                    </small>
-                </div>
-
-                <button type="submit" class="btn btn--primary auth__submit">
-                    Enviar pedido
-                </button>
-            </form>
-
-            <p class="auth__footer">
-                Volver a <a href="{{ url_for('blog.detail', id=servicio.post_id) }}">{{ servicio.post.title }}</a>.
-            </p>
+        <div class="cuenta__head">
+            <div>
+                <h1 class="cuenta__titulo">Pedir presupuesto</h1>
+                <p class="cuenta__bajada">
+                    No es una compra: es un pedido de precio. Cuando te conteste vas a
+                    poder aceptarlo o dejarlo pasar, sin compromiso.
+                </p>
+            </div>
         </div>
+
+        <form method="post" class="editor" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="editor__campos">
+                <section class="panel">
+                    <h2 class="panel__titulo">¿Qué necesitás?</h2>
+                    <p class="panel__bajada">
+                        Lo único obligatorio. Cuanto más concreto, menos idas y vueltas:
+                        qué pasa, desde cuándo, y si ya probaste algo.
+                    </p>
+
+                    <div class="campo">
+                        <label for="descripcion" class="sr-only">¿Qué necesitás?</label>
+                        <textarea name="descripcion" id="descripcion" class="auth__input"
+                                  rows="6" required
+                                  placeholder="Se tapó la pileta de la cocina hace dos días. Ya probé con sopapa y no destapa.">{{ datos.descripcion }}</textarea>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2 class="panel__titulo">
+                        ¿Dónde? <span class="campo__opcional">· opcional</span>
+                    </h2>
+
+                    {% if servicio.zona_cobertura %}
+                        <p class="aviso-suave aviso-suave--neutro">
+                            Atiende <strong>{{ servicio.zona_cobertura }}</strong>.
+                            Si es ahí, no hace falta que escribas nada.
+                        </p>
+                    {% endif %}
+
+                    <div class="campo">
+                        <label for="zona" class="sr-only">Zona</label>
+                        <input type="text" name="zona" id="zona" class="auth__input"
+                               maxlength="120" value="{{ datos.zona }}"
+                               placeholder="Otra zona: barrio, distrito o calle aproximada">
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2 class="panel__titulo">
+                        Una foto del problema <span class="campo__opcional">· opcional</span>
+                    </h2>
+
+                    <div class="campo">
+                        <label for="foto" class="campo__label">Elegí la imagen</label>
+                        <input type="file" name="foto" id="foto" class="auth__input"
+                               accept="image/png, image/jpeg, image/gif">
+                        <p class="campo__ayuda">
+                            Una foto ayuda a que el presupuesto sea más preciso. Se la
+                            mostramos solo al prestador y no la publicamos en ningún
+                            listado; tené en cuenta igual que el enlace a la imagen lo
+                            puede abrir cualquiera que lo tenga.
+                        </p>
+                    </div>
+                </section>
+
+                <div class="barra-guardar">
+                    <p class="barra-guardar__texto">
+                        Le llega un correo y lo va a ver en sus Presupuestos.
+                    </p>
+                    <a href="{{ url_for('blog.detail', id=servicio.post_id) }}"
+                       class="barra-guardar__cancelar">Cancelar</a>
+                    <button type="submit" class="btn btn--primary">Enviar pedido</button>
+                </div>
+            </div>
+
+            {# ===================== EL SERVICIO ===================== #}
+            <aside class="editor__previa">
+                <article class="panel panel--ficha">
+                    <div class="ficha-servicio">
+                        <span class="servicio__emblema" aria-hidden="true">
+                            {% with clave = servicio.rubro, medida = 26 %}
+                                {% include "partials/_icono_oficio.html" %}
+                            {% endwith %}
+                        </span>
+                        <div>
+                            <h2 class="ficha-servicio__titulo">{{ servicio.titulo }}</h2>
+                            <p class="ficha-servicio__sub">
+                                {{ servicio.rubro_label }}
+                                {%- if servicio.zona_cobertura %} · {{ servicio.zona_cobertura }}{% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if servicio.verificado %}
+                        <div class="ficha-servicio__sellos">
+                            <span class="badge badge--verificado"
+                                  title="Un administrador revisó la matrícula o el certificado de este servicio.">
+                                ✓ Verificado
+                            </span>
+                        </div>
+                    {% endif %}
+
+                    <div class="ficha-servicio__plata">
+                        {# None no es cero: un servicio sin precio se cotiza. #}
+                        {% if servicio.precio_estimado %}
+                            <p class="ficha-servicio__precio">{{ servicio.precio_estimado | precio }}</p>
+                            <p class="ficha-servicio__nota">
+                                Es un precio estimado: puede cambiar según tu caso.
+                            </p>
+                        {% else %}
+                            <p class="ficha-servicio__precio">A presupuestar</p>
+                            <p class="ficha-servicio__nota">
+                                Este servicio no tiene precio publicado: lo cotiza contra tu caso.
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <a href="{{ url_for('blog.detail', id=servicio.post_id) }}"
+                       class="ficha-servicio__quien">
+                        <span class="servicio__avatar" aria-hidden="true">
+                            {{ servicio.post.title[0] | upper }}
+                        </span>
+                        <span class="ficha-servicio__quien-nombre">{{ servicio.post.title }}</span>
+                        <span class="ficha-servicio__quien-ver">Ver</span>
+                    </a>
+                </article>
+
+                <section class="panel">
+                    <h2 class="panel__titulo">Qué pasa después</h2>
+                    <ol class="pasos">
+                        <li class="pasos__item">
+                            <span class="pasos__numero" aria-hidden="true">1</span>
+                            Le llega tu pedido por correo y le aparece en sus Presupuestos
+                            como pendiente.
+                        </li>
+                        <li class="pasos__item">
+                            <span class="pasos__numero" aria-hidden="true">2</span>
+                            Te contesta con un precio, o con una pregunta si le falta algún dato.
+                        </li>
+                        <li class="pasos__item">
+                            <span class="pasos__numero" aria-hidden="true">3</span>
+                            La conversación queda en Presupuestos, con la foto y todo lo
+                            que se dijeron.
+                        </li>
+                    </ol>
+                </section>
+
+                {# Solo si de verdad los toma: reglas.acepta_turnos pide el flag
+                   Y la duracion, porque sin duracion no hay de donde cortar
+                   slots y el link llevaria a una pantalla vacia. #}
+                {% if acepta_turnos %}
+                    <section class="panel panel--marca">
+                        <h2 class="panel__titulo">¿Ya sabés qué necesitás?</h2>
+                        <p class="panel__bajada">
+                            Este servicio toma turnos: podés reservar una hora concreta sin
+                            esperar el presupuesto.
+                        </p>
+                        <a href="{{ url_for('turnos.reservar', id=servicio.id) }}"
+                           class="btn btn--secondary btn--chico">Ver horarios libres</a>
+                    </section>
+                {% endif %}
+            </aside>
+        </form>
     </div>
 </section>
 {% endblock %}

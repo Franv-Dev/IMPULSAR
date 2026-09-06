@@ -1,0 +1,144 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "Inicio · escritorio",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 3120,
+      "is_interactive": true,
+      "page": "page-1"
+    },
+    {
+      "file": "Movil.dc.html",
+      "title": "Inicio · teléfono",
+      "x": 1560,
+      "y": 0,
+      "w": 390,
+      "h": 1590,
+      "is_interactive": true,
+      "page": "page-1"
+    },
+    {
+      "file": "Carrusel.dc.html",
+      "title": "Publicidad · anatomía",
+      "x": 2070,
+      "y": 0,
+      "w": 960,
+      "h": 1100,
+      "is_interactive": true,
+      "page": "page-1"
+    },
+    {
+      "file": "Resultados.dc.html",
+      "title": "Resultados · buscar cerca",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1580,
+      "page": "page-2",
+      "is_interactive": true
+    },
+    {
+      "file": "Ficha.dc.html",
+      "title": "Ficha del emprendimiento",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 2180,
+      "page": "page-2"
+    },
+    {
+      "file": "ResultadosMovil.dc.html",
+      "title": "Resultados · teléfono",
+      "x": 3120,
+      "y": 0,
+      "w": 390,
+      "h": 920,
+      "page": "page-2",
+      "is_interactive": true
+    },
+    {
+      "file": "FichaMovil.dc.html",
+      "title": "Ficha · teléfono",
+      "x": 3630,
+      "y": 0,
+      "w": 390,
+      "h": 2290,
+      "page": "page-2"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "nota-publicidad",
+      "x": 0,
+      "y": -160,
+      "w": 470,
+      "text": "Rediseño del inicio de IMPULSAR.\nArriba de todo, el anuncio: panel índigo profundo y acento propio de cada anunciante. Rota solo cada 6 segundos — sin flechas ni selector, no hay nada que operar.",
+      "page": "page-1"
+    },
+    {
+      "id": "nota-movil",
+      "x": 1560,
+      "y": -160,
+      "w": 380,
+      "text": "El mismo inicio en teléfono: el anuncio pasa a vertical y todos los controles quedan de 44 px.",
+      "page": "page-1"
+    },
+    {
+      "id": "nota-anatomia",
+      "x": 2070,
+      "y": -160,
+      "w": 460,
+      "text": "Cómo está armado el anuncio y qué cambia por anunciante. El chip de arriba del artboard cambia el plan contratado.",
+      "page": "page-1"
+    },
+    {
+      "id": "nota-tesis",
+      "x": 0,
+      "y": -230,
+      "w": 620,
+      "page": "page-2",
+      "text": "Competir con Mercado Libre y Marketplace.\n\nDe frente es una pelea perdida: ganan en catálogo, logística, pagos y protección al comprador — nada de eso se resuelve con diseño. Lo que ninguno de los dos hace es lo LOCAL con identidad, y eso IMPULSAR ya lo tiene en el modelo: horarios reales, distancia, la persona detrás, ferias donde encontrarla.\n\nEstas dos pantallas ponen esa ventaja adelante en vez de esconderla."
+    },
+    {
+      "id": "nota-resultados",
+      "x": 0,
+      "y": -110,
+      "w": 620,
+      "page": "page-2",
+      "text": "El listado. Los cinco filtros son los que app/blog/vistas.py ya resuelve: búsqueda, rubro, cerca de con radio en km, con reseñas y abierto ahora. \"Abierto ahora\" y el radio van como fichas grandes, no escondidos: es lo que la competencia no tiene. Probá tocándolas."
+    },
+    {
+      "id": "nota-ficha",
+      "x": 1560,
+      "y": -110,
+      "w": 600,
+      "page": "page-2",
+      "text": "La ficha. Cada bloque sale de una tabla que existe: productos con precio, servicios con zona y turnos, reseñas, horarios de la semana, ferias. El contacto es directo y lo dice: IMPULSAR no cobra comisión."
+    },
+    {
+      "id": "nota-movil-competir",
+      "x": 3120,
+      "y": -110,
+      "w": 560,
+      "page": "page-2",
+      "text": "Las mismas dos pantallas en teléfono, que es donde Marketplace es fuerte.\nEn resultados: la tarjeta es horizontal y compacta para poder comparar sin scrollear de más, y el mapa es un interruptor flotante en vez de una columna.\nEn la ficha: el contacto va en una barra fija abajo, con la frase de la comisión al lado — es el argumento, y se lee justo cuando se decide."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-2"
+  },
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Inicio"
+    },
+    {
+      "id": "page-2",
+      "name": "Competir"
+    }
+  ]
+}

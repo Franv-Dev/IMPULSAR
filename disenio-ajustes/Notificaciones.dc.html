@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-btn-borde:hover { background: #ECEAF7; border-color: #ECEAF7; }
+    .u-item:hover { background: #EEF1F7; color: #1B2430; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #4A5666">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #4A5666">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 5px; border: 1px solid #ECEAF7; border-radius: 999px; background: #ECEAF7; cursor: pointer">
+        <span style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">TG</span>
+        <span style="font-size: 13.5px; font-weight: 600; color: #33267C">Tomás</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 24px 24px 56px; display: flex; flex-direction: column; gap: 18px">
+
+    <div>
+      <h1 style="font-size: 24px; letter-spacing: -.01em">Ajustes de mi cuenta</h1>
+      <p style="margin: 5px 0 0; font-size: 14px; color: #5F6B7C">Cuándo te escribimos por correo. Son tres cosas, y las tres pasan sin que estés mirando.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; align-items: start">
+
+      <aside style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: #ECEAF7; color: #3E2F94; font-weight: 700">T</span>
+          <span style="display: flex; flex-direction: column; min-width: 0">
+            <span style="font-weight: 600; font-size: 14.5px">Tomás</span>
+            <a href="#" style="font-size: 12.5px; color: #5F6B7C">Ver mi perfil</a>
+          </span>
+        </div>
+        <nav style="display: flex; flex-direction: column; gap: 2px">
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mis emprendimientos</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mi catálogo</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mis servicios</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Presupuestos</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mensajes</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Reseñas recibidas</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Favoritos</a>
+          <span style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; background: #ECEAF7; color: #3E2F94; font-weight: 600">Ajustes</span>
+        </nav>
+      </aside>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+        <nav style="display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 12px; background: #EEF1F7">
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Perfil público</a>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Horarios</a>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Contacto y redes</a>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Cuenta y contraseña</a>
+          <span style="padding: 8px 14px; border-radius: 8px; background: #FFFFFF; color: #1B2430; font-size: 13.6px; font-weight: 600; box-shadow: 0 4px 12px rgba(15,23,42,.08)">Notificaciones</span>
+        </nav>
+
+        <div style="max-width: 760px; display: flex; flex-direction: column; gap: 16px">
+
+          <section style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; overflow: hidden">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px 14px">
+              <div>
+                <h2 style="font-size: 16px; letter-spacing: -.01em">Avisos por correo</h2>
+                <p style="margin: 6px 0 0; font-size: 13.6px; color: #5F6B7C">A tomas@ejemplo.com</p>
+              </div>
+              <span style="padding: 5px 11px; border-radius: 999px; background: #EEF1F7; color: #5F6B7C; font-size: 12px; font-weight: 600">Son los tres que existen</span>
+            </div>
+
+            <sc-for list="{{ avisos }}" as="a" hint-placeholder-count="3">
+              <div style="{{ a.fila }}">
+                <span style="{{ a.icono }}">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ a.trazo }}"/></svg>
+                </span>
+                <span style="display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0">
+                  <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600">{{ a.titulo }}</span>
+                  <span style="font-size: 13.2px; line-height: 1.55; color: #5F6B7C">{{ a.detalle }}</span>
+                </span>
+                <button type="button" onClick="{{ a.alternar }}" style="{{ a.interruptor }}">
+                  <span style="{{ a.perilla }}"></span>
+                </button>
+              </div>
+            </sc-for>
+          </section>
+
+          <!-- Lo que NO hay, dicho. Es la regla de las otras pantallas: lo que
+               está maquetado y no funciona se avisa, no se deja adivinar. -->
+          <section style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; padding: 18px 22px 20px">
+            <h2 style="font-size: 16px; letter-spacing: -.01em">Avisos en el navegador</h2>
+            <p style="margin: 6px 0 0; font-size: 13.6px; line-height: 1.6; color: #5F6B7C">Todavía no existen. Cuando estés adentro de IMPULSAR, los mensajes nuevos siguen apareciendo con el punto naranja en la campana de arriba.</p>
+          </section>
+
+          <section style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; padding: 18px 22px 20px">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0">
+                <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600">Novedades de IMPULSAR</span>
+                <span style="font-size: 13.2px; line-height: 1.55; color: #5F6B7C">Cambios grandes y ferias nuevas. Como mucho, uno por mes.</span>
+              </span>
+              <button type="button" onClick="{{ alternarNovedades }}" style="{{ interruptorNovedades }}">
+                <span style="{{ perillaNovedades }}"></span>
+              </button>
+            </div>
+          </section>
+
+          <div style="{{ barraGuardar }}">
+            <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+              <span style="{{ estadoTitulo }}">{{ estadoTexto }}</span>
+              <span style="font-size: 12.6px; color: #5F6B7C">{{ estadoDetalle }}</span>
+            </span>
+            <button type="button" onClick="{{ guardar }}" style="min-height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14.4px; box-shadow: 0 4px 12px rgba(15,23,42,.08); cursor: pointer">Guardar</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    // Los tres avisos son los que services/notificaciones_email.py manda hoy.
+    this.state = { prendidos: [true, true, true], novedades: false, sucio: false };
+  }
+
+  renderVals() {
+    const prendidos = this.state.prendidos;
+    const sucio = this.state.sucio;
+
+    const interruptor = (activo) =>
+      "position: relative; width: 44px; height: 26px; flex-shrink: 0; border: 0; border-radius: 999px; cursor: pointer; padding: 0; background: " +
+      (activo ? "#5248AE" : "#C9D0E0");
+    const perilla = (activo) =>
+      "position: absolute; top: 3px; left: " + (activo ? "21px" : "3px") +
+      "; width: 20px; height: 20px; border-radius: 999px; background: #FFFFFF; transition: left .15s ease";
+
+    const definiciones = [
+      {
+        titulo: "Te escribieron",
+        detalle: "Alguien mandó un mensaje sobre uno de tus emprendimientos.",
+        trazo: "M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z",
+        fondo: "#ECEAF7", tinta: "#33267C",
+      },
+      {
+        titulo: "Te respondieron un presupuesto",
+        detalle: "Pediste un presupuesto y el que lo ofrece te pasó precio.",
+        trazo: "M6 3.5h9l4 4v13H6zM9 11h6M9 15h4",
+        fondo: "#E6F4EC", tinta: "#1F7A4D",
+      },
+      {
+        titulo: "Se canceló un turno",
+        detalle: "Un turno tuyo, o de un cliente tuyo, dejó de estar en pie.",
+        trazo: "M3.5 5h17v15h-17zM3.5 10h17M8 3v3M16 3v3M9.5 14.5l5 4M14.5 14.5l-5 4",
+        fondo: "#FBEDE4", tinta: "#8C4A22",
+      },
+    ];
+
+    const avisos = definiciones.map((d, indice) => ({
+      titulo: d.titulo,
+      detalle: d.detalle,
+      trazo: d.trazo,
+      fila: "display: flex; align-items: center; gap: 14px; padding: 16px 22px; border-top: 1px solid #EEF1F7",
+      icono: "display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: " + d.fondo + "; color: " + d.tinta,
+      interruptor: interruptor(prendidos[indice]),
+      perilla: perilla(prendidos[indice]),
+      alternar: () => {
+        const copia = prendidos.slice();
+        copia[indice] = !copia[indice];
+        this.setState({ prendidos: copia, sucio: true });
+      },
+    }));
+
+    return {
+      avisos: avisos,
+      interruptorNovedades: interruptor(this.state.novedades),
+      perillaNovedades: perilla(this.state.novedades),
+      alternarNovedades: () => this.setState({ novedades: !this.state.novedades, sucio: true }),
+      guardar: () => this.setState({ sucio: false }),
+      barraGuardar: sucio
+        ? "display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid #D9D2F0; border-radius: 16px; background: #ECEAF7"
+        : "display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF",
+      estadoTitulo: "font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: " + (sucio ? "#33267C" : "#1B2430"),
+      estadoTexto: sucio ? "Tenés cambios sin guardar" : "Todo guardado",
+      estadoDetalle: sucio ? "Los avisos siguen como estaban hasta que guardes." : "Última vez: hoy a las 14:32.",
+    };
+  }
+}
+</script>
+</body>
+</html>

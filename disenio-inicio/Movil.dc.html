@@ -1,0 +1,304 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+  </style>
+</helmet>
+
+<div style="width: 390px; background: #F5F7FA">
+
+  <!-- BARRA -->
+  <header style="display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 60px; padding: 0 16px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 28px; width: auto; display: block">
+    <div style="display: flex; align-items: center; gap: 4px">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; color: #4A5666">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"/></svg>
+      </span>
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; color: #1B2430">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </span>
+    </div>
+  </header>
+
+  <!-- PUBLICIDAD
+       En telefono el anuncio es UN bloque, no cuatro bandas apiladas: el rotulo
+       "Publicidad" vive dentro del panel (arriba a la izquierda) en vez de ser
+       un encabezado de seccion propio, y la linea legal viaja pegada a la fila
+       del anuncio. Antes esto se comia 570 px de una pantalla de 844 y el
+       buscador -- que es a lo que la gente viene -- no llegaba a asomar. -->
+  <section style="padding: 14px 16px 18px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="border-radius: 20px; overflow: hidden; box-shadow: 0 18px 38px rgba(23,20,71,.18); background: {{ pub.fondo }}">
+      <!-- En telefono va UNA foto sola, a sangre y mas alta. Las tres chicas
+           estaban como tres cajitas vacias con un iconito adentro: leian como
+           carga rota y se comian 70 px arriba del texto. El resto del set se
+           anuncia con el chip "+3 fotos", que es el patron de siempre y ademas
+           es honesto: el anunciante sube cuatro, en el telefono se ve una.
+           Tampoco va la marca de agua con las iniciales (se cortaba contra el
+           borde) ni el rotulo con la medida, que es una nota para el anunciante
+           y no para quien mira. -->
+      <div style="position: relative; height: 160px; background: {{ pub.plancha }}">
+        <span style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,8,28,.35) 0%, transparent 38%, rgba(10,8,28,.28) 100%)"></span>
+        <span style="position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 7px; background: rgba(10,8,28,.55); color: rgba(255,255,255,.94); font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase">
+          <span style="width: 4px; height: 4px; border-radius: 999px; background: #F0B48A"></span>Publicidad
+        </span>
+        <span style="position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: rgba(10,8,28,.55); color: rgba(255,255,255,.9); font-size: 11px; font-weight: 600">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+          +3 fotos
+        </span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 11px; padding: 14px">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="flex-shrink: 0; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.22); color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700">{{ pub.iniciales }}</span>
+          <span style="display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; background: {{ pub.acentoSuave }}; color: {{ pub.acento }}; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase">{{ pub.rubro }}</span>
+        </div>
+
+        <h2 style="font-size: 21px; line-height: 1.14; letter-spacing: -.03em; color: #FFFFFF">{{ pub.titulo }}</h2>
+        <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: rgba(255,255,255,.72)">{{ pub.claim }}</p>
+
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px">
+          <span style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.11); color: #FFFFFF; font-size: 11.5px; font-weight: 600">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+            {{ pub.rating }}
+          </span>
+          <span style="display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.11); color: rgba(255,255,255,.86); font-size: 11.5px">{{ pub.distancia }}</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; background: rgba(126,226,168,.16); color: #A7EFC6; font-size: 11.5px; font-weight: 600">
+            <span style="width: 5px; height: 5px; border-radius: 999px; background: #7EE2A8"></span>{{ pub.estado }}
+          </span>
+        </div>
+
+        <a href="#" style="display: inline-flex; align-items: center; justify-content: center; height: 46px; border-radius: 999px; background: #FFFFFF; color: #2A2068; font-size: 15px; font-weight: 600; box-shadow: 0 10px 24px rgba(0,0,0,.2)">Ver el emprendimiento</a>
+      </div>
+    </div>
+
+    <p style="margin: 14px 0 0; font-size: 11px; line-height: 1.45; color: #5F6B7C">Espacio pago. El orden lo define el plan. <a href="#" style="font-weight: 600">Ver planes</a></p>
+  </section>
+
+  <!-- BUSCADOR -->
+  <section style="padding: 18px 16px 20px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <label style="display: flex; align-items: center; gap: 11px; height: 54px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 14px; background: #F5F7FA; color: #5F6B7C; font-size: 15px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3E2F94" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+        Pan de masa madre
+      </label>
+      <div style="display: flex; gap: 10px">
+        <label style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 54px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 14px; background: #F5F7FA; color: #1B2430; font-size: 15px">Rubro
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </label>
+        <button type="button" style="flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; height: 54px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF; color: #3E2F94; font-size: 13.5px; font-weight: 600; cursor: pointer">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+          Cerca de mí
+        </button>
+      </div>
+      <button type="button" style="display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 54px; border: none; border-radius: 14px; background: #5248AE; color: #FFFFFF; font-size: 15.5px; font-weight: 600; cursor: pointer; box-shadow: 0 10px 24px rgba(62,47,148,.26)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+        Buscar
+      </button>
+    </div>
+  </section>
+
+  <!-- RUBROS -->
+  <section style="padding: 28px 16px 8px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px">
+      <h2 style="font-size: 21px; letter-spacing: -.025em">Explorá por rubro</h2>
+      <a href="#" style="font-size: 13.5px; font-weight: 600">Ver los 7</a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 15px; background: #FFFFFF; color: #1B2430">
+        <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: #FDECE5; color: #9A5230">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 13.4c0-3.3 3.7-6 8.2-6s8.2 2.7 8.2 6-3.7 5.8-8.2 5.8-8.2-2.5-8.2-5.8Z"/><path d="M9.1 9.7 7.6 15.9"/><path d="M12.6 9.4 11.1 15.9"/><path d="M16 10.2 14.6 15.6"/></svg>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 500">Alimentos</span>
+          <span style="font-size: 12px; color: #5F6B7C">62 activos</span>
+        </span>
+      </a>
+
+      <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 15px; background: #FFFFFF; color: #1B2430">
+        <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: #FBEBF2; color: #954D71">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.4a2.2 2.2 0 1 1 2.2-2.2"/><path d="m12 7.4 8.2 5.5a1.2 1.2 0 0 1-.7 2.2H4.5a1.2 1.2 0 0 1-.7-2.2L12 7.4Z"/></svg>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 500">Indumentaria</span>
+          <span style="font-size: 12px; color: #5F6B7C">41 activos</span>
+        </span>
+      </a>
+
+      <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 15px; background: #FFFFFF; color: #1B2430">
+        <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: #F4F0E1; color: #7C6700">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15.4 3.4a5.2 5.2 0 0 0-4.8 7.2l-6.5 6.5a2 2 0 1 0 2.8 2.8l6.5-6.5a5.2 5.2 0 0 0 6.6-6.6l-3 3-2.4-2.4 2.9-3a5.2 5.2 0 0 0-2.1-1Z"/></svg>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 500">Servicios</span>
+          <span style="font-size: 12px; color: #5F6B7C">44 activos</span>
+        </span>
+      </a>
+
+      <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 15px; background: #FFFFFF; color: #1B2430">
+        <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: #EEEFFE; color: #635EA3">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.4 3.2h7.2l-1.4 3.1a1 1 0 0 0 .25 1.14A6.2 6.2 0 1 1 9.55 7.44a1 1 0 0 0 .25-1.14L8.4 3.2Z"/></svg>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 500">Artesanías</span>
+          <span style="font-size: 12px; color: #5F6B7C">37 activos</span>
+        </span>
+      </a>
+
+      <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 15px; background: #FFFFFF; color: #1B2430">
+        <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: #E5F2FD; color: #1D6FA0">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7.2" y="7.2" width="9.6" height="9.6" rx="2.2"/><path d="M10.2 3.4v2.4M13.8 3.4v2.4M10.2 18.2v2.4M13.8 18.2v2.4M3.4 10.2h2.4M3.4 13.8h2.4M18.2 10.2h2.4M18.2 13.8h2.4"/></svg>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 500">Tecnología</span>
+          <span style="font-size: 12px; color: #5F6B7C">19 activos</span>
+        </span>
+      </a>
+
+      <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 15px; background: #FFFFFF; color: #1B2430">
+        <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: #E5F5EC; color: #1C7B53">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3.6 11.4 8.4-7.2 8.4 7.2"/><path d="M6.2 10.2v9.6h11.6v-9.6"/><path d="M10.2 19.8v-5h3.6v5"/></svg>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 500">Hogar</span>
+          <span style="font-size: 12px; color: #5F6B7C">28 activos</span>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ÚLTIMOS EMPRENDIMIENTOS -->
+  <section style="padding: 28px 16px 30px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px">
+      <h2 style="font-size: 21px; letter-spacing: -.025em">Últimos emprendimientos</h2>
+      <a href="#" style="font-size: 13.5px; font-weight: 600">Ver todos</a>
+    </div>
+
+    <article style="display: flex; flex-direction: column; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; overflow: hidden; box-shadow: 0 10px 26px rgba(23,20,71,.06)">
+      <div style="position: relative; height: 180px; background: linear-gradient(150deg, #F3E8DF 0%, #EEF1F7 100%)">
+        <span style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #A98E7B">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+          <span style="font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase">Foto del emprendimiento</span>
+        </span>
+        <span style="position: absolute; top: 14px; left: 14px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; background: rgba(255,255,255,.94); color: #1B2430; font-size: 11.5px; font-weight: 600; box-shadow: 0 4px 12px rgba(23,20,71,.10)">
+          <span style="width: 6px; height: 6px; border-radius: 999px; background: #D97544"></span>Alimentos
+        </span>
+        <button type="button" aria-label="Guardar en favoritos" style="position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 999px; background: rgba(255,255,255,.94); color: #5F6B7C; cursor: pointer; padding: 0; box-shadow: 0 4px 12px rgba(23,20,71,.10)">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2s-7.2-4.5-7.2-9.5A3.95 3.95 0 0 1 12 8.1a3.95 3.95 0 0 1 7.2 2.6c0 5-7.2 9.5-7.2 9.5Z"/></svg>
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 9px; padding: 18px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 7px; background: #E6F4EC; color: #1F7A4D; font-size: 11.5px; font-weight: 600">
+            <span style="width: 6px; height: 6px; border-radius: 999px; background: #1C7B53"></span>Abierto ahora
+          </span>
+          <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 7px; background: #FCF6EA; font-size: 12.5px; font-weight: 600">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+            4,8 <span style="font-weight: 400; color: #5F6B7C">(31)</span>
+          </span>
+        </div>
+        <h3 style="font-size: 18px; font-weight: 600; letter-spacing: -.02em">Panadería La Masa Madre</h3>
+        <p style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5F6B7C">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+          Barrio Güemes · a 1,2 km
+        </p>
+        <p style="margin: 2px 0 0; font-size: 13.5px; line-height: 1.6; color: #4A5666">Pan de fermentación lenta, facturas y masas congeladas. Horneamos de martes a domingo.</p>
+      </div>
+    </article>
+  </section>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":1860}}'>
+class Component extends DCLogic {
+  // El anuncio rota solo: ya no hay flechas ni fila de anunciantes para elegir.
+  // El intervalo se limpia al desmontar para no dejarlo corriendo cuando el
+  // artboard se saca del canvas.
+  componentDidMount() {
+    this._rot = setInterval(() => {
+      const n = (this.state && typeof this.state.i === "number") ? this.state.i : 0;
+      this.setState({ i: (n + 1) % 3 });
+    }, 6000);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this._rot);
+  }
+
+  renderVals() {
+    const anuncios = [
+      {
+        iniciales: "LM",
+        rubro: "Alimentos",
+        nombre: "Panadería La Masa Madre",
+        titulo: "Pan de masa madre, todos los días",
+        claim: "Fermentación de 24 horas. Los pedidos del fin de semana se toman hasta el jueves.",
+        rating: "4,8",
+        distancia: "a 1,2 km",
+        estado: "Abierto ahora",
+        acento: "#F0B48A",
+        acentoSuave: "rgba(217,117,68,.22)",
+        glow: "rgba(217,117,68,.34)",
+        plancha: "linear-gradient(150deg, #4A3AA8 0%, #2A2068 60%, #B25E31 160%)"
+      },
+      {
+        iniciales: "EV",
+        rubro: "Artesanías",
+        nombre: "Estudio Verde Cerámica",
+        titulo: "Cerámica de gres, hecha a torno",
+        claim: "Vajilla para casas y restaurantes, más el taller de septiembre con torno y esmaltado.",
+        rating: "4,6",
+        distancia: "a 2,4 km",
+        estado: "Abre 15:00",
+        acento: "#9FE7C1",
+        acentoSuave: "rgba(31,122,77,.28)",
+        glow: "rgba(31,122,77,.36)",
+        plancha: "linear-gradient(150deg, #3A2F8E 0%, #241C63 55%, #1F7A4D 160%)"
+      },
+      {
+        iniciales: "BN",
+        rubro: "Servicios",
+        nombre: "Bici Taller Norte",
+        titulo: "Tu bici lista para la temporada",
+        claim: "Service completo y ajuste de cambios, con retiro a domicilio sin cargo.",
+        rating: "4,9",
+        distancia: "a 3,1 km",
+        estado: "Abierto ahora",
+        acento: "#F5D08A",
+        acentoSuave: "rgba(232,163,61,.24)",
+        glow: "rgba(232,163,61,.30)",
+        plancha: "linear-gradient(150deg, #3F3196 0%, #241C63 55%, #8A6416 160%)"
+      }
+    ];
+
+    const i = (this.state && typeof this.state.i === "number") ? this.state.i : 0;
+    const activo = anuncios[i];
+
+
+
+    return {
+      pub: Object.assign({}, activo, {
+        fondo: "radial-gradient(520px 300px at 6% -8%, rgba(255,255,255,.10), transparent 62%), "
+          + "radial-gradient(460px 320px at 98% 112%, " + activo.glow + ", transparent 68%), "
+          + "linear-gradient(128deg, #4A3B8E 0%, #3E2F94 52%, #33267C 100%)"
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

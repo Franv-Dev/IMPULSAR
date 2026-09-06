@@ -1,0 +1,335 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input, textarea { font-family: inherit; }
+    .u-campo { transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
+    .u-campo:focus-within { border-color: #3E2F94; background: #FFFFFF; box-shadow: 0 0 0 3px #ECEAF7; }
+    .u-btn-primario:hover { background: #483BA1; }
+    .u-btn-borde:hover { background: #ECEAF7; border-color: #ECEAF7; }
+    .u-item:hover { background: #EEF1F7; color: #1B2430; }
+    input, textarea { outline: none; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #4A5666">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #4A5666">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <button type="button" aria-label="Mensajes" style="position: relative; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; cursor: pointer; padding: 0">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+        <span style="position: absolute; right: 7px; top: 7px; width: 8px; height: 8px; border-radius: 999px; background: #D97544; border: 2px solid #FFFFFF"></span>
+      </button>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 5px; border: 1px solid #ECEAF7; border-radius: 999px; background: #ECEAF7; cursor: pointer">
+        <span style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">TG</span>
+        <span style="font-size: 13.5px; font-weight: 600; color: #33267C">Tomás</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 24px 24px 56px; display: flex; flex-direction: column; gap: 18px">
+
+    <div>
+      <h1 style="font-size: 24px; letter-spacing: -.01em">Ajustes de mi cuenta</h1>
+      <p style="margin: 5px 0 0; font-size: 14px; color: #5F6B7C">Lo que se ve de vos en IMPULSAR, y cómo te encuentran.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; align-items: start">
+
+      <!-- MENU DE CUENTA: el mismo parcial que ya usan las pantallas de cuenta
+           (templates/partials/_menu_cuenta.html), sin tocar. -->
+      <aside style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: #ECEAF7; color: #3E2F94; font-weight: 700">T</span>
+          <span style="display: flex; flex-direction: column; min-width: 0">
+            <span style="font-weight: 600; font-size: 14.5px">Tomás</span>
+            <a href="#" style="font-size: 12.5px; color: #5F6B7C">Ver mi perfil</a>
+          </span>
+        </div>
+        <nav style="display: flex; flex-direction: column; gap: 2px">
+          <sc-for list="{{ menu }}" as="m" hint-placeholder-count="8">
+            <a href="#" class="u-item" style="{{ m.estilo }}">{{ m.etiqueta }}</a>
+          </sc-for>
+        </nav>
+      </aside>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+        <!-- LAS CINCO SOLAPAS. Hoy tres están dibujadas y apagadas; en este
+             diseño las cinco son pantallas de verdad. -->
+        <nav style="display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 12px; background: #EEF1F7">
+          <span style="padding: 8px 14px; border-radius: 8px; background: #FFFFFF; color: #1B2430; font-size: 13.6px; font-weight: 600; box-shadow: 0 4px 12px rgba(15,23,42,.08)">Perfil público</span>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Horarios</a>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Contacto y redes</a>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Cuenta y contraseña</a>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Notificaciones</a>
+        </nav>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 24px; align-items: start">
+
+          <!-- ================= COLUMNA DEL FORMULARIO ================= -->
+          <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+            <!-- IDENTIDAD: las dos fotos dejan de ser dos <input type=file>
+                 crudos y muestran lo que hay cargado hoy. -->
+            <section style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; overflow: hidden">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 18px 22px 0">
+                <h2 style="font-size: 16px; letter-spacing: -.01em">Foto y portada</h2>
+                <span style="font-size: 12.5px; color: #5F6B7C">Se ven en tu perfil</span>
+              </div>
+
+              <div style="padding: 14px 22px 20px">
+                <div style="position: relative; border-radius: 12px; overflow: hidden; border: 1px solid #E2E6EE">
+                  <div style="{{ portadaEstilo }}">
+                    <span style="{{ portadaVaciaTexto }}">Sin portada · se usa la de arranque</span>
+                  </div>
+                  <div style="position: absolute; right: 12px; top: 12px; display: flex; gap: 8px">
+                    <button type="button" style="{{ botonPortada }}">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+                      Cambiar portada
+                    </button>
+                    <button type="button" onClick="{{ alternarPortada }}" style="{{ botonQuitar }}">{{ textoQuitar }}</button>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 16px; margin-top: 16px">
+                  <div style="width: 84px; height: 84px; flex-shrink: 0; border-radius: 999px; border: 3px solid #FFFFFF; box-shadow: 0 4px 12px rgba(15,23,42,.08); background: linear-gradient(150deg, #6E5FC8 0%, #4A3AA8 100%); display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700">T</div>
+                  <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+                    <div style="display: flex; gap: 8px">
+                      <button type="button" class="u-btn-borde" style="display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #1B2430; font-size: 14.4px; cursor: pointer">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V5m0 0L8 9m4-4 4 4"/><path d="M4 17v2.5h16V17"/></svg>
+                        Subir una foto
+                      </button>
+                      <button type="button" class="u-btn-borde" style="min-height: 40px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 14.4px; cursor: pointer">Quitar</button>
+                    </div>
+                    <p style="margin: 0; font-size: 13.6px; line-height: 1.5; color: #5F6B7C">JPG, PNG o GIF, hasta 15 MB. Si no subís una nueva, se conserva la que está.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- BIOGRAFIA -->
+            <section style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; padding: 18px 22px 20px">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+                <h2 style="font-size: 16px; letter-spacing: -.01em">Tu historia</h2>
+                <span style="{{ contadorEstilo }}">{{ contador }}</span>
+              </div>
+              <p style="margin: 6px 0 12px; font-size: 13.6px; line-height: 1.55; color: #5F6B7C">Lo primero que lee alguien que no te conoce. Qué hacés, desde cuándo y cómo se te compra.</p>
+
+              <div class="u-campo" style="padding: 12px 14px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+                <textarea rows="5" value="{{ bio }}" onChange="{{ escribirBio }}" style="width: 100%; border: 0; background: transparent; resize: none; color: #1B2430; font-size: 15.2px; line-height: 1.6"></textarea>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap">
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.5px"><strong style="font-weight: 700">**negrita**</strong></span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.5px">[texto](link)</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.5px">renglones nuevos</span>
+                <span style="font-size: 12.5px; color: #5F6B7C">— es lo único que se puede usar.</span>
+              </div>
+            </section>
+
+            <!-- DONDE TE ENCUENTRAN: los dos campos que hoy se confunden. -->
+            <section style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; padding: 18px 22px 20px">
+              <h2 style="font-size: 16px; letter-spacing: -.01em">Dónde te encuentran</h2>
+              <p style="margin: 6px 0 16px; font-size: 13.6px; line-height: 1.55; color: #5F6B7C">Son dos cosas distintas y hoy se confunden: una se lee, la otra mueve el mapa.</p>
+
+              <div style="display: flex; flex-direction: column; gap: 16px">
+                <div style="display: flex; flex-direction: column; gap: 7px">
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 12.6px; font-weight: 600">
+                    Ciudad y provincia
+                    <span style="padding: 3px 8px; border-radius: 999px; background: #EEF1F7; color: #5F6B7C; font-size: 11px; font-weight: 600">Solo texto</span>
+                  </label>
+                  <div class="u-campo" style="display: flex; align-items: center; gap: 11px; height: 48px; padding: 0 12px 0 14px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                    <input value="Godoy Cruz, Mendoza" style="flex: 1; min-width: 0; border: 0; background: transparent; color: #1B2430; font-size: 15.2px">
+                  </div>
+                  <p style="margin: 0; font-size: 13.6px; color: #5F6B7C">Aparece bajo tu nombre. No mueve el mapa.</p>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 7px">
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 12.6px; font-weight: 600">
+                    Dirección
+                    <span style="padding: 3px 8px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-size: 11px; font-weight: 600">Mueve el mapa</span>
+                  </label>
+                  <div class="u-campo" style="display: flex; align-items: center; gap: 11px; height: 48px; padding: 0 12px 0 14px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5Z"/><path d="M12 4v16"/></svg>
+                    <input value="Güemes 1480, Godoy Cruz, Mendoza" style="flex: 1; min-width: 0; border: 0; background: transparent; color: #1B2430; font-size: 15.2px">
+                  </div>
+
+                  <!-- La confirmación de que la dirección se entendió: hoy se
+                       geocodifica en silencio y nadie sabe si dio en el lugar. -->
+                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 3px; padding: 10px 12px; border: 1px solid #E2E6EE; border-radius: 12px; background: #F5F7FA">
+                    <span style="position: relative; width: 76px; height: 56px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: linear-gradient(140deg, #E7ECF4 0%, #DCE3EE 60%, #E9EDF3 100%)">
+                      <span style="position: absolute; left: 0; top: 22px; width: 76px; height: 4px; background: #FFFFFF"></span>
+                      <span style="position: absolute; left: 30px; top: 0; width: 4px; height: 56px; background: #FFFFFF"></span>
+                      <span style="position: absolute; left: 26px; top: 15px; width: 13px; height: 13px; border-radius: 999px; border: 4px solid #3E2F94; background: #FFFFFF"></span>
+                    </span>
+                    <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+                      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: #1F7A4D">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                        Encontrada en el mapa
+                      </span>
+                      <span style="font-size: 12.8px; color: #5F6B7C">Godoy Cruz, Mendoza · así va a aparecer el pin en tu perfil.</span>
+                    </span>
+                    <span style="flex: 1"></span>
+                    <button type="button" class="u-btn-borde" style="min-height: 36px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #1B2430; font-size: 13.5px; cursor: pointer">Ver el mapa</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- BARRA DE GUARDAR: en la pantalla de hoy el botón está al final
+                 de diez campos. Acá queda fija abajo del formulario. -->
+            <div style="{{ barraGuardar }}">
+              <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+                <span style="{{ estadoTitulo }}">{{ estadoTexto }}</span>
+                <span style="font-size: 12.6px; color: #5F6B7C">{{ estadoDetalle }}</span>
+              </span>
+              <button type="button" onClick="{{ descartar }}" class="u-btn-borde" style="min-height: 42px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 14.4px; cursor: pointer">Descartar</button>
+              <button type="button" onClick="{{ guardar }}" class="u-btn-primario" style="min-height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14.4px; font-weight: 500; box-shadow: 0 4px 12px rgba(15,23,42,.08); cursor: pointer">Guardar cambios</button>
+            </div>
+          </div>
+
+          <!-- ================= VISTA PREVIA ================= -->
+          <aside style="display: flex; flex-direction: column; gap: 10px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px">
+              <span style="display: inline-flex; align-items: center; gap: 7px; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; color: #33267C">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                Así te ven
+              </span>
+              <a href="#" style="font-size: 12.8px; color: #5F6B7C">Abrir mi perfil</a>
+            </div>
+
+            <div style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; overflow: hidden">
+              <div style="{{ previaPortada }}"></div>
+              <div style="padding: 0 18px 18px">
+                <div style="{{ previaAvatar }}">T</div>
+                <h3 style="margin-top: 10px; font-size: 19px; letter-spacing: -.02em">Tomás</h3>
+                <p style="margin: 3px 0 0; font-size: 13px; color: #5F6B7C">Emprendedor</p>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.5px">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5248AE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                    Godoy Cruz, Mendoza
+                  </span>
+                  <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 12.5px; font-weight: 600">
+                    <span style="width: 6px; height: 6px; border-radius: 999px; background: #1F7A4D"></span>
+                    Abierto ahora
+                  </span>
+                </div>
+
+                <p style="{{ previaBioEstilo }}">{{ previaBio }}</p>
+
+                <div style="display: flex; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #E2E6EE">
+                  <span style="flex: 1; display: inline-flex; align-items: center; justify-content: center; height: 38px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 13.5px; font-weight: 600">Enviar un mensaje</span>
+                  <span style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3z"/></svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <p style="margin: 2px 0 0; font-size: 12.6px; line-height: 1.55; color: #5F6B7C">La previa se actualiza mientras escribís. Lo que ves acá es lo que se publica al guardar.</p>
+          </aside>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"rol":{"editor":"enum","options":["emprendedor","cliente"],"default":"emprendedor","section":"Contenido"},"$preview":{"width":1440,"height":1680}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      bio: "Tostamos café de especialidad en Godoy Cruz y lo vendemos en grano y molido. Pedidos por acá o por WhatsApp; hacemos envío en el día dentro del Gran Mendoza.",
+      portada: true,
+      sucio: false,
+    };
+  }
+
+  renderVals() {
+    const cliente = (this.props.rol ?? "emprendedor") === "cliente";
+    const bio = this.state.bio;
+    const largo = bio.length;
+    const pasado = largo > 600;
+    const sucio = this.state.sucio;
+
+    const itemBase = "padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666";
+    const itemActivo = "padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; background: #ECEAF7; color: #3E2F94; font-weight: 600";
+    const menu = [
+      "Mis emprendimientos", "Mi catálogo", "Mis servicios", "Presupuestos",
+      "Mensajes", "Reseñas recibidas", "Favoritos", "Ajustes",
+    ].map((etiqueta) => ({
+      etiqueta: etiqueta,
+      estilo: etiqueta === "Ajustes" ? itemActivo : itemBase,
+    }));
+
+    const conPortada = this.state.portada && !cliente;
+
+    return {
+      menu: menu,
+      bio: bio,
+      escribirBio: (evento) => this.setState({ bio: evento.target.value, sucio: true }),
+      alternarPortada: () => this.setState({ portada: !this.state.portada, sucio: true }),
+      guardar: () => this.setState({ sucio: false }),
+      descartar: () => this.setState({ sucio: false }),
+
+      contador: largo + " / 600",
+      contadorEstilo: "font-size: 12.6px; font-weight: 600; color: " + (pasado ? "#B91C1C" : "#5F6B7C"),
+
+      portadaEstilo: conPortada
+        ? "height: 132px; background: linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%); display: flex; align-items: center; justify-content: center"
+        : "height: 132px; background: repeating-linear-gradient(135deg, #F5F7FA 0 12px, #EEF1F7 12px 24px); display: flex; align-items: center; justify-content: center",
+      portadaVaciaTexto: conPortada
+        ? "display: none"
+        : "font-size: 13px; color: #5F6B7C",
+      botonPortada: "display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 13px; border: 0; border-radius: 999px; background: rgba(255,255,255,.92); color: #1B2430; font-size: 13px; font-weight: 600; cursor: pointer",
+      botonQuitar: "height: 34px; padding: 0 13px; border: 0; border-radius: 999px; background: rgba(255,255,255,.92); color: #4A5666; font-size: 13px; font-weight: 600; cursor: pointer",
+      textoQuitar: conPortada ? "Quitar" : "Poner una",
+
+      barraGuardar: sucio
+        ? "position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid #D9D2F0; border-radius: 16px; background: #ECEAF7"
+        : "position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF",
+      estadoTitulo: "font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: " + (sucio ? "#33267C" : "#1B2430"),
+      estadoTexto: sucio ? "Tenés cambios sin guardar" : "Todo guardado",
+      estadoDetalle: sucio
+        ? "Nadie los ve hasta que toques Guardar."
+        : "Última vez: hoy a las 14:32.",
+
+      previaPortada: conPortada
+        ? "height: 84px; background: linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)"
+        : "height: 18px; background: #FFFFFF",
+      previaAvatar: conPortada
+        ? "width: 66px; height: 66px; margin-top: -33px; border-radius: 999px; border: 4px solid #FFFFFF; background: linear-gradient(150deg, #6E5FC8 0%, #4A3AA8 100%); display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700"
+        : "width: 66px; height: 66px; border-radius: 999px; background: linear-gradient(150deg, #6E5FC8 0%, #4A3AA8 100%); display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700",
+      previaBio: bio,
+      previaBioEstilo: "margin: 12px 0 0; font-size: 13.4px; line-height: 1.65; color: #4A5666; white-space: pre-line",
+    };
+  }
+}
+</script>
+</body>
+</html>

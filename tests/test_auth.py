@@ -378,3 +378,71 @@ def test_un_email_valido_se_sigue_registrando(client):
     })
 
     assert User.query.count() == 1
+
+
+# ------------------------------------------------------------------- el rol
+
+def test_nadie_se_registra_como_admin_por_el_formulario(client, db):
+    """El <select> del registro ofrecia "Administrador" y la vista guardaba lo
+    que viniera: cualquiera se hacia admin llenando un formulario publico.
+
+    Ahora las fichas ofrecen dos opciones, pero eso es HTML y el HTML lo manda
+    el cliente: el que tiene que decidir es el servidor, y por eso este test
+    manda el rol prohibido a mano.
+    """
+    from models.user import Roles, User
+
+    client.post("/auth/register", data={
+        "username": "colado", "email": "colado@test.com",
+        "password": "secreta123", "rol": "admin",
+    })
+
+    assert User.query.filter_by(username="colado").first().rol == Roles.USUARIO
+
+
+def test_nadie_se_registra_como_admin_por_la_api(client, db):
+    """Lo mismo por JSON, que ni siquiera pasa por el formulario."""
+    from models.user import Roles, User
+
+    resp = client.post("/auth/api/register", json={
+        "username": "colada", "email": "colada@test.com",
+        "password": "secreta123", "rol": "admin",
+    })
+
+    assert resp.status_code == 201
+    assert resp.get_json()["rol"] == Roles.USUARIO
+    assert User.query.filter_by(username="colada").first().rol == Roles.USUARIO
+
+
+def test_el_registro_si_deja_elegir_emprendedor(client, db):
+    """El filtro no puede quedarse con todo: emprendedor es una eleccion
+    legitima y es la mitad de lo que ofrecen las fichas."""
+    from models.user import Roles, User
+
+    client.post("/auth/register", data={
+        "username": "marina", "email": "marina@test.com",
+        "password": "secreta123", "rol": "emprendedor",
+    })
+
+    assert User.query.filter_by(username="marina").first().rol == Roles.EMPRENDEDOR
+
+
+def test_un_rol_inventado_cae_en_usuario(client, db):
+    """Ante un valor raro se elige el menor privilegio, no el mayor."""
+    from models.user import Roles, User
+
+    client.post("/auth/register", data={
+        "username": "raro", "email": "raro@test.com",
+        "password": "secreta123", "rol": "superadministrador",
+    })
+
+    assert User.query.filter_by(username="raro").first().rol == Roles.USUARIO
+
+
+def test_el_formulario_de_registro_no_ofrece_el_rol_de_admin(client):
+    """El servidor ya lo filtra, pero el HTML tampoco tiene que sugerirlo."""
+    html = client.get("/auth/register").get_data(as_text=True)
+
+    assert 'value="usuario"' in html
+    assert 'value="emprendedor"' in html
+    assert 'value="admin"' not in html

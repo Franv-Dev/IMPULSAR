@@ -1,0 +1,273 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input { font-family: inherit; }
+    input { outline: none; }
+    .u-campo:focus-within { border-color: #3E2F94; background: #FFFFFF; box-shadow: 0 0 0 3px #ECEAF7; }
+    .u-btn-borde:hover { background: #ECEAF7; border-color: #ECEAF7; }
+    .u-btn-primario:hover { background: #483BA1; }
+    .u-item:hover { background: #EEF1F7; color: #1B2430; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #4A5666">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #4A5666">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 5px; border: 1px solid #ECEAF7; border-radius: 999px; background: #ECEAF7; cursor: pointer">
+        <span style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">TG</span>
+        <span style="font-size: 13.5px; font-weight: 600; color: #33267C">Tomás</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 24px 24px 56px; display: flex; flex-direction: column; gap: 18px">
+
+    <div>
+      <h1 style="font-size: 24px; letter-spacing: -.01em">Ajustes de mi cuenta</h1>
+      <p style="margin: 5px 0 0; font-size: 14px; color: #5F6B7C">Cuándo atendés. Es lo que decide el cartel de "abierto ahora" en tu perfil.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; align-items: start">
+
+      <aside style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: #ECEAF7; color: #3E2F94; font-weight: 700">T</span>
+          <span style="display: flex; flex-direction: column; min-width: 0">
+            <span style="font-weight: 600; font-size: 14.5px">Tomás</span>
+            <a href="#" style="font-size: 12.5px; color: #5F6B7C">Ver mi perfil</a>
+          </span>
+        </div>
+        <nav style="display: flex; flex-direction: column; gap: 2px">
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mis emprendimientos</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mi catálogo</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mis servicios</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Presupuestos</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mensajes</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Reseñas recibidas</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Favoritos</a>
+          <span style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; background: #ECEAF7; color: #3E2F94; font-weight: 600">Ajustes</span>
+        </nav>
+      </aside>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+        <nav style="display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 12px; background: #EEF1F7">
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Perfil público</a>
+          <span style="padding: 8px 14px; border-radius: 8px; background: #FFFFFF; color: #1B2430; font-size: 13.6px; font-weight: 600; box-shadow: 0 4px 12px rgba(15,23,42,.08)">Horarios</span>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Contacto y redes</a>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Cuenta y contraseña</a>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Notificaciones</a>
+        </nav>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 24px; align-items: start">
+
+          <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+            <section style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; padding: 18px 22px 20px">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+                <h2 style="font-size: 16px; letter-spacing: -.01em">Horarios de atención</h2>
+                <span style="font-size: 12.5px; color: #5F6B7C">Hora de Argentina</span>
+              </div>
+              <p style="margin: 6px 0 0; font-size: 13.6px; line-height: 1.55; color: #5F6B7C">Un rango por día. Los días cerrados se marcan con el interruptor y quedan grises.</p>
+
+              <!-- Lo que hoy obliga a cargar siete filas a mano una por una. -->
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px">
+                <button type="button" onClick="{{ copiarLunes }}" class="u-btn-borde" style="display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 15px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #1B2430; font-size: 13.5px; cursor: pointer">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5H6a2 2 0 0 0-2 2v9"/></svg>
+                  Copiar el lunes a toda la semana
+                </button>
+                <button type="button" onClick="{{ cerrarFinde }}" class="u-btn-borde" style="min-height: 38px; padding: 0 15px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #1B2430; font-size: 13.5px; cursor: pointer">Cerrar sábado y domingo</button>
+              </div>
+
+              <div style="display: flex; flex-direction: column; margin-top: 8px">
+                <sc-for list="{{ dias }}" as="d" hint-placeholder-count="7">
+                  <div style="{{ d.fila }}">
+                    <span style="{{ d.nombre }}">{{ d.etiqueta }}</span>
+
+                    <div style="{{ d.horas }}">
+                      <div class="u-campo" style="display: flex; align-items: center; height: 44px; padding: 0 12px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+                        <input type="time" value="{{ d.abre }}" style="border: 0; background: transparent; color: #1B2430; font-size: 15px; width: 96px">
+                      </div>
+                      <span style="font-size: 13.5px; color: #5F6B7C">a</span>
+                      <div class="u-campo" style="display: flex; align-items: center; height: 44px; padding: 0 12px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+                        <input type="time" value="{{ d.cierra }}" style="border: 0; background: transparent; color: #1B2430; font-size: 15px; width: 96px">
+                      </div>
+                    </div>
+
+                    <span style="{{ d.leyenda }}">Cerrado todo el día</span>
+
+                    <span style="flex: 1"></span>
+
+                    <button type="button" onClick="{{ d.alternar }}" style="{{ d.interruptor }}">
+                      <span style="{{ d.perilla }}"></span>
+                    </button>
+                    <span style="{{ d.estado }}">{{ d.estadoTexto }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+
+            <div style="{{ barraGuardar }}">
+              <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+                <span style="{{ estadoTitulo }}">{{ estadoTexto }}</span>
+                <span style="font-size: 12.6px; color: #5F6B7C">{{ estadoDetalle }}</span>
+              </span>
+              <button type="button" onClick="{{ descartar }}" class="u-btn-borde" style="min-height: 42px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 14.4px; cursor: pointer">Descartar</button>
+              <button type="button" onClick="{{ guardar }}" class="u-btn-primario" style="min-height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14.4px; box-shadow: 0 4px 12px rgba(15,23,42,.08); cursor: pointer">Guardar horarios</button>
+            </div>
+          </div>
+
+          <!-- VISTA PREVIA: el cartel que estos siete renglones encienden. Hoy
+               se carga a ciegas y recién se ve entrando al perfil. -->
+          <aside style="display: flex; flex-direction: column; gap: 10px">
+            <span style="display: inline-flex; align-items: center; gap: 7px; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; color: #33267C">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              Así te ven
+            </span>
+
+            <div style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; padding: 18px">
+              <p style="margin: 0 0 10px; font-size: 12.6px; color: #5F6B7C">En tu perfil, ahora mismo:</p>
+              <span style="{{ chipEstado }}">
+                <span style="{{ chipPunto }}"></span>{{ chipTexto }}
+              </span>
+
+              <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #E2E6EE">
+                <p style="margin: 0 0 8px; font-size: 12.6px; color: #5F6B7C">La semana, como se lee del otro lado:</p>
+                <sc-for list="{{ dias }}" as="d" hint-placeholder-count="7">
+                  <div style="{{ d.previaFila }}">
+                    <span style="{{ d.previaDia }}">{{ d.corto }}</span>
+                    <span style="flex: 1"></span>
+                    <span style="{{ d.previaHora }}">{{ d.previaTexto }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <p style="margin: 2px 0 0; font-size: 12.6px; line-height: 1.55; color: #5F6B7C">El cartel verde es lo único de esta pantalla que ve un visitante. Todo lo demás son estas siete filas.</p>
+          </aside>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      cerrados: [false, false, false, false, false, false, true],
+      abre: ["09:00", "09:00", "09:00", "09:00", "09:00", "09:30", "09:00"],
+      cierra: ["13:30", "13:30", "13:30", "19:00", "19:00", "13:00", "13:00"],
+      sucio: false,
+    };
+  }
+
+  renderVals() {
+    const etiquetas = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const cortos = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+    const abre = this.state.abre;
+    const cierra = this.state.cierra;
+    const cerrados = this.state.cerrados;
+    const sucio = this.state.sucio;
+    // Jueves: el día que el ejemplo usa como "hoy", para que el cartel de
+    // arriba diga algo verdadero sobre estas mismas filas.
+    const hoy = 3;
+
+    const dias = etiquetas.map((etiqueta, indice) => {
+      const cerrado = cerrados[indice];
+      return {
+        etiqueta: etiqueta,
+        corto: cortos[indice],
+        abre: abre[indice],
+        cierra: cierra[indice],
+        fila: "display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #EEF1F7",
+        nombre: "width: 96px; flex-shrink: 0; font-size: 14.2px; font-weight: 600; color: " + (cerrado ? "#5F6B7C" : "#1B2430"),
+        horas: cerrado
+          ? "display: none"
+          : "display: flex; align-items: center; gap: 10px",
+        leyenda: cerrado
+          ? "font-size: 14px; color: #5F6B7C"
+          : "display: none",
+        interruptor: "position: relative; width: 44px; height: 26px; flex-shrink: 0; border: 0; border-radius: 999px; cursor: pointer; padding: 0; background: " + (cerrado ? "#C9D0E0" : "#5248AE"),
+        perilla: "position: absolute; top: 3px; left: " + (cerrado ? "3px" : "21px") + "; width: 20px; height: 20px; border-radius: 999px; background: #FFFFFF; transition: left .15s ease",
+        estado: "width: 62px; font-size: 13px; color: " + (cerrado ? "#5F6B7C" : "#1F7A4D"),
+        estadoTexto: cerrado ? "Cerrado" : "Abierto",
+        alternar: () => {
+          const copia = cerrados.slice();
+          copia[indice] = !copia[indice];
+          this.setState({ cerrados: copia, sucio: true });
+        },
+        previaFila: "display: flex; align-items: center; gap: 10px; padding: 5px 0",
+        previaDia: "font-size: 13px; font-weight: " + (indice === hoy ? "700" : "500") + "; color: " + (indice === hoy ? "#1B2430" : "#4A5666"),
+        previaHora: "font-size: 13px; color: " + (cerrado ? "#5F6B7C" : "#1B2430"),
+        previaTexto: cerrado ? "Cerrado" : abre[indice] + " a " + cierra[indice],
+      };
+    });
+
+    const abiertoHoy = !cerrados[hoy];
+
+    return {
+      dias: dias,
+      // Copia de verdad el rango del lunes, que es lo que dice el boton.
+      copiarLunes: () => this.setState({
+        cerrados: cerrados.map(() => cerrados[0]),
+        abre: abre.map(() => abre[0]),
+        cierra: cierra.map(() => cierra[0]),
+        sucio: true,
+      }),
+      cerrarFinde: () => {
+        const copia = cerrados.slice();
+        copia[5] = true;
+        copia[6] = true;
+        this.setState({ cerrados: copia, sucio: true });
+      },
+      guardar: () => this.setState({ sucio: false }),
+      descartar: () => this.setState({ sucio: false }),
+
+      chipEstado: abiertoHoy
+        ? "display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 13.5px; font-weight: 600"
+        : "display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 13.5px; font-weight: 600",
+      chipPunto: "width: 7px; height: 7px; border-radius: 999px; background: " + (abiertoHoy ? "#1F7A4D" : "#5F6B7C"),
+      chipTexto: abiertoHoy
+        ? "Abierto ahora · cierra " + cierra[hoy]
+        : "Cerrado hoy · abre mañana " + abre[(hoy + 1) % 7],
+
+      barraGuardar: sucio
+        ? "position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid #D9D2F0; border-radius: 16px; background: #ECEAF7"
+        : "position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF",
+      estadoTitulo: "font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: " + (sucio ? "#33267C" : "#1B2430"),
+      estadoTexto: sucio ? "Tenés cambios sin guardar" : "Todo guardado",
+      estadoDetalle: sucio
+        ? "El cartel de tu perfil cambia recién cuando guardes."
+        : "Última vez: hoy a las 14:32.",
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -61,6 +61,11 @@
 <link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet" />
 </head>
 <body>
+    {# La barra y el pie van en bloques para que una pantalla pueda no
+       tenerlos. Hoy lo usan entrar y crear cuenta, que son a pantalla completa
+       sobre una foto y llevan el logo adentro: la barra ahi ofrecia "Acceder" y
+       "Registrarse", que es justo lo que la pantalla ya esta haciendo. #}
+{% block navbar %}
     <header class="navbar">
         <div class="container navbar__content">
             <div class="navbar__logo">
@@ -176,11 +181,13 @@
             </button>
         </div>
     </header>
+{% endblock %}
 
     <main>
         {% block content %}{% endblock %}
     </main>
 
+{% block footer %}
     <footer class="footer">
         {# En columnas, como quedo en el rediseño: la fila unica de cuatro links
            mezclaba lo institucional con la navegacion. Ahora cada grupo dice
@@ -223,6 +230,7 @@
             <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
         </div>
     </footer>
+{% endblock %}
 
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

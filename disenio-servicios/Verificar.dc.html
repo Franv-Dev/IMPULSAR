@@ -1,0 +1,328 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-btn-primario:hover { background: #483BA1; }
+    .u-btn-borde:hover { background: #ECEAF7; border-color: #ECEAF7; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #4A5666">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #4A5666">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 5px; border: 1px solid #ECEAF7; border-radius: 999px; background: #ECEAF7; cursor: pointer">
+        <span style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">TG</span>
+        <span style="font-size: 13.5px; font-weight: 600; color: #33267C">Tomas</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 20px 24px 60px; display: flex; flex-direction: column; gap: 18px">
+
+    <p style="margin: 0; font-size: 13.5px"><a href="#" style="color: #5F6B7C">‹ Volver a mis servicios</a></p>
+
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px">
+      <div style="max-width: 620px">
+        <h1 style="font-size: 25px; letter-spacing: -.015em">Verificar credenciales</h1>
+        <p style="margin: 6px 0 0; font-size: 14.2px; line-height: 1.6; color: #5F6B7C">
+          El sello lo pone un administrador después de mirar tu documentación. Vos no
+          lo podés activar: si no, no significaría nada para quien lo mira.
+        </p>
+      </div>
+      <div style="flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+        <span style="width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 11px; background: #ECEAF7; color: #3E2F94">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4.5 16.5V20H8l4.8-4.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.5-2.5 2.6-2.6Z"/></svg>
+        </span>
+        <div>
+          <p style="margin: 0; font-size: 14px; font-weight: 600">Destapación de cañerías</p>
+          <p style="margin: 3px 0 0; font-size: 12.6px; color: #5F6B7C">Plomería · Plomería Sánchez</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 24px; align-items: start">
+
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+        <!-- LOS TRES PASOS. Con el estado en el que está este servicio marcado,
+             que es lo que hoy hay que deducir leyendo un párrafo. -->
+        <section style="padding: 22px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px">
+            <sc-for list="{{ pasos }}" as="p" hint-placeholder-count="3">
+              <div style="{{ p.cajaEstilo }}">
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <span style="{{ p.numeroEstilo }}">{{ p.numero }}</span>
+                  <span style="{{ p.tituloEstilo }}">{{ p.titulo }}</span>
+                </div>
+                <p style="{{ p.textoEstilo }}">{{ p.texto }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <!-- ===== SIN PEDIDO: el formulario ===== -->
+        <section style="{{ subirEstilo }}">
+          <div>
+            <h2 style="font-size: 16px">Subí tu documentación</h2>
+            <p style="margin: 6px 0 0; font-size: 13.4px; line-height: 1.6; color: #5F6B7C">
+              Una foto de tu matrícula, certificado o habilitación para <strong style="color: #1B2430">este</strong>
+              servicio. La verificación es por servicio y no por persona: si ofrecés
+              varios oficios, cada uno lleva la suya.
+            </p>
+          </div>
+
+          <button type="button" onClick="{{ adjuntar }}" style="{{ sueltaEstilo }}">
+            <span style="width: 50px; height: 50px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #3E2F94">
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16.5V4.5M7.5 9 12 4.5 16.5 9"/><path d="M4.5 15v3.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+            </span>
+            <span style="font-size: 14.2px; font-weight: 600; color: #1B2430">Arrastrá el documento o elegí el archivo</span>
+            <span style="font-size: 12.6px; color: #5F6B7C">Una imagen, hasta 15 MB. Que se lea el número y tu nombre.</span>
+          </button>
+
+          <div style="{{ archivoEstilo }}">
+            <div style="width: 120px; height: 84px; flex-shrink: 0; border-radius: 10px; background: linear-gradient(150deg, #C9CFDB 0%, #EEF1F7 100%); display: flex; align-items: center; justify-content: center; color: #5F6B7C">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5z"/><path d="M13.5 3.5v5h5"/></svg>
+            </div>
+            <div style="flex: 1; min-width: 0">
+              <p style="margin: 0; font-size: 14px; font-weight: 600">matricula-plomero.jpg</p>
+              <p style="margin: 4px 0 0; font-size: 12.6px; color: #5F6B7C">2,4 MB · lo ven el administrador y vos, nadie más</p>
+              <button type="button" onClick="{{ quitar }}" style="margin-top: 10px; height: 32px; padding: 0 13px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 12.8px; font-weight: 600; cursor: pointer">Elegir otro</button>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px; padding-top: 4px">
+            <button type="button" class="{{ claseMandar }}" style="{{ mandarEstilo }}">Pedir verificación</button>
+            <span style="font-size: 12.8px; color: #5F6B7C">{{ ayudaMandar }}</span>
+          </div>
+        </section>
+
+        <!-- ===== EN REVISION ===== -->
+        <section style="{{ revisionEstilo }}">
+          <div style="display: flex; align-items: flex-start; gap: 16px">
+            <span style="width: 46px; height: 46px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FBEDE4; color: #8C4A22">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+            </span>
+            <div style="min-width: 0">
+              <h2 style="font-size: 17px">Tu documentación está en revisión</h2>
+              <p style="margin: 6px 0 0; font-size: 13.6px; line-height: 1.6; color: #4A5666">
+                La mandaste el 3 de septiembre. Un administrador la va a mirar y la
+                respuesta te va a aparecer acá mismo. No hace falta que mandes otra.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 16px; padding: 16px; border-radius: 12px; background: #F5F7FA">
+            <div style="width: 148px; height: 104px; flex-shrink: 0; border-radius: 10px; background: linear-gradient(150deg, #C9CFDB 0%, #EEF1F7 100%)"></div>
+            <div style="min-width: 0">
+              <p style="margin: 0; font-size: 13.4px; font-weight: 600">Lo que mandaste</p>
+              <p style="margin: 5px 0 0; font-size: 12.6px; line-height: 1.55; color: #5F6B7C">
+                Se guarda fuera de las carpetas públicas y solo lo abren el
+                administrador y vos.
+              </p>
+              <a href="#" style="display: inline-block; margin-top: 10px; font-size: 12.8px; font-weight: 600">Ver el documento</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== RECHAZADO ===== -->
+        <section style="{{ rechazoEstilo }}">
+          <div style="display: flex; align-items: flex-start; gap: 16px">
+            <span style="width: 46px; height: 46px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FEE2E2; color: #B91C1C">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.8v5M12 16.2v.1"/></svg>
+            </span>
+            <div style="min-width: 0">
+              <h2 style="font-size: 17px">Tu último pedido no fue aprobado</h2>
+              <p style="margin: 8px 0 0; padding: 12px 14px; border-left: 3px solid #FCA5A5; border-radius: 0 8px 8px 0; background: #FEF2F2; font-size: 13.4px; line-height: 1.6; color: #4A5666">
+                <strong style="display: block; margin-bottom: 3px; color: #B91C1C">Motivo</strong>
+                La foto está cortada y no se lee el número de matrícula. Mandala
+                completa y con luz.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 16px; padding: 16px; border-radius: 12px; background: #F5F7FA">
+            <div style="width: 148px; height: 104px; flex-shrink: 0; border-radius: 10px; background: linear-gradient(150deg, #C9CFDB 0%, #EEF1F7 100%)"></div>
+            <div style="min-width: 0">
+              <p style="margin: 0; font-size: 13.4px; font-weight: 600">Lo que mandaste</p>
+              <p style="margin: 5px 0 0; font-size: 12.6px; line-height: 1.55; color: #5F6B7C">Verla al lado del motivo evita rehacerla a ciegas.</p>
+            </div>
+          </div>
+
+          <button type="button" class="u-btn-primario" style="align-self: flex-start; height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Mandar otra foto</button>
+        </section>
+
+        <!-- ===== VERIFICADO ===== -->
+        <section style="{{ okEstilo }}">
+          <div style="display: flex; align-items: flex-start; gap: 16px">
+            <span style="width: 46px; height: 46px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #E6F4EC; color: #1F7A4D">
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            </span>
+            <div style="min-width: 0">
+              <h2 style="font-size: 17px">Este servicio está verificado</h2>
+              <p style="margin: 6px 0 0; font-size: 13.6px; line-height: 1.6; color: #4A5666">
+                El sello se muestra en la búsqueda y en tu emprendimiento, y quien
+                filtra por “solo verificados” te encuentra.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 12px; background: #F5F7FA">
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 12.8px; font-weight: 600">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+              Verificado
+            </span>
+            <span style="font-size: 13px; color: #5F6B7C">Así lo ve quien busca un plomero.</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ===================== AL COSTADO ===================== -->
+      <aside style="display: flex; flex-direction: column; gap: 16px; position: sticky; top: 24px">
+
+        <section style="padding: 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <h2 style="font-size: 15px">Qué sirve como documentación</h2>
+          <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px">
+            <sc-for list="{{ sirven }}" as="s" hint-placeholder-count="3">
+              <div style="display: flex; gap: 10px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F7A4D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                <p style="margin: 0; font-size: 13.2px; line-height: 1.55; color: #4A5666">{{ s.texto }}</p>
+              </div>
+            </sc-for>
+          </div>
+          <p style="margin: 14px 0 0; padding-top: 14px; border-top: 1px solid #E2E6EE; font-size: 12.6px; line-height: 1.55; color: #5F6B7C">
+            Que se lea el número, tu nombre y la fecha. Si está vencida, no alcanza.
+          </p>
+        </section>
+
+        <section style="padding: 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <h2 style="font-size: 15px">Qué cambia el sello</h2>
+          <p style="margin: 10px 0 0; font-size: 13.2px; line-height: 1.6; color: #4A5666">
+            Dice que alguien de IMPULSAR miró un papel tuyo, nada más. No es una
+            garantía del trabajo ni un aval del municipio, y por eso está atado al
+            servicio y no a vos.
+          </p>
+        </section>
+
+        <section style="padding: 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <h2 style="font-size: 15px">Tus otros servicios</h2>
+          <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 4px">
+            <sc-for list="{{ otros }}" as="o" hint-placeholder-count="3">
+              <a href="#" style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px">
+                <span style="{{ o.puntoEstilo }}"></span>
+                <span style="flex: 1; min-width: 0; font-size: 13.4px; color: #1B2430">{{ o.titulo }}</span>
+                <span style="{{ o.estadoEstilo }}">{{ o.estado }}</span>
+              </a>
+            </sc-for>
+          </div>
+        </section>
+
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"estado":{"editor":"enum","options":["sin pedido","en revision","no aprobado","verificado"],"default":"sin pedido","section":"Contenido"},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { archivo: false };
+  }
+
+  renderVals() {
+    const estado = this.props.estado ?? "sin pedido";
+    const archivo = this.state.archivo;
+
+    // El paso en el que está: 0 subir, 1 esperando, 2 resuelto.
+    const enCurso = estado === "sin pedido" || estado === "no aprobado" ? 0 : (estado === "en revision" ? 1 : 2);
+
+    const pasos = [
+      { numero: 1, titulo: "Subís el documento", texto: "Matrícula, certificado o habilitación de este servicio." },
+      { numero: 2, titulo: "Lo mira un administrador", texto: "Puede aprobarlo o pedirte una foto mejor, con el motivo." },
+      { numero: 3, titulo: "Aparece el sello", texto: "En la búsqueda y en la página de tu emprendimiento." },
+    ].map((p, i) => {
+      const hecho = i < enCurso;
+      const activo = i === enCurso;
+      const tinta = hecho ? "#1F7A4D" : (activo ? "#3E2F94" : "#9AA3B2");
+      return {
+        numero: p.numero,
+        titulo: p.titulo,
+        texto: p.texto,
+        cajaEstilo: "display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: " + (activo ? "#ECEAF7" : "#F5F7FA"),
+        numeroEstilo: "width: 22px; height: 22px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-size: 11.6px; font-weight: 700; color: #FFFFFF; background: " + tinta,
+        tituloEstilo: "font-family: 'Poppins', sans-serif; font-size: 13.6px; font-weight: 600; color: " + (activo ? "#33267C" : "#1B2430"),
+        textoEstilo: "margin: 0; font-size: 12.4px; line-height: 1.5; color: #5F6B7C",
+      };
+    });
+
+    const panel = "display: flex; flex-direction: column; gap: 18px; padding: 24px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF";
+
+    return {
+      pasos: pasos,
+
+      subirEstilo: estado === "sin pedido" ? panel : "display: none",
+      revisionEstilo: estado === "en revision" ? panel : "display: none",
+      rechazoEstilo: estado === "no aprobado" ? panel : "display: none",
+      okEstilo: estado === "verificado" ? panel : "display: none",
+
+      adjuntar: () => this.setState({ archivo: true }),
+      quitar: () => this.setState({ archivo: false }),
+      sueltaEstilo: archivo
+        ? "display: none"
+        : "display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 30px 20px; border: 1px dashed #C9CFDB; border-radius: 12px; background: #F5F7FA; cursor: pointer; text-align: center",
+      archivoEstilo: archivo
+        ? "display: flex; align-items: flex-start; gap: 16px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 12px; background: #F5F7FA"
+        : "display: none",
+      claseMandar: archivo ? "u-btn-primario" : "",
+      mandarEstilo: archivo
+        ? "height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(15,23,42,.08)"
+        : "height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: #C9CFDB; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: not-allowed",
+      ayudaMandar: archivo
+        ? "Mientras lo revisan no vas a poder mandar otro."
+        : "Sin el documento no hay nada que revisar.",
+
+      sirven: [
+        { texto: "La matrícula del oficio, con el número visible." },
+        { texto: "Un certificado de curso o de capacitación del rubro." },
+        { texto: "La habilitación municipal, si el trabajo la necesita." },
+      ],
+
+      otros: [
+        { titulo: "Instalación de termotanque", estado: "En revisión", color: "#D97544", fondo: "#FBEDE4", tinta: "#8C4A22" },
+        { titulo: "Conexión de gas natural", estado: "No aprobado", color: "#B91C1C", fondo: "#FEE2E2", tinta: "#B91C1C" },
+        { titulo: "Pintura de interiores", estado: "Sin pedir", color: "#C9CFDB", fondo: "#EEF1F7", tinta: "#5F6B7C" },
+      ].map((o) => ({
+        titulo: o.titulo,
+        estado: o.estado,
+        puntoEstilo: "width: 8px; height: 8px; flex-shrink: 0; border-radius: 999px; background: " + o.color,
+        estadoEstilo: "flex-shrink: 0; padding: 4px 9px; border-radius: 999px; font-size: 11.8px; font-weight: 600; background: " + o.fondo + "; color: " + o.tinta,
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

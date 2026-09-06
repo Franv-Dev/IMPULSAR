@@ -1,0 +1,197 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-tira { scrollbar-width: none; -ms-overflow-style: none; }
+    .u-tira::-webkit-scrollbar { display: none; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; background: #F5F7FA">
+
+  <header style="display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 60px; padding: 0 16px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 28px; width: auto; display: block">
+    <div style="display: flex; align-items: center; gap: 4px">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; color: #4A5666">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"/></svg>
+      </span>
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; color: #1B2430">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </span>
+    </div>
+  </header>
+
+  <!-- BUSCADOR + FILTROS
+       En telefono los tres campos del escritorio no entran uno al lado del otro
+       sin quedar ilegibles, asi que se resumen en una sola linea que dice lo
+       que hay puesto ("Ceramica · Artesanias · Guemes 1200") y abre la hoja de
+       filtros al tocarla. Las fichas quedan afuera, en una tira que se desliza:
+       son el diferencial y tienen que estar a un toque, no adentro de un panel. -->
+  <section style="position: sticky; top: 0; z-index: 4; display: flex; flex-direction: column; gap: 10px; padding: 12px 0 11px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="display: flex; align-items: center; gap: 9px; padding: 0 16px">
+      <button type="button" style="display: flex; align-items: center; gap: 11px; flex: 1; min-width: 0; height: 48px; padding: 0 15px; border: 1px solid #E2E6EE; border-radius: 999px; background: #F5F7FA; cursor: pointer; text-align: left">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5248AE" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+        <span style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1">
+          <span style="font-size: 14.5px; font-weight: 600; color: #1B2430; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Cerámica</span>
+          <span style="font-size: 11.5px; color: #5F6B7C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Artesanías · cerca de Güemes 1200</span>
+        </span>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+      </button>
+      <button type="button" aria-label="Ver el mapa" style="flex-shrink: 0; width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #33267C; cursor: pointer; padding: 0">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4 6 2.4L20.5 4v16L15 17.6 9 20 3.5 17.6v-16L9 4Z"/><path d="M9 4v16M15 6.4v16"/></svg>
+      </button>
+    </div>
+
+    <div class="u-tira" style="display: flex; gap: 8px; padding: 0 16px 2px; overflow-x: auto; -webkit-overflow-scrolling: touch">
+      <sc-for list="{{ filtros }}" as="f" hint-placeholder-count="4">
+        <button type="button" onClick="{{ f.alternar }}" style="{{ f.estilo }}">
+          <span style="{{ f.punto }}"></span>{{ f.etiqueta }}
+        </button>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 24px">
+
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+      <h1 style="font-size: 17px; letter-spacing: -.02em">14 a menos de 3 km</h1>
+      <span style="font-size: 12.5px; color: #5F6B7C">Más cerca primero</span>
+    </div>
+
+    <!-- La tarjeta es compacta y horizontal: en 390 px una tarjeta vertical por
+         emprendimiento obliga a scrollear muchísimo para comparar, y comparar es
+         justo lo que se viene a hacer. La foto es cuadrada de 104 px; el resto
+         del ancho se lo lleva lo que decide: distancia, si está abierto y quién
+         es. -->
+    <sc-for list="{{ resultados }}" as="r" hint-placeholder-count="4">
+      <article style="display: flex; gap: 12px; padding: 10px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+
+        <div style="position: relative; flex-shrink: 0; width: 104px; height: 104px; border-radius: 12px; overflow: hidden; background: {{ r.foto }}">
+          <span style="position: absolute; left: 6px; top: 6px; width: 21px; height: 21px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 10.5px; font-weight: 700">{{ r.n }}</span>
+          <span style="position: absolute; right: 6px; bottom: 6px; padding: 3px 7px; border-radius: 999px; background: rgba(10,8,28,.55); color: rgba(255,255,255,.9); font-size: 9.5px; font-weight: 600">{{ r.fotos }}</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+            <span style="{{ r.rubroChip }}">{{ r.rubro }}</span>
+            <button type="button" aria-label="Guardar" style="flex-shrink: 0; width: 30px; height: 30px; margin: -4px -4px 0 0; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: transparent; cursor: pointer; padding: 0">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="{{ r.corazonRelleno }}" stroke="{{ r.corazonBorde }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.2-4.5-7.2-9.4A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.9C19.2 15.5 12 20 12 20Z"/></svg>
+            </button>
+          </div>
+
+          <h2 style="font-size: 15.5px; line-height: 1.2; letter-spacing: -.02em">{{ r.nombre }}</h2>
+
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px">
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-size: 11.5px; font-weight: 600">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+              {{ r.distancia }}
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #FCF6EA; color: #8A6416; font-size: 11.5px; font-weight: 600">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+              {{ r.rating }}
+            </span>
+            <span style="{{ r.estadoChip }}"><span style="{{ r.estadoPunto }}"></span>{{ r.estado }}</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 7px; margin-top: 1px; min-width: 0">
+            <span style="flex-shrink: 0; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 9px; font-weight: 700">{{ r.iniciales }}</span>
+            <span style="font-size: 12px; color: #5F6B7C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ r.persona }}</span>
+            <span style="{{ r.feriaChip }}">Feria</span>
+          </div>
+        </div>
+      </article>
+    </sc-for>
+
+    <button type="button" style="display: inline-flex; align-items: center; justify-content: center; height: 46px; margin-top: 4px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-size: 14.5px; font-weight: 600; cursor: pointer">Ver los 14</button>
+  </section>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const activos = (this.state && this.state.activos) || { abierto: true, cerca: true, resenias: false, favoritos: false };
+
+    const chip = (encendido) =>
+      "flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; "
+      + (encendido
+        ? "border: 1px solid #5248AE; background: #5248AE; color: #FFFFFF"
+        : "border: 1px solid #E2E6EE; background: #FFFFFF; color: #4A5666");
+
+    const alternar = (clave) => () => {
+      const copia = Object.assign({}, activos);
+      copia[clave] = !copia[clave];
+      this.setState({ activos: copia });
+    };
+
+    const filtros = [
+      { clave: "abierto", etiqueta: "Abierto ahora", color: "#7EE2A8" },
+      { clave: "cerca", etiqueta: "A menos de 3 km", color: "#FFFFFF" },
+      { clave: "resenias", etiqueta: "Con reseñas", color: "#FFFFFF" },
+      { clave: "favoritos", etiqueta: "Mis favoritos", color: "#FFFFFF" }
+    ].map((f) => ({
+      etiqueta: f.etiqueta,
+      estilo: chip(activos[f.clave]),
+      punto: activos[f.clave]
+        ? "width: 6px; height: 6px; border-radius: 999px; background: " + f.color
+        : "display: none",
+      alternar: alternar(f.clave)
+    }));
+
+    const RUBROS = {
+      "Artesanías":   ["#EEEFFE", "#635EA3"],
+      "Alimentos":    ["#FDECE5", "#9A5230"],
+      "Hogar":        ["#E5F5EC", "#1C7B53"],
+      "Indumentaria": ["#FBEBF2", "#954D71"]
+    };
+
+    const datos = [
+      { nombre: "Estudio Verde Cerámica", rubro: "Artesanías", persona: "Valentina Ruiz",
+        distancia: "400 m", rating: "4,6", fotos: "8", abierto: true, feria: true, favorito: true, tono: "#635EA3" },
+      { nombre: "Panadería La Masa Madre", rubro: "Alimentos", persona: "Marina Cabral",
+        distancia: "1,2 km", rating: "4,8", fotos: "12", abierto: true, feria: false, favorito: false, tono: "#9A5230" },
+      { nombre: "Taller Raíz — Muebles", rubro: "Hogar", persona: "Diego Ferrer",
+        distancia: "2,1 km", rating: "4,9", fotos: "6", abierto: false, feria: true, favorito: false, tono: "#1C7B53" },
+      { nombre: "Hilo Norte", rubro: "Indumentaria", persona: "Sofía Miranda",
+        distancia: "2,8 km", rating: "4,7", fotos: "9", abierto: true, feria: false, favorito: false, tono: "#954D71" }
+    ];
+
+    const resultados = datos.map((d, n) => {
+      const par = RUBROS[d.rubro] || ["#EEF1F7", "#5F6B7C"];
+      return Object.assign({}, d, {
+        n: String(n + 1),
+        iniciales: d.persona.split(" ").map((t) => t[0]).join(""),
+        foto: "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, " + d.tono + " 150%)",
+        rubroChip: "align-self: flex-start; display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; background: "
+          + par[0] + "; color: " + par[1] + "; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase",
+        estadoChip: "display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; "
+          + (d.abierto ? "background: #E6F4EC; color: #1C7B53" : "background: #EEF1F7; color: #5F6B7C"),
+        estadoPunto: "width: 5px; height: 5px; border-radius: 999px; background: " + (d.abierto ? "#1C7B53" : "#9AA3B2"),
+        estado: d.abierto ? "Abierto" : "Cerrado",
+        corazonRelleno: d.favorito ? "#DC2626" : "none",
+        corazonBorde: d.favorito ? "#DC2626" : "#9AA3B2",
+        feriaChip: d.feria
+          ? "flex-shrink: 0; display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 10.5px; font-weight: 700"
+          : "display: none"
+      });
+    });
+
+    return { filtros: filtros, resultados: resultados };
+  }
+}
+</script>
+</body>
+</html>

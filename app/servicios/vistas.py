@@ -129,22 +129,40 @@ def buscar():
     incluso sin cuenta. Pedir el presupuesto si necesita estar logueado, pero
     eso ya lo resuelve solicitar().
     """
-    rubro, zona, solo_verificados, pagina = formulario.leer_busqueda()
+    filtros = formulario.leer_busqueda()
+    # Lo que no esta en el catalogo no filtra, pero se le devuelve igual al
+    # template para repintar el control con lo que el usuario tenia.
+    rubro = filtros["rubro"] if reglas.rubro_valido(filtros["rubro"]) else None
+    precio = filtros["precio"] if reglas.precio_valido(filtros["precio"]) else None
+    orden = filtros["orden"] if reglas.orden_valido(filtros["orden"]) else None
+
     return render_template(
         "servicios/buscar.html",
         paginacion=consultas.buscar_servicios(
-            # Un rubro que no existe no filtra nada, pero se le devuelve igual
-            # al template para repintar el <select> con lo que el usuario tenia.
-            rubro=rubro if reglas.rubro_valido(rubro) else None,
-            zona=zona,
-            solo_verificados=solo_verificados,
-            pagina=pagina,
+            rubro=rubro,
+            zona=filtros["zona"],
+            solo_verificados=filtros["solo_verificados"],
+            precio=precio,
+            orden=orden,
+            pagina=filtros["pagina"],
             por_pagina=current_app.config["POSTS_POR_PAGINA"],
         ),
+        # El conteo NO recibe el rubro a proposito: cada numero dice cuantos
+        # hay en ese rubro con los demas filtros puestos, que es lo que hace
+        # que sirva para decidir a donde ir (ver consultas.conteos_por_rubro).
+        conteos=consultas.conteos_por_rubro(
+            zona=filtros["zona"],
+            solo_verificados=filtros["solo_verificados"],
+            precio=precio,
+        ),
         rubros=Rubros.ETIQUETAS,
-        rubro_actual=rubro,
-        zona_actual=zona,
-        solo_verificados_actual=solo_verificados,
+        precios=reglas.Precios,
+        ordenes=reglas.Ordenes,
+        rubro_actual=filtros["rubro"],
+        zona_actual=filtros["zona"],
+        solo_verificados_actual=filtros["solo_verificados"],
+        precio_actual=precio or reglas.Precios.TODOS,
+        orden_actual=orden or reglas.Ordenes.RECIENTE,
     )
 
 
@@ -154,13 +172,54 @@ def buscar():
 @login_required
 def index():
     """El panel: todos los servicios de los emprendimientos propios."""
+    servicios = consultas.servicios_de(g.user.id)
     return render_template(
         "servicios/index.html",
-        servicios=consultas.servicios_de(g.user.id),
+        servicios=servicios,
         posts=consultas.emprendimientos_de(g.user.id),
         maximo=MAX_SERVICIOS_POR_POST,
         rubros=Rubros,
+        # El estado del ultimo pedido de verificacion de cada uno. Se pide en
+        # una consulta para todos y no de a uno por fila (problema N+1).
+        verificaciones=consultas.estados_de_verificacion(
+            [servicio.id for servicio in servicios]
+        ),
+        estados_verificacion=EstadosVerificacion,
+        pendientes=consultas.cuantas_solicitudes_pendientes_para(g.user.id),
     )
+
+
+@servicios.route("/<int:id>/disponible", methods=("POST",))
+@login_required
+def alternar_disponible(id):
+    """Prender y apagar un servicio desde el panel, sin abrir el formulario.
+
+    Es la unica escritura de esta pantalla y toca una sola columna. Existe
+    porque hasta ahora apagar un servicio ("no estoy tomando trabajos esta
+    semana") obligaba a entrar al formulario de ocho campos, releerlos todos y
+    volver a guardarlos, con el riesgo de pisar de paso algo que no se queria
+    tocar.
+
+    POST y no GET aunque sea un solo campo: cambia el estado de una fila y
+    ademas se vuelve a mostrar en la busqueda publica. Con GET lo dispararia
+    cualquier cosa que precargue enlaces.
+
+    El permiso es el mismo _servicio_propio del resto del ABM, asi que un
+    id ajeno responde igual que en editar() o eliminar() y no de una forma que
+    delate si ese servicio existe.
+    """
+    servicio, rechazo = _servicio_propio(id)
+    if rechazo:
+        return rechazo
+
+    servicio.disponible = not servicio.disponible
+    consultas.guardar()
+    flash(
+        f'"{servicio.titulo}" ahora está disponible.'
+        if servicio.disponible
+        else f'"{servicio.titulo}" quedó oculto: lo seguís viendo solo vos.'
+    )
+    return redirect(url_for("servicios.index"))
 
 
 @servicios.route("/nuevo", methods=("GET", "POST"))
@@ -348,6 +407,7 @@ def solicitar(id):
             flash(error)
             return render_template(
                 "servicios/solicitar.html", servicio=servicio, datos=datos,
+                acepta_turnos=reglas.acepta_turnos(servicio),
             )
 
         solicitud = ServiceRequest(
@@ -385,6 +445,7 @@ def solicitar(id):
     return render_template(
         "servicios/solicitar.html", servicio=servicio,
         datos={"descripcion": "", "zona": ""},
+        acepta_turnos=reglas.acepta_turnos(servicio),
     )
 
 

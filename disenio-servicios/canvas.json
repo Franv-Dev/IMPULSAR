@@ -1,0 +1,146 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "Buscar servicios",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1900,
+      "is_interactive": true,
+      "page": "page-1"
+    },
+    {
+      "file": "MainMovil.dc.html",
+      "title": "Buscar servicios · teléfono",
+      "x": 1560,
+      "y": 0,
+      "w": 390,
+      "h": 1400,
+      "is_interactive": true,
+      "page": "page-1"
+    },
+    {
+      "file": "Pedir.dc.html",
+      "title": "Pedir presupuesto",
+      "x": 2070,
+      "y": 0,
+      "w": 1440,
+      "h": 1320,
+      "is_interactive": true,
+      "page": "page-1"
+    },
+    {
+      "file": "PedirMovil.dc.html",
+      "title": "Pedir presupuesto · teléfono",
+      "x": 3630,
+      "y": 0,
+      "w": 390,
+      "h": 1120,
+      "is_interactive": true,
+      "page": "page-1"
+    },
+    {
+      "file": "MisServicios.dc.html",
+      "title": "Mis servicios",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1120,
+      "is_interactive": true,
+      "page": "page-2"
+    },
+    {
+      "file": "Nuevo.dc.html",
+      "title": "Nuevo servicio",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 1600,
+      "is_interactive": true,
+      "page": "page-2"
+    },
+    {
+      "file": "Verificar.dc.html",
+      "title": "Verificar credenciales",
+      "x": 3120,
+      "y": 0,
+      "w": 1440,
+      "h": 1100,
+      "is_interactive": true,
+      "page": "page-2"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "nota-buscar",
+      "x": 0,
+      "y": -330,
+      "w": 660,
+      "page": "page-1",
+      "text": "Buscar servicios, rediseñado.\n\nLo que hay hoy: una fila con un <select> de rubro, un campo de zona, un checkbox y un botón, y abajo las mismas tarjetas genéricas que usa todo el proyecto.\n\nCuatro cambios:\n\n1. La columna de filtros de Emprendimientos, que ya existe en el código (.explorar / .filtros). Probá los rubros: filtran de verdad, y cada uno dice cuántos tiene. Los 13 del catálogo se despliegan; de arranque se ven solo los que tienen a alguien.\n2. Escribí \"maipu\" en Zona: filtra sin acento. Es texto libre contra la zona que cada uno declara.\n3. \"A presupuestar\" deja de ser un renglón más y pasa a ser un estado del precio, con su propio filtro: es la diferencia entre esta pantalla y un catálogo de productos.\n4. Los servicios no tienen foto (Service no tiene columna de imagen), así que la ficha lleva el emblema del oficio en vez de un hueco gris.\n\nEl tweak \"sesión\" muestra la pantalla sin cuenta: el botón de pedir presupuesto se cambia por el aviso con el link a entrar, que es lo que hace la app hoy."
+    },
+    {
+      "id": "nota-buscar-movil",
+      "x": 1560,
+      "y": -230,
+      "w": 390,
+      "page": "page-1",
+      "text": "En teléfono la zona queda a la vista y el resto de los filtros entra en un panel que se abre (tocá \"Filtros\"), con el globito de cuántos tenés puestos.\n\nEl emblema del oficio baja a 44 px y viaja con el título: una columna de 84 px en 390 de ancho deja el texto en un hilo."
+    },
+    {
+      "id": "nota-pedir",
+      "x": 2070,
+      "y": -300,
+      "w": 660,
+      "page": "page-1",
+      "text": "Pedir presupuesto.\n\nHoy son tres campos sueltos en una tarjeta angosta, sin nada que diga a quién le estás escribiendo ni qué pasa después.\n\nA la derecha va la ficha del servicio (precio, sello, zona, quién lo ofrece) y los tres pasos que siguen, que son los que la app de verdad ejecuta.\n\nEscribí en el campo: las tres pastillas de abajo se van encendiendo. Son una guía mientras escribís, no una validación — el servidor solo pide que la descripción no esté vacía, y el botón lo respeta.\n\nLa zona ya no es un campo mudo: dice qué zona atiende y que si es esa, no escribas nada.\n\nEl tweak \"estado\" muestra el caso de la solicitud pendiente: hoy eso es un flash suelto arriba de otra pantalla."
+    },
+    {
+      "id": "nota-pedir-movil",
+      "x": 3630,
+      "y": -180,
+      "w": 390,
+      "page": "page-1",
+      "text": "El mismo pedido en teléfono: la ficha del servicio se reduce a un renglón, el campo grande arriba, y enviar queda fijo abajo con 46 px de alto."
+    },
+    {
+      "id": "nota-mis-servicios",
+      "x": 0,
+      "y": -340,
+      "w": 660,
+      "page": "page-2",
+      "text": "Mis servicios.\n\nHoy: una grilla de tarjetas donde los servicios de los dos emprendimientos se mezclan, y el nombre del emprendimiento es un chip más entre los chips.\n\nAcá se agrupan por emprendimiento, con el cupo (X de 50) que hoy solo se entera cuando te lo rechaza, y cada servicio es una fila y no una tarjeta: se comparan de un vistazo.\n\nDos cosas que la fila sabe decir y hoy no:\n\n1. El estado de la verificación con sus cuatro valores. Hoy la tarjeta solo sabe \"Verificado\" o nada; \"en revisión\" y \"no aprobado\" existen en VerificationRequest y no se ven en ningún lado.\n2. El interruptor de Disponible, que hoy obliga a entrar al formulario de ocho campos para cambiar una sola cosa. OJO: es lo único de esta tanda que necesita backend nuevo — un POST chico tipo /servicios/<id>/disponible. Probalo en \"Pintura lavable\".\n\nEl tweak \"estado\" muestra los dos vacíos: sin servicios, y sin ningún emprendimiento del que colgarlos."
+    },
+    {
+      "id": "nota-nuevo",
+      "x": 1560,
+      "y": -320,
+      "w": 660,
+      "page": "page-2",
+      "text": "Nuevo servicio (la misma pantalla sirve para editar).\n\nHoy son ocho campos apilados en una columna de 640 px, con el de duración del turno siempre presente diciendo \"obligatorio si tomás turnos\".\n\nTres cambios:\n\n1. Tres grupos con un nombre: qué ofrecés, dónde y cuánto, cómo te lo piden.\n2. La duración del turno no existe hasta que prendés turnos, y ahí aparece con las duraciones de siempre (30/45/60/90) más el campo libre. El aviso de que sin horarios cargados no va a haber turnos es real y sale del texto que ya está en el formulario.\n3. La vista previa de la derecha es la ficha tal como se ve en la búsqueda. Borrá el precio y mirá cómo pasa a \"A presupuestar\"; apagá Disponible y mirá qué queda.\n\nLos topes son los de verdad: 120 el título, 300 la descripción, 5 a 480 minutos el turno."
+    },
+    {
+      "id": "nota-verificar",
+      "x": 3120,
+      "y": -320,
+      "w": 660,
+      "page": "page-2",
+      "text": "Verificar credenciales.\n\nHoy los cuatro estados se dibujan como párrafos sueltos y hay que leerlos para saber en cuál estás: la única señal visual es que aparezca o no el formulario.\n\nAcá los tres pasos están siempre arriba y marcan dónde estás, y cada estado tiene su panel. El tweak \"estado\" los recorre.\n\nEl rechazo muestra el motivo AL LADO de la foto que mandaste: hoy son un alert y una imagen suelta, y rehacer la foto es adivinar qué se veía mal.\n\nLos dos textos del costado son la parte que la app nunca dice: qué papel sirve, y qué significa el sello (que alguien miró un papel, no que el trabajo esté garantizado). Que la verificación sea por servicio y no por persona ya lo decía el texto viejo; acá se ve, con la lista de tus otros servicios y en qué anda cada uno."
+    }
+  ],
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Buscar y pedir"
+    },
+    {
+      "id": "page-2",
+      "name": "Del prestador"
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-1"
+  }
+}

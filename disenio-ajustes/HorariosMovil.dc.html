@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input { font-family: inherit; }
+    input { outline: none; }
+    .u-campo:focus-within { border-color: #3E2F94; background: #FFFFFF; box-shadow: 0 0 0 3px #ECEAF7; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; background: #F5F7FA">
+
+  <header style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <button type="button" aria-label="Volver" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: #F5F7FA; color: #1B2430; cursor: pointer; padding: 0">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5-7 7 7 7"/></svg>
+    </button>
+    <span style="display: flex; flex-direction: column; min-width: 0">
+      <h1 style="font-size: 17px; letter-spacing: -.02em">Horarios</h1>
+      <span style="font-size: 12.2px; color: #5F6B7C">Ajustes de mi cuenta</span>
+    </span>
+  </header>
+
+  <!-- El cartel que estas filas encienden, arriba de todo: es lo único que ve
+       un visitante y acá no hay lugar para una columna de previa al costado. -->
+  <div style="margin: 12px 16px 0; padding: 14px 16px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+    <p style="margin: 0 0 9px; font-size: 12.2px; color: #5F6B7C">En tu perfil, ahora mismo:</p>
+    <span style="{{ chipEstado }}">
+      <span style="{{ chipPunto }}"></span>{{ chipTexto }}
+    </span>
+  </div>
+
+  <!-- Las dos ayudas van arriba de las siete filas: en teléfono, cargar día por
+       día es el trabajo que nadie termina. -->
+  <div style="display: flex; gap: 8px; padding: 12px 16px 0">
+    <button type="button" onClick="{{ copiarLunes }}" style="flex: 1; min-height: 44px; padding: 0 12px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #1B2430; font-size: 13.4px; cursor: pointer">Copiar el lunes</button>
+    <button type="button" onClick="{{ cerrarFinde }}" style="flex: 1; min-height: 44px; padding: 0 12px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #1B2430; font-size: 13.4px; cursor: pointer">Cerrar el finde</button>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 100px">
+    <sc-for list="{{ dias }}" as="d" hint-placeholder-count="7">
+      <div style="{{ d.tarjeta }}">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="{{ d.nombre }}">{{ d.etiqueta }}</span>
+          <span style="flex: 1"></span>
+          <span style="{{ d.estado }}">{{ d.estadoTexto }}</span>
+          <button type="button" onClick="{{ d.alternar }}" style="{{ d.interruptor }}">
+            <span style="{{ d.perilla }}"></span>
+          </button>
+        </div>
+
+        <div style="{{ d.horas }}">
+          <div class="u-campo" style="display: flex; align-items: center; justify-content: center; flex: 1; height: 46px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+            <input type="time" value="{{ d.abre }}" style="border: 0; background: transparent; color: #1B2430; font-size: 15px; width: 92px; text-align: center">
+          </div>
+          <span style="font-size: 13.5px; color: #5F6B7C">a</span>
+          <div class="u-campo" style="display: flex; align-items: center; justify-content: center; flex: 1; height: 46px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+            <input type="time" value="{{ d.cierra }}" style="border: 0; background: transparent; color: #1B2430; font-size: 15px; width: 92px; text-align: center">
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="{{ barraGuardar }}">
+    <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+      <span style="{{ estadoTitulo }}">{{ estadoTexto }}</span>
+      <span style="font-size: 12px; color: #5F6B7C">{{ estadoDetalle }}</span>
+    </span>
+    <button type="button" onClick="{{ guardar }}" style="min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14.4px; font-weight: 600; cursor: pointer">Guardar</button>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      cerrados: [false, false, false, false, false, false, true],
+      abre: ["09:00", "09:00", "09:00", "09:00", "09:00", "09:30", "09:00"],
+      cierra: ["13:30", "13:30", "13:30", "19:00", "19:00", "13:00", "13:00"],
+      sucio: false,
+    };
+  }
+
+  renderVals() {
+    const etiquetas = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const cerrados = this.state.cerrados;
+    const abre = this.state.abre;
+    const cierra = this.state.cierra;
+    const sucio = this.state.sucio;
+    const hoy = 3;
+
+    const dias = etiquetas.map((etiqueta, indice) => {
+      const cerrado = cerrados[indice];
+      return {
+        etiqueta: etiqueta,
+        abre: abre[indice],
+        cierra: cierra[indice],
+        tarjeta: "display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border: 1px solid #E2E6EE; border-radius: 16px; background: " + (cerrado ? "#F9FAFC" : "#FFFFFF"),
+        nombre: "font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; color: " + (cerrado ? "#5F6B7C" : "#1B2430"),
+        estado: "font-size: 12.8px; color: " + (cerrado ? "#5F6B7C" : "#1F7A4D"),
+        estadoTexto: cerrado ? "Cerrado" : "Abierto",
+        interruptor: "position: relative; width: 44px; height: 26px; flex-shrink: 0; border: 0; border-radius: 999px; cursor: pointer; padding: 0; background: " + (cerrado ? "#C9D0E0" : "#5248AE"),
+        perilla: "position: absolute; top: 3px; left: " + (cerrado ? "3px" : "21px") + "; width: 20px; height: 20px; border-radius: 999px; background: #FFFFFF; transition: left .15s ease",
+        horas: cerrado ? "display: none" : "display: flex; align-items: center; gap: 10px",
+        alternar: () => {
+          const copia = cerrados.slice();
+          copia[indice] = !copia[indice];
+          this.setState({ cerrados: copia, sucio: true });
+        },
+      };
+    });
+
+    const abiertoHoy = !cerrados[hoy];
+
+    return {
+      dias: dias,
+      copiarLunes: () => this.setState({
+        cerrados: cerrados.map(() => cerrados[0]),
+        abre: abre.map(() => abre[0]),
+        cierra: cierra.map(() => cierra[0]),
+        sucio: true,
+      }),
+      cerrarFinde: () => {
+        const copia = cerrados.slice();
+        copia[5] = true;
+        copia[6] = true;
+        this.setState({ cerrados: copia, sucio: true });
+      },
+      guardar: () => this.setState({ sucio: false }),
+
+      chipEstado: abiertoHoy
+        ? "display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 13.4px; font-weight: 600"
+        : "display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 13.4px; font-weight: 600",
+      chipPunto: "width: 7px; height: 7px; border-radius: 999px; background: " + (abiertoHoy ? "#1F7A4D" : "#5F6B7C"),
+      chipTexto: abiertoHoy ? "Abierto ahora · cierra " + cierra[hoy] : "Cerrado hoy",
+
+      barraGuardar: "position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #FFFFFF; border-top: 1px solid " + (sucio ? "#D9D2F0" : "#E2E6EE"),
+      estadoTitulo: "font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; color: " + (sucio ? "#33267C" : "#1B2430"),
+      estadoTexto: sucio ? "Cambios sin guardar" : "Todo guardado",
+      estadoDetalle: sucio ? "El cartel cambia cuando guardes." : "Última vez: hoy 14:32",
+    };
+  }
+}
+</script>
+</body>
+</html>

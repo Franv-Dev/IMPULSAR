@@ -109,13 +109,22 @@ def leer_busqueda():
     "disponible" de leer_servicio(): un checkbox destildado no manda nada, y
     tildado manda "on". Preguntar por el valor obligaria a decidir que hacer con
     "0", "false" y demas, que nadie manda desde este formulario.
+
+    Devuelve un dict y no una tupla: son seis filtros y desempaquetar seis
+    posiciones en la vista es una linea que se lee mal y que se rompe en
+    silencio el dia que se agregue el septimo en el medio.
     """
-    return (
-        (request.args.get("rubro") or "").strip(),
-        (request.args.get("zona") or "").strip(),
-        request.args.get("verificados") is not None,
-        request.args.get("page", 1, type=int),
-    )
+    return {
+        "rubro": (request.args.get("rubro") or "").strip(),
+        "zona": (request.args.get("zona") or "").strip(),
+        "solo_verificados": request.args.get("verificados") is not None,
+        # El precio y el orden viajan por valor y no por presencia: no son
+        # si/no sino uno de varios, y el que no conozco se ignora (lo decide
+        # reglas.precio_valido / reglas.orden_valido, igual que el rubro).
+        "precio": (request.args.get("precio") or "").strip(),
+        "orden": (request.args.get("orden") or "").strip(),
+        "pagina": request.args.get("page", 1, type=int),
+    }
 
 
 def leer_solicitud():

@@ -2,27 +2,30 @@
 
 import io
 import re
+from datetime import time, timedelta
 
 from PIL import Image
 from werkzeug.datastructures import FileStorage
 
 from app.blog.modelo_favorito import Favorite
 from app.blog.modelo_resenia import Review
+from app.perfil import reglas
+from app.servicios.modelo import Service
+from app.turnos.modelo_turno import EstadosTurno, Turno
 from models.user import User
+from services.eventos import hoy_en_argentina
 
 
 def test_editar_perfil_guarda_datos_de_contacto(client, db, crear_usuario, login):
     usuario = crear_usuario(username="tomy")
     login(usuario.id)
 
-    client.post("/perfil/edit", data={
-        "biography": "Hago pan artesanal",
+    client.post("/perfil/edit/contacto", data={
         "phone": "261 555-1234",
         "whatsapp": "5492615551234",
         "instagram_url": "https://instagram.com/tomy",
         "facebook_url": "https://facebook.com/tomy",
         "twitter_url": "https://twitter.com/tomy",
-        "address_street": "",
     })
 
     db.session.refresh(usuario)
@@ -637,9 +640,7 @@ def test_un_telefono_con_letras_no_se_guarda(client, db, crear_usuario, login):
     usuario = crear_usuario(username="tomy")
     login(usuario.id)
 
-    respuesta = client.post("/perfil/edit", data={
-        "biography": "Hago pan artesanal", "phone": "llamame", "address_street": "",
-    })
+    respuesta = client.post("/perfil/edit/contacto", data={"phone": "llamame"})
 
     db.session.refresh(usuario)
     assert respuesta.status_code == 200
@@ -650,9 +651,7 @@ def test_un_whatsapp_demasiado_corto_no_se_guarda(client, db, crear_usuario, log
     usuario = crear_usuario(username="tomy")
     login(usuario.id)
 
-    client.post("/perfil/edit", data={
-        "biography": "Hago pan artesanal", "whatsapp": "1234", "address_street": "",
-    })
+    client.post("/perfil/edit/contacto", data={"whatsapp": "1234"})
 
     db.session.refresh(usuario)
     assert usuario.whatsapp is None
@@ -662,17 +661,19 @@ def test_un_telefono_mal_escrito_no_guarda_el_resto_del_formulario(
     client, db, crear_usuario, login
 ):
     """Se corta antes de tocar nada: guardar los otros campos y no el telefono
-    dejaria el perfil a medio actualizar sin que se note cual falto."""
+    dejaria el contacto a medio actualizar sin que se note cual falto."""
     usuario = crear_usuario(username="tomy")
     login(usuario.id)
 
-    client.post("/perfil/edit", data={
-        "biography": "Hago pan artesanal", "location": "Maipú",
-        "phone": "llamame", "address_street": "",
+    client.post("/perfil/edit/contacto", data={
+        "phone": "llamame",
+        "whatsapp": "2611234567",
+        "instagram_url": "https://instagram.com/tomy",
     })
 
     db.session.refresh(usuario)
-    assert usuario.location is None
+    assert usuario.whatsapp is None
+    assert usuario.instagram_url is None
 
 
 def test_los_telefonos_con_separadores_se_siguen_guardando(
@@ -683,10 +684,8 @@ def test_los_telefonos_con_separadores_se_siguen_guardando(
     usuario = crear_usuario(username="tomy")
     login(usuario.id)
 
-    client.post("/perfil/edit", data={
-        "biography": "Hago pan artesanal",
+    client.post("/perfil/edit/contacto", data={
         "phone": "+54 9 261 123-4567", "whatsapp": "(261) 4-123456",
-        "address_street": "",
     })
 
     db.session.refresh(usuario)
@@ -702,9 +701,7 @@ def test_borrar_el_telefono_sigue_siendo_valido(client, db, crear_usuario, login
     db.session.commit()
     login(usuario.id)
 
-    client.post("/perfil/edit", data={
-        "biography": "Hago pan artesanal", "phone": "", "address_street": "",
-    })
+    client.post("/perfil/edit/contacto", data={"phone": ""})
 
     db.session.refresh(usuario)
     assert usuario.phone is None
@@ -716,25 +713,20 @@ def test_un_telefono_mal_escrito_no_borra_lo_que_ya_se_habia_escrito(
     """Se repinta con lo que la persona escribio y no con lo que hay guardado.
 
     Si el formulario vuelve pintado desde user.*, corregir el teléfono cuesta
-    reescribir los otros siete campos, incluido el WhatsApp que estaba bien.
+    reescribir los otros cuatro campos, incluido el WhatsApp que estaba bien.
     Es el mismo patron que ya usa el panel de horarios, que devuelve los
     pendientes y no las filas guardadas.
     """
     usuario = crear_usuario(username="tomy")
     login(usuario.id)
 
-    respuesta = client.post("/perfil/edit", data={
-        "biography": "Hago pan artesanal",
-        "location": "Maipú",
+    respuesta = client.post("/perfil/edit/contacto", data={
         "instagram_url": "https://instagram.com/tomy",
         "whatsapp": "2611234567",
         "phone": "llamame",
-        "address_street": "",
     })
 
     html = respuesta.get_data(as_text=True)
-    assert "Hago pan artesanal" in html
-    assert "Maipú" in html
     assert "https://instagram.com/tomy" in html
     assert "2611234567" in html
     # Y el que fallo tambien vuelve, para que se vea que hay que corregir.
@@ -752,7 +744,424 @@ def test_el_formulario_de_edicion_se_precarga_con_lo_guardado(
     db.session.commit()
     login(usuario.id)
 
+    assert "Maipú" in client.get("/perfil/edit").get_data(as_text=True)
+    assert "2611234567" in client.get("/perfil/edit/contacto").get_data(as_text=True)
+
+
+# ------------------------------------- "Lo que tenes en curso" (turnos y presupuestos)
+
+def _turno_de(db, crear_usuario, crear_post, cliente, cuando,
+              estado=EstadosTurno.ACTIVO):
+    """Un turno de `cliente` sobre el servicio de otro, en la fecha pedida."""
+    vendedor = crear_usuario(username=f"vendedor{cuando.toordinal()}{estado}")
+    post = crear_post(author_id=vendedor.id, title="Bicis Mendoza")
+    servicio = Service(
+        post_id=post.id,
+        titulo="Service de bici",
+        rubro="otros",
+        turnos_habilitados=True,
+        duracion_turno_minutos=60,
+    )
+    db.session.add(servicio)
+    db.session.commit()
+
+    turno = Turno(
+        service_id=servicio.id,
+        cliente_id=cliente.id,
+        fecha=cuando,
+        hora_inicio=time(10, 0),
+        hora_fin=time(11, 0),
+        estado=estado,
+    )
+    db.session.add(turno)
+    db.session.commit()
+    return turno
+
+
+def test_el_dueño_ve_sus_turnos_proximos_en_el_perfil(
+    client, db, crear_usuario, crear_post, login
+):
+    """El perfil de quien no vende dejaba de estar vacio: sus turnos y sus
+    presupuestos viven en dos pantallas aparte y no asomaban por ningun lado."""
+    cliente = crear_usuario(username="camila")
+    _turno_de(db, crear_usuario, crear_post, cliente, hoy_en_argentina() + timedelta(days=3))
+    login(cliente.id)
+
+    html = client.get(f"/perfil/{cliente.slug}").get_data(as_text=True)
+
+    assert "Lo que tenés en curso" in html
+    assert "Service de bici" in html
+
+
+def test_un_visitante_no_ve_los_turnos_del_perfil_ajeno(
+    client, db, crear_usuario, crear_post, login
+):
+    """Misma privacidad que las estadisticas: la vista ni los calcula cuando
+    mira otro, asi que no hay forma de que se filtren por el template."""
+    cliente = crear_usuario(username="camila")
+    _turno_de(db, crear_usuario, crear_post, cliente, hoy_en_argentina() + timedelta(days=3))
+    curioso = crear_usuario(username="curioso")
+    login(curioso.id)
+
+    html = client.get(f"/perfil/{cliente.slug}").get_data(as_text=True)
+
+    assert "Lo que tenés en curso" not in html
+    assert "Service de bici" not in html
+
+
+def test_un_turno_que_ya_paso_no_cuenta_como_en_curso(
+    client, db, crear_usuario, crear_post, login
+):
+    """El bloque contesta "que tengo por delante": un turno de la semana pasada
+    y uno cancelado no son nada que hacer."""
+    cliente = crear_usuario(username="camila")
+    _turno_de(db, crear_usuario, crear_post, cliente, hoy_en_argentina() - timedelta(days=2))
+    login(cliente.id)
+
+    html = client.get(f"/perfil/{cliente.slug}").get_data(as_text=True)
+
+    assert "Lo que tenés en curso" not in html
+
+
+def test_un_turno_cancelado_no_cuenta_como_en_curso(
+    client, db, crear_usuario, crear_post, login
+):
+    cliente = crear_usuario(username="camila")
+    _turno_de(
+        db, crear_usuario, crear_post, cliente,
+        hoy_en_argentina() + timedelta(days=3),
+        estado=EstadosTurno.CANCELADO,
+    )
+    login(cliente.id)
+
+    html = client.get(f"/perfil/{cliente.slug}").get_data(as_text=True)
+
+    assert "Lo que tenés en curso" not in html
+
+
+def test_el_perfil_sin_emprendimientos_invita_a_publicar_uno(
+    client, db, crear_usuario, login
+):
+    """El hueco dicho como propuesta. Solo para el dueño: al visitante no le
+    sirve de nada que le ofrezcan publicar en el perfil de otro."""
+    cliente = crear_usuario(username="camila")
+    login(cliente.id)
+
+    html = client.get(f"/perfil/{cliente.slug}").get_data(as_text=True)
+
+    assert "¿Vos también hacés algo?" in html
+
+    otro = crear_usuario(username="curioso")
+    login(otro.id)
+    ajeno = client.get(f"/perfil/{cliente.slug}").get_data(as_text=True)
+
+    assert "¿Vos también hacés algo?" not in ajeno
+
+
+# ------------------------------------- Reseñas en el perfil (pestaña nueva)
+
+def test_las_resenias_recibidas_se_ven_en_el_perfil(
+    client, db, crear_usuario, crear_post
+):
+    """Estaban solo en /perfil/<slug>/resenias: la prueba de que a este
+    emprendimiento ya le compraron quedaba a un click, justo cuando el
+    visitante esta decidiendo."""
+    autor = crear_usuario(username="valentina")
+    post = crear_post(author_id=autor.id, title="Panadería del barrio")
+    cliente = crear_usuario(username="camila")
+    db.session.add(Review(
+        post_id=post.id, user_id=cliente.id, rating=5, comment="Excelente pan"
+    ))
+    db.session.commit()
+
+    html = client.get(f"/perfil/{autor.slug}").get_data(as_text=True)
+
+    assert "Excelente pan" in html
+    assert "1 reseña" in html
+
+
+def test_el_perfil_sin_resenias_no_dibuja_la_pestania(
+    client, db, crear_usuario, crear_post
+):
+    """Un boton sin panel detras queda vivo en la barra y no hace nada: la
+    pestaña se dibuja con la misma condicion que su contenido."""
+    autor = crear_usuario(username="valentina")
+    crear_post(author_id=autor.id, title="Panadería del barrio")
+
+    html = client.get(f"/perfil/{autor.slug}").get_data(as_text=True)
+
+    assert 'data-perfil-tab="resenias"' not in html
+
+
+def test_el_perfil_muestra_las_ultimas_resenias_y_no_todas(
+    client, db, crear_usuario, crear_post
+):
+    """El perfil es un resumen: la lista completa (paginada) sigue en /resenias."""
+    autor = crear_usuario(username="valentina")
+    post = crear_post(author_id=autor.id, title="Panadería del barrio")
+    for i in range(reglas.MAX_RESENIAS_EN_EL_PERFIL + 2):
+        cliente = crear_usuario(username=f"cliente{i}")
+        db.session.add(Review(
+            post_id=post.id, user_id=cliente.id, rating=5, comment=f"Reseña {i}"
+        ))
+    db.session.commit()
+
+    html = client.get(f"/perfil/{autor.slug}").get_data(as_text=True)
+
+    assert html.count("review-card__comment") == reglas.MAX_RESENIAS_EN_EL_PERFIL
+    # El resumen es sobre TODAS, no sobre las que se dibujan.
+    assert "5 reseñas" in html
+
+
+# ------------------------------------- "Ver como visitante"
+
+def test_el_dueño_ve_la_barra_que_le_dice_que_es_su_perfil(
+    client, crear_usuario, login
+):
+    """La app no decia en ningun lado que estabas parado en tu propio perfil."""
+    autor = crear_usuario(username="valentina")
+    login(autor.id)
+
+    html = client.get(f"/perfil/{autor.slug}").get_data(as_text=True)
+
+    assert "Este es tu perfil" in html
+    assert "Ver como visitante" in html
+
+
+def test_un_visitante_no_ve_la_barra_del_dueño(client, crear_usuario, login):
+    autor = crear_usuario(username="valentina")
+    curioso = crear_usuario(username="curioso")
+    login(curioso.id)
+
+    html = client.get(f"/perfil/{autor.slug}").get_data(as_text=True)
+
+    assert "Este es tu perfil" not in html
+    assert "Ver como visitante" not in html
+
+
+def test_ver_como_visitante_apaga_de_verdad_lo_privado(
+    client, db, crear_usuario, crear_post, login
+):
+    """No es un dibujo: con ?ver=visitante la vista ni consulta las
+    estadisticas ni los turnos, asi que no hay nada privado que filtrar."""
+    autor = crear_usuario(username="valentina")
+    crear_post(author_id=autor.id, title="Panadería del barrio")
+    _turno_de(db, crear_usuario, crear_post, autor,
+              hoy_en_argentina() + timedelta(days=3))
+    login(autor.id)
+
+    propia = client.get(f"/perfil/{autor.slug}").get_data(as_text=True)
+    assert "Tus números" in propia
+    assert "Lo que tenés en curso" in propia
+
+    previa = client.get(
+        f"/perfil/{autor.slug}?ver=visitante"
+    ).get_data(as_text=True)
+
+    assert "Tus números" not in previa
+    assert "Lo que tenés en curso" not in previa
+    # Pero sigue sabiendo que es suyo, o no tendria como volver.
+    assert "Así te ve cualquiera que entre" in previa
+    assert "Volver a mi vista" in previa
+
+
+def test_ver_como_visitante_en_un_perfil_ajeno_no_cambia_nada(
+    client, crear_usuario, login
+):
+    """El parametro es del dueño: pegarlo en el perfil de otro no puede
+    encender ninguna barra ni ningun aviso."""
+    autor = crear_usuario(username="valentina")
+    curioso = crear_usuario(username="curioso")
+    login(curioso.id)
+
+    html = client.get(
+        f"/perfil/{autor.slug}?ver=visitante"
+    ).get_data(as_text=True)
+
+    assert "Así te ve cualquiera que entre" not in html
+    assert "Volver a mi vista" not in html
+
+
+# ------------------------------------- El perfil de un cliente es otra pantalla
+
+def test_el_perfil_de_un_cliente_no_lleva_portada_ni_horarios(
+    client, crear_usuario, login
+):
+    """Compartir template con el emprendedor le dejaba una portada de negocio y
+    una grilla de horarios que no va a tener nunca: leia como pantalla rota."""
+    cliente = crear_usuario(username="camila", rol="usuario")
+    login(cliente.id)
+
+    html = client.get(f"/perfil/{cliente.slug}").get_data(as_text=True)
+
+    assert "perfil-hero--cliente" in html
+    assert "perfil-hero__portada" not in html
+    assert "Horarios de atención" not in html
+
+
+def test_un_usuario_con_emprendimientos_conserva_la_forma_de_negocio(
+    client, crear_usuario, crear_post, login
+):
+    """Si un "usuario" publicó algo, el que está mal es el rol: quedarse con la
+    forma de negocio es lo que no rompe la pantalla."""
+    dueño = crear_usuario(username="camila", rol="usuario")
+    crear_post(author_id=dueño.id, title="Tejidos de Camila")
+    login(dueño.id)
+
+    html = client.get(f"/perfil/{dueño.slug}").get_data(as_text=True)
+
+    assert "perfil-hero--cliente" not in html
+    assert "perfil-hero__portada" in html
+
+
+# ------------------------------------- Ajustes: las tres pantallas y su previa
+
+def test_las_tres_solapas_de_ajustes_existen_y_se_enlazan(client, crear_usuario, login):
+    """Perfil público, contacto y horarios son la misma sección: desde
+    cualquiera de las tres se llega a las otras dos."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    for url in ("/perfil/edit", "/perfil/edit/contacto", "/perfil/horarios"):
+        html = client.get(url).get_data(as_text=True)
+        assert 'href="/perfil/edit"' in html
+        assert 'href="/perfil/edit/contacto"' in html
+        assert 'href="/perfil/horarios"' in html
+
+
+def test_la_pantalla_de_perfil_publico_no_edita_el_contacto(
+    client, crear_usuario, login
+):
+    """Los cinco campos se mudaron: dejarlos también acá sería tener dos
+    formularios que guardan lo mismo y uno se iba a quedar atrás."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
     html = client.get("/perfil/edit").get_data(as_text=True)
 
-    assert "Maipú" in html
-    assert "2611234567" in html
+    assert 'name="biography"' in html
+    assert 'name="phone"' not in html
+    assert 'name="instagram_url"' not in html
+
+
+def test_ajustes_muestra_la_vista_previa_con_lo_guardado(
+    client, db, crear_usuario, login
+):
+    """Editar el perfil era escribir a ciegas: no se veía en ningún lado qué
+    estaba cambiando."""
+    usuario = crear_usuario(username="tomy")
+    usuario.biography = "Tostamos café en Godoy Cruz"
+    usuario.location = "Godoy Cruz, Mendoza"
+    db.session.commit()
+    login(usuario.id)
+
+    html = client.get("/perfil/edit").get_data(as_text=True)
+
+    assert "Así te ven" in html
+    assert "Tostamos café en Godoy Cruz" in html
+    assert "Godoy Cruz, Mendoza" in html
+
+
+def test_la_previa_vuelve_con_lo_que_se_escribio_si_algo_falla(
+    client, crear_usuario, login
+):
+    """Se pinta desde `campos` y no desde el usuario: si se pintara de la base,
+    al volver por un error mostraría lo viejo y no lo que hay en pantalla."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    html = client.post("/perfil/edit/contacto", data={
+        "phone": "llamame", "whatsapp": "2611234567",
+    }).get_data(as_text=True)
+
+    assert "Así te ven" in html
+    assert "WhatsApp" in html
+
+
+def test_el_error_del_telefono_se_dibuja_en_el_campo(client, crear_usuario, login):
+    """Antes volvía como un aviso suelto arriba de todo y había que adivinar
+    cuál de los diez campos lo había producido."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    html = client.post(
+        "/perfil/edit/contacto", data={"phone": "llamame"}
+    ).get_data(as_text=True)
+
+    assert 'aria-describedby="error-phone"' in html
+    assert "ajustes-estado--error" in html
+
+
+def test_se_puede_quitar_la_foto_y_la_portada(client, db, crear_usuario, login):
+    """Se podía cambiar la foto pero no volver a no tener ninguna."""
+    usuario = crear_usuario(username="tomy")
+    usuario.avatar = "foto.png"
+    usuario.cover_image = "portada.png"
+    db.session.commit()
+    login(usuario.id)
+
+    client.post("/perfil/edit", data={
+        "biography": "Hago pan artesanal", "address_street": "",
+        "quitar_avatar": "on", "quitar_cover": "on",
+    })
+
+    db.session.refresh(usuario)
+    assert usuario.avatar is None
+    assert usuario.cover_image is None
+
+
+def test_subir_una_foto_le_gana_a_quitarla(client, db, crear_usuario, login):
+    """Si mandó las dos cosas, lo que quiso es la foto nueva."""
+    usuario = crear_usuario(username="tomy")
+    usuario.avatar = "vieja.png"
+    db.session.commit()
+    login(usuario.id)
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (10, 10), "blue").save(buffer, format="PNG")
+    buffer.seek(0)
+    nueva = FileStorage(stream=buffer, filename="nueva.png", content_type="image/png")
+
+    client.post(
+        "/perfil/edit",
+        data={"biography": "Bio", "avatar": nueva, "quitar_avatar": "on"},
+        content_type="multipart/form-data",
+    )
+
+    db.session.refresh(usuario)
+    assert usuario.avatar is not None
+    assert usuario.avatar != "vieja.png"
+
+
+def test_ajustes_dice_si_la_direccion_se_encontro_en_el_mapa(
+    client, db, crear_usuario, login
+):
+    """La geocodificación pasaba en silencio: el aviso aparecía una vez al
+    guardar y después no quedaba rastro de si la dirección había entrado."""
+    usuario = crear_usuario(username="tomy")
+    usuario.address_street = "Güemes 1480, Godoy Cruz"
+    db.session.commit()
+    login(usuario.id)
+
+    sin_mapa = client.get("/perfil/edit").get_data(as_text=True)
+    assert "No la encontramos en el mapa" in sin_mapa
+
+    usuario.latitude, usuario.longitude = -32.9256, -68.8506
+    db.session.commit()
+
+    con_mapa = client.get("/perfil/edit").get_data(as_text=True)
+    assert "Encontrada en el mapa" in con_mapa
+
+
+def test_horarios_muestra_el_cartel_que_va_a_encender(
+    client, db, crear_usuario, login
+):
+    """Se cargaban a ciegas: qué cartel encienden recién se veía entrando al
+    perfil."""
+    usuario = crear_usuario(username="tomy")
+    login(usuario.id)
+
+    html = client.get("/perfil/horarios").get_data(as_text=True)
+
+    assert "Así te ven" in html
+    assert "Todavía no cargaste horarios" in html

@@ -1,0 +1,309 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input, textarea { font-family: inherit; }
+    input, textarea { outline: none; }
+    .u-campo { transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
+    .u-campo:focus-within { border-color: #3E2F94; background: #FFFFFF; box-shadow: 0 0 0 3px #ECEAF7; }
+    .u-btn-primario:hover { background: #483BA1; }
+    .u-btn-borde:hover { background: #ECEAF7; border-color: #ECEAF7; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #4A5666">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #3E2F94; font-weight: 600">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 5px; border: 1px solid #ECEAF7; border-radius: 999px; background: #ECEAF7; cursor: pointer">
+        <span style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">LM</span>
+        <span style="font-size: 13.5px; font-weight: 600; color: #33267C">Lucía</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 20px 24px 60px; display: flex; flex-direction: column; gap: 18px">
+
+    <p style="margin: 0; font-size: 13.5px">
+      <a href="#" style="color: #5F6B7C">‹ Volver a Plomería Sánchez</a>
+    </p>
+
+    <!-- YA HAY UNA PENDIENTE: la vista redirige a la solicitud que ya existe.
+         Acá se dibuja lo que hoy es un flash suelto arriba de la otra página. -->
+    <div style="{{ pendienteEstilo }}">
+      <span style="width: 44px; height: 44px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FBEDE4; color: #8C4A22">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+      </span>
+      <div style="min-width: 0">
+        <h2 style="font-size: 16px">Ya le pediste presupuesto por este servicio</h2>
+        <p style="margin: 5px 0 0; font-size: 13.6px; line-height: 1.6; color: #4A5666">
+          Lo mandaste el 2 de septiembre y todavía no lo contestó. Podés agregar
+          datos en la misma conversación en vez de mandar otro pedido igual.
+        </p>
+      </div>
+      <a href="#" class="u-btn-primario" style="flex-shrink: 0; display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 13.8px; font-weight: 600">Ver mi pedido</a>
+    </div>
+
+    <div style="{{ formularioEstilo }}">
+
+      <!-- ===================== EL PEDIDO ===================== -->
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+        <div>
+          <h1 style="font-size: 25px; letter-spacing: -.015em">Pedir presupuesto</h1>
+          <p style="margin: 6px 0 0; font-size: 14.2px; line-height: 1.6; color: #5F6B7C">
+            No es una compra: es un pedido de precio. Cuando te conteste vas a poder
+            aceptarlo o dejarlo pasar, sin compromiso.
+          </p>
+        </div>
+
+        <section style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <div>
+            <h2 style="font-size: 16px">¿Qué necesitás?</h2>
+            <p style="margin: 5px 0 0; font-size: 13px; color: #5F6B7C">
+              Lo único obligatorio. Cuanto más concreto, menos idas y vueltas.
+            </p>
+          </div>
+
+          <div class="u-campo" style="{{ campoEstilo }}">
+            <textarea rows="6" value="{{ descripcion }}" onInput="{{ escribirDescripcion }}" placeholder="Se tapó la pileta de la cocina hace dos días. Ya probé con sopapa y no destapa." style="width: 100%; border: 0; padding: 0; background: none; resize: none; font-size: 14.2px; line-height: 1.6; color: #1B2430"></textarea>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+            <span style="font-size: 12.6px; color: #5F6B7C">Ayuda contar:</span>
+            <sc-for list="{{ pistas }}" as="p" hint-placeholder-count="3">
+              <span style="{{ p.estilo }}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                {{ p.etiqueta }}
+              </span>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+            <h2 style="font-size: 16px">¿Dónde?</h2>
+            <span style="font-size: 12.5px; color: #5F6B7C">Opcional</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: #F5F7FA">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10.5c0 5.5-8 11-8 11s-8-5.5-8-11a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10.3" r="2.7"/></svg>
+            <span style="font-size: 13.4px; color: #4A5666">Atiende <strong style="font-weight: 600; color: #1B2430">Maipú y alrededores</strong>. Si es ahí, no hace falta que escribas nada.</span>
+          </div>
+
+          <div class="u-campo" style="display: flex; align-items: center; height: 44px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 10px; background: #F5F7FA">
+            <input type="text" maxlength="120" value="{{ zona }}" onInput="{{ escribirZona }}" placeholder="Otra zona: barrio, distrito o calle aproximada" style="flex: 1; min-width: 0; border: 0; background: none; font-size: 14px; color: #1B2430">
+          </div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+            <h2 style="font-size: 16px">Una foto del problema</h2>
+            <span style="font-size: 12.5px; color: #5F6B7C">Opcional</span>
+          </div>
+
+          <!-- SIN FOTO -->
+          <button type="button" onClick="{{ adjuntar }}" style="{{ zonaSueltaEstilo }}">
+            <span style="width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #3E2F94">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+            </span>
+            <span style="font-size: 14px; font-weight: 600; color: #1B2430">Arrastrá una foto o elegila de tu teléfono</span>
+            <span style="font-size: 12.6px; color: #5F6B7C">JPG, PNG o GIF, hasta 15 MB. Una sola.</span>
+          </button>
+
+          <!-- CON FOTO -->
+          <div style="{{ fotoEstilo }}">
+            <div style="width: 128px; height: 96px; flex-shrink: 0; border-radius: 10px; background: linear-gradient(150deg, #C9CFDB 0%, #EEF1F7 100%); display: flex; align-items: center; justify-content: center; color: #5F6B7C">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+            </div>
+            <div style="flex: 1; min-width: 0">
+              <p style="margin: 0; font-size: 14px; font-weight: 600">pileta-cocina.jpg</p>
+              <p style="margin: 4px 0 0; font-size: 12.6px; color: #5F6B7C">1,8 MB · se la ve solo el prestador</p>
+              <button type="button" onClick="{{ quitarFoto }}" style="margin-top: 10px; height: 32px; padding: 0 13px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 12.8px; font-weight: 600; cursor: pointer">Quitar</button>
+            </div>
+          </div>
+
+          <p style="margin: 0; display: flex; gap: 9px; font-size: 12.4px; line-height: 1.5; color: #5F6B7C">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></svg>
+            No se publica en ningún listado. Igual tené en cuenta que el enlace a la
+            imagen lo puede abrir cualquiera que lo tenga.
+          </p>
+        </section>
+
+        <!-- BARRA DE ENVIO. Pegada abajo, como la de Ajustes. -->
+        <div style="position: sticky; bottom: 0; display: flex; align-items: center; gap: 14px; padding: 14px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; box-shadow: 0 -4px 12px rgba(15,23,42,.04)">
+          <div style="flex: 1; min-width: 0">
+            <p style="{{ estadoEstilo }}">{{ estadoTexto }}</p>
+            <p style="margin: 3px 0 0; font-size: 12.4px; color: #5F6B7C">{{ estadoDetalle }}</p>
+          </div>
+          <a href="#" style="font-size: 13.4px; color: #5F6B7C">Cancelar</a>
+          <button type="button" class="{{ claseEnviar }}" style="{{ enviarEstilo }}">Enviar pedido</button>
+        </div>
+
+      </div>
+
+      <!-- ===================== EL SERVICIO ===================== -->
+      <aside style="display: flex; flex-direction: column; gap: 16px; position: sticky; top: 24px">
+
+        <section style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; overflow: hidden">
+          <div style="display: flex; align-items: center; gap: 14px; padding: 20px 20px 16px">
+            <span style="width: 56px; height: 56px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: #ECEAF7; color: #3E2F94">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4.5 16.5V20H8l4.8-4.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.5-2.5 2.6-2.6Z"/></svg>
+            </span>
+            <div style="min-width: 0">
+              <h2 style="font-size: 17px; line-height: 1.3; letter-spacing: -.015em">Destapación de cañerías</h2>
+              <p style="margin: 4px 0 0; font-size: 13px; color: #5F6B7C">Plomería · Maipú y alrededores</p>
+            </div>
+          </div>
+
+          <div style="padding: 0 20px 18px; display: flex; flex-wrap: wrap; gap: 7px">
+            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 12.4px; font-weight: 600">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+              Verificado
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 12.4px; font-weight: 600">Abierto ahora</span>
+          </div>
+
+          <div style="padding: 16px 20px; border-top: 1px solid #E2E6EE; background: #F5F7FA">
+            <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600">A presupuestar</p>
+            <p style="margin: 4px 0 0; font-size: 12.6px; line-height: 1.5; color: #5F6B7C">
+              Este servicio no tiene precio publicado: lo cotiza contra tu caso.
+            </p>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 11px; padding: 16px 20px; border-top: 1px solid #E2E6EE">
+            <span style="width: 38px; height: 38px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-family: 'Poppins', sans-serif; font-weight: 700">P</span>
+            <div style="flex: 1; min-width: 0">
+              <p style="margin: 0; font-size: 13.8px; font-weight: 600">Plomería Sánchez</p>
+              <p style="margin: 3px 0 0; font-size: 12.4px; color: #5F6B7C">★ 4,8 · 32 reseñas</p>
+            </div>
+            <a href="#" style="font-size: 12.8px; font-weight: 600">Ver</a>
+          </div>
+        </section>
+
+        <section style="padding: 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <h2 style="font-size: 15px">Qué pasa después</h2>
+          <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 14px">
+            <sc-for list="{{ pasos }}" as="p" hint-placeholder-count="3">
+              <div style="display: flex; gap: 12px">
+                <span style="width: 24px; height: 24px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12px; font-weight: 700">{{ p.numero }}</span>
+                <p style="margin: 0; font-size: 13.2px; line-height: 1.55; color: #4A5666">{{ p.texto }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <!-- TURNOS: solo si el servicio los toma (Service.turnos_habilitados). -->
+        <section style="display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px; border: 1px solid #ECEAF7; border-radius: 16px; background: #ECEAF7">
+          <span style="flex-shrink: 0; color: #3E2F94; margin-top: 1px">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+          </span>
+          <div style="min-width: 0">
+            <p style="margin: 0; font-size: 13.6px; font-weight: 600; color: #33267C">¿Sabés qué necesitás?</p>
+            <p style="margin: 5px 0 0; font-size: 12.8px; line-height: 1.55; color: #4A5666">
+              Este servicio toma turnos: podés reservar una hora directamente, sin
+              esperar el presupuesto. <a href="#" style="font-weight: 600">Ver horarios libres</a>
+            </p>
+          </div>
+        </section>
+
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"estado":{"editor":"enum","options":["pedido nuevo","ya hay uno pendiente"],"default":"pedido nuevo","section":"Contenido"},"$preview":{"width":1440,"height":1320}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { descripcion: "", zona: "", foto: false };
+  }
+
+  renderVals() {
+    const pendiente = (this.props.estado ?? "pedido nuevo") === "ya hay uno pendiente";
+    const st = this.state;
+    const texto = st.descripcion.trim();
+    const listo = texto.length > 0;
+
+    // Las tres pistas se encienden solas a medida que el texto las cumple: es
+    // una guía mientras se escribe, no una validación (el servidor solo pide
+    // que la descripción no esté vacía).
+    const cumple = [
+      { etiqueta: "qué pasa", ok: texto.length >= 20 },
+      { etiqueta: "desde cuándo", ok: /(hace|ayer|hoy|semana|mes|día|dias|días)/i.test(texto) },
+      { etiqueta: "si ya probaste algo", ok: texto.length >= 80 },
+    ];
+
+    return {
+      pendienteEstilo: pendiente
+        ? "display: flex; align-items: center; gap: 16px; padding: 18px 20px; border: 1px solid #F3D9C7; border-radius: 16px; background: #FBEDE4"
+        : "display: none",
+      formularioEstilo: pendiente
+        ? "display: none"
+        : "display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 24px; align-items: start",
+
+      descripcion: st.descripcion,
+      zona: st.zona,
+      escribirDescripcion: (e) => this.setState({ descripcion: e.target.value }),
+      escribirZona: (e) => this.setState({ zona: e.target.value }),
+      adjuntar: () => this.setState({ foto: true }),
+      quitarFoto: () => this.setState({ foto: false }),
+
+      campoEstilo: "padding: 14px 16px; border: 1px solid #E2E6EE; border-radius: 12px; background: #F5F7FA",
+
+      pistas: cumple.map((p) => ({
+        etiqueta: p.etiqueta,
+        estilo: p.ok
+          ? "display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 12.4px; font-weight: 600"
+          : "display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: #EEF1F7; color: #5F6B7C; font-size: 12.4px",
+      })),
+
+      zonaSueltaEstilo: st.foto
+        ? "display: none"
+        : "display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 26px 20px; border: 1px dashed #C9CFDB; border-radius: 12px; background: #F5F7FA; cursor: pointer; text-align: center",
+      fotoEstilo: st.foto
+        ? "display: flex; align-items: flex-start; gap: 14px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 12px; background: #F5F7FA"
+        : "display: none",
+
+      estadoTexto: listo ? "Listo para enviar" : "Falta contar qué necesitás",
+      estadoEstilo: "margin: 0; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: " + (listo ? "#1B2430" : "#8C4A22"),
+      estadoDetalle: listo
+        ? "Le llega un correo y lo va a ver en sus Presupuestos."
+        : "Es el único campo obligatorio del pedido.",
+      claseEnviar: listo ? "u-btn-primario" : "",
+      enviarEstilo: listo
+        ? "height: 42px; padding: 0 22px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(15,23,42,.08)"
+        : "height: 42px; padding: 0 22px; border: 0; border-radius: 999px; background: #C9CFDB; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: not-allowed",
+
+      pasos: [
+        { numero: 1, texto: "Le llega tu pedido por correo y le aparece en sus Presupuestos como pendiente." },
+        { numero: 2, texto: "Te contesta con un precio, o con una pregunta si le falta algún dato." },
+        { numero: 3, texto: "La conversación queda en Presupuestos, con la foto y todo lo que se dijeron." },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

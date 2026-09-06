@@ -7,6 +7,12 @@
          Banda propia arriba de todo, como quedo en el rediseño: el buscador
          deja de ser una pastilla flotando entre el hero y las tarjetas.
 
+         La caja es la misma forma que la del listado (.barra-filtros): un solo
+         recuadro con los tres campos separados por lineas, no tres inputs
+         sueltos. Se repite a proposito -- es el mismo gesto en las dos
+         pantallas -- pero con clases propias, porque esta no es pegajosa,
+         lleva la lupa adentro del primer campo y el boton es grande.
+
          Tiene DOS comportamientos y no es un descuido:
            - Sin "Dónde": los campos de texto y rubro filtran la grilla de abajo
              en vivo, contra /api/posts/, sin recargar (es lo que ya hacia).
@@ -17,52 +23,80 @@
          La regla la aplica main.js y esta escrita ahi tambien. -->
     <section class="buscador">
         <div class="container">
-            <h1 class="buscador__titulo">Todo lo que se hace cerca tuyo</h1>
-            <p class="buscador__conteo">
-                {{ total_posts }} emprendimiento{{ '' if total_posts == 1 else 's' }} publicado{{ '' if total_posts == 1 else 's' }}
-            </p>
+            {# El titular y el conteo salieron en el rediseño: la banda es el
+               filtro y nada mas. Como esto dejaba la pagina sin <h1>, el
+               encabezado accesible sigue existiendo pero no se ve. #}
+            <h1 class="sr-only">Emprendimientos cerca tuyo</h1>
 
             <form id="search-form" class="buscador__form">
                 <div class="buscador__campo buscador__campo--ancho">
-                    <label class="buscador__label" for="search-text">Qué buscás</label>
-                    <input
-                        id="search-text"
-                        type="text"
-                        class="buscador__input"
-                        placeholder="Pan de masa madre"
-                    />
+                    <svg class="buscador__lupa" width="19" height="19" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="1.8"
+                         stroke-linecap="round" aria-hidden="true" focusable="false">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="m20 20-3.6-3.6"/>
+                    </svg>
+                    <span class="buscador__campo-texto">
+                        <label class="buscador__label" for="search-text">Qué buscás</label>
+                        <input
+                            id="search-text"
+                            type="text"
+                            class="buscador__input"
+                            placeholder="Pan de masa madre"
+                        />
+                    </span>
                 </div>
 
                 <div class="buscador__campo">
-                    <label class="buscador__label" for="search-category">Rubro</label>
-                    <select id="search-category" class="buscador__select">
-                        <option value="">Todos</option>
-                        {% for clave, etiqueta in categorias.items() %}
-                            <option value="{{ clave }}">{{ etiqueta }}</option>
-                        {% endfor %}
-                    </select>
+                    <span class="buscador__campo-texto">
+                        <label class="buscador__label" for="search-category">Rubro</label>
+                        <select id="search-category" class="buscador__select">
+                            <option value="">Todos</option>
+                            {% for clave, etiqueta in categorias.items() %}
+                                <option value="{{ clave }}">{{ etiqueta }}</option>
+                            {% endfor %}
+                        </select>
+                    </span>
                 </div>
 
-                <div class="buscador__campo">
-                    <label class="buscador__label" for="search-near">Dónde</label>
-                    <input
-                        id="search-near"
-                        type="text"
-                        class="buscador__input"
-                        placeholder="Tu barrio o dirección"
-                        autocomplete="street-address"
-                    />
+                <div class="buscador__campo buscador__campo--donde">
+                    <span class="buscador__campo-texto">
+                        <label class="buscador__label" for="search-near">Dónde</label>
+                        <input
+                            id="search-near"
+                            type="text"
+                            class="buscador__input"
+                            placeholder="Tu barrio o dirección"
+                            autocomplete="street-address"
+                        />
+                    </span>
                     {#  Los dos campos que llena "Cerca de mí" con lo que da el
                         navegador. Van vacios si el usuario escribe la direccion
                         a mano: /blog/ geocodifica el texto en ese caso. #}
                     <input type="hidden" id="search-lat">
                     <input type="hidden" id="search-lon">
+                    {#  El texto va en su propio <span> porque main.js lo cambia
+                        por "Ubicando..." mientras el navegador pide permiso: si
+                        escribiera sobre el boton entero se llevaria puesto el
+                        pin y no volveria nunca. #}
                     <button type="button" id="use-my-location-home" class="buscador__cerca">
-                        Cerca de mí
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                             stroke-linejoin="round" aria-hidden="true" focusable="false">
+                            <path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/>
+                            <circle cx="12" cy="10" r="2.4"/>
+                        </svg>
+                        <span class="buscador__cerca-texto">Cerca de mí</span>
                     </button>
                 </div>
 
                 <button type="submit" class="btn btn--primary buscador__boton">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                         aria-hidden="true" focusable="false">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="m20 20-3.6-3.6"/>
+                    </svg>
                     Buscar
                 </button>
             </form>
@@ -77,13 +111,23 @@
     <section class="section rubros">
         <div class="container">
             <div class="section__header">
-                <h2 class="section__title">Explorá por rubro</h2>
-                <a href="{{ url_for('blog.index') }}" class="section__link">Ver los 7 rubros</a>
+                <div>
+                    <span class="section__rotulo">Rubros</span>
+                    <h2 class="section__title">Explorá por lo que hacen</h2>
+                    <p class="section__subtitle">
+                        Los siete rubros de la plataforma, con lo que hay publicado hoy en cada uno.
+                    </p>
+                </div>
+                <a href="{{ url_for('blog.index') }}" class="section__link">
+                    Ver los 7 rubros
+                    {% include "partials/_flecha.html" %}
+                </a>
             </div>
 
-            {#  El cuadradito de color es de cada rubro y sale de una clase por
-                clave (--alimentos, --servicios, ...), no de un style inline: son
-                siete tonos fijos del rediseño y viven con el resto de la paleta.
+            {#  El icono y su fondo son de cada rubro y salen de una clase por
+                clave (--alimentos, --servicios, ...), no de un style inline:
+                son siete pares fijos del rediseño (fondo + tinta) y viven con
+                el resto de la paleta.
 
                 El "N activos" es real: conteo_por_categoria() en una sola
                 consulta agrupada. Un rubro sin ninguno no vuelve en el dict, y
@@ -94,14 +138,39 @@
                     {% set total = conteo_por_rubro.get(clave, 0) %}
                     <li>
                         <a href="{{ url_for('blog.index', category=clave) }}" class="rubro">
-                            <span class="rubro__tono rubro__tono--{{ clave }}" aria-hidden="true"></span>
-                            <span class="rubro__nombre">{{ etiqueta }}</span>
-                            <span class="rubro__total">
-                                {{ total }} activo{{ '' if total == 1 else 's' }}
+                            <span class="rubro__tono rubro__tono--{{ clave }}" aria-hidden="true">
+                                {% include "partials/_icono_rubro.html" %}
+                            </span>
+                            <span class="rubro__texto">
+                                <span class="rubro__nombre">{{ etiqueta }}</span>
+                                <span class="rubro__total">
+                                    {{ total }} activo{{ '' if total == 1 else 's' }}
+                                </span>
                             </span>
                         </a>
                     </li>
                 {% endfor %}
+
+                {#  La octava ficha del rediseño: cierra la grilla de 4x2 y es
+                    la salida al listado sin filtro. El numero es el de toda la
+                    plataforma (Post.query.count()), no el de esta pagina. #}
+                <li>
+                    <a href="{{ url_for('blog.index') }}" class="rubro rubro--todos">
+                        <span class="rubro__tono" aria-hidden="true">
+                            <svg class="rubro__icono" width="21" height="21" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="1.7"
+                                 stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                                <path d="M4.5 6.2h15M4.5 12h15M4.5 17.8h15"/>
+                            </svg>
+                        </span>
+                        <span class="rubro__texto">
+                            <span class="rubro__nombre">Ver todo</span>
+                            <span class="rubro__total">
+                                {{ total_posts }} publicado{{ '' if total_posts == 1 else 's' }}
+                            </span>
+                        </span>
+                    </a>
+                </li>
             </ul>
         </div>
     </section>
@@ -118,22 +187,26 @@
                     (query_posts_con_rating) pero ninguna consulta corta por
                     ventana de tiempo. Se dice lo que se muestra. #}
                 <div>
+                    <span class="section__rotulo">Recién publicados</span>
                     <h2 class="section__title">Últimos emprendimientos</h2>
                     <p class="section__subtitle">
-                        Los que se publicaron más recientemente en la plataforma.
+                        Los que se sumaron más recientemente a la plataforma.
                     </p>
                 </div>
                 {# Antes apuntaba a #emprendimientos, que es esta misma seccion:
                    el link no llevaba a ninguna parte. Ahora va al listado
                    completo, que es lo que promete. #}
-                <a href="{{ url_for('blog.index') }}" class="section__link">Ver todos</a>
+                <a href="{{ url_for('blog.index') }}" class="section__link">
+                    Ver todos
+                    {% include "partials/_flecha.html" %}
+                </a>
             </div>
 
             <!-- GRID donde se insertan las cards con JS.
-                 Las tarjetas son las mismas .ficha del listado, pero en su
-                 variante vertical: en /blog/ van a dos columnas anchas y la
-                 foto entra al costado; aca van a tres y la foto va arriba,
-                 como en el artboard "Inicio". -->
+                 Las tarjetas son las mismas .tarjeta del listado, pero en su
+                 variante vertical: en /blog/ la foto va al costado porque la
+                 lista es de una sola columna ancha; aca entran tres por fila y
+                 la foto es la cabecera, como en el artboard "Inicio". -->
             <div id="posts-grid" class="cards-grid cards-grid--fichas">
                 <!-- JS inyecta acá las tarjetas -->
             </div>
@@ -158,12 +231,16 @@
         <div class="container">
             <div class="section__header">
                 <div>
+                    <span class="section__rotulo">Agenda</span>
                     <h2 class="section__title">Ferias y eventos</h2>
                     <p class="section__subtitle">
                         Lo que publican los emprendimientos, mes a mes. Elegí un día marcado para filtrar la lista.
                     </p>
                 </div>
-                <a href="{{ url_for('eventos.index') }}" class="section__link">Ver la cartelera</a>
+                <a href="{{ url_for('eventos.index') }}" class="section__link">
+                    Ver la cartelera
+                    {% include "partials/_flecha.html" %}
+                </a>
             </div>
 
             <!-- Dos columnas, como quedo en el rediseño: la lista de eventos ya
@@ -200,7 +277,7 @@
          rediseño: antes los dos botones del hero competian con el buscador
          apenas entrabas. -->
     <section class="cta">
-        <div class="container cta__caja">
+        <div class="container cta__caja cta__caja--panel">
             <div class="cta__texto">
                 <h2 class="cta__titulo">¿Tenés un emprendimiento? Publicalo gratis</h2>
                 <p class="cta__bajada">
@@ -231,4 +308,3 @@
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/calendario.js') }}"></script>
 {% endblock %}
-

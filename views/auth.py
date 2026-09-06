@@ -1,7 +1,6 @@
 from flask import (
     render_template, Blueprint, flash, request, session, url_for, redirect, g, jsonify, abort
 )
-from app.blog.modelo_post import Post
 from models.user import Roles, User
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.exc import IntegrityError
@@ -18,6 +17,29 @@ from flask_jwt_extended import (
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
 
+# Los unicos roles que alguien puede pedir para si mismo al registrarse.
+#
+# Roles.ADMIN NO esta, y esa es la razon de que exista esta constante: el
+# formulario tenia un <select> con "Administrador" adentro y la vista guardaba
+# lo que viniera, asi que cualquiera se registraba como admin (y por la API,
+# mandando {"rol": "admin"}, sin siquiera pasar por el formulario). Sacarlo del
+# HTML no alcanza: el que decide es el servidor.
+#
+# Administrador es un permiso que se otorga, no una opcion que se elige. Hoy se
+# asigna a mano en la base; cuando exista el panel para darlo, va por ahi.
+ROLES_AL_REGISTRARSE = (Roles.USUARIO, Roles.EMPRENDEDOR)
+
+
+def _rol_pedido(valor):
+    """El rol que se guarda, a partir de lo que mando el cliente.
+
+    Cualquier cosa que no sea uno de los dos permitidos cae en USUARIO, que es
+    el que menos puede: ante un valor raro se elige el menor privilegio, no el
+    mayor, y tampoco se corta con un error porque el rol es opcional.
+    """
+    normalizado = (valor or "").strip().lower()
+    return normalizado if normalizado in ROLES_AL_REGISTRARSE else Roles.USUARIO
+
 # ============
 #  VISTAS HTML (sesiones tradicionales)
 # ============
@@ -27,7 +49,7 @@ def register():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        rol = request.form.get("rol", "usuario").strip() or "usuario"
+        rol = _rol_pedido(request.form.get("rol"))
         # Se normaliza a minusculas para que Tomy@x.com y tomy@x.com sean el
         # mismo usuario, tanto al registrar como al consultar unicidad.
         email = request.form.get("email", "").strip().lower()
@@ -70,10 +92,7 @@ def register():
 
         flash(error)
 
-    # El panel lateral del rediseño (auth/_panel.html) dice cuantos
-    # emprendimientos hay: es el numero real y no uno escrito a mano, asi que
-    # se lo pasan las dos vistas que muestran ese panel.
-    return render_template('auth/register.html', total_posts=Post.query.count())
+    return render_template('auth/register.html')
 
 
 @auth.route("/login", methods=("GET", "POST"))
@@ -99,10 +118,7 @@ def login():
 
         flash(error)
 
-    # El panel lateral del rediseño (auth/_panel.html) dice cuantos
-    # emprendimientos hay: es el numero real y no uno escrito a mano, asi que
-    # se lo pasan las dos vistas que muestran ese panel.
-    return render_template('auth/login.html', total_posts=Post.query.count())
+    return render_template('auth/login.html')
 
 
 @auth.before_app_request
@@ -158,7 +174,7 @@ def api_register():
     username = (data.get("username") or "").strip()
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
-    rol = (data.get("rol") or "usuario").strip() or "usuario"
+    rol = _rol_pedido(data.get("rol"))
 
     errors = []
     username_error = validate_username(username)

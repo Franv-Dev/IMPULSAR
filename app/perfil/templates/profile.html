@@ -2,12 +2,11 @@
 {% block title %}Perfil de {{ user.username }}{% endblock %}
 
 {% block content %}
-{# Un solo chequeo de dueño para todo el template: antes se repetia
-   `g.user and g.user.id == user.id` en siete lugares, y cada uno era una
-   oportunidad de olvidarse la mitad de la condicion y filtrar datos privados.
-   El criterio de que es privado no cambia: vistas, estadisticas y "Sigo a"
-   siguen siendo del dueño (ver views/profile.py). #}
-{% set es_dueno = g.user and g.user.id == user.id %}
+{# `es_dueno` ya no se calcula aca: lo manda la vista, porque ahora no es solo
+   "sos el dueño" sino "sos el dueño Y no pediste ver como visitante". Que la
+   cuenta viva en un solo lado es lo que hace que la vista previa sea de
+   verdad: apagar lo privado en el template dejaria los datos igual de
+   cargados, y bastaria un `{% if %}` olvidado para que se filtren. #}
 
 <div class="perfil">
     {# Sin esto los avisos se pierden: varias acciones (guardar horarios,
@@ -22,21 +21,71 @@
         {% endif %}
     {% endwith %}
 
+    {# BARRA DEL DUEÑO — la app no decia en ningun lado que estas parado en tu
+       propio perfil ni que ves de mas que el resto. Lo dice esta barra, y el
+       enlace deja comprobarlo: recarga el perfil sin nada privado (la vista ni
+       consulta las estadisticas, los turnos ni los presupuestos).
+
+       Es un enlace y no un interruptor de JS a proposito: el estado vive en la
+       URL, asi se puede compartir, marcar y volver con el boton de atras, y
+       funciona sin JS. Usa `es_dueno_real` porque `es_dueno` esta apagado
+       justamente mientras la vista previa esta prendida. #}
+    {% if es_dueno_real %}
+        <div class="perfil-aviso{{ ' perfil-aviso--previa' if vista_visitante }}">
+            <span class="perfil-aviso__icono" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            </span>
+            <span class="perfil-aviso__texto">
+                <strong class="perfil-aviso__titulo">
+                    {{ "Así te ve cualquiera que entre" if vista_visitante else "Este es tu perfil" }}
+                </strong>
+                <span class="perfil-aviso__detalle">
+                    {% if vista_visitante %}
+                        Están ocultos tus números, los botones de editar y lo que tenés en curso.
+                    {% else %}
+                        Tus números y lo que tenés en curso solo los ves vos.
+                    {% endif %}
+                </span>
+            </span>
+            {% if vista_visitante %}
+                <a href="{{ url_for('profile.view_profile', slug=user.slug) }}" class="btn btn--secondary">
+                    Volver a mi vista
+                </a>
+            {% else %}
+                <a href="{{ url_for('profile.view_profile', slug=user.slug, ver='visitante') }}"
+                   class="btn btn--secondary">
+                    Ver como visitante
+                </a>
+                <a href="{{ url_for('profile.edit') }}" class="btn btn--primary">Editar perfil</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
     {# ============================================================
        1. IDENTIDAD — lo primero que ve el visitante: quien es, de
        donde, si esta abierto y como contactarlo. Todo lo demas es
        secundario y va abajo o al costado.
        ============================================================ #}
-    <header class="perfil-hero">
-        <div class="perfil-hero__portada">
-            {% if user.cover_image %}
-                <img src="{{ url_for('static', filename='uploads/covers/' ~ user.cover_image) }}"
-                     alt="Portada de {{ user.username }}" class="perfil-hero__portada-img">
-            {% else %}
-                <img src="{{ url_for('static', filename='icons/portada.jpg') }}"
-                     alt="" class="perfil-hero__portada-img">
-            {% endif %}
-        </div>
+    {# El cliente no lleva portada: la de arranque es una portada de negocio y
+       un perfil de alguien que entro a comprar no tiene que aparentar uno. Pero
+       si subio la suya, va: la cargo a proposito, y esconderla seria decidir
+       por el. Mismo criterio que los horarios de mas abajo.
+
+       Sin portada el avatar no pisa nada, asi que la clase del hero le saca el
+       margen negativo y lo achica (.perfil-hero--cliente en styles.css). #}
+    {% set con_portada = not perfil_de_cliente or user.cover_image %}
+    <header class="perfil-hero{{ '' if con_portada else ' perfil-hero--cliente' }}">
+        {% if con_portada %}
+            <div class="perfil-hero__portada">
+                {% if user.cover_image %}
+                    <img src="{{ url_for('static', filename='uploads/covers/' ~ user.cover_image) }}"
+                         alt="Portada de {{ user.username }}" class="perfil-hero__portada-img">
+                {% else %}
+                    <img src="{{ url_for('static', filename='icons/portada.jpg') }}"
+                         alt="" class="perfil-hero__portada-img">
+                {% endif %}
+            </div>
+        {% endif %}
 
         <div class="perfil-hero__cuerpo">
             <div class="perfil-hero__avatar">
@@ -235,9 +284,97 @@
                 </section>
             {% endif %}
 
+            {# LO QUE TIENE EN CURSO — privado, como las estadisticas (la vista
+               ni lo calcula cuando mira otro). Es lo que hace que el perfil de
+               alguien que no vende deje de ser una pantalla vacia: sus turnos y
+               los presupuestos que pidio viven hoy en /turnos/mios y
+               /servicios/solicitudes, dos pantallas a las que hay que ir a
+               proposito. Aca es un resumen de tres, no la lista. #}
+            {% if turnos_en_curso or presupuestos_en_curso %}
+                <section class="perfil-card perfil-card--propia">
+                    <div class="perfil-card__header">
+                        <h2 class="perfil-card__titulo">Lo que tenés en curso</h2>
+                        <span class="perfil-panel__chip">Solo lo ves vos</span>
+                    </div>
+
+                    <ul class="encurso-lista">
+                        {% for turno in turnos_en_curso %}
+                            <li class="encurso-lista__item">
+                                <span class="encurso-lista__icono" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v3M16 3v3"/></svg>
+                                </span>
+                                <span class="encurso-lista__cuerpo">
+                                    <a href="{{ url_for('turnos.mios') }}" class="encurso-lista__titulo">
+                                        {{ turno.servicio.titulo }}
+                                    </a>
+                                    <span class="encurso-lista__detalle">
+                                        {{ turno.servicio.post.title }} ·
+                                        {{ turno.fecha | fecha_evento }} · {{ turno.hora_inicio.strftime("%H:%M") }}
+                                    </span>
+                                </span>
+                                <span class="badge badge--verificado">Turno tomado</span>
+                            </li>
+                        {% endfor %}
+
+                        {% for solicitud in presupuestos_en_curso %}
+                            <li class="encurso-lista__item">
+                                <span class="encurso-lista__icono" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l4 4v13H6z"/><path d="M9 11h6M9 15h4"/></svg>
+                                </span>
+                                <span class="encurso-lista__cuerpo">
+                                    <a href="{{ url_for('servicios.solicitud', id=solicitud.id) }}" class="encurso-lista__titulo">
+                                        {{ solicitud.servicio.titulo }}
+                                    </a>
+                                    <span class="encurso-lista__detalle">
+                                        {{ solicitud.servicio.post.title }} · presupuesto pedido
+                                    </span>
+                                </span>
+                                {# "Te respondieron" y no "Respondida": lo que importa
+                                   no es el estado de la fila, es que hay algo para
+                                   ir a leer. #}
+                                {% if solicitud.estado == "respondida" %}
+                                    <span class="badge badge--respondida">Te respondieron</span>
+                                {% else %}
+                                    <span class="badge badge--pendiente">Esperando respuesta</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                    <p class="perfil-vacio encurso-lista__pie">
+                        <a href="{{ url_for('turnos.mios') }}">Ver todos mis turnos</a> ·
+                        <a href="{{ url_for('servicios.solicitudes') }}">Ver todos los presupuestos</a>
+                    </p>
+                </section>
+            {% endif %}
+
+            {# PESTAÑAS — emprendimientos y eventos dejan de apilarse. Van
+               ocultas hasta que el JS las prende (ver initPerfilTabs en
+               main.js): sin JS las dos secciones se ven una abajo de la otra,
+               que es como estaba antes y sigue funcionando. #}
+            <nav class="perfil-tabs" data-perfil-tabs aria-label="Secciones del perfil" hidden>
+                <button type="button" class="perfil-tabs__boton" data-perfil-tab="emprendimientos">
+                    {% if es_dueno %}Mis emprendimientos{% else %}Emprendimientos{% endif %}
+                    <span class="perfil-tabs__contador">{{ posts|length }}</span>
+                </button>
+                {# La pestaña se dibuja con la misma condicion que su panel: un
+                   boton sin panel detras queda vivo en la barra y no hace nada
+                   al tocarlo (el JS lo saltea porque no encuentra el destino). #}
+                {% if resenias %}
+                    <button type="button" class="perfil-tabs__boton" data-perfil-tab="resenias">
+                        Reseñas
+                        <span class="perfil-tabs__contador">{{ resumen_resenias.total }}</span>
+                    </button>
+                {% endif %}
+                <button type="button" class="perfil-tabs__boton" data-perfil-tab="eventos">
+                    Ferias y eventos
+                    <span class="perfil-tabs__contador">{{ eventos_proximos|length }}</span>
+                </button>
+            </nav>
+
             {# El catalogo es el contenido principal del perfil: sube arriba de
                eventos, horarios y mapa, que antes lo empujaban fuera de pantalla. #}
-            <section class="perfil-card">
+            <section class="perfil-card" data-perfil-panel="emprendimientos">
                 <div class="perfil-card__header">
                     <h2 class="perfil-card__titulo">
                         {% if es_dueno %}Mis emprendimientos{% else %}Emprendimientos{% endif %}
@@ -294,23 +431,122 @@
                             </article>
                         {% endfor %}
                     </div>
+                {% elif es_dueno %}
+                    {# El hueco dicho como una propuesta y no como una falta.
+                       Para alguien que entro a IMPULSAR a comprar, esta seccion
+                       vacia era la mitad de su perfil: ahora es el unico lugar
+                       donde se le cuenta que puede pasar del otro lado, con el
+                       argumento que ordena el resto del sitio (sin comision). #}
+                    <div class="perfil-vender">
+                        <p class="perfil-vender__titulo">¿Vos también hacés algo?</p>
+                        <p class="perfil-vender__texto">
+                            Publicar tu emprendimiento es gratis y no cobramos comisión por lo
+                            que vendas. Con la cuenta que ya tenés.
+                        </p>
+                        <a href="{{ url_for('blog.create') }}" class="btn btn--primary">
+                            Publicar mi emprendimiento
+                        </a>
+                    </div>
                 {% else %}
                     <p class="perfil-vacio">
-                        {% if es_dueno %}
-                            Todavía no registraste ningún emprendimiento.
-                            <a href="{{ url_for('blog.create') }}">Creá el primero acá.</a>
-                        {% else %}
-                            Este usuario todavía no registró ningún emprendimiento.
-                        {% endif %}
+                        Este usuario todavía no registró ningún emprendimiento.
                     </p>
                 {% endif %}
             </section>
+
+            {# RESEÑAS — publicas, como el catalogo. Estaban solo en
+               /perfil/<slug>/resenias: la prueba de que a este emprendimiento ya
+               le compraron quedaba a un click de distancia, justo cuando el
+               visitante esta decidiendo. Aca van las tres ultimas y el resumen
+               de todas; la pagina completa sigue existiendo y es a donde lleva
+               el pie del bloque.
+
+               Las tarjetas reusan `review-card` y la distribucion `distribucion__*`,
+               que ya son de /resenias: es la misma cosa mostrada en otro lado y
+               tiene que verse igual. Responder no va aca (es una pantalla de
+               trabajo, no del perfil): se responde desde /resenias. #}
+            {% if resenias %}
+                <section class="perfil-card" data-perfil-panel="resenias">
+                    <div class="perfil-card__header">
+                        <h2 class="perfil-card__titulo">Reseñas</h2>
+                        <a href="{{ url_for('profile.reviews', slug=user.slug) }}" class="btn btn--secondary">
+                            Ver todas
+                        </a>
+                    </div>
+
+                    <div class="perfil-resenias">
+                        <div class="perfil-resenias__resumen">
+                            <div class="resumen__promedio">
+                                <span class="resumen__nota">{{ resumen_resenias.promedio if resumen_resenias.promedio else '—' }}</span>
+                                <span class="resumen__total">
+                                    {{ resumen_resenias.total }} reseña{{ '' if resumen_resenias.total == 1 else 's' }}
+                                </span>
+                            </div>
+
+                            <ul class="distribucion">
+                                {% for fila in resumen_resenias.distribucion %}
+                                    <li class="distribucion__fila">
+                                        <span class="distribucion__estrellas">{{ fila.estrellas }} ★</span>
+                                        <span class="distribucion__barra">
+                                            <span class="distribucion__relleno" style="width: {{ fila.porcentaje }}%"></span>
+                                        </span>
+                                        <span class="distribucion__n">{{ fila.cuantas }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <div class="reviews-list perfil-resenias__lista">
+                            {% for r in resenias %}
+                                <div class="review-card">
+                                    <div class="review-card__header">
+                                        <strong class="review-card__author">
+                                            {{ r.user.username if r.user else "Usuario borrado" }}
+                                            {% if r.updated_at %}
+                                                <span class="review-card__edited">(editado)</span>
+                                            {% endif %}
+                                        </strong>
+                                        <div class="review-card__stars">
+                                            {% for i in range(1, 6) %}
+                                                {% if i <= r.rating %}★{% else %}☆{% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <p class="card__location">
+                                        Sobre
+                                        <a href="{{ url_for('blog.detail', id=r.post_id) }}">{{ r.post.title if r.post else "un emprendimiento" }}</a>
+                                    </p>
+
+                                    <p class="review-card__comment {% if not r.comment %}review-card__comment--empty{% endif %}">
+                                        {{ r.comment or 'Sin comentario escrito.' }}
+                                    </p>
+
+                                    {% if r.reply %}
+                                        <div class="review-card__reply">
+                                            <strong>Respuesta de {{ user.username }}:</strong>
+                                            <p>{{ r.reply }}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% if es_dueno and resumen_resenias.sin_responder %}
+                        <p class="perfil-vacio">
+                            Te quedan {{ resumen_resenias.sin_responder }} sin responder.
+                            <a href="{{ url_for('profile.reviews', slug=user.slug) }}">Respondelas acá.</a>
+                        </p>
+                    {% endif %}
+                </section>
+            {% endif %}
 
             {# Los eventos son publicos: los ve cualquier visitante, a diferencia de
                las estadisticas. La seccion aparece si hay algo que mostrar, o si el
                dueño esta mirando (para que tenga desde donde publicar el primero). #}
             {% if eventos_proximos or eventos_pasados or es_dueno %}
-                <section class="perfil-card">
+                <section class="perfil-card" data-perfil-panel="eventos">
                     <div class="perfil-card__header">
                         <h2 class="perfil-card__titulo">Próximos eventos</h2>
                         {% if es_dueno %}
@@ -396,7 +632,12 @@
 
         <aside class="perfil-layout__lateral">
 
-            {% if horarios or es_dueno %}
+            {# "Horarios de atencion" no aparece en el perfil de un cliente: para
+               el dueño era un "Todavía no cargaste tus horarios" que lo invitaba
+               a llenar algo que no atiende a nadie, y para el visitante media
+               tarjeta vacia. Si por lo que sea ya tiene horarios cargados, se
+               siguen mostrando: esconderlos seria perderle un dato. #}
+            {% if horarios or (es_dueno and not perfil_de_cliente) %}
                 <section class="perfil-card">
                     <div class="perfil-card__header">
                         <h2 class="perfil-card__titulo">Horarios de atención</h2>
@@ -407,13 +648,18 @@
                         {% endif %}
                     </div>
                     {% if horarios %}
-                        {# A la vista y no plegado, como en el rediseño: son siete
-                           filas, entran en la lateral sin empujar nada, y la
-                           pregunta "¿a que hora abren el sabado?" no tiene por que
-                           costar un click. El chip del hero sigue diciendo el
-                           estado de ahora; esto dice el resto de la semana.
-                           La fila de hoy va resaltada para no tener que contar
-                           dias desde arriba. #}
+                        {# En escritorio, a la vista: son siete filas, entran en la
+                           lateral sin empujar nada, y la pregunta "¿a que hora
+                           abren el sabado?" no tiene por que costar un click. La
+                           fila de hoy va resaltada para no tener que contar dias.
+
+                           En telefono es otra cosa: ahi la lateral cae abajo de
+                           todo el contenido y esas siete filas son media pantalla
+                           que nadie pidio, asi que se pliegan (initPlegablesMoviles
+                           en main.js le saca el `open`). Sin JS queda abierto, que
+                           es como estaba. #}
+                        <details class="perfil-plegable perfil-plegable--movil" data-plegar-en-movil open>
+                            <summary class="perfil-plegable__resumen">Ver la semana completa</summary>
                         <ul class="horarios-lista">
                             {% for horario in horarios %}
                                 <li class="horarios-lista__item{{ ' horarios-lista__item--hoy' if horario.dia_semana == dia_hoy }}">
@@ -433,6 +679,7 @@
                                 </li>
                             {% endfor %}
                         </ul>
+                        </details>
                     {% else %}
                         <p class="perfil-vacio">Todavía no cargaste tus horarios de atención.</p>
                     {% endif %}
@@ -445,7 +692,13 @@
                     {% if user.address_street %}
                         <p class="perfil-dato">{{ user.address_street }}</p>
                     {% endif %}
-                    <div id="map"></div>
+                    {# El mapa tambien se pliega en telefono: son 200px de alto que
+                       en la version angosta quedan al final de todo y casi nadie
+                       abre. La direccion, que es el dato, se sigue viendo arriba. #}
+                    <details class="perfil-plegable perfil-plegable--movil" data-plegar-en-movil open>
+                        <summary class="perfil-plegable__resumen">Ver el mapa</summary>
+                        <div id="map"></div>
+                    </details>
                 </section>
             {% endif %}
 

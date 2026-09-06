@@ -1,0 +1,386 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input, textarea, select { font-family: inherit; }
+    input, textarea, select { outline: none; }
+    .u-campo { transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
+    .u-campo:focus-within { border-color: #3E2F94; background: #FFFFFF; box-shadow: 0 0 0 3px #ECEAF7; }
+    .u-btn-primario:hover { background: #483BA1; }
+    .u-btn-borde:hover { background: #ECEAF7; border-color: #ECEAF7; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #4A5666">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #4A5666">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 5px; border: 1px solid #ECEAF7; border-radius: 999px; background: #ECEAF7; cursor: pointer">
+        <span style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">TG</span>
+        <span style="font-size: 13.5px; font-weight: 600; color: #33267C">Tomas</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 20px 24px 60px; display: flex; flex-direction: column; gap: 18px">
+
+    <p style="margin: 0; font-size: 13.5px"><a href="#" style="color: #5F6B7C">‹ Volver a mis servicios</a></p>
+
+    <div>
+      <h1 style="font-size: 25px; letter-spacing: -.015em">Nuevo servicio</h1>
+      <p style="margin: 6px 0 0; max-width: 620px; font-size: 14.2px; line-height: 1.6; color: #5F6B7C">
+        Un trabajo que hacés a pedido. Aparece en la búsqueda de servicios y en la
+        página de tu emprendimiento, y desde ahí te piden presupuesto.
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 24px; align-items: start">
+
+      <!-- ===================== FORMULARIO ===================== -->
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+        <section style="display: flex; flex-direction: column; gap: 16px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <h2 style="font-size: 16px">Qué ofrecés</h2>
+
+          <div style="display: flex; flex-direction: column; gap: 7px">
+            <label for="post" style="font-size: 13px; font-weight: 600">Emprendimiento</label>
+            <div class="u-campo" style="display: flex; align-items: center; height: 44px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 10px; background: #F5F7FA">
+              <select id="post" style="flex: 1; min-width: 0; border: 0; background: none; font-size: 14px; color: #1B2430">
+                <option>Plomería Sánchez</option>
+                <option>Pintor Ríos</option>
+              </select>
+            </div>
+            <p style="margin: 0; font-size: 12.2px; color: #5F6B7C">Los servicios cuelgan del emprendimiento, no de tu usuario.</p>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 7px">
+            <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+              <label for="titulo" style="font-size: 13px; font-weight: 600">Título</label>
+              <span style="{{ contadorTituloEstilo }}">{{ contadorTitulo }}</span>
+            </div>
+            <div class="u-campo" style="display: flex; align-items: center; height: 44px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 10px; background: #F5F7FA">
+              <input id="titulo" type="text" maxlength="120" value="{{ titulo }}" onInput="{{ escribirTitulo }}" placeholder="Destapación de cañerías" style="flex: 1; min-width: 0; border: 0; background: none; font-size: 14px; color: #1B2430">
+            </div>
+            <p style="margin: 0; font-size: 12.2px; color: #5F6B7C">El trabajo, no el oficio: "destapación de cañerías" se busca mejor que "plomería".</p>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 7px">
+            <label for="rubro" style="font-size: 13px; font-weight: 600">Rubro</label>
+            <div class="u-campo" style="display: flex; align-items: center; height: 44px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 10px; background: #F5F7FA">
+              <select id="rubro" value="{{ rubro }}" onChange="{{ elegirRubro }}" style="flex: 1; min-width: 0; border: 0; background: none; font-size: 14px; color: #1B2430">
+                <sc-for list="{{ catalogo }}" as="r" hint-placeholder-count="13">
+                  <option value="{{ r.clave }}">{{ r.etiqueta }}</option>
+                </sc-for>
+              </select>
+            </div>
+            <p style="margin: 0; font-size: 12.2px; color: #5F6B7C">Es por lo que te van a filtrar. Si no encaja en ninguno, "Otros".</p>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 7px">
+            <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+              <label for="desc" style="font-size: 13px; font-weight: 600">Descripción <span style="font-weight: 400; color: #5F6B7C">· opcional</span></label>
+              <span style="{{ contadorDescEstilo }}">{{ contadorDesc }}</span>
+            </div>
+            <div class="u-campo" style="padding: 12px 14px; border: 1px solid #E2E6EE; border-radius: 10px; background: #F5F7FA">
+              <textarea id="desc" rows="3" maxlength="300" value="{{ descripcion }}" onInput="{{ escribirDesc }}" placeholder="Qué incluye, qué no, y cualquier cosa que te evite una pregunta." style="width: 100%; border: 0; padding: 0; background: none; resize: none; font-size: 14px; line-height: 1.6; color: #1B2430"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 16px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <h2 style="font-size: 16px">Dónde y cuánto</h2>
+
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px">
+            <div style="display: flex; flex-direction: column; gap: 7px">
+              <label for="zona" style="font-size: 13px; font-weight: 600">Zona de cobertura <span style="font-weight: 400; color: #5F6B7C">· opcional</span></label>
+              <div class="u-campo" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 10px; background: #F5F7FA">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10.5c0 5.5-8 11-8 11s-8-5.5-8-11a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10.3" r="2.7"/></svg>
+                <input id="zona" type="text" maxlength="120" value="{{ zona }}" onInput="{{ escribirZona }}" placeholder="Maipú y alrededores" style="flex: 1; min-width: 0; border: 0; background: none; font-size: 14px; color: #1B2430">
+              </div>
+              <p style="margin: 0; font-size: 12.2px; line-height: 1.45; color: #5F6B7C">Texto libre: es lo que se compara cuando alguien filtra por zona.</p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 7px">
+              <label for="precio" style="font-size: 13px; font-weight: 600">Precio estimado <span style="font-weight: 400; color: #5F6B7C">· opcional</span></label>
+              <div class="u-campo" style="display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 10px; background: #F5F7FA">
+                <span style="font-size: 14px; color: #5F6B7C">$</span>
+                <input id="precio" type="text" inputmode="decimal" value="{{ precio }}" onInput="{{ escribirPrecio }}" placeholder="1500 o 1500,50" style="flex: 1; min-width: 0; border: 0; background: none; font-size: 14px; color: #1B2430">
+              </div>
+              <p style="margin: 0; font-size: 12.2px; line-height: 1.45; color: #5F6B7C">{{ ayudaPrecio }}</p>
+            </div>
+          </div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 16px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <h2 style="font-size: 16px">Cómo te lo piden</h2>
+
+          <label style="display: flex; align-items: flex-start; gap: 14px; cursor: pointer">
+            <span style="{{ pistaDisponible }}"><span style="{{ perillaDisponible }}"></span></span>
+            <span style="min-width: 0">
+              <span style="display: block; font-size: 14px; font-weight: 600">Disponible</span>
+              <span style="display: block; margin-top: 3px; font-size: 12.6px; line-height: 1.5; color: #5F6B7C">{{ textoDisponible }}</span>
+            </span>
+            <input type="checkbox" onChange="{{ alternarDisponible }}" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none">
+          </label>
+
+          <div style="height: 1px; background: #E2E6EE"></div>
+
+          <label style="display: flex; align-items: flex-start; gap: 14px; cursor: pointer">
+            <span style="{{ pistaTurnos }}"><span style="{{ perillaTurnos }}"></span></span>
+            <span style="min-width: 0">
+              <span style="display: block; font-size: 14px; font-weight: 600">Tomar turnos para este servicio</span>
+              <span style="display: block; margin-top: 3px; font-size: 12.6px; line-height: 1.5; color: #5F6B7C">
+                El cliente reserva una hora concreta en vez de pedir presupuesto. Las horas
+                salen de los horarios de atención de tu perfil.
+              </span>
+            </span>
+            <input type="checkbox" onChange="{{ alternarTurnos }}" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none">
+          </label>
+
+          <!-- La duración solo existe si toma turnos: hoy el campo está siempre
+               y dice "obligatorio si tomás turnos", que hay que leer para saber
+               si te toca. -->
+          <div style="{{ duracionEstilo }}">
+            <div style="display: flex; flex-direction: column; gap: 9px">
+              <span style="font-size: 13px; font-weight: 600">Cuánto dura cada turno</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 7px">
+                <sc-for list="{{ duraciones }}" as="d" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ d.elegir }}" style="{{ d.estilo }}">{{ d.etiqueta }}</button>
+                </sc-for>
+                <div class="u-campo" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF">
+                  <input type="number" min="5" max="480" step="1" value="{{ duracion }}" onInput="{{ escribirDuracion }}" style="width: 46px; border: 0; background: none; font-size: 13.4px; color: #1B2430">
+                  <span style="font-size: 13px; color: #5F6B7C">min</span>
+                </div>
+              </div>
+              <p style="{{ avisoDuracionEstilo }}">{{ avisoDuracion }}</p>
+            </div>
+
+            <!-- Aviso real: sin horarios cargados no hay turnos que ofrecer. -->
+            <div style="display: flex; align-items: flex-start; gap: 11px; padding: 14px 16px; border-radius: 12px; background: #FBEDE4">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8C4A22" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><path d="M12 3.5 21 20H3z"/><path d="M12 10v4M12 17v.1"/></svg>
+              <p style="margin: 0; font-size: 12.8px; line-height: 1.55; color: #8C4A22">
+                Todavía no cargaste horarios de atención, así que no va a haber turnos
+                para elegir. <a href="#" style="color: #8C4A22; font-weight: 600; text-decoration: underline">Cargalos en Ajustes › Horarios</a>.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <div style="position: sticky; bottom: 0; display: flex; align-items: center; gap: 14px; padding: 14px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; box-shadow: 0 -4px 12px rgba(15,23,42,.04)">
+          <div style="flex: 1; min-width: 0">
+            <p style="{{ estadoEstilo }}">{{ estadoTexto }}</p>
+            <p style="margin: 3px 0 0; font-size: 12.4px; color: #5F6B7C">{{ estadoDetalle }}</p>
+          </div>
+          <a href="#" style="font-size: 13.4px; color: #5F6B7C">Cancelar</a>
+          <button type="button" class="{{ claseGuardar }}" style="{{ guardarEstilo }}">Agregar servicio</button>
+        </div>
+
+      </div>
+
+      <!-- ===================== VISTA PREVIA ===================== -->
+      <aside style="display: flex; flex-direction: column; gap: 14px; position: sticky; top: 24px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+          <h2 style="font-size: 15px">Cómo se va a ver</h2>
+          <span style="font-size: 12.4px; color: #5F6B7C">En la búsqueda</span>
+        </div>
+
+        <article style="{{ previaEstilo }}">
+          <div style="display: flex; align-items: flex-start; gap: 13px">
+            <span style="width: 52px; height: 52px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 13px; background: #ECEAF7; color: #3E2F94">
+              <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{ previaIcono }}"/></svg>
+            </span>
+            <div style="min-width: 0; flex: 1">
+              <h3 style="{{ previaTituloEstilo }}">{{ previaTitulo }}</h3>
+              <p style="margin: 5px 0 0; font-size: 12.6px; color: #5F6B7C">Plomería Sánchez · ★ 4,8</p>
+            </div>
+          </div>
+
+          <p style="{{ previaDescEstilo }}">{{ previaDesc }}</p>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 7px">
+            <span style="display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.2px; font-weight: 600">{{ previaRubro }}</span>
+            <span style="{{ previaZonaEstilo }}">{{ previaZona }}</span>
+            <span style="{{ previaTurnosEstilo }}">Toma turnos</span>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid #E2E6EE">
+            <div>
+              <p style="{{ previaPrecioEstilo }}">{{ previaPrecio }}</p>
+              <p style="margin: 2px 0 0; font-size: 11.6px; color: #5F6B7C">{{ previaPrecioNota }}</p>
+            </div>
+            <span style="display: inline-flex; align-items: center; height: 34px; padding: 0 15px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 13px; font-weight: 600">Pedir presupuesto</span>
+          </div>
+        </article>
+
+        <!-- Apagado: la ficha no desaparece de tu panel, deja de mostrarse afuera. -->
+        <div style="{{ ocultoEstilo }}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><path d="M3 3l18 18M10.6 10.7a2 2 0 0 0 2.8 2.8"/><path d="M6.8 6.9C4.8 8.2 3.4 10 2.5 12c1.6 3.6 5.2 6 9.5 6 1.6 0 3.1-.3 4.4-1M9.9 6.2c.7-.1 1.4-.2 2.1-.2 4.3 0 7.9 2.4 9.5 6-.6 1.3-1.4 2.5-2.5 3.4"/></svg>
+          <p style="margin: 0; font-size: 12.6px; line-height: 1.55; color: #5F6B7C">
+            Está apagado: no aparece en la búsqueda ni en tu emprendimiento. Lo seguís
+            viendo vos en Mis servicios.
+          </p>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1600}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      titulo: "", rubro: "plomeria", descripcion: "", zona: "", precio: "",
+      disponible: true, turnos: false, duracion: 60, sucio: false,
+    };
+  }
+
+  renderVals() {
+    const st = this.state;
+    const catalogo = [
+      { clave: "plomeria", etiqueta: "Plomería", icono: "M14.7 6.3a4 4 0 0 1-5.4 5.4L4.5 16.5V20H8l4.8-4.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.5-2.5 2.6-2.6Z" },
+      { clave: "electricidad", etiqueta: "Electricidad", icono: "M13.5 2.5 5 13.5h5.5L9.5 21.5 18.5 10h-5.6l.6-7.5Z" },
+      { clave: "gas", etiqueta: "Gas", icono: "M12 21.5a5.5 5.5 0 0 0 5.5-5.5c0-3.7-2.8-5.5-3.7-8.3-1.8 1.4-2.3 3.2-2.3 3.2s-1.4-1.4-2.8-2.4c-1.4 1.9-2.2 4.2-2.2 7.5a5.5 5.5 0 0 0 5.5 5.5Z" },
+      { clave: "albanileria", etiqueta: "Albañilería", icono: "M3 9h18v5H3zM6 4h15v5H6zM3 14h15v5H3z" },
+      { clave: "pintura", etiqueta: "Pintura", icono: "M4 5.5h10v5H4zM14 8h3.8a1.7 1.7 0 0 1 1.7 1.7v2a1.7 1.7 0 0 1-1.7 1.7H12.5v2.1M10.4 15.5h4.2v6h-4.2z" },
+      { clave: "carpinteria", etiqueta: "Carpintería", icono: "M4 20 14.5 9.5M11 6l7 7 3-3-7-7zM4 20h4l1.5-4.5" },
+      { clave: "herreria", etiqueta: "Herrería", icono: "M3 18h9M6.5 18V7.5M13.5 4.5 21 12l-3.5 3.5L10 8z" },
+      { clave: "refrigeracion", etiqueta: "Refrigeración", icono: "M12 3v18M4.5 7.5 19.5 16.5M19.5 7.5 4.5 16.5M12 6.8 9.6 4.4M12 6.8l2.4-2.4M12 17.2l-2.4 2.4M12 17.2l2.4 2.4" },
+      { clave: "jardineria", etiqueta: "Jardinería", icono: "M20 3.5C10 3.5 4 8.5 4 15.5c0 2 1 4.5 1 4.5s6.5-.5 10.5-4.5c3-3 4.5-8 4.5-12ZM8.5 19c1-5 4-8.5 8-10.5" },
+      { clave: "limpieza", etiqueta: "Limpieza", icono: "M9 3h6v5H9zM8 8h8l1 13H7zM12 12v5" },
+      { clave: "fletes", etiqueta: "Fletes y mudanzas", icono: "M3 7.5h11v9H3zM14 10.5h3.6l3.4 3.4v2.6h-7zM7.3 19.5a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6ZM17.6 19.5a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6Z" },
+      { clave: "informatica", etiqueta: "Informática", icono: "M3.5 5.5h17v10h-17zM2 19.5h20M9.5 15.5h5" },
+      { clave: "otros", etiqueta: "Otros", icono: "M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z" },
+    ];
+    const actual = catalogo.filter((r) => r.clave === st.rubro)[0] || catalogo[0];
+
+    const titulo = st.titulo.trim();
+    const desc = st.descripcion.trim();
+    const zona = st.zona.trim();
+    const precioTexto = st.precio.trim();
+    const precioNumero = Number(precioTexto.replace(/\./g, "").replace(",", "."));
+    const precioValido = precioTexto !== "" && !Number.isNaN(precioNumero) && precioNumero > 0;
+    const listo = titulo.length > 0 && (!st.turnos || (st.duracion >= 5 && st.duracion <= 480));
+
+    const tocar = (cambio) => this.setState(Object.assign({ sucio: true }, cambio));
+
+    const pastillaBase = "height: 36px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 13.4px; cursor: pointer";
+    const pastillaActiva = "height: 36px; padding: 0 14px; border: 1px solid #3E2F94; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 13.4px; font-weight: 600; cursor: pointer";
+    const duraciones = [30, 45, 60, 90].map((m) => ({
+      etiqueta: m + " min",
+      estilo: st.duracion === m ? pastillaActiva : pastillaBase,
+      elegir: () => tocar({ duracion: m }),
+    }));
+
+    const duracionFuera = st.turnos && (st.duracion < 5 || st.duracion > 480);
+
+    return {
+      catalogo: catalogo,
+      titulo: st.titulo,
+      rubro: st.rubro,
+      descripcion: st.descripcion,
+      zona: st.zona,
+      precio: st.precio,
+      duracion: st.duracion,
+
+      escribirTitulo: (e) => tocar({ titulo: e.target.value }),
+      escribirDesc: (e) => tocar({ descripcion: e.target.value }),
+      escribirZona: (e) => tocar({ zona: e.target.value }),
+      escribirPrecio: (e) => tocar({ precio: e.target.value }),
+      escribirDuracion: (e) => tocar({ duracion: Number(e.target.value) }),
+      elegirRubro: (e) => tocar({ rubro: e.target.value }),
+      alternarDisponible: () => tocar({ disponible: !st.disponible }),
+      alternarTurnos: () => tocar({ turnos: !st.turnos }),
+
+      contadorTitulo: st.titulo.length + " / 120",
+      contadorTituloEstilo: "font-size: 12.2px; font-weight: 600; color: " + (st.titulo.length > 110 ? "#8C4A22" : "#5F6B7C"),
+      contadorDesc: st.descripcion.length + " / 300",
+      contadorDescEstilo: "font-size: 12.2px; font-weight: 600; color: " + (st.descripcion.length > 280 ? "#8C4A22" : "#5F6B7C"),
+
+      ayudaPrecio: precioValido
+        ? "Se muestra como precio estimado, no como precio cerrado."
+        : "Vacío se muestra como “A presupuestar”, que es lo normal en un oficio.",
+
+      pistaDisponible: "position: relative; width: 42px; height: 25px; flex-shrink: 0; border-radius: 999px; transition: background-color .15s ease; background: " + (st.disponible ? "#3E2F94" : "#C9CFDB"),
+      perillaDisponible: "position: absolute; top: 3px; left: " + (st.disponible ? "20px" : "3px") + "; width: 19px; height: 19px; border-radius: 999px; background: #FFFFFF; transition: left .15s ease; box-shadow: 0 1px 3px rgba(15,23,42,.25)",
+      textoDisponible: st.disponible
+        ? "Se muestra en la búsqueda y te pueden pedir presupuesto."
+        : "Queda visible solo para vos, sin que tengas que borrarlo.",
+
+      pistaTurnos: "position: relative; width: 42px; height: 25px; flex-shrink: 0; border-radius: 999px; transition: background-color .15s ease; background: " + (st.turnos ? "#3E2F94" : "#C9CFDB"),
+      perillaTurnos: "position: absolute; top: 3px; left: " + (st.turnos ? "20px" : "3px") + "; width: 19px; height: 19px; border-radius: 999px; background: #FFFFFF; transition: left .15s ease; box-shadow: 0 1px 3px rgba(15,23,42,.25)",
+
+      duracionEstilo: st.turnos
+        ? "display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 12px; background: #F5F7FA"
+        : "display: none",
+      duraciones: duraciones,
+      avisoDuracion: duracionFuera
+        ? "Tiene que estar entre 5 y 480 minutos."
+        : "Entre 5 y 480 minutos. Es el bloque que se le reserva al cliente.",
+      avisoDuracionEstilo: duracionFuera
+        ? "margin: 0; font-size: 12.4px; font-weight: 600; color: #B91C1C"
+        : "margin: 0; font-size: 12.4px; color: #5F6B7C",
+
+      estadoTexto: listo ? "Listo para agregar" : "Falta el título",
+      estadoEstilo: "margin: 0; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: " + (listo ? "#1B2430" : "#8C4A22"),
+      estadoDetalle: listo
+        ? "Lo vas a poder editar o apagar cuando quieras."
+        : "Es lo único que la app pide sí o sí, además del rubro.",
+      claseGuardar: listo ? "u-btn-primario" : "",
+      guardarEstilo: listo
+        ? "height: 42px; padding: 0 22px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(15,23,42,.08)"
+        : "height: 42px; padding: 0 22px; border: 0; border-radius: 999px; background: #C9CFDB; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: not-allowed",
+
+      previaEstilo: st.disponible
+        ? "display: flex; flex-direction: column; gap: 12px; padding: 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF"
+        : "display: flex; flex-direction: column; gap: 12px; padding: 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; opacity: .55",
+      previaIcono: actual.icono,
+      previaTitulo: titulo || "El título de tu servicio",
+      previaTituloEstilo: "font-size: 16px; line-height: 1.3; letter-spacing: -.015em; color: " + (titulo ? "#1B2430" : "#9AA3B2"),
+      previaDesc: desc || "La descripción aparece acá, debajo del título.",
+      previaDescEstilo: "margin: 0; font-size: 13.2px; line-height: 1.55; color: " + (desc ? "#4A5666" : "#9AA3B2"),
+      previaRubro: actual.etiqueta,
+      previaZona: zona || "Sin zona",
+      previaZonaEstilo: zona
+        ? "display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.2px; font-weight: 600"
+        : "display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; background: #EEF1F7; color: #9AA3B2; font-size: 12.2px; font-weight: 600",
+      previaTurnosEstilo: st.turnos
+        ? "display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12.2px; font-weight: 600"
+        : "display: none",
+      previaPrecio: precioValido ? "$ " + precioNumero.toLocaleString("es-AR") : "A presupuestar",
+      previaPrecioEstilo: precioValido
+        ? "margin: 0; font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 600; color: #1B2430"
+        : "margin: 0; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: #4A5666",
+      previaPrecioNota: precioValido ? "Precio estimado" : "Le cotizás su caso",
+
+      ocultoEstilo: st.disponible
+        ? "display: none"
+        : "display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border-radius: 12px; background: #EEF1F7",
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -2,23 +2,31 @@
 
 {% block title %}Conversación sobre {{ post.title }} – IMPULSAR{% endblock %}
 
+{#  La conversación, rediseñada: una ventana de chat de verdad, con cabecera
+    fija arriba (quién es la otra parte y de qué emprendimiento se habla), el
+    historial en el medio y el campo de escribir abajo.
+
+    Antes era un .section__header suelto, una caja con las burbujas y un
+    textarea al final, todo dentro de una columna de 700 px.
+
+    Lo que NO se toca es el cableado: el div del historial conserva su id y sus
+    tres data-* (post-id, client-id, my-id) y el <script> con el JSON del
+    historial sigue igual, porque static/js/chat.js los busca por ahí y hace el
+    polling. Las burbujas también conservan sus clases (.chat-message y sus dos
+    modificadores): las dibuja el JS, así que cambiarles el nombre acá las
+    dejaría sin estilo. Lo que cambió es el CSS de esas clases, no el marcado
+    que genera el JS. #}
+
 {% block content %}
 <section class="section">
-    <div class="container" style="max-width: 700px;">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">{{ post.title }}</h2>
-                <p class="section__subtitle">
-                    Conversación con
-                    <a href="{{ url_for('profile.view_profile', slug=otra_parte.slug) }}">{{ otra_parte.username }}</a>
-                </p>
-            </div>
-            <a href="{{ url_for('blog.detail', id=post.id) }}" class="section__link">Ver emprendimiento</a>
-        </div>
+    <div class="container">
+        <p class="volver">
+            <a href="{{ url_for('messages.inbox') }}">‹ Volver a mensajes</a>
+        </p>
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
+                <div class="auth__messages">
                     {% for message in messages %}
                         <div class="auth__alert">{{ message }}</div>
                     {% endfor %}
@@ -26,16 +34,46 @@
             {% endif %}
         {% endwith %}
 
-        <div id="chat-historial" class="chat-historial" data-post-id="{{ post.id }}" data-client-id="{{ client_id }}" data-my-id="{{ g.user.id }}">
+        <div class="chat">
+            <header class="chat__head">
+                <a href="{{ url_for('profile.view_profile', slug=otra_parte.slug) }}"
+                   class="chat__quien">
+                    <span class="chat-inbox__avatar" aria-hidden="true">
+                        {{ otra_parte.username[:2] | upper }}
+                    </span>
+                    <span class="chat__quien-datos">
+                        <span class="chat__quien-nombre">{{ otra_parte.username }}</span>
+                        <span class="chat__quien-rol">
+                            {{ 'el dueño del emprendimiento' if g.user.id == client_id else 'cliente' }}
+                        </span>
+                    </span>
+                </a>
+
+                <div class="chat__sobre">
+                    <span class="chat__sobre-rotulo">Hablan sobre</span>
+                    <a href="{{ url_for('blog.detail', id=post.id) }}" class="chat__sobre-post">
+                        {{ post.title }}
+                    </a>
+                </div>
+            </header>
+
+            {# El JS pinta acá adentro: el historial inicial y lo que llega por
+               polling, con la misma función para los dos. #}
+            <div id="chat-historial" class="chat-historial"
+                 data-post-id="{{ post.id }}"
+                 data-client-id="{{ client_id }}"
+                 data-my-id="{{ g.user.id }}">
+            </div>
+
+            <form method="post" class="chat-form" id="chat-form"
+                  action="{{ url_for('messages.conversation', post_id=post.id, client_id=client_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="chat-body" class="sr-only">Tu mensaje</label>
+                <textarea name="body" id="chat-body" rows="2" class="auth__input"
+                          placeholder="Escribí tu mensaje…" required></textarea>
+                <button type="submit" class="btn btn--primary">Enviar</button>
+            </form>
         </div>
-
-        <form method="post" class="chat-form" id="chat-form" action="{{ url_for('messages.conversation', post_id=post.id, client_id=client_id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <textarea name="body" rows="2" class="auth__input" placeholder="Escribí tu mensaje..." required></textarea>
-            <button type="submit" class="btn btn--primary">Enviar</button>
-        </form>
-
-        <a href="{{ url_for('messages.inbox') }}" class="back-link">← Volver a mensajes</a>
     </div>
 </section>
 

@@ -1,0 +1,61 @@
+{#  El icono de un oficio de servicios, por clave.
+
+    Mismo criterio que partials/_icono_rubro.html, que hace lo propio con los
+    siete rubros del emprendimiento: if-chain y no un dict en Python porque son
+    SVG, o sea marcado, y el marcado vive en las plantillas. Los trazos salen
+    del canvas de servicios (disenio-servicios/Main.dc.html): grilla de 24,
+    trazo 1.6, sin relleno, para que el color lo ponga el contenedor con
+    currentColor.
+
+    Los rubros de servicio son OTRO catalogo que el de emprendimientos (trece
+    oficios en Rubros contra siete categorias en Categorias), asi que este
+    parcial es otro y no un caso mas del anterior.
+
+    Nunca emoji: escalan mal, cambian de dibujo segun el sistema y no se pueden
+    recolorear. #}
+<svg class="oficio__icono" width="{{ medida | default(30) }}" height="{{ medida | default(30) }}"
+     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    {% if clave == 'plomeria' %}
+        {# Una llave inglesa. #}
+        <path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4.5 16.5V20H8l4.8-4.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.5-2.5 2.6-2.6Z"/>
+    {% elif clave == 'electricidad' %}
+        {# Un rayo. #}
+        <path d="M13.5 2.5 5 13.5h5.5L9.5 21.5 18.5 10h-5.6l.6-7.5Z"/>
+    {% elif clave == 'gas' %}
+        {# Una llama. #}
+        <path d="M12 21.5a5.5 5.5 0 0 0 5.5-5.5c0-3.7-2.8-5.5-3.7-8.3-1.8 1.4-2.3 3.2-2.3 3.2s-1.4-1.4-2.8-2.4c-1.4 1.9-2.2 4.2-2.2 7.5a5.5 5.5 0 0 0 5.5 5.5Z"/>
+    {% elif clave == 'albanileria' %}
+        {# Hiladas de ladrillo, trabadas como se levanta una pared. #}
+        <path d="M3 9h18v5H3zM6 4h15v5H6zM3 14h15v5H3z"/>
+    {% elif clave == 'pintura' %}
+        {# Un rodillo con su bandeja. #}
+        <path d="M4 5.5h10v5H4zM14 8h3.8a1.7 1.7 0 0 1 1.7 1.7v2a1.7 1.7 0 0 1-1.7 1.7H12.5v2.1M10.4 15.5h4.2v6h-4.2z"/>
+    {% elif clave == 'carpinteria' %}
+        {# Un martillo. #}
+        <path d="M4 20 14.5 9.5M11 6l7 7 3-3-7-7zM4 20h4l1.5-4.5"/>
+    {% elif clave == 'herreria' %}
+        {# Un yunque sobre su base. #}
+        <path d="M3 18h9M6.5 18V7.5M13.5 4.5 21 12l-3.5 3.5L10 8z"/>
+    {% elif clave == 'refrigeracion' %}
+        {# Un copo de nieve. #}
+        <path d="M12 3v18M4.5 7.5 19.5 16.5M19.5 7.5 4.5 16.5M12 6.8 9.6 4.4M12 6.8l2.4-2.4M12 17.2l-2.4 2.4M12 17.2l2.4 2.4"/>
+    {% elif clave == 'jardineria' %}
+        {# Una hoja con su nervadura. #}
+        <path d="M20 3.5C10 3.5 4 8.5 4 15.5c0 2 1 4.5 1 4.5s6.5-.5 10.5-4.5c3-3 4.5-8 4.5-12ZM8.5 19c1-5 4-8.5 8-10.5"/>
+    {% elif clave == 'limpieza' %}
+        {# Un rociador. #}
+        <path d="M9 3h6v5H9zM8 8h8l1 13H7zM12 12v5"/>
+    {% elif clave == 'fletes' %}
+        {# Un camion de reparto. #}
+        <path d="M3 7.5h11v9H3zM14 10.5h3.6l3.4 3.4v2.6h-7zM7.3 19.5a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6ZM17.6 19.5a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6Z"/>
+    {% elif clave == 'informatica' %}
+        {# Un monitor sobre el escritorio. #}
+        <path d="M3.5 5.5h17v10h-17zM2 19.5h20M9.5 15.5h5"/>
+    {% else %}
+        {# "Otros" es el cajon de sastre: cuatro cuadrados, que no prometen
+           ningun oficio en particular. Es tambien el fallback si mañana
+           aparece una clave que este parcial no conoce. #}
+        <path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z"/>
+    {% endif %}
+</svg>

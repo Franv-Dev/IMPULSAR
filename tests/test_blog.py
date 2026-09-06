@@ -64,11 +64,13 @@ def test_el_listado_muestra_el_autor_real_y_no_al_usuario_logueado(
     login(visitante.id)
     html = client.get("/blog/").get_data(as_text=True)
 
-    # Se mira solo el badge de autor: el nombre del usuario logueado aparece
-    # legitimamente en la barra de navegacion, asi que no sirve buscarlo en
-    # todo el HTML.
+    # Se mira solo el pie de la tarjeta: el nombre del usuario logueado
+    # aparece legitimamente en la barra de navegacion, asi que no sirve
+    # buscarlo en todo el HTML. En el rediseno el badge--author paso a ser
+    # .tarjeta__persona, que lleva el avatar de iniciales adelante y el
+    # nombre despues.
     autores_mostrados = re.findall(
-        r'badge--author"[^>]*>\s*([^<\s]+)\s*<', html
+        r'tarjeta__persona">.*?</span>\s*([^<\s]+)\s*</span>', html, re.S
     )
 
     assert autores_mostrados == ["autorreal"]
@@ -445,11 +447,11 @@ def test_el_listado_se_pagina(client, app, crear_usuario, crear_post):
     primera = client.get("/blog/").get_data(as_text=True)
     segunda = client.get("/blog/?page=2").get_data(as_text=True)
 
-    # .ficha es la tarjeta del listado (la horizontal de la pantalla
-    # "Explorar"). No es la misma clase que .card, que es la tarjeta vertical
-    # del home y del detalle.
-    assert primera.count('class="ficha"') == por_pagina
-    assert segunda.count('class="ficha"') == 3
+    # .tarjeta es la del listado (la horizontal de la pantalla "Explorar",
+    # que en el rediseño paso a ocupar el ancho entero). No es .card, que es la
+    # vertical del home y del detalle.
+    assert primera.count('class="tarjeta"') == por_pagina
+    assert segunda.count('class="tarjeta"') == 3
     assert "Página 2 de 2" in segunda
 
 
@@ -870,72 +872,90 @@ def _marcado(html, name):
     return None
 
 
+def _elegido(html, name):
+    """El value de la <option> seleccionada del select `name`, o None.
+
+    El rediseño paso el radio de un grupo de <input type="radio"> a un <select>
+    que se manda solo al cambiarlo, asi que lo marcado ya no se lee con
+    _marcado(), que mira inputs.
+    """
+    select = re.search(
+        r'<select[^>]*\bname="{}"[^>]*>(.*?)</select>'.format(name), html, re.S
+    )
+    if select is None:
+        return None
+    for opcion in re.findall(r"<option[^>]*>", select.group(1)):
+        if "selected" in opcion:
+            return re.search(r'value="([^"]*)"', opcion).group(1)
+    return None
+
+
 def test_el_radio_viaja_en_km_enteros_y_no_como_etiqueta(client):
     """El backend espera reglas.RADIOS_KM. Un value de "5 km" no filtra nada.
 
     Y no falla en ningun lado: leer_cercania lo lee con type=int, "5 km" vuelve
     None y el listado sale sin acotar, como si el usuario no hubiera elegido.
     """
-    html = client.get("/blog/").get_data(as_text=True)
+    html = client.get("/blog/?{}".format(DESDE)).get_data(as_text=True)
 
     for km in reglas.RADIOS_KM:
-        assert 'name="radio" value="{}"'.format(km) in html
+        assert '<option value="{}"'.format(km) in html
     assert 'value="1 km"' not in html
 
 
-def test_los_dos_filtros_nuevos_ya_no_estan_apagados(client):
+def test_sin_coordenadas_no_se_ofrece_el_radio(client):
+    """Sin lat/lon la consulta ignora el radio: no hay desde donde medir.
+
+    Antes el grupo de radios se dibujaba igual y dejaba elegir "5 km" para que
+    despues no pasara nada. Un control que no hace nada es peor que no tenerlo,
+    que es la misma regla por la que se fue "Solo verificados".
+    """
     html = client.get("/blog/").get_data(as_text=True)
 
-    assert '<fieldset class="filtros__radios">' in html
+    assert _elegido(html, "radio") is None
+    assert 'name="radio"' not in html
+
+
+def test_con_resenias_no_esta_apagado(client):
+    """Es una ficha que se prende y se apaga, no un checkbox deshabilitado."""
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert "Con reseñas" in html
     assert re.search(r'name="con_resenias"[^>]*disabled', html) is None
 
 
-def test_solo_verificados_sigue_apagado(client):
+def test_solo_verificados_ya_no_se_ofrece(client):
     """Post no tiene marca de verificacion, asi que ese filtro no puede viajar.
 
-    "Abierto ahora" ya no esta en la lista: se cableo contra los horarios del
-    autor (ver los tests de mas abajo) y por eso ahora si puede viajar.
+    Antes estaba dibujado y `disabled`, con un aviso al lado que explicaba que
+    todavia no filtraba. En el rediseño se fue del todo: la barra de filtros no
+    tiene lugar para un control apagado, y no ofrecerlo es mas honesto que
+    ofrecerlo roto.
+
+    "Abierto ahora" si viaja: se cableo contra los horarios del autor (ver los
+    tests de mas abajo).
     """
     html = client.get("/blog/").get_data(as_text=True)
 
-    assert re.search(r'name="solo_verificados"[^>]*disabled', html)
+    assert 'name="solo_verificados"' not in html
     assert re.search(r'name="abierto_ahora"[^>]*disabled', html) is None
-
-
-def test_el_aviso_del_grupo_nombra_al_filtro_que_falta(client):
-    """"Estos dos todavía no filtran" no decia cuales eran los dos.
-
-    Ahora ademas quedo uno solo, asi que el aviso tiene que nombrarlo. Se
-    escribe "Solo verificados" (la etiqueta del control, en minuscula) y no
-    "Verificado": esa palabra en el listado es justamente la que fija
-    test_el_listado_no_dice_que_un_emprendimiento_esta_verificado, porque un
-    Post no tiene verificacion que afirmar.
-    """
-    html = client.get("/blog/").get_data(as_text=True)
-
-    assert "Solo verificados» todavía no filtra" in html
-    assert "Estos dos" not in html
-    # La misma regla del otro test, para que el aviso no la rompa de costado.
+    # La misma regla de test_el_listado_no_dice_que_un_emprendimiento_esta_
+    # verificado: la palabra no puede aparecer, porque un Post no tiene
+    # verificacion que afirmar.
     assert "Verificado" not in html
 
 
-def test_sin_radio_en_la_url_queda_marcado_toda(client):
-    html = client.get("/blog/").get_data(as_text=True)
-
-    assert _marcado(html, "radio") == ""
-
-
-def test_el_radio_de_la_url_queda_marcado(client):
+def test_el_radio_de_la_url_queda_elegido(client):
     html = client.get("/blog/?{}&radio=5".format(DESDE)).get_data(as_text=True)
 
-    assert _marcado(html, "radio") == "5"
+    assert _elegido(html, "radio") == "5"
 
 
-def test_un_radio_invalido_repinta_toda(client):
+def test_un_radio_invalido_vuelve_a_sin_limite(client):
     """Se ignora para filtrar (mas arriba) y tampoco se le repinta al usuario."""
     html = client.get("/blog/?{}&radio=7".format(DESDE)).get_data(as_text=True)
 
-    assert _marcado(html, "radio") == ""
+    assert _elegido(html, "radio") == ""
 
 
 def test_el_checkbox_de_resenias_llega_hasta_la_consulta(
@@ -968,21 +988,39 @@ def test_sin_el_checkbox_el_listado_los_trae_a_los_dos(
     assert "Panadería recién abierta" in html
 
 
-def test_el_checkbox_de_resenias_queda_marcado(client):
+def test_resenias_puesto_deja_su_ficha_prendida(client):
+    """La ficha muestra que esta aplicado, y el hidden lo hace viajar.
+
+    El hidden importa: si no estuviera, apretar "Buscar" con el filtro puesto
+    lo perderia sin que el usuario lo pida.
+    """
     html = client.get("/blog/?con_resenias=1").get_data(as_text=True)
 
-    assert _marcado(html, "con_resenias") == "1"
+    assert 'name="con_resenias" value="1"' in html
+    assert re.search(r'class="ficha-filtro ficha-filtro--activa"[^>]*>\s*Con reseñas', html)
 
 
 def test_los_dos_filtros_nuevos_se_pueden_sacar_de_a_uno(client):
-    """Aplicados salen como chip, igual que el texto, el rubro y la cercania."""
+    """Se sacan con la misma ficha que los pone: el enlace alterna.
+
+    Antes salian como chip abajo del titulo, con una × al lado. Ahora la ficha
+    de arriba hace las dos cosas, asi que el chip repetido se fue: la ficha
+    prendida enlaza a la misma URL sin ese parametro.
+    """
     html = client.get(
         "/blog/?{}&radio=5&con_resenias=1".format(DESDE)
     ).get_data(as_text=True)
 
-    assert "Hasta 5 km" in html
-    assert 'aria-label="Quitar el filtro de radio"' in html
-    assert 'aria-label="Quitar el filtro de reseñas"' in html
+    # El enlace de la ficha prendida es el que la apaga: no lleva el parametro.
+    apagar = re.search(r'href="([^"]*)"[^>]*class="ficha-filtro ficha-filtro--activa"', html)
+    assert apagar is not None
+    assert "con_resenias" not in apagar.group(1)
+
+    # El radio se saca eligiendo "Sin límite de distancia", que viaja vacio.
+    # El value se mira con un regex y no como texto exacto porque la opcion
+    # lleva ademas el `selected` cuando no hay radio puesto.
+    assert re.search(r'<option value=""[^>]*>Sin límite de distancia</option>', html)
+    assert _elegido(html, "radio") == "5"
 
 
 def test_sin_coordenadas_el_radio_no_pinta_su_chip(client):
@@ -1001,13 +1039,14 @@ def test_sin_coordenadas_el_radio_no_pinta_su_chip(client):
     assert 'class="filtros__limpiar"' not in html
 
 
-def test_con_una_direccion_geocodificada_el_radio_si_pinta_su_chip(
+def test_con_una_direccion_geocodificada_si_se_ofrece_el_radio(
     client, monkeypatch
 ):
     """Las coordenadas de una direccion las resuelve la vista y no estan en la URL.
 
-    Por eso la condicion del chip mira si la consulta ordeno por distancia y no
-    request.args: con "near" cargado el radio SI acota, y el chip corresponde.
+    Por eso la condicion mira si la consulta ordeno por distancia y no
+    request.args: con "near" cargado el radio SI acota, asi que el select
+    corresponde y queda con su valor puesto.
     """
     monkeypatch.setattr(
         "app.blog.vistas.get_coordinates_from_address",
@@ -1016,7 +1055,7 @@ def test_con_una_direccion_geocodificada_el_radio_si_pinta_su_chip(
 
     html = client.get("/blog/?near=Obelisco&radio=5").get_data(as_text=True)
 
-    assert "Hasta 5 km" in html
+    assert _elegido(html, "radio") == "5"
 
 
 # ------------------------------------------------------------------ compartir
@@ -1565,21 +1604,27 @@ def test_el_home_cuenta_los_emprendimientos_de_cada_rubro(
     assert "0 activos" in html
 
 
-def test_el_home_no_dice_de_que_ciudad_es_el_total(
+def test_el_home_no_dice_de_que_ciudad_es_nada(
     client, crear_usuario, crear_post
 ):
-    """Post no tiene localidad, asi que el contador habla de la plataforma.
+    """Post no tiene localidad, asi que el home no puede nombrar una ciudad.
 
-    El rediseño muestra "218 emprendimientos en San Rafael"; el "San Rafael" es
-    un texto que el diseñador escribio a mano en el editor, no un dato.
+    Antes esto cuidaba al contador ("218 emprendimientos en San Rafael": el
+    "San Rafael" era un texto escrito a mano en el editor, no un dato). El
+    contador se fue con el titular en el rediseño del 2026-09-03 -- la banda de
+    arriba quedo siendo el filtro y nada mas -- pero la regla sigue valiendo
+    para todo lo que quede en la pantalla.
     """
     autor = crear_usuario(username="autor")
     crear_post(autor.id, title="Pan")
 
     html = client.get("/").get_data(as_text=True)
 
-    assert "1 emprendimiento publicado" in html
     assert "San Rafael" not in html
+    # El titular y el contador ya no estan; el <h1> accesible si.
+    assert "Todo lo que se hace cerca tuyo" not in html
+    assert "emprendimiento publicado" not in html
+    assert '<h1 class="sr-only">' in html
 
 
 def test_el_home_ofrece_buscar_por_cercania(client):
@@ -1640,6 +1685,49 @@ def test_la_api_marca_los_favoritos_del_usuario_logueado(
 
     assert por_titulo["Guardado"]["favorito"] is True
     assert por_titulo["Suelto"]["favorito"] is False
+
+
+def test_la_api_manda_el_promedio_y_quien_publico(
+    client, db, crear_usuario, crear_post
+):
+    """La tarjeta del inicio muestra las dos cosas, igual que la del listado.
+
+    No son columnas de Post, asi que no salen del serialize(): el promedio sale
+    de la misma subquery agrupada que usa /blog/ y el nombre de la relacion
+    author_user. Si dejaran de viajar, la tarjeta de la home volveria a ser
+    una version pobre de la del listado sin que se rompa nada.
+    """
+    autor = crear_usuario(username="Marina")
+    post = crear_post(autor.id, title="Panadería")
+
+    for indice, puntaje in enumerate([4, 5]):
+        cliente = crear_usuario(username=f"cliente{indice}")
+        db.session.add(Review(post_id=post.id, user_id=cliente.id, rating=puntaje))
+    db.session.commit()
+
+    item = client.get("/api/posts/").get_json()["items"][0]
+
+    assert item["avg_rating"] == 4.5
+    assert item["review_count"] == 2
+    assert item["author_name"] == "Marina"
+
+
+def test_la_api_no_califica_con_cero_al_que_no_tiene_resenias(
+    client, crear_usuario, crear_post
+):
+    """Sin reseñas el promedio va en None y no en 0.
+
+    Un emprendimiento recien publicado no esta calificado con un cero: la
+    tarjeta tiene que poder decir "sin reseñas todavía", y con un 0 dibujaria
+    la peor nota posible.
+    """
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Nuevo")
+
+    item = client.get("/api/posts/").get_json()["items"][0]
+
+    assert item["avg_rating"] is None
+    assert item["review_count"] == 0
 
 
 def test_el_token_csrf_esta_disponible_para_el_javascript(client):
@@ -1842,7 +1930,7 @@ def test_el_total_sigue_exacto_con_el_filtro_nuevo(client, db, crear_usuario, cr
     html = client.get("/blog/?q=alfajor").get_data(as_text=True)
 
     assert re.search(r"1 emprendimiento\s*<", html)
-    assert html.count('class="ficha"') == 1
+    assert html.count('class="tarjeta"') == 1
     assert "Taller mecánico" not in html
 
 
@@ -1978,13 +2066,16 @@ def test_sin_el_parametro_el_listado_no_filtra_por_horario(
     assert "Panadería con franco" in html
 
 
-def test_abierto_ahora_pinta_su_chip_y_queda_marcado(
+def test_abierto_ahora_deja_su_ficha_prendida_y_viaja(
     client, db, crear_usuario, crear_post
 ):
+    """Igual que reseñas: la ficha muestra el estado y el hidden lo conserva."""
     html = client.get("/blog/?abierto_ahora=1").get_data(as_text=True)
 
-    assert re.search(r'name="abierto_ahora"[^>]*checked', html)
-    assert "Quitar el filtro de horario" in html
+    assert 'name="abierto_ahora" value="1"' in html
+    assert re.search(
+        r'class="ficha-filtro ficha-filtro--activa"[^>]*>.*?Abierto ahora', html, re.S
+    )
 
 
 def test_el_total_cuenta_solo_los_abiertos(client, db, crear_usuario, crear_post):

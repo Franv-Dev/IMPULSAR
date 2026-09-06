@@ -101,6 +101,38 @@
        usarlo. */
     --color-accent: #D97544;
 
+    /* --- Del rediseño de Claude Design (2026-09-04) ---------------------- */
+
+    /* El RELLENO de los botones primarios. No es --color-primary a proposito:
+       el indigo del logo (#3E2F94) sobre un boton grande quedaba pesado, y
+       Tomas pidio aclararlo. Dos pasos de luminosidad arriba, 7.25:1 contra el
+       texto blanco -- bien por encima del 4.5:1 de AA.
+       --color-primary sigue mandando en TEXTO: enlaces, iconos, titulos. */
+    --color-primary-boton: #5248AE;
+    --color-primary-boton-hover: #483BA1;
+
+    /* Los tres puntos del degradado de los bloques de marca oscuros (el panel
+       del anuncio, el CTA del home). Van con el MISMO valor en los dos temas,
+       por lo mismo que --color-primary-deep: no son superficies que sigan al
+       tema, llevan texto blanco fijo. Antes esto era #2F2578 -> #171046, un
+       morado casi negro que a Tomas no le cerraba. */
+    --color-panel-from: #4A3B8E;
+    --color-panel-mid: #3E2F94;
+    --color-panel-to: #33267C;
+
+    /* Paleta de rubros: siete pares fondo + tinta que comparten luminosidad
+       (L 0.519) y croma (C 0.107), variando solo el tono. Ese croma es el mas
+       alto que los seis tonos aguantan juntos dentro de sRGB sin bajar de
+       4.6:1. "Otros" es neutro a proposito: es el cajon de sastre.
+       Ver disenio-inicio/DISENIO.md para el detalle. */
+    --rubro-alimentos-bg: #FDECE5;    --rubro-alimentos-ink: #9A5230;
+    --rubro-indumentaria-bg: #FBEBF2; --rubro-indumentaria-ink: #954D71;
+    --rubro-servicios-bg: #F4F0E1;    --rubro-servicios-ink: #7C6700;
+    --rubro-artesanias-bg: #EEEFFE;   --rubro-artesanias-ink: #635EA3;
+    --rubro-tecnologia-bg: #E5F2FD;   --rubro-tecnologia-ink: #1D6FA0;
+    --rubro-hogar-bg: #E5F5EC;        --rubro-hogar-ink: #1C7B53;
+    --rubro-otros-bg: #EEF1F7;        --rubro-otros-ink: #5F6B7C;
+
     --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.10);
     --shadow-light: 0 4px 12px rgba(15, 23, 42, 0.08);
     --shadow-card: 0 8px 20px rgba(15, 23, 42, 0.06);
@@ -164,6 +196,26 @@
     /* Un tono mas claro que la terracota del tema claro (#D97544): sobre fondo
        oscuro la version oscura se apagaria, igual que le pasa al indigo. */
     --color-accent: #F1965D;
+
+    /* En oscuro el primario ya es claro y el texto encima es oscuro, asi que
+       el boton no necesita aclararse mas: sigue al primario. */
+    --color-primary-boton: #9B93FF;
+    --color-primary-boton-hover: #B3ACFF;
+
+    /* Los mismos que en claro: ver el comentario alla arriba. */
+    --color-panel-from: #4A3B8E;
+    --color-panel-mid: #3E2F94;
+    --color-panel-to: #33267C;
+
+    /* Los fondos de rubro se oscurecen y las tintas se aclaran, manteniendo el
+       tono de cada uno. Los pares quedan entre 4.6:1 y 5.3:1. */
+    --rubro-alimentos-bg: #3A241B;    --rubro-alimentos-ink: #E9A183;
+    --rubro-indumentaria-bg: #38222C; --rubro-indumentaria-ink: #E39CBE;
+    --rubro-servicios-bg: #322D18;    --rubro-servicios-ink: #CBB44F;
+    --rubro-artesanias-bg: #272641;   --rubro-artesanias-ink: #ADA8EE;
+    --rubro-tecnologia-bg: #16293A;   --rubro-tecnologia-ink: #74B7E4;
+    --rubro-hogar-bg: #14301F;        --rubro-hogar-ink: #6FC79A;
+    --rubro-otros-bg: #292440;        --rubro-otros-ink: #A29DBA;
     /* Mas claro que el borde: la estrella sin marcar tiene que insinuarse para
        que se vea que el widget tiene 5, y sobre fondo oscuro un gris apenas por
        encima de la superficie directamente desaparece. */
@@ -508,7 +560,7 @@ main {
 }
 
 .btn--primary {
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-boton);
     color: var(--color-on-primary);
     box-shadow: var(--shadow-light);
 }
@@ -516,7 +568,7 @@ main {
 .btn--primary:hover {
     transform: translateY(-1px);
     box-shadow: var(--shadow-soft);
-    background-color: var(--color-primary-hover);
+    background-color: var(--color-primary-boton-hover);
 }
 
 .btn--secondary {
@@ -655,76 +707,192 @@ main {
    linea, y tocarlas ahi moveria una pagina que no tiene nada que ver. */
 
 .buscador {
-    padding: 3rem 0 2.5rem;
+    padding: 2.25rem 0 2.1rem;
     background-color: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
 }
 
-.buscador__titulo {
-    margin: 0 0 0.4rem;
-    font-family: "Poppins", system-ui, sans-serif;
-    font-size: 2.2rem;
-    line-height: 1.15;
-    text-wrap: pretty;
-}
+/* La caja unica del artboard "Inicio": UN recuadro con los tres campos
+   adentro, separados por lineas, y el boton grande pegado a la derecha. Antes
+   eran tres inputs sueltos con su borde cada uno, que se leian como un
+   formulario de alta y no como un buscador.
 
-.buscador__conteo {
-    margin: 0 0 1.75rem;
-    color: var(--color-muted);
-}
-
+   Es la misma forma que la barra del listado (.barra-filtros__form), a
+   proposito: buscar tiene que ser el mismo gesto en las dos pantallas. No
+   reusa esas clases porque esta banda no es pegajosa, lleva la lupa adentro
+   del primer campo y su boton es de 64px, no de 44. */
 .buscador__form {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 0.75rem;
+    align-items: stretch;
+    gap: 0.35rem;
+    padding: 0.45rem;
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-soft);
 }
 
 .buscador__campo {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
     flex: 1 1 180px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    /* 64px del artboard. Muy por encima del piso de 44px de area tocable. */
+    min-height: 64px;
+    padding: 0 1.15rem;
+    border-radius: 13px;
 }
 
+/* El campo de texto se lleva casi el doble de ancho: es el que mas se escribe. */
 .buscador__campo--ancho {
-    flex: 2 1 320px;
+    flex: 1.8 1 280px;
+}
+
+/* El de "Dónde" lleva la pastilla de "Cerca de mí" al costado, asi que pide un
+   poco mas de ancho y empuja la pastilla contra el borde derecho.
+
+   Las proporciones del artboard (2 / 1 / 1.15) son para una caja de 1160px;
+   el container de la app es mas angosto y con esas el placeholder
+   "Tu barrio o dirección" quedaba cortado a la mitad detras de la pastilla. */
+.buscador__campo--donde {
+    flex: 1.4 1 260px;
+    justify-content: space-between;
+}
+
+/* Los separadores del rediseño, sin un <span> vacio por medio. */
+.buscador__campo + .buscador__campo {
+    box-shadow: inset 1px 0 0 var(--color-border);
+}
+
+/* Sin borde propio, el foco del teclado tiene que verse en el campo entero. */
+.buscador__campo:focus-within {
+    background-color: var(--color-input-bg);
+    box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+
+.buscador__lupa {
+    flex-shrink: 0;
+    color: var(--color-primary);
+}
+
+.buscador__campo-texto {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
 }
 
 .buscador__label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--color-text-soft);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
 }
 
 .buscador__input,
 .buscador__select {
-    /* 48px: el mismo alto para los dos, asi la fila queda pareja y sigue
-       siendo comodo de tocar en telefono. */
-    height: 48px;
-    padding: 0 0.9rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background-color: var(--color-input-bg);
-    color: var(--color-text);
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
     font-family: inherit;
-    font-size: 0.95rem;
+    font-size: 0.97rem;
+    color: var(--color-text);
 }
 
 .buscador__input:focus,
 .buscador__select:focus {
     outline: none;
-    border-color: var(--color-primary);
-    background-color: var(--color-input-bg-focus);
 }
 
 .buscador__input::placeholder {
     color: var(--color-muted);
 }
 
+/* "Cerca de mí" es una pastilla adentro del campo, no un link debajo: en el
+   rediseño es una accion del campo "Dónde" y tiene que leerse como parte de
+   el. Sigue sin ser un boton solido para no competir con "Buscar", que es la
+   accion principal de la fila. */
+.buscador__cerca {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 34px;
+    padding: 0 0.8rem;
+    border: 0;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.buscador__cerca:hover {
+    color: var(--color-primary-hover);
+}
+
+.buscador__cerca:disabled {
+    color: var(--color-muted);
+    cursor: progress;
+}
+
 .buscador__boton {
-    height: 48px;
     flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 64px;
+    padding: 0 1.75rem;
+    border-radius: 14px;
+}
+
+@media (max-width: 860px) {
+    /* Los tres campos uno al lado del otro no entran legibles: se apilan y el
+       boton se va a lo ancho, igual que en la barra del listado. */
+    .buscador__form {
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    .buscador__campo,
+    .buscador__campo--ancho,
+    .buscador__campo--donde {
+        flex: 0 0 auto;
+        min-height: 56px;
+        /* Un poco menos de aire a los costados que en escritorio: con 1.15rem
+           la pastilla de "Cerca de mí" se comia la ultima letra del
+           "Tu barrio o dirección". */
+        padding: 0 0.9rem;
+    }
+
+    /* Por lo mismo, la pastilla se ajusta un poco: en 390px cada pixel del
+       campo cuenta y el placeholder tiene que entrar entero. El alto sube a
+       los 44px del piso tocable: los 34 del artboard son para el mouse, y en
+       telefono esto se aprieta con el dedo. Entra porque el campo mide 56. */
+    .buscador__cerca {
+        height: 44px;
+        padding: 0 0.65rem;
+    }
+
+    /* En columna la linea separadora tiene que ser horizontal. */
+    .buscador__campo + .buscador__campo {
+        box-shadow: inset 0 1px 0 var(--color-border);
+    }
+
+    .buscador__boton {
+        width: 100%;
+        min-height: 52px;
+        margin-top: 0.35rem;
+        justify-content: center;
+    }
 }
 
 /* CTA EMPRENDEDOR (home) */
@@ -742,6 +910,56 @@ main {
     padding: 2rem;
     border-radius: var(--radius-lg);
     background-color: var(--color-primary-soft);
+}
+
+/* La variante del rediseño: el CTA deja de ser una caja lila clara y pasa a ser
+   el bloque de marca oscuro, el mismo degradado que el panel del anuncio. Va
+   con texto blanco fijo en los dos temas, como --color-primary-deep. */
+.cta__caja--panel {
+    padding: 2.75rem 2.75rem;
+    border-radius: 26px;
+    background-image:
+        radial-gradient(760px 400px at 88% 120%, rgba(217, 117, 68, 0.30), transparent 70%),
+        linear-gradient(135deg, var(--color-panel-from) 0%, var(--color-panel-mid) 55%, var(--color-panel-to) 100%);
+    box-shadow: 0 26px 56px rgba(23, 20, 71, 0.26);
+}
+
+.cta__caja--panel .cta__titulo {
+    color: #FFFFFF;
+}
+
+.cta__caja--panel .cta__bajada {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+/* Sobre el panel el boton primario se invierte: relleno blanco y texto indigo.
+   El indigo del boton sobre el indigo del panel no despegaria. */
+.cta__caja--panel .btn--primary {
+    background-color: #FFFFFF;
+    color: var(--color-panel-to);
+}
+
+.cta__caja--panel .btn--primary:hover {
+    background-color: #F2F0FC;
+    color: var(--color-panel-to);
+}
+
+.cta__caja--panel .btn--secondary {
+    background-color: transparent;
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #FFFFFF;
+}
+
+.cta__caja--panel .btn--secondary:hover {
+    background-color: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.45);
+    color: #FFFFFF;
+}
+
+@media (max-width: 640px) {
+    .cta__caja--panel {
+        padding: 1.75rem 1.5rem;
+    }
 }
 
 .cta__texto {
@@ -858,10 +1076,27 @@ main {
     margin-bottom: 1.5rem;
 }
 
+/* El rotulito en mayusculas arriba del titulo ("RUBROS", "AGENDA"). Va en
+   terracota, que es el acento de marca: es una marca de color, no texto de
+   lectura, pero igual usa el tono un paso mas oscuro (--color-warning-text) y
+   no el #D97544, que a este tamaño no llegaria a AA. */
+.section__rotulo {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-warning-text);
+}
+
 .section__title {
     margin: 0;
     font-family: "Poppins", system-ui, sans-serif;
-    font-size: 1.3rem;
+    font-size: 1.6rem;
+    letter-spacing: -0.025em;
+    text-wrap: pretty;
 }
 
 .section__subtitle {
@@ -871,9 +1106,28 @@ main {
 }
 
 .section__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
     font-size: 0.9rem;
+    font-weight: 600;
     text-decoration: none;
     color: var(--color-primary);
+}
+
+.section__link:hover {
+    color: var(--color-primary-hover);
+}
+
+/* La flecha se corre un poco al pasar por encima: es el unico movimiento del
+   enlace, que no lleva subrayado. */
+.section__flecha {
+    transition: transform 0.15s ease;
+}
+
+.section__link:hover .section__flecha {
+    transform: translateX(3px);
 }
 
 /* GRID DE CARDS */
@@ -885,14 +1139,14 @@ main {
 }
 
 /* RUBROS (home)
-   Los 7 rubros como fila de fichas. En el rediseño son 7 columnas fijas; aca
-   es auto-fit para que en una pantalla angosta se acomoden en varias filas en
-   vez de quedar ilegibles de tan finitas. */
+   Los 7 rubros mas la ficha de "Ver todo", en una grilla de 4x2 como el
+   artboard. Es auto-fit y no repeat(4) fijo para que en una pantalla angosta
+   se acomoden en menos columnas en vez de quedar ilegibles de tan finitas. */
 
 .rubros__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 0.9rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -901,27 +1155,66 @@ main {
 .rubro {
     display: flex;
     align-items: center;
-    /* 56px: el area de toque minima que se uso en el rediseño para movil. */
-    min-height: 56px;
-    padding: 0 1rem;
+    gap: 0.9rem;
+    /* 76px del artboard: entran el icono de 42, el nombre y el conteo. */
+    min-height: 76px;
+    padding: 0 1.15rem;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     color: var(--color-text);
     text-decoration: none;
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .rubro:hover,
 .rubro:focus-visible {
     border-color: var(--color-primary);
-    background-color: var(--color-primary-soft);
+    box-shadow: var(--shadow-card);
+}
+
+.rubro__texto {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
 }
 
 .rubro__nombre {
     font-family: "Poppins", system-ui, sans-serif;
-    font-size: 0.95rem;
+    font-size: 0.98rem;
     font-weight: 500;
+}
+
+/* La octava ficha: la salida al listado sin filtrar. Va en el bloque de marca
+   (los mismos tokens del panel del CTA) para que se lea como el cierre de la
+   grilla y no como un rubro mas. */
+.rubro--todos {
+    border-color: transparent;
+    background-image: linear-gradient(135deg, var(--color-panel-mid) 0%, var(--color-primary-deep) 100%);
+    color: var(--color-on-primary);
+    box-shadow: var(--shadow-card);
+}
+
+.rubro--todos:hover,
+.rubro--todos:focus-visible {
+    border-color: transparent;
+    box-shadow: var(--shadow-soft);
+}
+
+.rubro--todos .rubro__nombre {
+    font-weight: 600;
+}
+
+/* Sobre el panel indigo el conteo no puede seguir siendo --color-muted: se
+   apagaria. Blanco al 72%, que es lo que usa el artboard. */
+.rubro--todos .rubro__total {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.rubro--todos .rubro__tono {
+    background-color: rgba(255, 255, 255, 0.16);
+    color: var(--color-on-primary);
 }
 
 /* EXPLORAR (listado publico)
@@ -1178,12 +1471,6 @@ main {
     color: var(--color-muted);
 }
 
-.resultados__grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-}
-
 /* Chips de lo aplicado */
 
 .chips {
@@ -1217,78 +1504,16 @@ main {
     opacity: 1;
 }
 
-/* Ficha horizontal del listado: foto a la izquierda, datos a la derecha. */
+/* Lo que queda de la ficha vieja del listado.
 
-.ficha {
-    display: flex;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    background-color: var(--color-surface);
-    overflow: hidden;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
+   El listado y el inicio ya arman .tarjeta (ver "La tarjeta" mas abajo), asi
+   que .ficha, .ficha__foto/__img/__cuerpo/__tags/__acciones/__titulo/__meta/
+   __desc/__dueño se fueron: no los pedia ningun template. Estos dos sobreviven
+   porque el detalle del emprendimiento (blog/detail.html) todavia los usa para
+   el promedio de resenias.
 
-.ficha:hover {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-card);
-}
-
-.ficha__foto {
-    flex-shrink: 0;
-    width: 150px;
-    background-color: var(--color-image-bg);
-}
-
-.ficha__img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.ficha__cuerpo {
-    flex: 1;
-    min-width: 0;
-    padding: 16px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-
-.ficha__tags {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-}
-
-.ficha__acciones {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-.ficha__titulo {
-    margin: 0;
-    font-family: "Poppins", system-ui, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.ficha__titulo a {
-    color: var(--color-text);
-    text-decoration: none;
-}
-
-.ficha__meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    font-size: 0.82rem;
-    color: var(--color-muted);
-}
+   No confundir con .ficha-filtro*, .fichas-filtro* ni .ficha-servicio*: son
+   otras clases y siguen vivas. */
 
 .ficha__rating {
     display: inline-flex;
@@ -1302,35 +1527,12 @@ main {
     color: var(--color-star);
 }
 
-.ficha__desc {
-    margin: 0;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    color: var(--color-text-soft);
-    text-wrap: pretty;
-}
-
-.ficha__dueño {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.25rem;
-}
-
 /* Chico es el texto, no el area: hereda el inline-flex centrado de .btn y le
    suma el piso de 32px. */
 .btn--chico {
     font-size: 0.8rem;
     min-height: 32px;
     padding: 0.3rem 0.8rem;
-}
-
-/* Una sola columna de fichas antes de que la columna de filtros se vaya:
-   dos fichas horizontales en menos de 1100px dejan el texto en un hilo. */
-@media (max-width: 1100px) {
-    .resultados__grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
 }
 
 @media (max-width: 879px) {
@@ -1340,15 +1542,6 @@ main {
 
     .filtros {
         position: static;
-    }
-
-    .ficha {
-        flex-direction: column;
-    }
-
-    .ficha__foto {
-        width: 100%;
-        height: 160px;
     }
 }
 
@@ -1895,6 +2088,658 @@ main {
     max-width: none;
     box-shadow: none;
     border: 1px solid var(--color-border);
+}
+
+/* ============================================================
+   AJUSTES — el formulario del perfil, en dos columnas
+
+   Antes era una sola columna de diez controles con el botón de guardar al
+   final. Ahora: los campos a la izquierda, la vista previa a la derecha, y
+   cada grupo en su tarjeta. La previa cae abajo en 1100px, que es donde la
+   columna de 340 deja de entrar sin apretar los campos.
+   ============================================================ */
+
+.ajustes-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.ajustes-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+
+@media (max-width: 1100px) {
+    .ajustes-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.ajustes-caja {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.15rem 1.35rem 1.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.ajustes-caja__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.ajustes-caja__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+}
+
+.ajustes-caja__nota,
+.ajustes-ayuda {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+}
+
+/* La etiqueta lleva al lado la pastilla que dice qué hace el campo: es la
+   diferencia entre "ciudad" y "dirección", que se explicaba en un texto de
+   ayuda que nadie leía hasta después de equivocarse. */
+.ajustes-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ajustes-tag {
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    color: var(--color-muted);
+    font-size: 0.69rem;
+    font-weight: 600;
+}
+
+.ajustes-tag--mapa {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.ajustes-contador {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-muted);
+}
+
+.ajustes-contador--pasado {
+    color: var(--color-danger-text);
+}
+
+/* La caja del textarea: misma pieza que .auth__campo pero alta, con el aire
+   arriba y abajo en vez de los 48px fijos de una línea. */
+.auth__campo--area {
+    height: auto;
+    align-items: stretch;
+    padding: 0.7rem 0.85rem;
+}
+
+.auth__campo--area .auth__input {
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.auth__campo--error {
+    border-color: var(--color-danger-border);
+    background-color: var(--color-danger-surface);
+}
+
+.auth__campo--error .auth__campo-icono {
+    color: var(--color-danger-text);
+}
+
+/* --- Las dos fotos --- */
+
+.ajustes-portada {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.ajustes-portada__img {
+    display: block;
+    width: 100%;
+    height: 132px;
+    object-fit: cover;
+}
+
+.ajustes-portada__vacia {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.92);
+    color: var(--color-text-soft);
+    font-size: 0.76rem;
+}
+
+.ajustes-portada__acciones {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* El <input type=file> va escondido con .sr-only y la etiqueta hace de botón:
+   el control nativo no se puede vestir, y así el tamaño tocable es el del
+   botón y no el del texto "Ningún archivo seleccionado". */
+.ajustes-archivo {
+    position: relative;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.ajustes-archivo svg {
+    width: 15px;
+    height: 15px;
+}
+
+/* El foco del teclado vive en el input escondido, así que se dibuja en la
+   etiqueta o no se vería en ningún lado. */
+.ajustes-archivo:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.ajustes-quitar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 40px;
+    padding: 0 0.85rem;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.92);
+    color: var(--color-text-soft);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.ajustes-avatar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.ajustes-avatar__foto {
+    flex: 0 0 auto;
+    width: 84px;
+    height: 84px;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 3px solid var(--color-surface);
+    box-shadow: var(--shadow-light);
+    background-color: var(--color-surface-alt);
+}
+
+.ajustes-avatar__foto img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ajustes-avatar__lado {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.ajustes-avatar__botones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.ajustes-avatar__botones .ajustes-quitar {
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+}
+
+/* --- Marcas de la biografía --- */
+
+.ajustes-marcas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ajustes-marca {
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+    font-size: 0.76rem;
+}
+
+/* --- El resultado de una acción, dicho en el campo --- */
+
+.ajustes-estado {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 0.83rem;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.ajustes-estado svg {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+}
+
+.ajustes-estado--ok {
+    color: var(--color-success-text);
+}
+
+.ajustes-estado--falta {
+    color: var(--color-warning-text);
+}
+
+.ajustes-estado--error {
+    color: var(--color-danger-text);
+}
+
+/* --- Barra de guardar --- */
+
+.ajustes-guardar {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.85rem 1.1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-light);
+}
+
+/* Con cambios sin guardar la barra se tiñe: es el único aviso de que lo que
+   está en pantalla todavía no lo ve nadie. */
+.ajustes-guardar--sucia {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+}
+
+.ajustes-guardar__estado {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.ajustes-guardar__titulo {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.ajustes-guardar--sucia .ajustes-guardar__titulo {
+    color: var(--color-primary);
+}
+
+.ajustes-guardar__detalle {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+/* --- Contacto y redes --- */
+
+.ajustes-duo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+@media (max-width: 640px) {
+    .ajustes-duo {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.ajustes-redes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.ajustes-red {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    color: var(--color-muted);
+}
+
+.ajustes-red--ig {
+    color: var(--rubro-indumentaria-ink);
+}
+
+.ajustes-red--fb {
+    color: var(--rubro-tecnologia-ink);
+}
+
+/* --- Vista previa --- */
+
+.ajustes-previa {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.ajustes-previa__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+}
+
+.ajustes-previa__titulo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.ajustes-previa__titulo svg {
+    width: 16px;
+    height: 16px;
+}
+
+.ajustes-previa__link {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+.ajustes-previa__tarjeta {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    overflow: hidden;
+}
+
+.ajustes-previa__tarjeta--simple {
+    padding: 1.1rem 1.2rem 1.2rem;
+}
+
+.ajustes-previa__portada img {
+    display: block;
+    width: 100%;
+    height: 84px;
+    object-fit: cover;
+}
+
+.ajustes-previa__cuerpo {
+    padding: 0 1.1rem 1.1rem;
+}
+
+.ajustes-previa__avatar {
+    width: 66px;
+    height: 66px;
+    margin-top: -33px;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 4px solid var(--color-surface);
+    background-color: var(--color-surface);
+}
+
+.ajustes-previa__avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ajustes-previa__nombre {
+    margin: 0.6rem 0 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.12rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.ajustes-previa__rol {
+    margin: 0.15rem 0 0.65rem;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.ajustes-previa__bio {
+    margin: 0.7rem 0 0;
+    font-size: 0.83rem;
+    line-height: 1.65;
+    color: var(--color-text-soft);
+    /* La biografía viaja con renglones propios y hay que respetarlos: es la
+       diferencia entre lo que se escribe y lo que se publica. */
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.ajustes-previa__bio--vacia {
+    font-style: italic;
+    color: var(--color-muted);
+}
+
+.ajustes-previa__canales {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.ajustes-previa__canal {
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+    font-size: 0.76rem;
+}
+
+.ajustes-previa__canal--wpp {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+    font-weight: 600;
+}
+
+.ajustes-previa__semana {
+    list-style: none;
+    margin: 0.9rem 0 0;
+    padding: 0.9rem 0 0;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.8rem;
+    color: var(--color-text-soft);
+}
+
+.ajustes-previa__semana li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.22rem 0;
+}
+
+.ajustes-previa__dia--hoy {
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.ajustes-previa__pie {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+}
+
+/* --- Horarios: la fila y su interruptor --- */
+
+.ajustes-atajos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.horarios-editor {
+    display: flex;
+    flex-direction: column;
+}
+
+.horarios-editor .horario-fila {
+    gap: 0.75rem;
+    margin-bottom: 0;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--color-surface-alt);
+}
+
+.horarios-editor .horario-fila__dia {
+    min-width: 6rem;
+}
+
+.horario-fila__horas {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* El input de hora era .auth__input, que desde el rediseño de las pantallas de
+   entrar no tiene borde propio (la caja la pone .auth__campo). Acá el control
+   ES la caja: con dos por fila, envolver cada uno sumaba dos divs por día. */
+.horarios-editor .horario-fila__hora {
+    height: 44px;
+    padding: 0 0.7rem;
+    border: 1px solid var(--color-border);
+    border-radius: 13px;
+    background-color: var(--color-input-bg);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.horarios-editor .horario-fila__hora:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+/* El día cerrado apaga sus horas en vez de esconderlas: si se esconden, volver
+   a abrir el día muestra dos campos vacíos y hay que recargar lo que ya
+   estaba escrito. */
+.horario-fila--cerrada .horario-fila__horas {
+    opacity: 0.45;
+}
+
+.horario-fila--cerrada .horario-fila__dia {
+    color: var(--color-muted);
+}
+
+.interruptor {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-left: auto;
+    cursor: pointer;
+}
+
+.interruptor__input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.interruptor__pista {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    /* SIN marcar = el día está ABIERTO: el checkbox se llama "cerrado_N" (así
+       lo lee el backend desde siempre) pero un interruptor encendido se lee
+       como "sí, atiendo". El nombre accesible lo aclara: "Cerrado el lunes". */
+    background-color: var(--color-primary-boton);
+    transition: background-color 0.15s ease;
+}
+
+.interruptor__pista::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 21px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background-color: #FFFFFF;
+    transition: left 0.15s ease;
+}
+
+.interruptor__input:checked + .sr-only + .interruptor__pista {
+    background-color: var(--color-border);
+}
+
+.interruptor__input:checked + .sr-only + .interruptor__pista::after {
+    left: 3px;
+}
+
+.interruptor__input:focus-visible + .sr-only + .interruptor__pista {
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.interruptor__texto {
+    width: 4.2rem;
+    font-size: 0.82rem;
+    color: var(--color-success-text);
+}
+
+.interruptor__cerrado {
+    display: none;
+}
+
+.interruptor__input:checked ~ .interruptor__texto {
+    color: var(--color-muted);
+}
+
+.interruptor__input:checked ~ .interruptor__texto .interruptor__abierto {
+    display: none;
+}
+
+.interruptor__input:checked ~ .interruptor__texto .interruptor__cerrado {
+    display: inline;
 }
 
 @media (max-width: 1100px) {
@@ -2604,60 +3449,221 @@ main {
 
 /* =========================
 PÁGINAS DE AUTENTICACIÓN
+=========================
+
+Entrar y crear cuenta son la MISMA pantalla con dos solapas, así que todo lo de
+acá abajo lo comparten las dos. Van a pantalla completa sobre una foto, sin
+barra y sin pie (los bloques se vacían en las dos plantillas): la barra ofrecía
+"Acceder" y "Registrarse", que es lo que la pantalla ya está haciendo.
+
+Reemplaza a la pantalla partida mitad y mitad, con el panel índigo del conteo
+de emprendimientos y los cuatro beneficios numerados. Se sacó entera por
+decisión de Tomás: partía la vista al medio y en teléfono era un segundo scroll
+de relleno. Lo que quedó del argumento son tres líneas al pie de la tarjeta.
 ========================= */
 
 .auth {
-    padding: 3rem 1.5rem 3.5rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    /* Ocupa la ventana entera menos nada: no hay barra ni pie que descontar.
+       min-height y no height para que en un teléfono bajo la tarjeta pueda
+       pasarse de largo y hacer scroll en vez de recortarse. */
+    min-height: 100vh;
+    padding: 3rem 1.25rem 3.25rem;
+    overflow: hidden;
+    /* El color de abajo de todo: si la foto tarda o falla, la pantalla sigue
+       siendo oscura y el texto blanco encima se lee igual. */
+    background-color: #1A1330;
+}
+
+/* --- El fondo ------------------------------------------------------------
+   Cuatro capas apiladas, cada una en su <span> (ver auth/_fondo.html). Van
+   como elementos y no como varios background del <section> porque así cada
+   una se puede tocar sola sin rearmar la lista entera. */
+
+.auth__foto,
+.auth__velo,
+.auth__degradado,
+.auth__vineta {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+/* AQUÍ VA LA FOTO, y es el único lugar donde hay que tocar nada.
+   Se deja el archivo en static/icons/, se descomenta el background-image con
+   su nombre y listo. El degradado de abajo es el hueco mientras tanto: oscuro,
+   con una luz cálida arriba a la izquierda, que es como va a estar iluminada
+   la foto de alguien trabajando en su taller.
+
+   La foto que entra tiene que ser horizontal, de 2400 px de ancho o más, con
+   el sujeto A UN COSTADO: el centro lo tapa la tarjeta. */
+.auth__foto {
+    /* background-image: url("../icons/auth-fondo.jpg"); */
+    background: radial-gradient(ellipse 62% 58% at 26% 18%, #6E5A3A 0%, #3A2E44 46%, #1A1330 100%);
+    background-size: cover;
+    background-position: center;
+}
+
+/* Baja la foto a semioscura y la tiñe de índigo en vez de dejarla en gris: es
+   el color de la marca, y una foto cualquiera pasa a pertenecer a la pantalla. */
+.auth__velo {
+    background-color: rgba(26, 19, 48, 0.46);
+}
+
+/* Oscurece arriba y abajo. Es lo que hace que el logo y las tres líneas del
+   pie se lean contra CUALQUIER foto que se ponga después, sin tener que elegir
+   una que ya venga oscura en los bordes. */
+.auth__degradado {
+    background-image: linear-gradient(
+        180deg,
+        rgba(20, 14, 44, 0.62) 0%,
+        rgba(20, 14, 44, 0.14) 32%,
+        rgba(20, 14, 44, 0.18) 68%,
+        rgba(20, 14, 44, 0.70) 100%
+    );
+}
+
+/* Cierra la composición sobre la tarjeta. */
+.auth__vineta {
+    background-image: radial-gradient(
+        ellipse 62% 70% at 50% 46%,
+        rgba(20, 14, 44, 0) 32%,
+        rgba(20, 14, 44, 0.34) 100%
+    );
+}
+
+/* --- La columna del medio ------------------------------------------------ */
+
+.auth__centro {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    flex-grow: 1;
+    width: 100%;
+    max-width: 468px;
 }
 
-.auth__container {
-    display: flex;
-    justify-content: center;
+.auth__logo {
+    display: block;
+    margin-bottom: 1.75rem;
 }
 
-/* Pantalla "Entrar" del rediseño: formulario a la izquierda, panel indigo con
-   el argumento a la derecha, mitad y mitad. Es un modificador de .auth y no
-   una pantalla nueva para que login y registro sigan compartiendo todo lo de
-   adentro de la tarjeta (campos, mensajes, boton). */
-.auth--split {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: stretch;
-    gap: 0;
-    padding: 0;
+/* El logotipo tiene la palabra en gris azulado (#5D6F87): sobre la foto oscura
+   no se leería. Se invierte a blanco con un filtro en vez de pedir un segundo
+   PNG que después haya que mantener sincronizado con el original. */
+.auth__logo img {
+    display: block;
+    height: 38px;
+    width: auto;
+    filter: brightness(0) invert(1);
 }
 
-.auth__formulario {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3.5rem 2rem;
+/* --- La tarjeta ---------------------------------------------------------- */
+
+.auth__card {
+    /*  LA TARJETA NO SIGUE AL TEMA, y es a propósito.
+
+        El fondo de esta pantalla es una foto oscura con su velo, y esas capas
+        están fijas en los dos temas: no son superficies de la interfaz, son
+        una imagen. Si la tarjeta siguiera al tema, en modo oscuro quedaría
+        gris oscuro sobre foto oscura y se perdería el único contraste que
+        sostiene la composición.
+
+        Es la misma regla que ya se aplica a --color-primary-deep y a los
+        paneles de marca: un bloque con valores propios, iguales en los dos
+        temas. Se resuelve redeclarando los tokens del tema claro acá adentro
+        en vez de escribir colores a mano en cada regla hija, así el resto del
+        bloque sigue leyéndose igual y no hay un segundo juego de reglas para
+        modo oscuro que mantener.
+
+        color-scheme fija además los controles del navegador (el autocompletar
+        del usuario, la barra de scroll interna) al esquema claro, que es el
+        que corresponde a lo que se ve. */
+    color-scheme: light;
+
+    --color-bg: #F5F7FA;
+    --color-surface: #FFFFFF;
+    --color-text: #1B2430;
+    --color-text-soft: #4A5666;
+    --color-muted: #5F6B7C;
+    --color-border: #E2E6EE;
+    --color-input-bg: #F5F7FA;
+    --color-input-bg-focus: #FFFFFF;
+    --color-primary: #3E2F94;
+    --color-primary-hover: #33267C;
+    --color-primary-soft: #ECEAF7;
+    --color-primary-boton: #5248AE;
+    --color-primary-boton-hover: #483BA1;
+    --color-on-primary: #FFFFFF;
+    --color-danger-bg: #FEE2E2;
+    --color-danger-text: #B91C1C;
+    --rubro-alimentos-bg: #FDECE5;
+    --rubro-alimentos-ink: #9A5230;
+    --shadow-light: 0 4px 12px rgba(15, 23, 42, 0.08);
+
+    /*  Redeclarar los tokens no alcanza para el texto: los títulos y los
+        nombres de las fichas no fijan color, lo HEREDAN del <body>, que ya lo
+        resolvió con el token del tema que esté puesto. En oscuro quedaban casi
+        blancos sobre la tarjeta blanca. Poner el color acá corta la herencia
+        en la tarjeta y todo lo de adentro parte del valor correcto. */
+    color: var(--color-text);
+
+    /* border-box y no el content-box por defecto: con el otro, el width:100%
+       era el ancho de la columna Y ADEMÁS le sumaba su propio padding y el
+       borde, así que en teléfono la tarjeta se comía los márgenes y quedaba
+       pegada a los dos bordes de la pantalla. */
+    box-sizing: border-box;
+    width: 100%;
+    padding: 2.25rem 2.5rem 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 26px;
     background-color: var(--color-surface);
+    /* Más sombra que una tarjeta normal: sobre un fondo oscuro una sombra
+       suave no despega nada. */
+    box-shadow: 0 44px 96px rgba(8, 4, 28, 0.52), 0 4px 12px rgba(8, 4, 28, 0.34);
 }
 
-.auth--split .auth__card {
-    box-shadow: none;
-    padding: 0;
+.auth__title {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.8rem;
+    line-height: 1.15;
+    letter-spacing: -0.028em;
+    text-align: center;
+    text-wrap: pretty;
 }
+
+.auth__subtitle {
+    margin: 0.6rem 0 1.5rem;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+    text-align: center;
+}
+
+/* --- Las solapas --------------------------------------------------------- */
 
 .auth__tabs {
     display: flex;
     gap: 4px;
-    padding: 3px;
+    padding: 4px;
     margin-bottom: 1.5rem;
-    border-radius: var(--radius-md);
+    border-radius: 13px;
     background-color: var(--color-bg);
 }
 
 .auth__tab {
     flex: 1;
-    padding: 10px 0;
-    border-radius: var(--radius-sm);
+    /* 44px de alto: es un control que se toca, y en teléfono es lo primero. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    border-radius: 10px;
     text-align: center;
     text-decoration: none;
     font-size: 0.88rem;
@@ -2671,145 +3677,36 @@ PÁGINAS DE AUTENTICACIÓN
     box-shadow: var(--shadow-light);
 }
 
-/* El panel del argumento, sobre el indigo profundo del rediseño
-   (--color-primary-deep). Es a proposito el mismo color en los dos temas: no
-   es una superficie que siga al tema, es un bloque de marca, y el texto que
-   lleva encima es blanco fijo.
-   Primero se probo componerlo con color-mix sobre --color-primary, pero en
-   tema oscuro el primario es CLARO (#9B93FF) y el mix daba #7973C7: 4.1:1
-   contra el blanco, abajo del minimo AA. Por eso es un token y no una cuenta. */
-.auth__panel {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 1.75rem;
-    padding: 3.5rem 2.5rem;
-    background-color: var(--color-primary-deep);
-    color: #fff;
-}
-
-.auth__panel-chip {
-    display: inline-block;
-    padding: 5px 12px;
-    border-radius: 999px;
-    background-color: rgba(255, 255, 255, 0.16);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-}
-
-.auth__panel-titulo {
-    margin: 1rem 0 0.6rem;
-    font-family: "Poppins", system-ui, sans-serif;
-    font-size: 1.6rem;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
-    text-wrap: pretty;
-}
-
-.auth__panel-bajada {
-    margin: 0;
-    font-size: 0.95rem;
-    line-height: 1.6;
-    /* Blanco al 78%: baja el brillo respecto del titulo sin irse a un gris que
-       sobre indigo se ensucia. */
-    color: rgba(255, 255, 255, 0.78);
-}
-
-.auth__beneficios {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    counter-reset: none;
-}
-
-.auth__beneficio {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.8rem;
-    padding: 15px 18px;
-    border-radius: var(--radius-md);
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-.auth__beneficio-num {
-    flex-shrink: 0;
-    width: 26px;
-    height: 26px;
-    border-radius: 999px;
-    background-color: rgba(255, 255, 255, 0.18);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-}
-
-.auth__beneficio-titulo {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.auth__beneficio-desc {
-    display: block;
-    margin-top: 3px;
-    font-size: 0.84rem;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.78);
-    text-wrap: pretty;
-}
-
-/* En pantalla angosta el panel pasa abajo del formulario: partir la pantalla
-   en dos columnas de 190px no le sirve a nadie. */
-@media (max-width: 879px) {
-    .auth--split {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .auth__panel {
-        padding: 2.5rem 1.5rem;
-    }
-}
-
-.auth__card {
-    width: 100%;
-    max-width: 420px;
-    background-color: var(--color-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-soft);
-    padding: 2rem 2.25rem;
-}
-
-.auth__title {
-    margin: 0 0 0.5rem;
-    font-family: "Poppins", system-ui, sans-serif;
-    font-size: 1.5rem;
-}
-
-.auth__subtitle {
-    margin: 0 0 1.5rem;
-    color: var(--color-muted);
-    font-size: 0.95rem;
-}
+/* --- Los mensajes -------------------------------------------------------- */
 
 .auth__messages {
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
 }
 
 /* Es el unico estilo de flash message del sitio: todas las vistas renderizan
    get_flashed_messages() con esta clase, asi que alcanza con tematizarla aca. */
 .auth__alert {
-    padding: 0.6rem 0.8rem;
-    border-radius: var(--radius-md);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
     background-color: var(--color-danger-bg);
     color: var(--color-danger-text);
     font-size: 0.85rem;
+    line-height: 1.5;
 }
+
+.auth__alert + .auth__alert {
+    margin-top: 0.5rem;
+}
+
+.auth__alert-icono {
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* --- Los campos ---------------------------------------------------------- */
 
 .auth__form {
     display: flex;
@@ -2820,56 +3717,320 @@ PÁGINAS DE AUTENTICACIÓN
 .auth__field {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.45rem;
 }
 
 .auth__label {
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.79rem;
+    font-weight: 600;
+    color: var(--color-text);
 }
 
-.auth__input {
-    border-radius: var(--radius-md);
+/* La caja es la que lleva el borde y el foco, no el <input>: adentro van
+   también el ícono y el botón del ojo, y los tres tienen que verse como una
+   sola pieza. */
+.auth__campo {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    height: 48px;
+    padding: 0 0.75rem 0 0.875rem;
     border: 1px solid var(--color-border);
-    padding: 0.6rem 0.75rem;
-    font-size: 0.9rem;
-    font-family: inherit;
-    outline: none;
-    color: var(--color-text);
+    border-radius: 13px;
     background-color: var(--color-input-bg);
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+/* El <input> no tiene borde propio, así que el foco del teclado tiene que
+   verse en la caja entera o no se vería en ningún lado. */
+.auth__campo:focus-within {
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.auth__campo-icono {
+    flex-shrink: 0;
+    color: var(--color-muted);
+}
+
+/* .auth__input ES la caja, salvo cuando va adentro de una .auth__campo.
+
+   El rediseño de entrar/crear cuenta le pasó el borde a .auth__campo (que
+   envuelve al input junto con el ícono y el ojo) y dejó al input sin borde, sin
+   fondo y sin padding. Pero la clase la usan trece formularios más —eventos,
+   productos, servicios, turnos, reportes, la bio— que nunca tuvieron ese
+   envoltorio: ahí los campos quedaron sin recuadro, texto suelto sobre la
+   tarjeta.
+
+   Por eso el default vuelve a ser la caja, que es lo que esos trece esperan, y
+   son las pantallas nuevas las que la apagan cuando el borde ya lo pone el
+   envoltorio. Así ninguno de los dos grupos depende de que el otro se acuerde
+   de algo. */
+.auth__input {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: 13px;
+    background-color: var(--color-input-bg);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.auth__input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-input-bg-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.auth__campo .auth__input {
+    flex: 1;
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    min-width: 0;
+}
+
+/* El foco lo dibuja la caja de afuera (.auth__campo:focus-within). */
+.auth__campo .auth__input:focus {
+    box-shadow: none;
 }
 
 .auth__input::placeholder {
     color: var(--color-muted);
 }
 
-.auth__input:focus {
-    border-color: var(--color-primary);
-    background-color: var(--color-input-bg-focus);
-    box-shadow: 0 0 0 1px var(--color-primary-soft);
-}
-
 textarea.auth__input {
+    padding: 0.7rem 0.875rem;
     line-height: 1.5;
     resize: vertical;
     min-height: 120px;
 }
 
+.auth__campo textarea.auth__input {
+    padding: 0;
+}
+
+/* --- El ojo de la contraseña --------------------------------------------- */
+
+.auth__ojo {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    cursor: pointer;
+}
+
+.auth__ojo:hover {
+    color: var(--color-primary-hover);
+}
+
+/* Sin JavaScript el botón no hace nada, así que main.js es el que lo enciende
+   quitándole el hidden. El !important es porque [hidden] pierde contra el
+   display de arriba. */
+.auth__ojo[hidden] {
+    display: none !important;
+}
+
+/* Un solo ícono a la vez: el tachado aparece cuando la contraseña YA se ve, o
+   sea que el dibujo muestra qué va a pasar al apretar, no en qué estado está. */
+.auth__ojo-cerrado,
+.auth__ojo[aria-pressed="true"] .auth__ojo-abierto {
+    display: none;
+}
+
+.auth__ojo[aria-pressed="true"] .auth__ojo-cerrado {
+    display: block;
+}
+
+/* --- Las reglas de la contraseña ----------------------------------------- */
+
+/* Las dos que validate_password aplica de verdad, dichas antes de que el
+   formulario rebote. No es un medidor de fuerza: eso prometería un criterio
+   que la app no tiene. */
+.auth__reglas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1rem;
+    margin: 0.15rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.76rem;
+    color: var(--color-muted);
+}
+
+.auth__reglas li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.auth__reglas li::before {
+    content: "";
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background-color: var(--color-border);
+}
+
+/* --- Las fichas de rol --------------------------------------------------- */
+
+.auth__roles {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.auth__roles-grilla {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+}
+
+/* El <input type="radio"> real sigue existiendo y es el que manda el valor:
+   se esconde a la vista pero NO con display:none, que lo sacaría del orden de
+   tabulación y dejaría el control inalcanzable con el teclado. */
+.auth__rol input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.auth__rol-caja {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 0.9rem 0.9rem 0.95rem;
+    /* El borde es de 2px SIEMPRE, transparente cuando no está elegida: si
+       creciera de 1 a 2 al elegirla, la ficha saltaría un pixel. */
+    border: 2px solid transparent;
+    box-shadow: inset 0 0 0 1px var(--color-border);
+    border-radius: 15px;
+    background-color: var(--color-surface);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.auth__rol:hover .auth__rol-caja {
+    box-shadow: inset 0 0 0 1px var(--color-primary-soft);
+}
+
+.auth__rol input:checked + .auth__rol-caja {
+    border-color: var(--color-primary);
+    box-shadow: none;
+    background-color: var(--color-primary-soft);
+}
+
+/* El foco del teclado tiene que verse: el radio está escondido, así que el
+   anillo va en la caja. */
+.auth__rol input:focus-visible + .auth__rol-caja {
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+    border-color: var(--color-primary);
+}
+
+.auth__rol-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.auth__rol-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+}
+
+/* Comprar en el índigo de marca y Vender en la terracota de los alimentos: son
+   los dos pares que ya existen en la paleta, no colores nuevos. */
+.auth__rol-icono--comprar {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.auth__rol-icono--vender {
+    background-color: var(--rubro-alimentos-bg);
+    color: var(--rubro-alimentos-ink);
+}
+
+.auth__rol-marca {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 999px;
+    background-color: transparent;
+    color: transparent;
+}
+
+.auth__rol input:checked + .auth__rol-caja .auth__rol-marca {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.auth__rol-nombre {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.auth__rol-desc {
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--color-text-soft);
+}
+
+/* --- El botón y el pie de la tarjeta ------------------------------------- */
 
 .auth__submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
     width: 100%;
-    margin-top: 0.5rem;
+    min-height: 50px;
+    margin-top: 0.35rem;
+    border-radius: 14px;
+    font-size: 0.97rem;
 }
 
 .auth__footer {
-    margin-top: 1.25rem;
-    font-size: 0.9rem;
+    margin: 1.25rem 0 0;
+    font-size: 0.85rem;
     color: var(--color-muted);
+    text-align: center;
 }
 
 .auth__footer a {
     color: var(--color-primary);
+    font-weight: 600;
     text-decoration: none;
 }
 
@@ -2877,9 +4038,68 @@ textarea.auth__input {
     text-decoration: underline;
 }
 
+/* --- El argumento, abajo de la tarjeta ----------------------------------- */
+
+/* Blanco al 80% sobre la foto oscura, y el tilde en el verde CLARO del tema
+   oscuro: el #1F7A4D del tema claro sobre este fondo no se vería. */
+.auth__argumento {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.6rem;
+    margin: 1.75rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.81rem;
+    color: rgba(255, 255, 255, 0.80);
+}
+
+.auth__argumento li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.auth__argumento svg {
+    color: #6FC79A;
+}
+
+/* --- Teléfono ------------------------------------------------------------ */
+
 @media (max-width: 480px) {
+    .auth {
+        /* Menos aire arriba y abajo, y 20px a los costados: la tarjeta tiene
+           que despegarse de los bordes para que se vea el fondo alrededor. */
+        padding: 2.25rem 1.25rem 2rem;
+    }
+
+    .auth__logo {
+        margin-bottom: 1.4rem;
+    }
+
+    .auth__logo img {
+        height: 30px;
+    }
+
     .auth__card {
-        padding: 1.5rem 1.5rem;
+        padding: 1.5rem 1.15rem 1.4rem;
+        border-radius: 22px;
+    }
+
+    .auth__title {
+        font-size: 1.5rem;
+    }
+
+    .auth__subtitle {
+        margin-bottom: 1.25rem;
+    }
+
+    /* En 390px la fila de tres se parte fea; una sola línea alcanza. Las otras
+       dos afirmaciones no se pierden: están en el inicio y en el "Cómo
+       funciona". */
+    .auth__argumento li:not(:first-child) {
+        display: none;
     }
 }
 /* =========================
@@ -3680,6 +4900,309 @@ textarea.auth__input {
     margin-bottom: 0.6rem;
 }
 
+/* El plegable que solo pliega en telefono (semana de horarios, mapa). En
+   escritorio el JS lo deja abierto y el resumen no tiene sentido: seria un
+   "Ver la semana" arriba de la semana. Se esconde con CSS y no sacandolo del
+   HTML porque el mismo markup sirve para los dos tamaños. */
+@media (min-width: 961px) {
+    .perfil-plegable--movil > .perfil-plegable__resumen {
+        display: none;
+    }
+}
+
+/* --- Pestañas del perfil ---
+   Emprendimientos y eventos dejaban la pagina larguisima apilados. Van en una
+   pastilla, como los chips del inicio, y no como un subrayado: la fila entra
+   en el ancho de la columna principal en telefono sin partirse.
+
+   Nace con hidden en el HTML y lo saca el JS (ver el listener de
+   [data-perfil-tabs] en main.js): sin JS las dos secciones se ven enteras, una
+   abajo de la otra, que es como funcionaba el perfil antes. */
+.perfil-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.35rem;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+}
+
+.perfil-tabs__boton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    /* 44px de alto: es el piso tocable del proyecto, no una sugerencia. */
+    min-height: 44px;
+    padding: 0 1.15rem;
+    border: 0;
+    border-radius: 999px;
+    background-color: transparent;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.perfil-tabs__boton:hover {
+    color: var(--color-text);
+}
+
+.perfil-tabs__boton--activo,
+.perfil-tabs__boton--activo:hover {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.perfil-tabs__contador {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-muted);
+}
+
+.perfil-tabs__boton--activo .perfil-tabs__contador {
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+}
+
+/* --- El perfil de un cliente ---
+   Sin portada (la saca el template) el avatar no tiene nada que pisar: se le
+   va el margen negativo, y baja de 112 a 96 px porque un cliente no es un
+   negocio y el perfil no tiene que aparentarlo. El cuerpo recupera el padding
+   de arriba que antes ponia la portada. */
+.perfil-hero--cliente .perfil-hero__cuerpo {
+    padding-top: 1.75rem;
+}
+
+.perfil-hero--cliente .perfil-hero__avatar {
+    width: 96px;
+    height: 96px;
+    margin-top: 0;
+}
+
+/* --- Barra del dueño ("Este es tu perfil" / "Ver como visitante") ---
+   Va arriba de todo, antes de la portada: es lo primero que hay que saber al
+   entrar al propio perfil. Superficie de marca suave y no el indigo profundo
+   de los paneles: es un aviso permanente, no un bloque de marca, y el indigo
+   compitiendo con la portada dejaba dos bloques oscuros pegados.
+
+   La variante --previa sube el borde a primario: mientras estas mirando con
+   ojos de visitante, la barra tiene que distinguirse de la normal de un
+   vistazo, porque es el unico cartel que dice que la vista esta recortada. */
+.perfil-aviso {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-bottom: 1.1rem;
+    padding: 0.85rem 1.1rem;
+    background-color: var(--color-primary-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.perfil-aviso--previa {
+    border-color: var(--color-primary);
+}
+
+.perfil-aviso__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+}
+
+.perfil-aviso__icono svg {
+    width: 19px;
+    height: 19px;
+}
+
+/* Empuja los botones al otro extremo y, cuando la fila se parte en telefono,
+   ocupa el ancho entero para que los botones bajen juntos y no uno solo. */
+.perfil-aviso__texto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+
+.perfil-aviso__titulo {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.perfil-aviso__detalle {
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: var(--color-text-soft);
+}
+
+/* --- Reseñas dentro del perfil ---
+   El resumen al costado en escritorio y arriba en telefono, con las tarjetas
+   `review-card` de /resenias sin tocar: es la misma cosa en otro lado. */
+.perfil-resenias {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.perfil-resenias__resumen {
+    padding: 1rem 1.1rem;
+    background-color: var(--color-surface-alt);
+    border-radius: var(--radius-lg);
+}
+
+/* La caja de /resenias separa el promedio de la distribucion con el padding de
+   `lateral__caja`; aca la separacion la pone esta regla. */
+.perfil-resenias__resumen .distribucion {
+    margin-top: 0.8rem;
+}
+
+.perfil-resenias__lista {
+    min-width: 0;
+}
+
+@media (max-width: 960px) {
+    .perfil-resenias {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* --- Lo que el usuario tiene en curso ---
+   Turnos y presupuestos, en una sola lista. Es un resumen y cada fila lleva a
+   la pantalla donde eso se opera de verdad. */
+.encurso-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.encurso-lista__item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.encurso-lista__item:last-child {
+    border-bottom: 0;
+}
+
+.encurso-lista__icono {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.encurso-lista__icono svg {
+    width: 20px;
+    height: 20px;
+}
+
+.encurso-lista__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.encurso-lista__titulo {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.encurso-lista__titulo:hover {
+    color: var(--color-primary);
+}
+
+.encurso-lista__detalle {
+    font-size: 0.82rem;
+    color: var(--color-muted);
+}
+
+.encurso-lista__pie {
+    margin-top: 0.9rem;
+}
+
+/* --- La invitacion a publicar ---
+   Reemplaza al "todavia no registraste ningun emprendimiento" del dueño. Para
+   quien entro a comprar, esa seccion vacia era la mitad de su perfil. Es el
+   unico bloque de marca del cuerpo, con el indigo profundo y el blanco fijo
+   encima, igual que .perfil-panel: no es una tarjeta mas, es una propuesta. */
+.perfil-vender {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--color-primary-deep);
+    color: #ffffff;
+}
+
+.perfil-vender__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.perfil-vender__texto {
+    margin: 0;
+    max-width: 46ch;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    /* Blanco al 82%: el cuerpo baja un escalon del titulo y sobre el indigo
+       profundo sigue muy arriba del 4.5:1. */
+    color: rgba(255, 255, 255, 0.82);
+}
+
+/* El boton primario sobre el indigo profundo desaparece (violeta sobre
+   violeta): se invierte, blanco con la tinta de la marca. */
+.perfil-vender .btn--primary {
+    margin-top: 0.35rem;
+    background-color: #ffffff;
+    color: var(--color-primary-deep);
+}
+
+.perfil-vender .btn--primary:hover {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary-deep);
+}
+
 /* --- Panel de numeros del dueño (solo lo ve el) ---
 
    Es el mismo bloque de marca que .auth__panel: indigo profundo fijo en los
@@ -4114,67 +5637,214 @@ a.perfil-dato:hover {
 }
 
 .chat-inbox__item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    padding: 1rem 1.25rem;
+    padding: 0.9rem 1.1rem;
     text-decoration: none;
     color: inherit;
-    box-shadow: var(--shadow-light);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .chat-inbox__item:hover {
-    box-shadow: var(--shadow-soft);
-    transform: translateY(-1px);
+    border-color: var(--color-primary-soft);
+    box-shadow: var(--shadow-light);
+}
+
+/* Sin leer: el fondo apenas teñido y el nombre en negrita. El punto de la
+   derecha es el que se ve de lejos; esto es el refuerzo, para no depender de
+   un solo punto de color. */
+.chat-inbox__item--nuevo {
+    background-color: var(--color-primary-soft);
+    border-color: var(--color-primary-soft);
+}
+
+.chat-inbox__item--nuevo .chat-inbox__nombre,
+.chat-inbox__item--nuevo .chat-inbox__preview {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.chat-inbox__avatar {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    color: var(--color-primary);
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.chat-inbox__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    flex: 1;
+    min-width: 0;
 }
 
 .chat-inbox__info {
     display: flex;
+    align-items: baseline;
     justify-content: space-between;
     gap: 1rem;
+}
+
+.chat-inbox__nombre {
     font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.chat-inbox__fecha {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--color-muted);
 }
 
 .chat-inbox__with {
+    font-size: 0.78rem;
     color: var(--color-muted);
     font-weight: 400;
 }
 
+/* Una sola línea con puntos suspensivos: la vista previa es para reconocer la
+   conversación, no para leerla. */
 .chat-inbox__preview {
-    margin: 0.35rem 0 0;
+    margin: 0.2rem 0 0;
     font-size: 0.85rem;
     color: var(--color-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-inbox__vos {
+    font-weight: 600;
+    color: var(--color-text-soft);
+}
+
+.chat-inbox__punto {
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background-color: var(--color-primary);
+}
+
+/* La ventana: cabecera, historial y campo de escribir, en una sola caja. Antes
+   eran tres bloques sueltos separados por márgenes. */
+.chat {
+    display: flex;
+    flex-direction: column;
+    max-width: 760px;
+    margin: 1rem auto 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    overflow: hidden;
+}
+
+.chat__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.chat__quien {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.chat__quien-datos {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.chat__quien-nombre {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.chat__quien:hover .chat__quien-nombre {
+    color: var(--color-primary);
+}
+
+.chat__quien-rol {
+    font-size: 0.76rem;
+    color: var(--color-muted);
+}
+
+.chat__sobre {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    text-align: right;
+}
+
+.chat__sobre-rotulo {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.chat__sobre-post {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
 }
 
 .chat-historial {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    min-height: 320px;
     max-height: 60vh;
     overflow-y: auto;
-    margin-top: 1rem;
-    padding: 1rem;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    background-color: var(--color-bg);
 }
 
+/* Las clases las escribe static/js/chat.js: acá se cambia el dibujo, no los
+   nombres. La esquina "mordida" de cada lado es lo que hace que se lea de un
+   vistazo quién dijo qué, sin depender solo del color. */
 .chat-message {
-    max-width: 75%;
-    padding: 0.6rem 0.9rem;
-    border-radius: var(--radius-md);
-    background-color: var(--color-bg);
+    max-width: 76%;
+    padding: 0.65rem 0.95rem;
+    border-radius: 16px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
 }
 
 .chat-message--mine {
     align-self: flex-end;
+    border-bottom-right-radius: 4px;
     background-color: var(--color-primary-soft);
+    border-color: var(--color-primary-soft);
 }
 
 .chat-message--theirs {
     align-self: flex-start;
+    border-bottom-left-radius: 4px;
 }
 
 .chat-message__body {
@@ -4195,11 +5865,33 @@ a.perfil-dato:hover {
     display: flex;
     gap: 0.75rem;
     align-items: flex-end;
-    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--color-border);
 }
 
 .chat-form textarea {
     flex-grow: 1;
+    resize: vertical;
+}
+
+@media (max-width: 620px) {
+    .chat__head {
+        gap: 0.6rem;
+    }
+
+    /* En teléfono el emprendimiento baja de línea y se alinea con el nombre:
+       a la derecha, contra el borde, quedaba partido en tres renglones. */
+    .chat__sobre {
+        text-align: left;
+    }
+
+    .chat-message {
+        max-width: 88%;
+    }
+
+    .chat-form .btn {
+        min-height: 44px;
+    }
 }
 
 /* === Favoritos === */
@@ -6120,68 +7812,31 @@ a.perfil-dato:hover {
    HOME, SEGUNDA PASADA
    --------------------------------------------------------------------------
    Lo que faltaba del artboard "Inicio" y ahora tiene dato real detras: el
-   tercer campo del buscador, y el color y el conteo de cada rubro.
+   color y el conteo de cada rubro.
+
+   Lo del buscador que vivia aca (el "Cerca de mí" como link debajo del campo,
+   y los ajustes de alineacion de la fila de inputs sueltos) se fue: el
+   buscador ahora es la caja unica del artboard y todo su CSS esta junto,
+   arriba. Definirlo en dos lugares hacia que el de aca abajo ganara por orden
+   y la pastilla quedara sin fondo.
    ========================================================================== */
-
-/* El campo "Dónde" lleva el link de "Cerca de mí" pegado abajo, asi que su
-   columna es mas alta que las otras dos. align-items:flex-end alinearia los
-   inputs por el borde de abajo del bloque entero y dejaria los tres a distinta
-   altura; con stretch cada campo ocupa el alto de la fila y los inputs quedan
-   parejos por arriba. */
-.buscador__form {
-    align-items: stretch;
-}
-
-.buscador__campo {
-    justify-content: flex-end;
-}
-
-/* Un boton que se lee como link: la accion principal de la fila es "Buscar", y
-   dos botones solidos uno al lado del otro competirian. */
-.buscador__cerca {
-    align-self: flex-start;
-    margin-top: 0.35rem;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--color-primary);
-    font-family: inherit;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.buscador__cerca:hover {
-    color: var(--color-primary-hover);
-    text-decoration: underline;
-}
-
-.buscador__cerca:disabled {
-    color: var(--color-muted);
-    cursor: progress;
-    text-decoration: none;
-}
 
 /* --- Rubros con color y conteo --- */
 
-/* Pasa de una fila a dos lineas de texto, asi que deja de ser un flex
-   horizontal centrado. */
-.rubro {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 0.35rem;
-    /* Mas alto que los 56px de antes: ahora entran el tono, el nombre y el
-       conteo. Sigue muy por encima del minimo de toque. */
-    min-height: 92px;
-    padding: 0.9rem 1rem;
-}
-
+/* El cuadradito de color paso a ser la plancha del icono: 42px, el icono del
+   rubro adentro y el par completo (fondo + tinta) en vez de solo la tinta. Es
+   lo que pide la regla del par: el color del rubro es una identidad, y donde
+   aparece aparece igual. */
 .rubro__tono {
-    width: 26px;
-    height: 26px;
-    border-radius: var(--radius-sm);
-    background-color: var(--color-border);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    background-color: var(--color-surface-alt);
+    color: var(--color-muted);
 }
 
 .rubro__total {
@@ -6189,70 +7844,67 @@ a.perfil-dato:hover {
     color: var(--color-muted);
 }
 
-/* Los siete tonos del rediseño. Son marca de color y nunca fondo de texto, asi
-   que no necesitan par de contraste; van como clase por rubro y no inline para
-   que el template no cargue con la paleta.
+/* Los siete tonos del rediseño, ahora desde los tokens --rubro-*.
 
-   En oscuro se dejan igual: son manchas chicas y saturadas sobre una tarjeta
-   clara o oscura, y en los dos casos se distinguen entre si, que es lo unico
-   que tienen que hacer. */
-.rubro__tono--alimentos     { background-color: #D97544; }
-.rubro__tono--indumentaria  { background-color: #3E2F94; }
-.rubro__tono--artesanias    { background-color: #8C7BD1; }
-.rubro__tono--tecnologia    { background-color: #4A5666; }
-.rubro__tono--hogar         { background-color: #1F7A4D; }
-.rubro__tono--servicios     { background-color: #C3CEE3; }
-.rubro__tono--otros         { background-color: #E8A33D; }
+   Antes eran siete colores sueltos y desparejos: Servicios era un gris azulado
+   palido (#C3CEE3), Tecnología era --color-text-soft, Otros era el amarillo de
+   las estrellas y Indumentaria el indigo de marca. Ademas Indumentaria y
+   Artesanías estaban a 5 grados de tono una de otra, o sea que eran el mismo
+   color a la vista. Ahora las siete comparten luminosidad y croma y solo varian
+   el tono, asi que se distinguen entre si sin que ninguna pese mas.
 
-/* En oscuro los dos tonos mas apagados se pierden contra la superficie: el gris
-   de Tecnología y el gris azulado de Servicios quedan casi del color de la
-   tarjeta. Se aclaran solo esos dos. */
-[data-theme="dark"] .rubro__tono--tecnologia { background-color: #8B97A8; }
-[data-theme="dark"] .rubro__tono--servicios  { background-color: #9DB0CE; }
+   Van en PAR (fondo + tinta) porque el rediseño las usa como pastilla con texto
+   encima, no solo como punto. La tinta pasa AA sobre su propio fondo.
+   Los tokens ya traen su version oscura, asi que aca no hace falta repetir el
+   bloque [data-theme="dark"]. */
+.rubro__tono--alimentos     { background-color: var(--rubro-alimentos-bg);    color: var(--rubro-alimentos-ink); }
+.rubro__tono--indumentaria  { background-color: var(--rubro-indumentaria-bg); color: var(--rubro-indumentaria-ink); }
+.rubro__tono--artesanias    { background-color: var(--rubro-artesanias-bg);   color: var(--rubro-artesanias-ink); }
+.rubro__tono--tecnologia    { background-color: var(--rubro-tecnologia-bg);   color: var(--rubro-tecnologia-ink); }
+.rubro__tono--hogar         { background-color: var(--rubro-hogar-bg);        color: var(--rubro-hogar-ink); }
+.rubro__tono--servicios     { background-color: var(--rubro-servicios-bg);    color: var(--rubro-servicios-ink); }
+.rubro__tono--otros         { background-color: var(--rubro-otros-bg);        color: var(--rubro-otros-ink); }
 
-/* El hover pinta la tarjeta de lila; el conteo tiene que seguir leyendose. */
-.rubro:hover .rubro__total,
-.rubro:focus-visible .rubro__total {
+/* La pastilla del rubro: el mismo par, usado como fondo + texto. La usan la
+   tarjeta del listado y la ficha. */
+.rubro-pastilla {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background-color: var(--rubro-otros-bg);
+    color: var(--rubro-otros-ink);
+}
+
+.rubro-pastilla--alimentos    { background-color: var(--rubro-alimentos-bg);    color: var(--rubro-alimentos-ink); }
+.rubro-pastilla--indumentaria { background-color: var(--rubro-indumentaria-bg); color: var(--rubro-indumentaria-ink); }
+.rubro-pastilla--artesanias   { background-color: var(--rubro-artesanias-bg);   color: var(--rubro-artesanias-ink); }
+.rubro-pastilla--tecnologia   { background-color: var(--rubro-tecnologia-bg);   color: var(--rubro-tecnologia-ink); }
+.rubro-pastilla--hogar        { background-color: var(--rubro-hogar-bg);        color: var(--rubro-hogar-ink); }
+.rubro-pastilla--servicios    { background-color: var(--rubro-servicios-bg);    color: var(--rubro-servicios-ink); }
+.rubro-pastilla--otros        { background-color: var(--rubro-otros-bg);        color: var(--rubro-otros-ink); }
+
+/* El hover marca la ficha con el indigo; el conteo lo acompaña. Se excluye la
+   ficha de "Ver todo": ahi el fondo YA es indigo y el conteo tiene que seguir
+   siendo blanco translucido. Sin el :not() esta regla le ganaba por
+   especificidad y el conteo desaparecia contra el panel. */
+.rubro:not(.rubro--todos):hover .rubro__total,
+.rubro:not(.rubro--todos):focus-visible .rubro__total {
     color: var(--color-primary);
 }
 
-@media (max-width: 480px) {
-    /* A este ancho entran dos por fila y el conteo empuja el nombre a dos
-       renglones; el tono al lado del nombre lo devuelve a uno. */
-    .rubro {
-        flex-direction: row;
-        align-items: center;
-        flex-wrap: wrap;
-        min-height: 56px;
-    }
-
-    .rubro__total {
-        width: 100%;
-    }
-}
-
-/* --- La ficha en vertical (home) ---
-   Misma tarjeta que el listado, girada: la foto arriba a lo ancho en vez de al
-   costado. En /blog/ hay dos columnas anchas y la foto lateral aprovecha el
-   ancho; en la home hay tres y la foto tiene que ser la cabecera. */
-
+/* La grilla del inicio. La tarjeta vertical que la llena esta al final del
+   archivo, con el resto de .tarjeta: definida aca perdia contra el bloque
+   base, que viene despues y tiene la misma especificidad. */
 .cards-grid--fichas {
     /* 300px de piso da tres columnas en el container de 1240, que es lo que
        muestra el artboard "Inicio", y baja a dos y a una sola solo. */
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.ficha--vertical {
-    flex-direction: column;
-}
-
-.ficha--vertical .ficha__foto {
-    width: 100%;
-    /* Alto fijo y no aspect-ratio: las tarjetas de una fila tienen que empezar
-       el titulo a la misma altura, y las fotos que suben los usuarios vienen en
-       cualquier proporcion. */
-    height: 170px;
+    gap: 22px;
 }
 
 /* ==========================================================================
@@ -6954,4 +8606,1969 @@ a.perfil-dato:hover {
     .form-evento__fila {
         grid-template-columns: 1fr;
     }
+}
+
+/* ==========================================================================
+   LISTADO: barra de filtros arriba + tarjeta horizontal
+   --------------------------------------------------------------------------
+   Del rediseño de Claude Design (2026-09-04). Reemplaza a la columna de
+   filtros de la izquierda: "abierto ahora" y el radio en kilometros son lo
+   unico que Mercado Libre y Marketplace no pueden hacer, y en un panel lateral
+   no los usaba nadie.
+
+   Nada de colores escritos a mano de aca para abajo: todo sale de los tokens,
+   que ya vienen con su version oscura.
+   ========================================================================== */
+
+.barra-filtros {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 1.15rem 0 1rem;
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.barra-filtros__caja {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.barra-filtros__form {
+    display: flex;
+    align-items: stretch;
+    gap: 0.35rem;
+    padding: 0.45rem;
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-soft);
+}
+
+.barra-filtros__campo {
+    flex: 1 1 170px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.1rem;
+    min-width: 0;
+    padding: 0.4rem 1rem;
+    border-radius: 13px;
+}
+
+/* El campo de texto se lleva el doble de ancho: es el que mas se escribe. */
+.barra-filtros__campo--ancho {
+    flex: 2 1 260px;
+}
+
+/* Los separadores del rediseño, sin un <span> vacio por medio. */
+.barra-filtros__campo + .barra-filtros__campo {
+    box-shadow: inset 1px 0 0 var(--color-border);
+}
+
+.barra-filtros__label {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.barra-filtros__input,
+.barra-filtros__select {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.97rem;
+    color: var(--color-text);
+}
+
+.barra-filtros__input:focus,
+.barra-filtros__select:focus {
+    outline: none;
+}
+
+/* Sin borde propio, el foco del teclado tiene que verse en el campo entero. */
+.barra-filtros__campo:focus-within {
+    background-color: var(--color-input-bg);
+    box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+
+.barra-filtros__input::placeholder {
+    color: var(--color-muted);
+}
+
+.barra-filtros__buscar {
+    flex: 0 0 auto;
+    min-width: 122px;
+    border-radius: 14px;
+}
+
+/* --- Las fichas de filtro ------------------------------------------------ */
+
+.fichas-filtro {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.ficha-filtro {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    height: 38px;
+    padding: 0 0.95rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background-color: var(--color-surface);
+    color: var(--color-text-soft);
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    /* Dos de las fichas son <a>: sin esto heredan el subrayado de los enlaces y
+       dejan de leerse como pastillas. */
+    text-decoration: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.ficha-filtro:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* Puesta: relleno lleno, como en el rediseño. Se distingue de un vistazo cual
+   esta aplicada sin tener que leer las etiquetas. */
+.ficha-filtro--activa,
+.ficha-filtro--activa:hover {
+    border-color: var(--color-primary-boton);
+    background-color: var(--color-primary-boton);
+    color: var(--color-on-primary);
+}
+
+/* El punto verde de "abierto ahora" solo aparece cuando el filtro esta puesto:
+   apagado seria una mancha de color sin significado. */
+.ficha-filtro__punto {
+    display: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background-color: var(--color-success-strong);
+}
+
+.ficha-filtro--activa .ficha-filtro__punto {
+    display: inline-block;
+}
+
+.ficha-filtro--select {
+    padding-right: 0.6rem;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.ficha-filtro--limpiar {
+    border-style: dashed;
+    color: var(--color-muted);
+}
+
+.fichas-filtro__radio {
+    display: inline-flex;
+    margin: 0;
+}
+
+/* Empuja "Cerca de mí" y "Limpiar todo" al otro extremo. */
+.fichas-filtro__relleno {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* --- Los resultados ----------------------------------------------------- */
+
+/* Sin panel lateral el listado es una sola columna a lo ancho. */
+.explorar--sin-panel {
+    display: block;
+}
+
+.resultados__lista {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* --- La tarjeta --------------------------------------------------------- */
+
+.tarjeta {
+    display: grid;
+    grid-template-columns: 232px 1fr;
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    background-color: var(--color-surface);
+    overflow: hidden;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tarjeta:hover {
+    border-color: var(--color-primary-soft);
+    box-shadow: var(--shadow-soft);
+}
+
+.tarjeta__foto {
+    display: block;
+    min-height: 196px;
+    background-color: var(--color-image-bg);
+}
+
+.tarjeta__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tarjeta__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1.15rem 1.25rem;
+    min-width: 0;
+}
+
+.tarjeta__encabezado {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.9rem;
+}
+
+.tarjeta__acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.tarjeta__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.18rem;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+}
+
+.tarjeta__titulo a {
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.tarjeta__titulo a:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.tarjeta__desc {
+    margin: 0;
+    font-size: 0.87rem;
+    line-height: 1.55;
+    color: var(--color-text-soft);
+}
+
+.tarjeta__datos {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.dato {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+/* La distancia va en el color de marca: es el argumento de toda la pantalla. */
+.dato--distancia {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.dato--rating {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.dato__estrella {
+    color: var(--color-star);
+}
+
+.tarjeta__pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    margin-top: auto;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.tarjeta__persona {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    font-size: 0.83rem;
+    color: var(--color-text-soft);
+}
+
+.tarjeta__avatar {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+
+.tarjeta__dueno {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* --- Teléfono ----------------------------------------------------------- */
+
+@media (max-width: 860px) {
+    /* Los tres campos uno al lado del otro no entran legibles: se apilan y el
+       boton se va a lo ancho. */
+    .barra-filtros__form {
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    /* En columna el `flex: 1 1 170px` de los campos los estiraba a 180 px de
+       alto cada uno: los tres juntos se comian la pantalla entera antes del
+       primer resultado. Apilados van a su alto natural. */
+    .barra-filtros__campo,
+    .barra-filtros__campo--ancho {
+        flex: 0 0 auto;
+        padding: 0.55rem 0.9rem;
+    }
+
+    .barra-filtros__campo + .barra-filtros__campo {
+        box-shadow: inset 0 1px 0 var(--color-border);
+    }
+
+    .barra-filtros__buscar {
+        width: 100%;
+        margin-top: 0.35rem;
+    }
+
+    /* Las fichas pasan a una tira que se desliza. En un telefono real la barra
+       de scroll no se dibuja; se esconde igual para los navegadores que si. */
+    .fichas-filtro {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .fichas-filtro::-webkit-scrollbar {
+        display: none;
+    }
+
+    .ficha-filtro {
+        flex: 0 0 auto;
+    }
+
+    /* El relleno empujaria "Cerca de mí" fuera de la tira. */
+    .fichas-filtro__relleno {
+        display: none;
+    }
+
+    /* La tarjeta se compacta: la foto pasa a un cuadrado a la izquierda, que es
+       lo que deja comparar sin scrollear de mas. */
+    .tarjeta {
+        grid-template-columns: 116px 1fr;
+    }
+
+    .tarjeta__foto {
+        min-height: 100%;
+    }
+
+    .tarjeta__cuerpo {
+        gap: 0.5rem;
+        padding: 0.85rem 0.9rem;
+    }
+
+    .tarjeta__titulo {
+        font-size: 1.02rem;
+    }
+
+    /* En una tarjeta de 116 px de foto no entra la descripcion sin empujar todo
+       lo que decide la comparacion abajo del doblez. */
+    .tarjeta__desc {
+        display: none;
+    }
+}
+
+/* El <details> que compacta la barra en telefono. En escritorio no existe:
+   display: contents lo saca del layout y sus hijos quedan como hijos directos
+   del form, que es lo que espera el flex de arriba. */
+.barra-filtros__desplegable {
+    display: contents;
+}
+
+/* Chrome mete los hijos del <details> adentro de una caja propia
+   (::details-content), asi que el display: contents de arriba no alcanza: los
+   tres campos quedaban apilados en escritorio. Los navegadores que no la
+   tienen ignoran esta regla y ya funcionan con la de arriba, porque ahi los
+   hijos son hijos directos. */
+.barra-filtros__desplegable::details-content {
+    display: contents;
+}
+
+.barra-filtros__resumen {
+    display: none;
+}
+
+@media (max-width: 860px) {
+    .barra-filtros__desplegable {
+        display: block;
+    }
+
+    /* En telefono la caja tiene que volver a ser una caja: con
+       display: contents el <details> no puede esconder su contenido y el
+       desplegable no cerraria. */
+    .barra-filtros__desplegable::details-content {
+        display: block;
+    }
+
+    /* Cerrado: solo se ve el resumen. Abierto: el resumen sigue arriba y abajo
+       aparecen los campos. */
+    .barra-filtros__resumen {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        min-height: 48px;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        background-color: var(--color-input-bg);
+        color: var(--color-primary);
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .barra-filtros__resumen::-webkit-details-marker {
+        display: none;
+    }
+
+    .barra-filtros__resumen-texto {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+    }
+
+    .barra-filtros__resumen-que {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--color-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .barra-filtros__resumen-detalle {
+        font-size: 0.72rem;
+        color: var(--color-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Abierto, los campos se despegan del resumen. */
+    .barra-filtros__desplegable[open] .barra-filtros__campo:first-of-type {
+        margin-top: 0.5rem;
+    }
+
+    /* Sin borde propio el form no tiene por que dibujar la caja: el resumen ya
+       es la caja. */
+    .barra-filtros__form {
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .barra-filtros__desplegable[open] .barra-filtros__campo {
+        border: 1px solid var(--color-border);
+        border-radius: 13px;
+    }
+
+    .barra-filtros__campo + .barra-filtros__campo {
+        box-shadow: none;
+    }
+}
+
+/* --- La tarjeta en vertical (home) ---
+   Misma tarjeta que el listado (.tarjeta), girada: la foto arriba a lo ancho
+   en vez de al costado. En /blog/ la lista es de una sola columna ancha y la
+   foto lateral la aprovecha; en la home entran tres por fila y la foto tiene
+   que ser la cabecera, como en el artboard "Inicio".
+
+   Va aca abajo y no con el resto del inicio a proposito: definida antes del
+   bloque base de .tarjeta perdia por orden, porque tienen la misma
+   especificidad y ahi gana la ultima. */
+
+.tarjeta--vertical {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+}
+
+.tarjeta--vertical .tarjeta__foto {
+    position: relative;
+    width: 100%;
+    /* Alto fijo y no aspect-ratio: las tarjetas de una fila tienen que empezar
+       el titulo a la misma altura, y las fotos que suben los usuarios vienen en
+       cualquier proporcion. */
+    height: 188px;
+    min-height: 0;
+}
+
+/* El rubro y las acciones van SOBRE la foto, no en una fila arriba del titulo:
+   asi la tarjeta arranca por el nombre del emprendimiento, que es lo que se
+   viene a leer. Es la unica diferencia de anatomia con la del listado, donde
+   la foto es angosta y no hay lugar encima.
+
+   Los dos son hermanos del <a> de la foto y no hijos suyos: ese <a> es
+   aria-hidden (duplica el link del titulo), y adentro el rubro dejaba de
+   anunciarse. En el listado la pastilla vive en .tarjeta__cuerpo y si se lee;
+   aca se posiciona contra la tarjeta, que tambien es position: relative. */
+.tarjeta__sello {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    /* Sobre la foto, igual que las acciones: sin esto depende del orden en el
+       DOM y queda a merced de cualquier reordenamiento. */
+    z-index: 1;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-light);
+}
+
+.tarjeta__acciones--sobre-foto {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1;
+}
+
+/* Los dos botones flotan sobre una foto cualquiera: sin fondo propio no se
+   leen contra una imagen clara. */
+.tarjeta__acciones--sobre-foto .share-btn,
+.tarjeta__acciones--sobre-foto .favorite-btn {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-light);
+}
+
+.tarjeta--vertical .tarjeta__cuerpo {
+    flex: 1 1 auto;
+    padding: 1.15rem 1.25rem 1.25rem;
+}
+
+/* El pie de la tarjeta vertical lleva ademas el boton "Ver", que en el listado
+   no hace falta porque la tarjeta entera es mas ancha y el titulo alcanza. */
+.tarjeta--vertical .tarjeta__pie {
+    padding-top: 0.9rem;
+}
+
+@media (max-width: 860px) {
+    /* El bloque de telefono del listado compacta la tarjeta a foto cuadrada de
+       116px y esconde la descripcion. Eso es para comparar en una lista larga;
+       en el inicio son tres tarjetas de vidriera y se quedan verticales. */
+    .tarjeta--vertical {
+        grid-template-columns: none;
+    }
+
+    .tarjeta--vertical .tarjeta__foto {
+        height: 168px;
+    }
+
+    .tarjeta--vertical .tarjeta__desc {
+        display: block;
+    }
+
+    /* Los 38px del artboard son de escritorio. Con el dedo el piso son 44, y
+       ademas estos dos flotan sobre la foto: errarles es abrir el detalle. */
+    .tarjeta--vertical .tarjeta__acciones--sobre-foto .share-btn,
+    .tarjeta--vertical .tarjeta__acciones--sobre-foto .favorite-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    /* Mismo piso para el "Ver" del pie: .btn--chico se queda en 32px, que es el
+       alto que le corresponde al lado de "Editar" y "Eliminar" en escritorio. */
+    .tarjeta--vertical .tarjeta__pie .btn {
+        min-height: 44px;
+    }
+}
+
+/* ==========================================================================
+   SERVICIOS (2026-09-05)
+   --------------------------------------------------------------------------
+   Las cinco pantallas del rediseño de servicios: buscar, pedir presupuesto,
+   mis servicios, nuevo/editar y verificar. El canvas esta en
+   disenio-servicios/ y las decisiones en disenio-inicio/DISENIO.md.
+
+   Reutiliza lo que ya existia y no lo copia: la grilla .explorar y la columna
+   .filtros son las mismas del listado de emprendimientos, .panel es el mismo
+   del detalle de un presupuesto, y los chips, botones y badges son los de
+   siempre. Lo que se agrega aca es lo que servicios tiene y el resto no.
+
+   Nada de colores hardcodeados: todo sale de los tokens, asi el tema oscuro
+   funciona sin escribir un segundo bloque.
+   ========================================================================== */
+
+/* --- La lista de oficios de la columna de filtros ------------------------ */
+
+.oficios {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.oficio {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-soft);
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.oficio:hover {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text);
+}
+
+.oficio--activo,
+.oficio--activo:hover {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* Un rubro sin nadie se dibuja igual: la lista es el catalogo completo y
+   esconder los vacios la haria cambiar de largo en cada busqueda. Se apaga,
+   pero se puede tocar: filtrar por el y ver el vacio es una respuesta. */
+.oficio--vacio {
+    color: var(--color-muted);
+}
+
+.oficio__punto {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background-color: var(--color-border);
+}
+
+.oficio--activo .oficio__punto {
+    background-color: var(--color-primary);
+}
+
+.oficio__nombre {
+    flex: 1;
+    min-width: 0;
+}
+
+.oficio__cuantos {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--color-muted);
+}
+
+/* El chip de precio es el mismo .radio-chip de la columna de filtros, pero
+   aca es un enlace y no un <label> con radio adentro: sin JS un radio suelto
+   no manda nada, y meterlo en el form obligaria a apretar "Buscar". */
+a.radio-chip {
+    display: block;
+    text-decoration: none;
+}
+
+/* Tres opciones no entran en una fila de 276 px sin partir "A presupuestar"
+   por la mitad, y no se puede acortar: es el termino que usa toda la app para
+   un servicio sin precio. Se dejan envolver, asi caen dos y una. */
+.filtros__radios--precio {
+    flex-wrap: wrap;
+}
+
+.filtros__radios--precio .radio-chip {
+    flex: 1 1 45%;
+    padding: 8px 6px;
+}
+
+.radio-chip--activo {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* La columna de filtros, plegable en telefono. En escritorio el <details> no
+   existe visualmente: display: contents lo saca de la caja y el <summary> hace
+   de encabezado, con lo cual la columna se ve igual que antes. */
+.filtros__desplegable--columna {
+    display: contents;
+}
+
+.filtros__resumen--columna {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    list-style: none;
+    cursor: default;
+}
+
+.filtros__resumen--columna::-webkit-details-marker {
+    display: none;
+}
+
+.filtros__resumen--columna .filtros__resumen-detalle {
+    display: none;
+}
+
+/* El "Limpiar todo" va al final de la columna y no en el encabezado: un enlace
+   adentro de un <summary> se pelea con el toggle del <details>. */
+.filtros__limpiar {
+    align-self: flex-start;
+}
+
+/* --- El interruptor que en realidad es un enlace ------------------------- */
+
+/* Mismo dibujo que el interruptor de Horarios, pero movido por aria-pressed
+   en vez de por :checked: aca no hay checkbox que marcar, hay una URL que
+   cambia un parametro. */
+.interruptor-enlace,
+.interruptor-boton {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.interruptor-enlace__pista {
+    position: relative;
+    width: 40px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    border-radius: 999px;
+    background-color: var(--color-border);
+    transition: background-color 0.15s ease;
+}
+
+.interruptor-enlace__pista::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-light);
+    transition: transform 0.15s ease;
+}
+
+[aria-pressed="true"] > .interruptor-enlace__pista {
+    background-color: var(--color-primary);
+}
+
+[aria-pressed="true"] > .interruptor-enlace__pista::after {
+    transform: translateX(16px);
+}
+
+.interruptor-enlace__texto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.interruptor-enlace__nombre {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.interruptor-enlace__ayuda {
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--color-muted);
+}
+
+/* --- La ficha de un servicio en la busqueda ----------------------------- */
+
+.servicios-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Sin columna de foto, al reves que .tarjeta: Service no tiene imagen, y un
+   rectangulo gris vacio se lee como carga rota. En su lugar va el emblema del
+   oficio. */
+.servicio {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 18px;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    background-color: var(--color-surface);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.servicio:hover {
+    border-color: var(--color-primary-soft);
+    box-shadow: var(--shadow-soft);
+}
+
+.servicio__emblema {
+    width: 84px;
+    height: 84px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.servicio__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.servicio__encabezado {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.1rem;
+}
+
+.servicio__quien-caja {
+    min-width: 0;
+}
+
+.servicio__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.1rem;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    color: var(--color-text);
+}
+
+.servicio__quien {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0.35rem 0 0;
+    font-size: 0.82rem;
+    color: var(--color-muted);
+}
+
+.servicio__avatar {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+
+.servicio__desc {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--color-text-soft);
+}
+
+.servicio__datos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.dato--turnos {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.servicio__precio-caja {
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.servicio__precio {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.12rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+/* "A presupuestar" no es un precio, asi que no grita como uno: mismo lugar,
+   un paso mas chico y en el gris del texto suave. */
+.servicio__precio--abierto {
+    font-size: 0.94rem;
+    color: var(--color-text-soft);
+}
+
+.servicio__precio-nota {
+    margin: 0.2rem 0 0;
+    font-size: 0.72rem;
+    color: var(--color-muted);
+}
+
+.servicio__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.15rem;
+}
+
+.servicio__aviso {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--color-muted);
+}
+
+/* --- El vacio, compartido por las cinco pantallas ----------------------- */
+
+.vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 3rem 1.5rem;
+    border: 1px dashed var(--color-border);
+    border-radius: 18px;
+    background-color: var(--color-surface);
+    text-align: center;
+}
+
+.vacio__icono {
+    width: 54px;
+    height: 54px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.6rem;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.vacio__icono--aviso {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.vacio__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.15rem;
+}
+
+.vacio__texto {
+    max-width: 460px;
+    margin: 0.35rem 0 1rem;
+    font-size: 0.87rem;
+    line-height: 1.6;
+    color: var(--color-muted);
+}
+
+/* --- Mis servicios: la linea de contexto y los grupos ------------------- */
+
+.resumen-linea {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.75rem 1.1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.resumen-linea__texto {
+    font-size: 0.85rem;
+    color: var(--color-text-soft);
+}
+
+.resumen-linea__aviso {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.resumen-linea__globo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.grupos-servicio {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+}
+
+.grupo-servicio {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.grupo-servicio__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.grupo-servicio__inicial {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.grupo-servicio__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+}
+
+/* El cupo se ve antes de que el alta lo rechace: 50 es el tope real
+   (MAX_SERVICIOS_POR_POST) y antes solo se conocia chocandose con el. */
+.grupo-servicio__cupo {
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background-color: var(--color-surface-alt);
+    color: var(--color-muted);
+    font-size: 0.74rem;
+    font-weight: 600;
+}
+
+.grupo-servicio__linea {
+    flex: 1;
+    min-width: 1rem;
+    height: 1px;
+    background-color: var(--color-border);
+}
+
+.grupo-servicio__link {
+    font-size: 0.8rem;
+    text-decoration: none;
+}
+
+.grupo-servicio__lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* --- Mis servicios: la fila ------------------------------------------- */
+
+.fila-servicio {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    background-color: var(--color-surface);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.fila-servicio:hover {
+    border-color: var(--color-primary-soft);
+    box-shadow: var(--shadow-light);
+}
+
+/* Apagado no es lo mismo que borrado: la fila sigue entera, con el color
+   bajado, porque el dueño la sigue viendo y la puede volver a prender. */
+.fila-servicio--apagada {
+    background-color: var(--color-bg);
+}
+
+.fila-servicio--apagada .fila-servicio__titulo,
+.fila-servicio--apagada .fila-servicio__plata {
+    color: var(--color-muted);
+}
+
+.fila-servicio__emblema {
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.fila-servicio--apagada .fila-servicio__emblema {
+    background-color: var(--color-surface-alt);
+    color: var(--color-muted);
+}
+
+.fila-servicio__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.fila-servicio__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.98rem;
+    letter-spacing: -0.01em;
+}
+
+.fila-servicio__datos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.fila-servicio__zona {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+.fila-servicio__precio {
+    min-width: 104px;
+    text-align: right;
+}
+
+.fila-servicio__plata {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.fila-servicio__plata--abierta {
+    font-size: 0.84rem;
+    color: var(--color-text-soft);
+}
+
+.fila-servicio__nota {
+    margin: 0.15rem 0 0;
+    font-size: 0.7rem;
+    color: var(--color-muted);
+}
+
+.fila-servicio__interruptor {
+    margin: 0;
+}
+
+.interruptor-boton {
+    align-items: center;
+}
+
+.interruptor-boton__texto {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.interruptor-boton[aria-pressed="false"] .interruptor-boton__texto {
+    color: var(--color-muted);
+}
+
+.fila-servicio__acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* --- El sello de verificacion, con sus cuatro estados ------------------- */
+
+.sello {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.sello__punto {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.sello--ok {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.sello--espera {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.sello--no {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-text);
+}
+
+.sello--sin {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+}
+
+/* --- El editor de dos columnas (formulario + previa) -------------------- */
+
+/* Lo comparten el alta de un servicio, el pedido de presupuesto y la
+   verificacion: en las tres hay algo que se completa a la izquierda y algo
+   que se mira a la derecha. */
+.editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 372px;
+    gap: 24px;
+    align-items: start;
+    margin-top: 1.1rem;
+}
+
+.editor__campos {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.editor__previa {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    position: sticky;
+    top: 88px;
+}
+
+.editor__previa-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.editor__previa-donde {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+}
+
+.editor__previa-nota {
+    display: flex;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-alt);
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+}
+
+/* La ficha de la previa es la misma de la busqueda, en una columna: en 372 px
+   el emblema al costado deja el titulo en un hilo. */
+.servicio--previa {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.85rem;
+}
+
+.servicio--previa .servicio__emblema {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+}
+
+.servicio--apagado {
+    opacity: 0.55;
+}
+
+.servicio__titulo--vacio,
+.servicio__desc--vacia {
+    color: var(--color-muted);
+}
+
+.dato--vacio {
+    color: var(--color-muted);
+}
+
+.servicio__precio-caja--previa {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+    text-align: left;
+}
+
+/* --- Campos del editor -------------------------------------------------- */
+
+.panel__separador {
+    height: 1px;
+    background-color: var(--color-border);
+}
+
+.panel__pie {
+    margin: 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.76rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.campo-par {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.campo__label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.campo__opcional {
+    font-weight: 400;
+    color: var(--color-muted);
+}
+
+.campo__ayuda {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+}
+
+.campo__con-unidad {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.campo__con-unidad .auth__input {
+    width: 7rem;
+}
+
+.campo__unidad {
+    font-size: 0.82rem;
+    color: var(--color-muted);
+}
+
+/* Un checkbox con su nombre y su explicacion, alineados como el resto de los
+   campos. El input queda a la izquierda y no adentro del <label> de texto,
+   que es lo que hacia que la explicacion quedara colgando debajo del cuadrito. */
+.opcion {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.opcion__input {
+    margin-top: 0.2rem;
+    flex-shrink: 0;
+}
+
+.opcion__texto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.opcion__nombre {
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.opcion__ayuda {
+    font-size: 0.76rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+}
+
+.bloque-turnos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg);
+}
+
+.aviso-suave {
+    margin: 0;
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.aviso-suave a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.aviso-suave--neutro {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text-soft);
+}
+
+.barra-guardar {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.barra-guardar__texto {
+    flex: 1;
+    min-width: 12rem;
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.barra-guardar__cancelar {
+    font-size: 0.82rem;
+    color: var(--color-muted);
+    text-decoration: none;
+}
+
+/* --- La ficha del servicio al costado (pedir presupuesto, verificar) ----- */
+
+.panel--ficha {
+    gap: 1rem;
+}
+
+.ficha-servicio {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.ficha-servicio--chica {
+    flex-shrink: 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+}
+
+.ficha-servicio .servicio__emblema {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+}
+
+.ficha-servicio--chica .servicio__emblema {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+}
+
+.ficha-servicio__titulo {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+}
+
+.ficha-servicio__sub {
+    margin: 0.25rem 0 0;
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+.ficha-servicio__sellos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.ficha-servicio__plata {
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg);
+}
+
+.ficha-servicio__precio {
+    margin: 0;
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 1.12rem;
+    font-weight: 600;
+}
+
+.ficha-servicio__nota {
+    margin: 0.3rem 0 0;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+}
+
+.ficha-servicio__quien {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--color-border);
+    text-decoration: none;
+}
+
+.ficha-servicio__quien-nombre {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.ficha-servicio__quien-ver {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+/* --- Los tres pasos del "que pasa despues" ------------------------------ */
+
+.pasos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: none;
+}
+
+.pasos__item {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--color-text-soft);
+}
+
+.pasos__numero {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+/* --- Verificar: los tres pasos de arriba y los estados ------------------ */
+
+.pasos-verificacion {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.paso-v {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.35rem 0.6rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg);
+}
+
+.paso-v__numero {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: var(--color-muted);
+    color: var(--color-on-primary);
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.paso-v__titulo {
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.paso-v__texto {
+    grid-column: 2;
+    font-size: 0.74rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+}
+
+.paso-v--activo {
+    background-color: var(--color-primary-soft);
+}
+
+.paso-v--activo .paso-v__numero {
+    background-color: var(--color-primary);
+}
+
+.paso-v--activo .paso-v__titulo {
+    color: var(--color-primary);
+}
+
+.paso-v--hecho {
+    background-color: var(--color-success-bg);
+}
+
+.paso-v--hecho .paso-v__numero {
+    background-color: var(--color-success-strong);
+}
+
+.estado-v {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.estado-v__icono {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.estado-v__icono--ok {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.estado-v__icono--espera {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.estado-v__icono--no {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-text);
+}
+
+.panel--ok {
+    border-color: var(--color-success-bg);
+}
+
+.panel--rechazo {
+    border-color: var(--color-danger-border);
+}
+
+/* El motivo del rechazo se lee AL LADO de la foto, no como un aviso suelto
+   arriba de todo: rehacer la foto sin saber que se veia mal es adivinar. */
+.motivo {
+    margin: 0.5rem 0 0;
+    padding: 0.75rem 0.9rem;
+    border-left: 3px solid var(--color-danger-border);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background-color: var(--color-danger-surface);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--color-text-soft);
+}
+
+.motivo__rotulo {
+    display: block;
+    margin-bottom: 0.15rem;
+    font-weight: 700;
+    color: var(--color-danger-text);
+}
+
+.documento {
+    display: flex;
+    gap: 1rem;
+    padding: 0.9rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg);
+}
+
+.documento__foto {
+    width: 148px;
+    height: 104px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-image-bg);
+    object-fit: cover;
+}
+
+.documento__titulo {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.documento__nota {
+    margin: 0.3rem 0 0;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+}
+
+.muestra-sello {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg);
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.lista-tildes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--color-text-soft);
+}
+
+.lista-tildes li {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.lista-tildes li::before {
+    content: "✓";
+    flex-shrink: 0;
+    color: var(--color-success-text);
+    font-weight: 700;
+}
+
+/* --- Responsive --------------------------------------------------------- */
+
+/* Antes que la columna de filtros: la fila de Mis servicios tiene cinco
+   columnas y en menos de 1000 px el titulo queda en un hilo. */
+@media (max-width: 1000px) {
+    .fila-servicio {
+        grid-template-columns: 48px minmax(0, 1fr);
+        row-gap: 0.75rem;
+    }
+
+    .fila-servicio__precio {
+        grid-column: 2;
+        text-align: left;
+    }
+
+    .fila-servicio__interruptor,
+    .fila-servicio__acciones {
+        grid-column: 2;
+    }
+
+    .editor {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* La previa deja de estar pegada: en una sola columna queda abajo del
+       formulario, y un sticky ahi no se despega de nada. */
+    .editor__previa {
+        position: static;
+    }
+}
+
+@media (max-width: 879px) {
+    /* Aca la columna se vuelve un desplegable de verdad: el <summary> es una
+       fila tocable de 44 px que dice cuantos filtros hay puestos. */
+    .filtros__desplegable--columna {
+        display: block;
+    }
+
+    .filtros__resumen--columna {
+        min-height: 44px;
+        margin-bottom: 0;
+        cursor: pointer;
+    }
+
+    .filtros__desplegable--columna[open] .filtros__resumen--columna {
+        margin-bottom: 1.25rem;
+    }
+
+    .filtros__resumen--columna .filtros__resumen-detalle {
+        display: inline;
+        font-size: 0.78rem;
+        color: var(--color-muted);
+    }
+
+    .servicio {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.9rem;
+    }
+
+    .servicio__emblema {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+    }
+
+    .pasos-verificacion {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 620px) {
+    .servicio__encabezado {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .servicio__precio-caja {
+        text-align: left;
+    }
+
+    .campo-par {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* Los controles tocables no bajan de 44 px en telefono, que es el piso del
+       resto del proyecto. */
+    .servicio__acciones .btn,
+    .fila-servicio__acciones .btn {
+        min-height: 44px;
+    }
+}
+
+/* --- Favoritos dentro del layout de cuenta (2026-09-05) ------------------ */
+
+/* La pantalla pasó a .cuenta + .tarjeta como el resto de la sección, y el
+   filtro de rubro dejó de ser un bloque suelto para ser una columna más de la
+   cabecera de resultados: ahí el margen de abajo que traía sobra. */
+.resultados__head .favoritos__filtros {
+    align-items: center;
+    margin-bottom: 0;
+}
+
+/* .filtros__input es 100% porque vive en una columna de 276 px; acá está en
+   una fila y tiene que medir lo suyo. */
+.favoritos__filtro .filtros__input {
+    width: auto;
+    min-width: 9rem;
 }

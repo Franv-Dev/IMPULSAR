@@ -55,28 +55,28 @@ function renderPosts(posts) {
 
         const title = escapeHtml(post.title || "Emprendimiento sin título");
         const body = escapeHtml(post.body || "");
-        // 160, el mismo recorte que usa la ficha del listado.
+        // 160, el mismo recorte que usa la tarjeta del listado.
         const shortBody = body.length > 160 ? body.slice(0, 160) + "..." : body;
 
-        // La tarjeta es la misma .ficha que arma el listado en el servidor
-        // (ver app/blog/templates/blog/index.html): la home y /blog/ tienen que
-        // verse iguales, y antes esta seguia siendo la tarjeta vieja.
+        // La tarjeta es la misma .tarjeta que arma el listado en el servidor
+        // (ver app/blog/templates/blog/index.html), en su variante vertical: la
+        // home y /blog/ tienen que verse iguales.
         //
-        // Solo se pinta lo que la API devuelve de verdad. El rediseño muestra
-        // ademas el promedio de reseñas, la zona, los km y un sello
-        // "Verificado": el promedio existe en la base pero /api/posts/ todavia
-        // no lo manda, y los otros tres no existen (no hay barrio, no hay
-        // distancia sin geolocalizar, y la verificacion es de cada servicio y
-        // no del emprendimiento). Nada de eso se dibuja.
+        // Solo se pinta lo que la API devuelve de verdad. El artboard "Inicio"
+        // muestra ademas "abierto ahora", el barrio y los km: los horarios y
+        // las coordenadas existen en la base, pero hoy no viajan por fila
+        // (habria que sumarlos al select de /api/posts/) y sin geolocalizar no
+        // hay distancia que calcular. Nada de eso se dibuja inventado.
         const postDetailUrl = `/blog/${post.id}`;
         const postAbsoluteUrl = `${location.origin}${postDetailUrl}`;
         const postImageUrl = post.image ? `/static/uploads/${escapeHtml(post.image)}` : null;
         const categoryText = escapeHtml(post.category_label || "Sin categoría");
+        const categoryKey = escapeHtml(post.category || "otros");
 
-        card.className = "ficha ficha--vertical";
+        card.className = "tarjeta tarjeta--vertical";
 
         const imagenHtml = postImageUrl
-            ? `<img src="${postImageUrl}" alt="" class="ficha__img">`
+            ? `<img src="${postImageUrl}" alt="" class="tarjeta__img" loading="lazy">`
             : "";
 
         // El corazon solo existe si la API mando "favorito", o sea si hay
@@ -84,26 +84,60 @@ function renderPosts(posts) {
         const favoritoHtml =
             typeof post.favorito === "boolean" ? botonFavorito(post, title) : "";
 
+        // Sin reseñas se dice "Sin reseñas todavía" y no un 0: es lo mismo que
+        // hace el listado, y un cero se leeria como una mala calificacion.
+        const ratingHtml = post.avg_rating
+            ? `<span class="dato dato--rating"
+                     aria-label="Calificación promedio: ${post.avg_rating} de 5">
+                   <span class="dato__estrella" aria-hidden="true">★</span>
+                   ${post.avg_rating} · ${post.review_count}
+                   reseña${post.review_count === 1 ? "" : "s"}
+               </span>`
+            : `<span class="dato">Sin reseñas todavía</span>`;
+
+        // El pie con la persona detras del emprendimiento: es uno de los cinco
+        // datos que el rediseño pide adelante (ver disenio-inicio/DISENIO.md).
+        //
+        // Las iniciales se recortan del nombre CRUDO y recien despues se
+        // escapan. Al reves -- escapar y cortar dos caracteres -- un nombre que
+        // empieza con &, <, " o ' deja media entidad ("&a", "&l") pintada en el
+        // circulo. Es el mismo orden que usa el listado, que hace
+        // username[:2] | upper y deja escapar a Jinja.
+        const autorCrudo = post.author_name || "";
+        const autor = escapeHtml(autorCrudo);
+        const iniciales = escapeHtml(autorCrudo.slice(0, 2).toUpperCase());
+        const pieHtml = autorCrudo
+            ? `<span class="tarjeta__persona">
+                   <span class="tarjeta__avatar" aria-hidden="true">${iniciales}</span>
+                   ${autor}
+               </span>`
+            : "<span></span>";
+
         card.innerHTML = `
-            <a href="${postDetailUrl}" class="ficha__foto" tabindex="-1" aria-hidden="true">
+            <a href="${postDetailUrl}" class="tarjeta__foto" tabindex="-1" aria-hidden="true">
                 ${imagenHtml}
             </a>
-            <div class="ficha__cuerpo">
-                <div class="ficha__tags">
-                    <span class="badge badge--category">${categoryText}</span>
-                    <div class="ficha__acciones">
-                        <button type="button" class="share-btn"
-                            data-share-url="${postAbsoluteUrl}"
-                            data-share-title="${title}"
-                            aria-label="Compartir ${title}"
-                            title="Compartir">🔗</button>
-                        ${favoritoHtml}
-                    </div>
-                </div>
-                <h3 class="ficha__titulo">
+            <span class="rubro-pastilla rubro-pastilla--${categoryKey} tarjeta__sello">
+                ${categoryText}
+            </span>
+            <div class="tarjeta__acciones tarjeta__acciones--sobre-foto">
+                <button type="button" class="share-btn"
+                    data-share-url="${postAbsoluteUrl}"
+                    data-share-title="${title}"
+                    aria-label="Compartir ${title}"
+                    title="Compartir">🔗</button>
+                ${favoritoHtml}
+            </div>
+            <div class="tarjeta__cuerpo">
+                <div class="tarjeta__datos">${ratingHtml}</div>
+                <h3 class="tarjeta__titulo">
                     <a href="${postDetailUrl}">${title}</a>
                 </h3>
-                <p class="ficha__desc">${shortBody}</p>
+                <p class="tarjeta__desc">${shortBody}</p>
+                <div class="tarjeta__pie">
+                    ${pieHtml}
+                    <a href="${postDetailUrl}" class="btn btn--secondary btn--chico">Ver</a>
+                </div>
             </div>
         `;
 
@@ -228,9 +262,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const textoOriginal = botonCerca.textContent;
+            // Se escribe sobre el <span> del texto y no sobre el boton entero:
+            // el boton lleva adentro el SVG del pin, y un textContent en el
+            // boton lo borraria para siempre.
+            const etiqueta =
+                botonCerca.querySelector(".buscador__cerca-texto") || botonCerca;
+            const textoOriginal = etiqueta.textContent;
             botonCerca.disabled = true;
-            botonCerca.textContent = "Ubicando...";
+            etiqueta.textContent = "Ubicando...";
 
             navigator.geolocation.getCurrentPosition(
                 (posicion) => {
@@ -241,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 () => {
                     alert("No pudimos acceder a tu ubicación.");
                     botonCerca.disabled = false;
-                    botonCerca.textContent = textoOriginal;
+                    etiqueta.textContent = textoOriginal;
                 }
             );
         });
@@ -569,5 +608,415 @@ document.addEventListener("submit", (evento) => {
 
     if (!window.confirm(formulario.dataset.confirm)) {
         evento.preventDefault();
+    }
+});
+
+
+/* La barra de filtros del listado se compacta en telefono.
+
+   Los tres campos apilados ocupaban 310 px y empujaban el primer resultado
+   abajo del doblez, que es lo contrario de lo que tiene que hacer una pantalla
+   de resultados. Van adentro de un <details> que arranca con `open` en el HTML
+   a proposito: sin JS queda desplegado, que es peor pero nunca roto.
+
+   Se cierra una sola vez, al cargar, y no se reabre ni se recierra al girar el
+   telefono: si el usuario lo abrio para cargar una direccion, un resize (que en
+   Android dispara el teclado virtual) no puede cerrarselo en la cara. */
+(() => {
+    const desplegable = document.querySelector(".barra-filtros__desplegable");
+    if (!desplegable) return;
+
+    if (window.matchMedia("(max-width: 860px)").matches) {
+        desplegable.open = false;
+    }
+})();
+
+/* Lo mismo con la columna de filtros de la busqueda de servicios, que en
+   telefono tiene el mismo problema: trece rubros, la zona, el precio y el
+   interruptor empujan la primera ficha fuera de la pantalla.
+
+   El corte son 879 px y no 860 porque es donde .explorar deja de ser dos
+   columnas: hasta ahi la columna esta al costado y no estorba. */
+(() => {
+    const columna = document.querySelector(".filtros__desplegable--columna");
+    if (!columna) return;
+
+    if (window.matchMedia("(max-width: 879px)").matches) {
+        columna.open = false;
+    }
+})();
+
+// El ojo que muestra la contraseña, en entrar y crear cuenta.
+//
+// Va en su propio listener y no adentro del de arriba a proposito: aquel corta
+// con `if (!grid) return` apenas ve que no esta en la home, que es justo el
+// caso de las pantallas de auth.
+//
+// El boton se dibuja escondido (ver auth/_ojo.html) y lo enciende ESTE codigo:
+// si el JS no carga, no queda un boton pintado que no responde.
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("[data-ojo]").forEach((boton) => {
+        const campo = document.getElementById(boton.dataset.ojo);
+        if (!campo) return;
+
+        boton.hidden = false;
+
+        boton.addEventListener("click", () => {
+            const seVe = campo.type === "text";
+            campo.type = seVe ? "password" : "text";
+            boton.setAttribute("aria-pressed", seVe ? "false" : "true");
+
+            const etiqueta = seVe ? "Mostrar la contraseña" : "Ocultar la contraseña";
+            boton.setAttribute("aria-label", etiqueta);
+            boton.title = etiqueta;
+
+            // El foco vuelve al campo y el cursor al final: si no, apretar el
+            // ojo para revisar lo que se escribio obliga a volver a clickear
+            // adentro para seguir escribiendo.
+            const largo = campo.value.length;
+            campo.focus();
+            campo.setSelectionRange(largo, largo);
+        });
+    });
+});
+
+
+// Las pestañas del perfil (emprendimientos / ferias y eventos).
+//
+// Mismo criterio que el ojo de arriba: la barra se dibuja con `hidden` y la
+// enciende ESTE codigo. Sin JS las dos secciones quedan una abajo de la otra,
+// que es como funcionaba el perfil antes de las pestañas; nadie se queda con
+// medio perfil invisible porque no cargo un script.
+document.addEventListener("DOMContentLoaded", () => {
+    const barra = document.querySelector("[data-perfil-tabs]");
+    if (!barra) return;
+
+    const botones = Array.from(barra.querySelectorAll("[data-perfil-tab]"));
+    const paneles = new Map();
+    botones.forEach((boton) => {
+        const panel = document.querySelector(
+            `[data-perfil-panel="${boton.dataset.perfilTab}"]`
+        );
+        if (panel) paneles.set(boton, panel);
+    });
+
+    // Con una sola seccion no hay nada que elegir: la barra se queda escondida
+    // y la seccion a la vista. Pasa en el perfil de quien no publico eventos.
+    if (paneles.size < 2) return;
+
+    barra.hidden = false;
+
+    const mostrar = (elegido) => {
+        paneles.forEach((panel, boton) => {
+            const activo = boton === elegido;
+            boton.classList.toggle("perfil-tabs__boton--activo", activo);
+            boton.setAttribute("aria-pressed", activo ? "true" : "false");
+            panel.hidden = !activo;
+        });
+    };
+
+    botones.forEach((boton) => {
+        boton.addEventListener("click", () => mostrar(boton));
+    });
+
+    mostrar(botones[0]);
+});
+
+
+// Los plegables que solo se pliegan en telefono: la semana de horarios y el
+// mapa de la lateral.
+//
+// En escritorio la lateral es una columna al costado y esas dos cosas entran
+// sin molestar; en telefono cae abajo de todo y son ~350px de scroll que nadie
+// pidio. El `open` viaja en el HTML, asi que sin JS quedan abiertos en los dos
+// tamaños (que es como estaban): esto solo los cierra cuando la pantalla es
+// angosta.
+document.addEventListener("DOMContentLoaded", () => {
+    const plegables = Array.from(document.querySelectorAll("[data-plegar-en-movil]"));
+    if (!plegables.length) return;
+
+    const angosta = window.matchMedia("(max-width: 960px)");
+
+    const aplicar = () => {
+        plegables.forEach((plegable) => {
+            plegable.open = !angosta.matches;
+        });
+    };
+
+    aplicar();
+    angosta.addEventListener("change", aplicar);
+
+    // maplibre mide el contenedor cuando se crea. Si nace adentro de un
+    // <details> cerrado mide 0 y el mapa queda en blanco al abrirlo, asi que
+    // se le avisa: el mapa escucha el resize de la ventana (trackResize viene
+    // prendido por defecto) y se vuelve a medir solo.
+    plegables.forEach((plegable) => {
+        if (!plegable.querySelector("#map")) return;
+        plegable.addEventListener("toggle", () => {
+            if (plegable.open) window.dispatchEvent(new Event("resize"));
+        });
+    });
+});
+
+
+// La barra de guardar de Ajustes: dice si hay cambios sin guardar.
+//
+// El formulario del perfil se puede recorrer entero sin saber si se tocó algo,
+// y lo que está en pantalla no lo ve nadie hasta que se guarda. La barra nace
+// diciendo "Todo guardado" desde el HTML (que es lo cierto al entrar) y este
+// código la cambia al primer cambio. Sin JS queda el texto de arranque y el
+// botón, que es exactamente lo que había antes.
+document.addEventListener("DOMContentLoaded", () => {
+    const formulario = document.querySelector("[data-ajustes-form]");
+    if (!formulario) return;
+
+    const barra = formulario.querySelector("[data-ajustes-barra]");
+    if (!barra) return;
+
+    const titulo = barra.querySelector("[data-barra-titulo]");
+    const detalle = barra.querySelector("[data-barra-detalle]");
+    const detalleOriginal = detalle ? detalle.textContent.trim() : "";
+    let sucio = false;
+
+    const ensuciar = () => {
+        if (sucio) return;
+        sucio = true;
+        barra.classList.add("ajustes-guardar--sucia");
+        if (titulo) titulo.textContent = "Tenés cambios sin guardar";
+        if (detalle) detalle.textContent = "Nadie los ve hasta que toques Guardar.";
+    };
+
+    // "change" y no solo "input": los que valen para las fotos y los
+    // interruptores son cambios de checkbox y de <input type=file>, que no
+    // disparan "input" en todos los navegadores.
+    formulario.addEventListener("input", ensuciar);
+    formulario.addEventListener("change", ensuciar);
+
+    // Al mandar, la barra deja de avisar: si no, el navegador todavía muestra
+    // la pantalla vieja mientras carga la nueva y el aviso queda mintiendo.
+    formulario.addEventListener("submit", () => {
+        sucio = true;  // evita que un "input" tardío lo vuelva a pintar
+        barra.classList.remove("ajustes-guardar--sucia");
+        if (titulo) titulo.textContent = "Guardando…";
+        if (detalle) detalle.textContent = detalleOriginal;
+    });
+});
+
+
+// La vista previa del perfil, mientras se escribe.
+//
+// Es la mitad del rediseño de Ajustes: antes se escribía a ciegas y había que
+// salir al perfil para ver cómo quedaba. La previa se dibuja en el servidor
+// con lo guardado (así también existe sin JS); esto solo la va acompañando.
+document.addEventListener("DOMContentLoaded", () => {
+    const bio = document.querySelector('[data-previa-origen="bio"]');
+    const previaBio = document.querySelector("[data-previa-bio]");
+    const contador = document.querySelector("[data-contador]");
+
+    if (bio && (previaBio || contador)) {
+        const vacia = "Todavía no escribiste tu biografía.";
+
+        const pintar = () => {
+            const texto = bio.value.trim();
+
+            if (previaBio) {
+                // textContent y no innerHTML: lo que se escribe es texto de la
+                // persona y acá no se renderiza el markdown (eso lo hace el
+                // servidor con render_bio al guardar). Meterlo como HTML sería
+                // ejecutar lo que se escriba en el campo.
+                previaBio.textContent = texto || vacia;
+                previaBio.classList.toggle("ajustes-previa__bio--vacia", !texto);
+            }
+            if (contador) {
+                contador.hidden = false;
+                contador.textContent = `${bio.value.length} caracteres`;
+            }
+        };
+
+        bio.addEventListener("input", pintar);
+        pintar();
+    }
+
+    const ubicacion = document.querySelector('[data-previa-origen="ubicacion"]');
+    const chip = document.querySelector("[data-previa-ubicacion]");
+    const chipTexto = document.querySelector("[data-previa-ubicacion-texto]");
+
+    if (ubicacion && chip && chipTexto) {
+        ubicacion.addEventListener("input", () => {
+            const texto = ubicacion.value.trim();
+            chipTexto.textContent = texto;
+            chip.hidden = !texto;
+        });
+    }
+});
+
+
+// Los horarios: el interruptor apaga su fila, y los dos atajos hacen el
+// trabajo repetido.
+//
+// El interruptor ES el checkbox "cerrado_N" de siempre (el backend no cambió):
+// lo único que agrega el JS es apagar visualmente la fila y los dos botones de
+// arriba, que nacen con `hidden` y se encienden acá. Sin JS, marcar el día
+// como cerrado sigue funcionando igual.
+document.addEventListener("DOMContentLoaded", () => {
+    const filas = Array.from(document.querySelectorAll("[data-horario-fila]"));
+    if (!filas.length) return;
+
+    const apagar = (fila) => {
+        const cerrado = fila.querySelector("[data-cerrado]");
+        if (!cerrado) return;
+        fila.classList.toggle("horario-fila--cerrada", cerrado.checked);
+    };
+
+    filas.forEach((fila) => {
+        const cerrado = fila.querySelector("[data-cerrado]");
+        if (cerrado) cerrado.addEventListener("change", () => apagar(fila));
+        apagar(fila);
+    });
+
+    const atajos = document.querySelector("[data-horarios-atajos]");
+    if (!atajos) return;
+    atajos.hidden = false;
+
+    const hora = (fila, cual) => fila.querySelector(`[data-hora="${cual}"]`);
+
+    const copiar = atajos.querySelector("[data-copiar-lunes]");
+    if (copiar) {
+        copiar.addEventListener("click", () => {
+            const lunes = filas[0];
+            const abre = hora(lunes, "abre");
+            const cierra = hora(lunes, "cierra");
+            const cerrado = lunes.querySelector("[data-cerrado]");
+
+            filas.slice(1).forEach((fila) => {
+                if (abre) hora(fila, "abre").value = abre.value;
+                if (cierra) hora(fila, "cierra").value = cierra.value;
+                const suyo = fila.querySelector("[data-cerrado]");
+                if (suyo && cerrado) suyo.checked = cerrado.checked;
+                apagar(fila);
+            });
+
+            // A mano: cambiar .value y .checked desde código no dispara
+            // "change", y la barra de guardar se quedaría diciendo que no hay
+            // nada que guardar.
+            atajos.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+    }
+
+    const finde = atajos.querySelector("[data-cerrar-finde]");
+    if (finde) {
+        finde.addEventListener("click", () => {
+            filas.slice(5).forEach((fila) => {
+                const cerrado = fila.querySelector("[data-cerrado]");
+                if (cerrado) cerrado.checked = true;
+                apagar(fila);
+            });
+            atajos.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+    }
+});
+
+
+// Nuevo/editar servicio: la vista previa de la ficha y el bloque de turnos.
+//
+// Mismo criterio que la previa de Ajustes: la ficha se dibuja en el servidor
+// con lo que hay (así existe sin JS y, al volver por un error, muestra lo que
+// la persona escribió), y esto solo la va acompañando mientras se tipea.
+//
+// El bloque de la duración del turno nace VISIBLE en el HTML y lo esconde este
+// script cuando los turnos están apagados. Al revés —nacer oculto y mostrarlo
+// con JS— dejaría, sin JavaScript, un campo obligatorio que no se puede
+// completar.
+document.addEventListener("DOMContentLoaded", () => {
+    const formulario = document.querySelector("[data-preview-servicio]");
+    if (!formulario) return;
+
+    const campo = (nombre) => formulario.querySelector(`[data-previa="${nombre}"]`);
+    const enPrevia = (selector) => formulario.querySelector(selector);
+
+    // --- el bloque de turnos
+    const turnos = campo("turnos");
+    const bloque = formulario.querySelector("[data-bloque-turnos]");
+    const chipTurnos = enPrevia("[data-previa-chip-turnos]");
+
+    const pintarTurnos = () => {
+        if (bloque) bloque.hidden = !turnos.checked;
+        if (chipTurnos) chipTurnos.hidden = !turnos.checked;
+    };
+
+    if (turnos) {
+        turnos.addEventListener("change", pintarTurnos);
+        pintarTurnos();
+    }
+
+    // --- los textos de la ficha
+    const acompanar = (nombre, destino, vacio, claseVacia) => {
+        const origen = campo(nombre);
+        const nodo = enPrevia(destino);
+        if (!origen || !nodo) return;
+
+        origen.addEventListener("input", () => {
+            const texto = origen.value.trim();
+            // textContent y no innerHTML: es texto que escribe la persona, y
+            // meterlo como HTML sería ejecutar lo que se escriba en el campo.
+            nodo.textContent = texto || vacio;
+            if (claseVacia) nodo.classList.toggle(claseVacia, !texto);
+        });
+    };
+
+    acompanar("titulo", "[data-previa-titulo]", "El título de tu servicio",
+              "servicio__titulo--vacio");
+    acompanar("descripcion", "[data-previa-descripcion]",
+              "La descripción aparece acá, debajo del título.", "servicio__desc--vacia");
+    acompanar("zona", "[data-previa-zona]", "Sin zona", "dato--vacio");
+
+    // --- el precio: vacío no es cero, es "a presupuestar"
+    const precio = campo("precio");
+    const previaPrecio = enPrevia("[data-previa-precio]");
+    const previaNota = enPrevia("[data-previa-precio-nota]");
+
+    if (precio && previaPrecio) {
+        precio.addEventListener("input", () => {
+            const texto = precio.value.trim();
+            previaPrecio.textContent = texto || "A presupuestar";
+            previaPrecio.classList.toggle("servicio__precio--abierto", !texto);
+            if (previaNota) {
+                previaNota.textContent = texto ? "Precio estimado" : "Le cotizás su caso";
+            }
+        });
+    }
+
+    // --- el rubro cambia el ícono del emblema y el chip
+    const rubro = campo("rubro");
+    const previaRubro = enPrevia("[data-previa-rubro]");
+    const emblema = enPrevia("[data-previa-emblema]");
+
+    if (rubro) {
+        rubro.addEventListener("change", () => {
+            if (previaRubro) {
+                previaRubro.textContent =
+                    rubro.options[rubro.selectedIndex].textContent.trim();
+            }
+            if (emblema) {
+                // Los trece íconos ya están en el HTML (el marcado vive en las
+                // plantillas, ver partials/_icono_oficio.html): acá solo se
+                // muestra el que corresponde.
+                emblema.querySelectorAll("[data-oficio]").forEach((icono) => {
+                    icono.hidden = icono.dataset.oficio !== rubro.value;
+                });
+            }
+        });
+    }
+
+    // --- apagado: la ficha se ve como se va a ver, es decir, no se ve
+    const disponible = campo("disponible");
+    const ficha = enPrevia("[data-previa-ficha]");
+    const nota = enPrevia("[data-previa-oculto]");
+
+    if (disponible && ficha) {
+        disponible.addEventListener("change", () => {
+            ficha.classList.toggle("servicio--apagado", !disponible.checked);
+            if (nota) nota.hidden = disponible.checked;
+        });
     }
 });

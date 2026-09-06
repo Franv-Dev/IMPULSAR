@@ -640,3 +640,449 @@ Decisión de Tomás: en 390 px las pantallas quedaban llenas. Tres reglas:
 - "Lo que más le piden" es una consulta nueva sobre `products`.
 - Que un cliente tenga **sólo sus reseñas como público**: es una decisión de
   este diseño, no una regla que el código aplique hoy.
+
+### El perfil, pasado a código (2026-09-05)
+
+Lo que del canvas quedó andando en la app, en `app/perfil/` y en los dos
+archivos estáticos. La primera tanda (23:00 del 04) dejó hecho lo de abajo y
+paró antes de las dos últimas piezas; ésta las cerró.
+
+De la primera tanda: **"Lo que tenés en curso"** (turnos y presupuestos del
+dueño, tres de cada uno, `reglas.turnos_en_curso` y
+`reglas.presupuestos_en_curso`), las **pestañas** (`[data-perfil-tabs]` en
+`main.js`, la barra nace con `hidden` y la enciende el JS), el **hueco de
+"todavía no publicaste" dicho como invitación** (`.perfil-vender`), y los
+**plegables de teléfono** para la semana de horarios y el mapa
+(`[data-plegar-en-movil]`, con el `resize` que le avisa a maplibre cuando se
+abre adentro de un `<details>` cerrado).
+
+De esta tanda:
+
+- **Las reseñas son la tercera pestaña.** Estaban sólo en
+  `/perfil/<slug>/resenias`: la prueba de que a este emprendimiento ya le
+  compraron quedaba a un click, justo cuando el visitante está decidiendo. Van
+  las últimas tres (`reglas.MAX_RESENIAS_EN_EL_PERFIL`) con el resumen de
+  **todas** al costado, y el pie lleva a la página completa, que sigue
+  existiendo paginada. Las tarjetas reusan `review-card` y la distribución
+  `distribucion__*` de `/resenias` sin tocarlas: es la misma cosa en otro lado
+  y tiene que verse igual. **Responder no va acá** — es una pantalla de
+  trabajo, no del perfil. La pestaña se dibuja con la misma condición que su
+  panel: un botón sin panel detrás queda vivo en la barra y no hace nada,
+  porque el JS lo saltea al no encontrar el destino.
+- **"Ver como visitante" es una URL, no un interruptor de JS.** `?ver=visitante`
+  sobre el perfil propio. Se eligió así porque el estado queda compartible,
+  marcable, vuelve con el botón de atrás y funciona sin JS.
+- **Y apaga de verdad.** El corte está en `vistas.py`, no en el template: con
+  el parámetro puesto, `es_dueño` es `False` y las estadísticas, los turnos y
+  los presupuestos **ni se consultan**. La vista previa no es un dibujo, es la
+  misma consulta que corre para un visitante. De paso, `es_dueno` dejó de
+  calcularse en el template (`{% set es_dueno = g.user and ... %}`) y lo manda
+  la vista: la cuenta vive en un solo lado, que es lo que hace que apagar sea
+  confiable.
+- **El perfil de un cliente cambia de forma.** Rol `usuario` y sin
+  emprendimientos publicados: sin portada, avatar de 96 px en vez de 112 (sin
+  portada no pisa nada, así que también pierde el margen negativo) y sin la
+  tarjeta "Horarios de atención", que para el dueño era una invitación a llenar
+  algo que no atiende a nadie. **Dos cosas se respetan igual**: si subió una
+  portada, va —la cargó a propósito—, y si ya tiene horarios cargados, se
+  siguen mostrando. Se pide el rol Y que no haya publicado nada, porque si un
+  "usuario" tiene emprendimientos el que está equivocado es el rol, y quedarse
+  con la forma de negocio es lo que no rompe la pantalla.
+- **La barra usa `es_dueno_real`** y no `es_dueno`, porque tiene que seguir
+  viéndose mientras la vista previa está prendida: si no, no habría desde dónde
+  volver.
+
+**Medidas y color.** La barra va sobre `--color-primary-soft` y no sobre el
+índigo profundo de los paneles: es un aviso permanente, no un bloque de marca,
+y dos bloques oscuros pegados a la portada quedaban peleando. La variante
+`--previa` sube el borde a `--color-primary`, porque mientras mirás recortado
+esa barra es el único cartel que lo dice. El resumen de reseñas es una columna
+de 240 px que cae arriba de la lista abajo de 960 px, el mismo corte que usan
+los plegables de teléfono.
+
+**Verificado**: la suite queda en **851 en verde** (832 antes de la tanda del
+perfil), y las dos vistas probadas contra el servidor con sesión iniciada — la
+normal muestra "Tus números" y "Lo que tenés en curso", la previa no muestra
+ninguno de los dos y sigue ofreciendo "Volver a mi vista".
+
+### Lo que del perfil NO se pasó, y por qué
+
+- **La variación mensual de "Tus números"** (`+18%`, `+9`). No hay con qué
+  calcularla: `estadisticas_de_usuario` da el total de hoy y no hay histórico.
+  Es una propuesta del canvas y sigue siéndolo.
+- **"Lo que más le piden"**. Es una consulta nueva sobre `products` que todavía
+  no existe.
+- **La mitad del perfil del cliente que el canvas propone como listas propias**:
+  turnos, presupuestos, reseñas escritas, guardados y a quién sigue como cinco
+  bloques. En la app hay tres de esos cinco y en otra forma —"Lo que tenés en
+  curso" funde turnos y presupuestos, y guardados y seguidos siguen viviendo en
+  sus pantallas—, que alcanza para que el perfil no esté vacío. Partirlo en
+  cinco secciones es la tanda que sigue.
+- **Que de un cliente sólo sean públicas sus reseñas**. Es una decisión del
+  diseño, no una regla que el código aplique hoy.
+
+---
+
+## Ajustes: editar el perfil (2026-09-05)
+
+El canvas está en `disenio-ajustes/` (siete artboards, dos páginas). Reemplaza
+al formulario único de `/perfil/edit`: diez controles en una sola columna —las
+dos fotos como `<input type=file>` pelados, la biografía, los dos teléfonos,
+las tres redes y las dos ubicaciones— con el botón de guardar al final del
+scroll.
+
+**La estructura.** Ajustes pasa a ser una sección con solapas de verdad, y los
+ocho campos se reparten por lo que responde cada grupo:
+
+- **Perfil público** (`/perfil/edit`): fotos, biografía y las dos ubicaciones.
+- **Contacto y redes** (`/perfil/edit/contacto`, ruta nueva): los dos teléfonos
+  y los tres links. Se cargan una vez y no se vuelven a tocar, pero estaban
+  entre la biografía y la dirección, que son las dos que sí se editan seguido.
+- **Horarios** (`/perfil/horarios`): deja de ser una tarjeta suelta de 640 px
+  fuera del menú de cuenta y entra como una solapa más.
+
+`formulario.leer_perfil()` se partió en `leer_perfil_publico()` y
+`leer_contacto()`; `campos_guardados()` sigue devolviendo los ocho, porque las
+dos pantallas pintan la misma vista previa.
+
+**Lo que cambia adentro de cada una:**
+
+- **La vista previa** (`partials/_ajustes_previa.html`), fija a la derecha.
+  Editar el perfil era escribir a ciegas y salir a mirar. Se pinta en el
+  servidor desde `campos` —así existe sin JS y, al volver por un error, muestra
+  lo que la persona escribió y no lo viejo de la base— y `main.js` le va
+  acompañando la biografía y la ciudad mientras se escribe. La bio entra por
+  `textContent` y no por `innerHTML`: el markdown lo renderiza el servidor al
+  guardar, y meterlo como HTML sería ejecutar lo que se escriba en el campo.
+- **Las fotos muestran la que hay cargada.** Y se pueden **quitar**
+  (`quitar_avatar` / `quitar_cover`), que antes no se podía: se cambiaba la foto
+  pero no se volvía a no tener ninguna. Subir le gana a quitar. La columna queda
+  en `None` y el archivo no se borra, como el resto de los uploads viejos.
+- **Ciudad y dirección dejan de confundirse**: cada una lleva su pastilla
+  encima («Solo texto» / «Mueve el mapa») en vez de un texto de ayuda que se
+  leía después de equivocarse. Y **la geocodificación deja de ser muda**: si la
+  dirección guardada no tiene coordenadas, el campo lo dice cada vez que se
+  entra, no una sola vez al guardar.
+- **El error del teléfono se dibuja EN el campo**, con `aria-describedby`.
+  Volvía como un aviso suelto arriba de todo y había que adivinar cuál de los
+  diez campos lo había producido. El mensaje se filtra de la lista de flashes
+  para no decirlo dos veces (empieza con «El teléfono» o «El WhatsApp», y eso
+  es lo que decide en qué campo se dibuja).
+- **Guardar es una barra fija** con el estado. Nace diciendo «Todo guardado»
+  desde el HTML (que es cierto al entrar) y `main.js` la tiñe al primer cambio.
+  Sin JS queda el texto de arranque y el botón, que es lo que había.
+- **Horarios**: el checkbox «Cerrado» del final es un interruptor que apaga su
+  fila, y al costado se ve el cartel que las siete filas encienden en el perfil.
+  Dos atajos (`Copiar el lunes`, `Cerrar sábado y domingo`) hacen el trabajo
+  repetido; nacen con `hidden` y los enciende el JS, porque sin él no harían
+  nada y un botón muerto es peor que ninguno.
+
+**El interruptor no cambió el backend.** Sigue siendo el mismo
+`<input type="checkbox" name="cerrado_N">` de siempre: lo que se invierte es el
+color (encendido = abierto, que es como se lee un interruptor) con
+`:checked + .sr-only + .interruptor__pista`. El nombre accesible sigue diciendo
+lo que el control hace al marcarse («Cerrado el lunes»).
+
+### El bug que apareció de paso: los campos sin recuadro
+
+El rediseño de entrar/crear cuenta le pasó el borde a `.auth__campo` —que
+envuelve al input junto con el ícono y el ojo— y dejó a `.auth__input` sin
+borde, sin fondo y sin padding. Pero esa clase la usan **trece formularios
+más** que nunca tuvieron ese envoltorio (eventos, productos, servicios, turnos,
+reportes, la bio, editar perfil): ahí los campos quedaron sin recuadro, texto
+suelto sobre la tarjeta.
+
+Se arregló invirtiendo el default: `.auth__input` vuelve a ser la caja, y
+`.auth__campo .auth__input` la apaga cuando el borde ya lo pone el envoltorio.
+Así ninguno de los dos grupos depende de que el otro se acuerde de algo.
+
+### Lo que NO se pasó, y por qué
+
+- **Cuenta y contraseña.** No hay nada detrás: `views/auth.py` tiene register,
+  login y logout, y ninguna ruta para cambiar la contraseña ni el correo, ni
+  para cerrar la cuenta. La advertencia del nombre de usuario que dibuja el
+  canvas (cambiarlo cambia el slug y rompe los links compartidos) **sí es
+  real**, y es lo primero que valdría la pena pasar.
+- **Notificaciones.** Los tres avisos existen (`services/notificaciones_email.py`)
+  pero no hay dónde guardar la preferencia: hace falta una columna o una tabla
+  y que los tres envíos la consulten.
+- Las dos siguen dibujadas y apagadas en la barra de solapas, con el aviso
+  abajo, que es la regla del resto del proyecto.
+
+**Verificado**: la suite queda en **862 en verde** (853 antes de esta tanda), y
+las tres pantallas probadas contra el servidor con sesión iniciada.
+
+---
+
+## Servicios (2026-09-05)
+
+El canvas está en `disenio-servicios/` (siete artboards, dos páginas). Cubre las
+cinco pantallas que quedaban con el diseño viejo: buscar, pedir presupuesto,
+mis servicios, nuevo/editar y verificar. Presupuestos y el detalle del pedido ya
+estaban rediseñados y no se tocan.
+
+**Los servicios no tienen foto.** `Service` no tiene columna de imagen, así que
+la ficha no puede usar `.tarjeta` tal cual (que reserva 232 px para la foto del
+emprendimiento). En su lugar va un **emblema del oficio**: un cuadrado de 84 px
+(44 en teléfono) con el índigo lavado de fondo y un ícono de línea del rubro
+dibujado en SVG, sobre la grilla de 24. Un hueco gris con un iconito adentro se
+lee como carga rota; el emblema se lee como categoría.
+
+**Los 13 rubros de servicio no son los 7 del emprendimiento.** `Rubros` en
+`app/servicios/modelo.py` es un catálogo aparte (plomería, gas, herrería…) y no
+tiene paleta: la de la guía es para `Categorias`, que son otra cosa. Acá van
+todos en `--color-primary-soft` y el rubro se distingue por el ícono, no por el
+color. Trece pares de fondo + tinta que pasen AA no valen el esfuerzo para una
+lista que además se filtra.
+
+**El filtro es la columna de Emprendimientos**, la que ya existe en el CSS
+(`.explorar` 276 px + `.filtros`), y no la fila de tres campos de hoy. De los 13
+rubros se muestran los que tienen a alguien, con el conteo al lado, y el resto se
+despliega: trece renglones en 276 px son una lista, no un filtro.
+
+**"A presupuestar" es un estado, no un renglón.** `precio_estimado` en NULL es lo
+que distingue esta tabla de `products`, así que tiene su propio filtro y su propia
+tipografía (más chica y en `--color-text-soft`, contra el precio cerrado en 18 px
+y `--color-text`).
+
+**La fila de Mis servicios reemplaza a la tarjeta.** Se agrupan por
+emprendimiento, con el cupo (`MAX_SERVICIOS_POR_POST`, 50) visible antes de que
+te lo rechace. Dos cosas que la fila dice y hoy no se ven en ningún lado:
+
+- **Los cuatro estados de la verificación.** Hoy la tarjeta sabe decir
+  "Verificado" o nada; `VerificationRequest` tiene PENDIENTE y RECHAZADA y no se
+  muestran. La cola del admin los escribe y el dueño no se entera hasta que entra
+  a `/servicios/<id>/verificar`.
+- **El interruptor de Disponible.** Es lo único de esta tanda que necesita
+  backend nuevo: un POST chico (`/servicios/<id>/disponible`). Hoy apagar un
+  servicio obliga a abrir el formulario de ocho campos y guardar los ocho.
+
+**La duración del turno no existe hasta que se prenden los turnos.** Hoy el campo
+está siempre y dice "obligatorio si tomás turnos", que hay que leer para saber si
+te toca. Los topes del canvas son los de `reglas.py`: 5 a 480 minutos, con
+30/45/60/90 como pastillas y el campo libre al lado.
+
+**Verificar deja de ser cuatro párrafos.** Los tres pasos (subís, lo mira un
+admin, aparece el sello) están siempre arriba y marcan en cuál estás, y el motivo
+del rechazo se dibuja al lado de la foto que mandaste: hoy son un alert y una
+imagen suelta, y rehacerla es adivinar qué se veía mal.
+
+### Lo que el canvas dice y la app no
+
+Dos textos nuevos, los dos al costado de Verificar: qué papel sirve (matrícula
+con el número visible, certificado del rubro, habilitación municipal) y qué
+significa el sello — que alguien de IMPULSAR miró un papel, no que el trabajo
+esté garantizado. Es la parte que hoy no está escrita en ningún lado y es la que
+decide si el sello vale algo para quien lo mira.
+
+| Qué | Dónde |
+| --- | --- |
+| Artboards de servicios | `disenio-servicios/*.dc.html` + `canvas.json` |
+| Canvas publicado | https://claude.ai/code/artifact/069e1492-b8cb-4c58-8cf0-b036dc06e7c2 |
+
+### Servicios, pasado a código (2026-09-05)
+
+Las cinco pantallas del canvas están en la app. Lo que se tocó:
+
+| Qué | Dónde |
+| --- | --- |
+| Buscar servicios | `app/servicios/templates/servicios/buscar.html` |
+| Mis servicios | `app/servicios/templates/servicios/index.html` |
+| Nuevo / editar | `app/servicios/templates/servicios/form.html` |
+| Pedir presupuesto | `app/servicios/templates/servicios/solicitar.html` |
+| Verificar credenciales | `app/servicios/templates/servicios/verificar.html` |
+| Los íconos de los 13 oficios | `templates/partials/_icono_oficio.html` |
+| Estilos | `static/css/styles.css`, bloque "SERVICIOS (2026-09-05)" |
+| Previa del formulario | `static/js/main.js`, al final |
+
+**Los filtros son enlaces, no un formulario.** Rubro, precio y el interruptor de
+verificados cambian un parámetro de la URL y recargan; solo la zona es un
+`<form>`, porque hay que escribirla. Así la búsqueda entera se puede compartir,
+se vuelve con el botón de atrás y —lo que decide— funciona sin JavaScript. Es
+el mismo criterio que ya usaban las fichas de "Abierto ahora" y "Con reseñas"
+del listado de emprendimientos.
+
+**El conteo al lado de cada rubro no se filtra a sí mismo.**
+`consultas.conteos_por_rubro()` aplica todos los filtros MENOS el rubro: el
+número tiene que decir cuántos hay en Electricidad mientras estás parado en
+Plomería, que es lo que lo hace servir para decidir a dónde ir. Los filtros
+viven en `_filtrar_busqueda()`, compartida con la búsqueda, para que el
+contador no pueda desincronizarse de lo que el rubro va a devolver.
+
+**El filtro de precio no es un rango de plata.** Son los dos estados que de
+verdad separan a los servicios: con precio publicado, o a presupuestar
+(`precio_estimado` en NULL, que es lo que distingue esta tabla de `products`).
+
+**El orden por defecto cambió**: era por emprendimiento y título, ahora es por
+fecha descendente (`reglas.Ordenes.RECIENTE`), con "Nombre (A-Z)" como la otra
+opción. Lo último cargado es lo que todavía nadie vio, y por título "Aberturas"
+quedaba primero para siempre. Los dos órdenes desempatan por id: sin eso, dos
+servicios del mismo segundo pueden salir en distinto orden en cada consulta y
+en una lista paginada eso significa una fila repetida o una que no aparece
+nunca.
+
+**"Mejor puntuados" no se pasó**, aunque el canvas lo dibujaba: el promedio de
+reseñas es del EMPRENDIMIENTO, no del servicio, así que ordenaría los servicios
+de uno por una nota que no es suya. Por el mismo motivo la ficha no muestra
+estrellas.
+
+**La fila de Mis servicios dice dos cosas que antes no se veían**: el estado del
+último pedido de verificación (`consultas.estados_de_verificacion()`, una
+consulta para todos y no una por fila) y el cupo por emprendimiento
+(`MAX_SERVICIOS_POR_POST`), que antes se conocía recién cuando el alta lo
+rechazaba.
+
+**Backend nuevo: `POST /servicios/<id>/disponible`.** Es lo único de la tanda
+que no existía. Apagar un servicio obligaba a abrir el formulario de ocho
+campos y volver a guardarlos todos, con el riesgo de pisar algo de paso. Es un
+form de un botón y no un checkbox con JavaScript, por lo mismo que los filtros.
+
+**La previa del formulario se pinta en el servidor** y `main.js` la va
+acompañando, igual que la de Ajustes: así existe sin JS y, al volver por un
+error, muestra lo que la persona escribió y no lo viejo de la base. Los trece
+íconos van dibujados y escondidos en el HTML porque el marcado vive en las
+plantillas; el JS solo muestra el del rubro elegido.
+
+**El campo de duración del turno nace visible** y lo esconde el JS cuando los
+turnos están apagados. Al revés —nacer oculto— dejaría, sin JavaScript, un
+campo obligatorio que no se puede completar.
+
+### Lo que de servicios NO se pasó, y por qué
+
+- **Las estrellas y la reputación en la ficha.** Ver arriba: la nota es del
+  emprendimiento.
+- **"Abierto ahora" en la ficha de la búsqueda.** El dato existe
+  (`services/horarios.py`) pero es del emprendimiento y calcularlo por fila en
+  una lista paginada es una consulta por resultado. Cuando se cablee, va con el
+  mismo helper que usa el inicio.
+- **El aviso de "no cargaste horarios" del formulario** quedó como el texto
+  genérico que ya estaba, sin consultar si la persona tiene horarios: eso es
+  otra consulta y el canvas lo dibujaba como si el dato estuviera.
+
+**Verificado**: la suite queda en **873 en verde** (862 antes de esta tanda:
+once tests nuevos y dos actualizados). Los dos que se actualizaron lo fueron a
+propósito y no para que pasaran: `test_la_busqueda_pagina` daba por sentado el
+orden alfabético viejo, y el del checkbox de verificados probaba un control que
+ahora es un enlace con `aria-pressed`.
+
+---
+
+## Favoritos (2026-09-05)
+
+Sin canvas: la pantalla no necesitaba un diseño nuevo sino entrar al que ya
+existe. Era la única de las cinco del menú de cuenta que seguía con
+`.section__header` y la grilla de `.card` genéricas, al lado de Mis
+emprendimientos, Mis servicios y Reseñas recibidas, que ya estaban
+rediseñadas.
+
+- Pasa al layout `.cuenta` con el menú a la izquierda, igual que sus hermanas.
+- Las fichas son las mismas `.tarjeta` del listado de emprendimientos, con la
+  pastilla del rubro, el corazón, el promedio y el autor. Es la misma ficha que
+  la persona ya vio al marcar el favorito: no hay motivo para que se vea
+  distinta acá.
+- **El orden dejó de ser un `<select>` y pasó a ser dos enlaces**, como en la
+  búsqueda de servicios: son dos opciones, y desplegar un select para elegir
+  entre dos es un paso de más. El rubro sigue siendo un `<select>` con
+  `onchange` (siete opciones) y su botón "Aplicar" de fallback para quien tenga
+  JS apagado.
+- El vacío usa el `.vacio` de servicios, y distingue los dos casos que ya
+  distinguía: sin favoritos, o sin favoritos EN ESE RUBRO.
+
+Se actualizaron tres tests de `tests/test_favorites.py` que leían el marcado
+viejo: el helper que sacaba los títulos buscaba `<h3 class="card__title">`, y
+dos que verificaban que el orden volviera con `selected` ahora miran
+`aria-current` en el enlace activo.
+
+---
+
+## El chat (2026-09-05)
+
+Sin canvas, como Favoritos: las dos pantallas ya existían y lo que faltaba era
+que entraran al diseño del resto.
+
+**La bandeja** (`templates/messages/inbox.html`) pasa al layout de cuenta y cada
+conversación es una fila con avatar. Los tres datos que se agregan salen de lo
+que la consulta ya traía, así que no hay ninguna consulta nueva:
+
+- **De qué lado estás**: «le escribís como cliente» o «te escribieron a tu
+  emprendimiento». Es lo que decide con quién estás hablando, y antes había que
+  deducirlo del nombre.
+- **La fecha** del último mensaje.
+- **Sin leer**: el punto índigo y el fondo teñido, cuando el último mensaje es
+  de la otra parte y no tiene `read_at`. Antes la única forma de saber si te
+  habían contestado era abrir las conversaciones una por una. Los propios no se
+  marcan: nacen sin `read_at` y decir que tenés algo pendiente con vos mismo no
+  significa nada.
+
+La vista previa va a una sola línea con puntos suspensivos: sirve para
+reconocer la conversación, no para leerla.
+
+**La conversación** (`templates/messages/conversation.html`) pasa a ser una
+ventana de chat: cabecera con la otra parte y el emprendimiento del que se
+habla, el historial en el medio con alto mínimo, y el campo de escribir abajo,
+todo dentro de la misma caja. Antes eran tres bloques sueltos separados por
+márgenes.
+
+**Lo que NO se tocó es el cableado.** El div del historial conserva su `id` y
+sus tres `data-*`, el `<script>` con el JSON del historial queda igual, y las
+burbujas conservan sus clases (`.chat-message` y sus dos modificadores):
+`static/js/chat.js` las escribe, así que renombrarlas las habría dejado sin
+estilo y habría roto el polling. Lo que cambió es el CSS de esas clases: cada
+burbuja muerde la esquina de su lado, para que se lea quién dijo qué sin
+depender solo del color.
+
+---
+
+## Auditoría de la tanda del inicio (2026-09-05)
+
+Lo que salió de revisar el inicio ya pasado a código. Lo medido, para no
+volver a discutirlo:
+
+- **La consulta de `/api/posts/` no tiene N+1 ni duplica filas.** Usa el mismo
+  `query_posts_con_rating()` que el listado — outerjoin contra una subquery
+  agrupada por `post_id`, así que un emprendimiento con cinco reseñas sigue
+  siendo una fila. Medido vaciando el *identity map* antes de la request: **2
+  consultas fijas** (el SELECT y el `count(*)` del paginado) con 5, 20 y 40
+  emprendimientos. `author_name` no suma ninguna porque `Post.author_user` es
+  `lazy="joined"`.
+- **El shape de la respuesta es aditivo.** Aparecen `avg_rating`,
+  `review_count` y `author_name`; no desaparece ninguna clave, las de primer
+  nivel del paginado quedan igual y `favorito` sigue sin viajar cuando no hay
+  sesión. El único consumidor es `static/js/main.js`.
+- **Los siete pares de rubro pasan AA en los dos temas**: 4,64:1 a 5,11:1 en
+  claro y 5,68:1 a 7,00:1 en oscuro, calculados con la fórmula de WCAG. El
+  blanco al 72 % del conteo de "Ver todo" sobre el panel da 6,15:1.
+- **La grilla de rubros no puede quedar coja.** El bucle es sobre
+  `Categorias.ETIQUETAS` (los siete, siempre) y el conteo entra con
+  `.get(clave, 0)`, así que un rubro en cero dibuja su ficha igual y dice
+  "0 activos". Con la octava ficha de "Ver todo" son 8 celdas: 4x2 exactas.
+
+### Lo que hubo que arreglar
+
+- **Tres controles nuevos no llegaban a los 44 px en teléfono.** "Cerca de mí"
+  medía 34, los dos botones sobre la foto 38x38 y el "Ver" del pie 32. Los
+  valores del artboard son de escritorio y ahí están bien; el piso de 44 se
+  aplica en la media query de 860 px y sólo ahí. Verificado midiendo dentro de
+  un iframe de 390 px (la media query mira el `innerWidth` del documento, así
+  que redimensionar la ventana no sirve).
+- **La pastilla del rubro no se anunciaba.** Estaba dentro del
+  `<a class="tarjeta__foto" aria-hidden="true">` — ese enlace es un duplicado
+  del título y por eso se esconde, pero se llevaba puesto el rubro. Pasó a ser
+  hermano suyo, posicionado contra la tarjeta (que ya es `position: relative`)
+  y con `z-index: 1`. En el listado no pasaba: ahí la pastilla vive en
+  `.tarjeta__cuerpo`.
+- **Las iniciales del avatar salían del nombre ya escapado.** `escapeHtml(...)`
+  y después `.slice(0, 2)` deja "&a" o "&l" en el círculo si el nombre empieza
+  con `&`, `<`, `"` o `'`. Se corta el crudo y se escapa después, que es el
+  orden del listado (`username[:2] | upper`).
+- **CSS muerto del cambio de `.ficha` a `.tarjeta`.** Se fueron `.ficha` y sus
+  nueve hijos, `.resultados__grid` y sus reglas de media query. Sobreviven
+  `.ficha__rating` y `.ficha__estrella`, que `blog/detail.html` sigue pidiendo,
+  y no se tocan `.ficha-filtro*`, `.fichas-filtro*` ni `.ficha-servicio*`, que
+  son otras clases.
+
+Nada de lo que pinta la tarjeta del inicio es inventado: sólo `avg_rating`,
+`review_count` y `author_name`, los tres reales. "Abierto ahora", el barrio y
+los km siguen fuera, como dice la sección de arriba.
+
+La suite queda en **873 en verde**.

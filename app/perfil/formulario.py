@@ -22,29 +22,45 @@ def leer_bio():
     return biografia, error
 
 
-def leer_perfil():
-    """Los campos del perfil completo, ya limpios: (datos, error).
+# Los ocho campos del perfil, repartidos en las dos pantallas de Ajustes que
+# los editan. Estaban los ocho en un formulario solo: diez controles en fila
+# (con las dos fotos) que se recorrian enteros para cambiar una linea de la
+# biografia. Se parten por lo que responde cada grupo: uno es "quién soy y
+# dónde estoy", el otro "por dónde me escribís".
+CAMPOS_PERFIL_PUBLICO = ("biography", "location", "address_street")
+CAMPOS_CONTACTO = (
+    "phone", "whatsapp", "instagram_url", "facebook_url", "twitter_url",
+)
+
+
+def _leidos(nombres):
+    """Los campos pedidos, tal como vinieron y sin espacios de sobra."""
+    return {nombre: request.form.get(nombre, "").strip() for nombre in nombres}
+
+
+def leer_perfil_publico():
+    """Biografia y ubicacion, ya limpias: (datos, error).
 
     Ojo con dos que se parecen y no son lo mismo: `location` es texto libre que
     solo se muestra, y `address_street` es la direccion que se geocodifica.
 
-    De los ocho campos, los dos telefonos son los unicos que se validan, y no
-    por capricho: son datos de CONTACTO, o sea que existen para que alguien los
-    marque. Un telefono con letras o con cuatro digitos no falla en ningun
-    lado, se publica en el perfil y el cliente que lo intente no llega a
-    nadie. Los tres links y los dos textos libres se guardan como vengan, que
-    es como venia funcionando.
+    Ninguno de los tres se valida: son textos libres y se guardan como vengan,
+    que es como venia funcionando. El error se devuelve igual (siempre None)
+    para que las dos pantallas de ajustes se lean iguales desde la vista.
     """
-    datos = {
-        "biography": request.form.get("biography", "").strip(),
-        "location": request.form.get("location", "").strip(),
-        "address_street": request.form.get("address_street", "").strip(),
-        "phone": request.form.get("phone", "").strip(),
-        "whatsapp": request.form.get("whatsapp", "").strip(),
-        "instagram_url": request.form.get("instagram_url", "").strip(),
-        "facebook_url": request.form.get("facebook_url", "").strip(),
-        "twitter_url": request.form.get("twitter_url", "").strip(),
-    }
+    return _leidos(CAMPOS_PERFIL_PUBLICO), None
+
+
+def leer_contacto():
+    """Telefonos y redes, ya limpios: (datos, error).
+
+    Los dos telefonos son los unicos campos del perfil que se validan, y no por
+    capricho: son datos de CONTACTO, o sea que existen para que alguien los
+    marque. Un telefono con letras o con cuatro digitos no falla en ningun
+    lado, se publica en el perfil y el cliente que lo intente no llega a nadie.
+    Los tres links se guardan como vengan.
+    """
+    datos = _leidos(CAMPOS_CONTACTO)
 
     error = (
         validate_telefono(datos["phone"])
@@ -57,12 +73,16 @@ def leer_perfil():
 def campos_guardados(user):
     """Los ocho campos del perfil tal como estan guardados hoy.
 
-    La contraparte de leer_perfil(), y la razon de que exista es la misma que
-    la de filas_guardadas() en los horarios: el template se pinta SIEMPRE desde
-    un dict con estas ocho claves, venga de la base (al entrar) o del POST (al
-    volver por un error). Si el GET leyera user.* y el error leyera el POST,
-    serian dos formas de armar la misma pantalla y una de las dos se iba a
-    quedar atras.
+    La contraparte de leer_perfil_publico() y leer_contacto(), y la razon de
+    que exista es la misma que la de filas_guardadas() en los horarios: el
+    template se pinta SIEMPRE desde un dict con estas ocho claves, venga de la
+    base (al entrar) o del POST (al volver por un error). Si el GET leyera
+    user.* y el error leyera el POST, serian dos formas de armar la misma
+    pantalla y una de las dos se iba a quedar atras.
+
+    Van las ocho aunque cada pantalla edite tres o cinco: la de perfil publico
+    igual necesita el telefono para decir que hay contacto cargado, y las dos
+    pintan la misma vista previa.
     """
     return {
         "biography": user.biography or "",

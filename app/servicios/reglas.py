@@ -52,6 +52,62 @@ def rubro_valido(rubro):
     return rubro in Rubros.TODOS
 
 
+class Precios:
+    """Los tres estados del filtro de precio de la busqueda publica.
+
+    No es un rango de plata sino la division que de verdad separa a los
+    servicios entre si: `precio_estimado` en NULL ("a presupuestar") es lo que
+    distingue esta tabla de products, donde el precio es NOT NULL. Filtrar por
+    un numero seria inventar un orden entre "$12.500" y "te lo cotizo", que no
+    son dos precios sino dos formas de vender.
+    """
+
+    TODOS = ""
+    CERRADO = "cerrado"
+    PRESUPUESTAR = "presupuestar"
+
+    ETIQUETAS = {
+        TODOS: "Todos",
+        CERRADO: "Con precio",
+        PRESUPUESTAR: "A presupuestar",
+    }
+
+
+def precio_valido(precio):
+    """Mismo criterio permisivo que rubro_valido: lo que no conozco no filtra."""
+    return precio in (Precios.CERRADO, Precios.PRESUPUESTAR)
+
+
+class Ordenes:
+    """Como se ordena la busqueda publica.
+
+    Los mismos dos que ofrece el listado de emprendimientos
+    (app/blog/reglas.py), y por el mismo motivo: son los dos que la consulta
+    sabe hacer sin datos que no existen. Service no tiene coordenadas, asi que
+    no hay "cercania"; el promedio de reseñas es del EMPRENDIMIENTO y no del
+    servicio, asi que "mejor puntuados" ordenaria los servicios de uno por una
+    nota que no es suya.
+
+    El default es RECIENTE y no NOMBRE: lo que se carga ultimo es lo que
+    todavia nadie vio, y ordenar por titulo dejaba a "Aberturas" primero para
+    siempre.
+    """
+
+    RECIENTE = "reciente"
+    NOMBRE = "nombre"
+
+    TODOS = (RECIENTE, NOMBRE)
+
+    ETIQUETAS = {
+        RECIENTE: "Más recientes",
+        NOMBRE: "Nombre (A-Z)",
+    }
+
+
+def orden_valido(orden):
+    return orden in Ordenes.TODOS
+
+
 # Los limites de la duracion de un turno, en minutos. Van aca y no en modelo.py
 # junto a MAX_SERVICIOS_POR_POST porque no son un limite de la base sino una
 # decision de negocio que el formulario tiene que poder citar en su mensaje de

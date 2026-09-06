@@ -213,8 +213,15 @@ def _marcar(client, post_id):
 
 
 def _titulos_en(html):
-    """Los titulos de las tarjetas, en el orden en que salen en la pagina."""
-    return re.findall(r'<h3 class="card__title">\s*<a[^>]*>\s*(.*?)\s*</a>', html)
+    """Los titulos de las tarjetas, en el orden en que salen en la pagina.
+
+    Desde el rediseño la ficha es la misma .tarjeta del listado de
+    emprendimientos, asi que el titulo es un <h2 class="tarjeta__titulo"> y ya
+    no el <h3 class="card__title"> de la tarjeta generica vieja.
+    """
+    return re.findall(
+        r'<h2 class="tarjeta__titulo">\s*<a[^>]*>\s*(.*?)\s*</a>', html
+    )
 
 
 def test_ordena_por_cuando_se_marco_y_no_por_cuando_se_publico(
@@ -386,7 +393,13 @@ def test_los_selects_vuelven_marcados_con_lo_elegido(
     client, db, crear_usuario, crear_post, login
 ):
     """Si la pantalla no repinta lo elegido, el usuario no sabe que esta viendo
-    filtrado."""
+    filtrado.
+
+    El rubro sigue siendo un <select> y vuelve con `selected`; desde el
+    rediseño el orden es una fila de enlaces (dos opciones se leen mejor de un
+    vistazo que desplegando un select), asi que el que esta puesto se marca con
+    aria-current y no con selected.
+    """
     usuario = crear_usuario(username="tomy")
     autor = crear_usuario(username="autor")
     post = crear_post(autor.id, title="Panaderia", category=Categorias.ALIMENTOS)
@@ -399,7 +412,7 @@ def test_los_selects_vuelven_marcados_con_lo_elegido(
     ).get_data(as_text=True)
 
     assert re.search(rf'value="{Categorias.ALIMENTOS}"[^>]*selected', html)
-    assert re.search(r'value="nombre"[^>]*selected', html)
+    assert re.search(r'orden=nombre"[^>]*aria-current', html, re.S)
 
 
 def test_sin_orden_en_la_url_queda_marcado_el_default(
@@ -414,7 +427,7 @@ def test_sin_orden_en_la_url_queda_marcado_el_default(
 
     html = client.get("/blog/favoritos").get_data(as_text=True)
 
-    assert re.search(r'value="reciente"[^>]*selected', html)
+    assert re.search(r'orden=reciente"[^>]*aria-current', html, re.S)
 
 
 def test_el_rubro_sobrevive_al_cambio_de_pagina(
