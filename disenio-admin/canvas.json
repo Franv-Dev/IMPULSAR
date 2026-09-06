@@ -1,0 +1,47 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Resumen — escritorio", "x": 0, "y": 0, "w": 1440, "h": 1500 },
+    { "file": "Cola.dc.html", "title": "Cola pendiente — escritorio", "x": 1560, "y": 0, "w": 1440, "h": 1120 },
+    { "file": "Usuarios.dc.html", "title": "Usuarios — escritorio", "x": 3120, "y": 0, "w": 1440, "h": 900 },
+    { "file": "Emprendimientos.dc.html", "title": "Emprendimientos — escritorio", "x": 4680, "y": 0, "w": 1440, "h": 900 },
+    { "file": "Movil.dc.html", "title": "Cola pendiente — teléfono", "x": 6240, "y": 0, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    {
+      "id": "nota-estado",
+      "x": 0,
+      "y": -440,
+      "w": 720,
+      "text": "TAMPOCO ESTABA «SIN TOCAR», Y ES LO QUE MÁS IMPORTA DE ESTA TANDA.\nDe las cinco plantillas, TRES ya tienen el rediseño de agosto: dashboard.html, usuarios.html y emprendimientos.html, con menú lateral, tabla, buscador y paginado de verdad.\n\nREPORTES Y VERIFICACIONES SE QUEDARON AFUERA. Siguen con .section__header, una tabla pelada, estilos inline (style=\"font-size:0.8rem\") y —esto es lo grave— SIN EL MENÚ DEL PANEL, aunque el menú les enlaza: entrás a Reportes y perdés la navegación, con un «← Volver al panel» como única salida.\n\nPor eso el artboard de la cola es el central de esta tanda: no es solo pintura, es la pantalla que hoy no existe con la forma del resto."
+    },
+    {
+      "id": "nota-numero",
+      "x": 780,
+      "y": -440,
+      "w": 660,
+      "text": "UN SOLO NÚMERO GRANDE POR PANTALLA, y es el que decide si hoy hay trabajo.\nEl Resumen lidera con las cosas pendientes a 60 px. Las tres métricas de la plataforma van abajo, a 30 px: si compiten en tamaño, la pantalla deja de tener un titular y pasa a ser un tablero de cifras sueltas.\n\nSIN FLECHA DE TENDENCIA Y SIN SPARKLINE, y no por pereza: la consulta da el total de hoy y la fecha de alta de cada fila, no hay histórico contra el que comparar. «+47 en 30 días» es lo que se puede sostener; una flecha verde diría «creció respecto del mes pasado», que nadie sabe. El delta va en tinta apagada por lo mismo: no es un bueno-ni-malo, es un conteo.\n\nDel diseño viejo no están «Emprendimientos sin actividad» (Post no tiene updated_at y habría que inventar qué es «actividad») ni «Exportar métricas»: no hay exportación de nada."
+    },
+    {
+      "id": "nota-cola",
+      "x": 1560,
+      "y": -440,
+      "w": 700,
+      "text": "LA COLA ES UNA PANTALLA, NO UNA TABLA.\nUna verificación se resuelve mirando un documento y escribiendo un motivo. Eso no entra en una celda de una fila de seis columnas —que es lo que hay hoy, con un <textarea rows=\"1\" style=\"min-width:180px\" apretado en la columna «Acción»—. Ficha por ítem, el documento con su propia caja, y las acciones abajo.\n\nEL MOTIVO SIGUE VIAJANDO EN EL MISMO ENVÍO QUE EL RECHAZO. Si fuera otra pantalla, el prestador se quedaría sin saber qué corregir cada vez que el admin tiene apuro. Eso ya lo decidió el código y se respeta.\n\nSIN FOTO ES UN ESTADO, NO UN HUECO. El modelo la deja nullable y hoy la celda dice «Sin foto» en gris. Acá el botón de aprobar se apaga —no hay nada que mirar, no hay nada que aprobar— y el rechazo viene con el motivo ya escrito.\n\nESTE ARTBOARD ES EL MOLDE DE LAS DOS COLAS: Reportes usa la misma cáscara con sus campos (tipo, contenido, motivo, quién reportó) y sus dos acciones, como se ve en el Resumen."
+    },
+    {
+      "id": "nota-tablas",
+      "x": 3120,
+      "y": -440,
+      "w": 1400,
+      "text": "LAS DOS TABLAS: LO QUE CAMBIA Y LO QUE NO.\nBuscador y filtros ya recortan la consulta de verdad (views/admin.py), y los dos viajan en la URL, así que la paginación los conserva y el filtro va escondido en el formulario para que buscar no lo pierda. Eso no se toca: se dibuja como lo que es.\n\nNÚMEROS EN COLUMNA CON tabular-nums (fechas, vistas, reseñas, conteos de los chips) para que alineén verticalmente. Los números grandes sueltos —el 5 del Resumen, los totales de las métricas— van con las cifras proporcionales de la fuente: tabular a ese tamaño los deja flojos.\n\nEL ESTADO NO SE DICE SÓLO CON COLOR: cada pastilla lleva ícono y palabra (Activa con tilde, Baneado con cruz, «1 reporte sin resolver» con el triángulo). Y la fila entera se tiñe, no sólo una celda: en veinte filas un rojo suelto en la cuarta columna se pierde.\n\nDOS COSAS QUE EL CÓDIGO YA DIJO Y EL DIBUJO REPITE: banear cierra la sesión pero NO oculta los emprendimientos del baneado (el diseño de agosto decía que sí y era falso), y eliminar un emprendimiento se lleva puestos productos, servicios, reseñas, eventos, fotos y reportes —está declarado en Post y en las FK, así que el aviso lo enumera en vez de decir «esto no se puede deshacer».\n\nDel diseño viejo no está «Exportar CSV» en ninguna de las dos: no hay exportación."
+    },
+    {
+      "id": "nota-movil",
+      "x": 6240,
+      "y": 900,
+      "w": 460,
+      "text": "EN EL TELÉFONO EL PANEL SE RECORTA A LA COLA.\nEs una herramienta de escritorio: las tablas de cinco columnas y las métricas no entran ni tienen por qué. Al celular se viene a resolver algo urgente, así que Usuarios y Emprendimientos se quedan en escritorio y el menú lateral se reemplaza por un segmentado de dos.\n\nLas acciones van apiladas y a lo ancho, de 44 px: así «Eliminar» no cae nunca justo al lado del pulgar que iba a «Marcar resuelto»."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

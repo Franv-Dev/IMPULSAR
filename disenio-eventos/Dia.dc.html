@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-tipo { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px;
+              border-radius: 999px; background: #ECEAF7; color: #33267C;
+              font-family: "Poppins", sans-serif; font-size: 10.5px; font-weight: 600; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; max-width: 100%; height: 844px; overflow: hidden; background: #F5F7FA">
+
+  <!-- Lo de atrás es la cartelera, apagada. Se dibuja apenas insinuada para que
+       se entienda que la hoja es una capa y no otra pantalla. -->
+  <div style="padding: 14px 16px 0; filter: blur(1px)">
+    <div style="height: 26px; width: 128px; border-radius: 6px; background: #E2E6EE"></div>
+    <div style="height: 13px; width: 210px; margin-top: 10px; border-radius: 5px; background: #EEF1F7"></div>
+    <div style="display: flex; gap: 8px; margin-top: 16px">
+      <div style="flex: 1; height: 40px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E2E6EE"></div>
+      <div style="flex: 1; height: 40px; border-radius: 999px; background: #ECEAF7; border: 1px solid #5248AE"></div>
+    </div>
+    <div style="height: 118px; margin-top: 16px; border-radius: 16px; background: #FFFFFF; border: 1px solid #E2E6EE"></div>
+    <div style="height: 118px; margin-top: 12px; border-radius: 16px; background: #FFFFFF; border: 1px solid #E2E6EE"></div>
+  </div>
+
+  <div style="position: absolute; inset: 0; background: rgba(15,17,34,.46)"></div>
+
+  <!-- La hoja NO lleva max-height: se acomoda a lo que mide, anclada abajo. Con
+       un tope fijo (estaba en 700 px) el contenido daba 711 y el botón de abajo
+       salía cortado, que es justo lo que no puede pasar con la acción principal. -->
+  <section style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; border-radius: 22px 22px 0 0; background: #FFFFFF; box-shadow: 0 -12px 40px rgba(15,17,34,.22)">
+
+    <div style="display: flex; justify-content: center; padding: 10px 0 2px">
+      <span style="width: 38px; height: 4px; border-radius: 999px; background: #E2E6EE"></span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 8px 18px 14px">
+      <h2 style="flex: 1; font-size: 17px">Septiembre de 2026</h2>
+      <button type="button" aria-label="Mes anterior" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 11px; background: #FFFFFF; color: #C9D0E0; cursor: not-allowed">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6-6 6 6 6"/></svg>
+      </button>
+      <button type="button" aria-label="Mes siguiente" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 11px; background: #FFFFFF; color: #4A5666; cursor: pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+      </button>
+      <button type="button" aria-label="Cerrar" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 11px; background: #EEF1F7; color: #4A5666; cursor: pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+
+    <!-- Los días del calendario son objetivos de toque: 44 px, el mínimo de la
+         guía. En el calendario del escritorio son 38 y ahí está bien; acá se
+         tocan con el pulgar. -->
+    <div style="padding: 0 14px">
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; margin-bottom: 4px">
+        <sc-for list="{{ diasSemana }}" as="d" hint-placeholder-count="7">
+          <span style="text-align: center; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; color: #5F6B7C">{{ d }}</span>
+        </sc-for>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px">
+        <sc-for list="{{ celdas }}" as="c" hint-placeholder-count="35">
+          <span style="{{ c.estilo }}">
+            {{ c.texto }}
+            <span style="{{ c.punto }}"></span>
+          </span>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 16px; padding: 14px 18px 12px; margin-top: 10px; border-top: 1px solid #EEF1F7; font-size: 12px; color: #5F6B7C">
+      <span style="display: inline-flex; align-items: center; gap: 6px">
+        <span style="width: 6px; height: 6px; border-radius: 999px; background: #5248AE"></span>
+        Día con eventos
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 6px">
+        <span style="width: 6px; height: 6px; border-radius: 999px; background: #D97544"></span>
+        Hoy
+      </span>
+    </div>
+
+    <div style="padding: 4px 18px 0">
+      <h3 style="font-size: 14.5px">Sábado 12 de septiembre</h3>
+      <p style="margin: 4px 0 12px; font-size: 12.8px; color: #5F6B7C">2 eventos ese día</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 9px; padding: 0 18px">
+      <div style="display: flex; align-items: center; gap: 11px; padding: 11px 13px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+        <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 12px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 600">10:00</span>
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span class="u-tipo" style="align-self: flex-start">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5 6 4.5h12l2.5 5M3.5 9.5h17M5.5 9.5V20h13V9.5M9.5 20v-5.5h5V20"/></svg>
+            Feria
+          </span>
+          <span style="font-family: 'Poppins', sans-serif; font-size: 13.8px; font-weight: 600; line-height: 1.3">Feria de emprendedores de la Plaza Independencia</span>
+          <span style="font-size: 12px; color: #5F6B7C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Plaza Independencia, Ciudad</span>
+        </span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9D0E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m9.5 6 6 6-6 6"/></svg>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 11px; padding: 11px 13px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+        <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 12px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 600">16:30</span>
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span class="u-tipo" style="align-self: flex-start">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.4 4.6a3.6 3.6 0 0 1 5 5l-8.2 8.2-5-5ZM6.2 12.8 3.5 20.5l7.7-2.7"/></svg>
+            Taller
+          </span>
+          <span style="font-family: 'Poppins', sans-serif; font-size: 13.8px; font-weight: 600; line-height: 1.3">Taller de encuadernación artesanal</span>
+          <span style="font-size: 12px; color: #5F6B7C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Taller Rueda Libre, Godoy Cruz</span>
+        </span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9D0E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m9.5 6 6 6-6 6"/></svg>
+      </div>
+    </div>
+
+    <div style="padding: 16px 18px 26px">
+      <button type="button" style="width: 100%; height: 48px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer">
+        Ver los 2 eventos del sábado
+      </button>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    // Septiembre de 2026: arranca un martes, 30 días. Hoy es el 6; hay eventos
+    // el 12, el 19, el 26 y el 27; el elegido es el 12.
+    const CON = { 12: true, 19: true, 26: true, 27: true };
+    const HOY = 6;
+    const ELEGIDO = 12;
+
+    const celdas = [];
+    const base = "position: relative; height: 44px; display: flex; align-items: center;"
+      + " justify-content: center; border-radius: 12px; font-size: 14.5px;";
+
+    celdas.push({ texto: "", punto: "display: none", estilo: base + " color: transparent" });
+
+    for (let n = 1; n <= 30; n += 1) {
+      const tiene = Boolean(CON[n]);
+      const puesto = n === ELEGIDO;
+      const esHoy = n === HOY;
+
+      let estilo = base;
+      if (puesto) {
+        estilo += " background: #5248AE; color: #FFFFFF; font-weight: 600; border: 1px solid #5248AE;";
+      } else if (tiene) {
+        estilo += " background: #FFFFFF; border: 1px solid #E2E6EE; color: #1B2430; font-weight: 600;";
+      } else {
+        estilo += " border: 1px solid transparent; color: #5F6B7C;";
+      }
+
+      let punto = "display: none";
+      if (!puesto && (tiene || esHoy)) {
+        punto = "position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%);"
+          + " width: 5px; height: 5px; border-radius: 999px; background: "
+          + (esHoy ? "#D97544" : "#5248AE");
+      }
+
+      celdas.push({ texto: String(n), estilo: estilo, punto: punto });
+    }
+
+    return { diasSemana: ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"], celdas: celdas };
+  }
+}
+</script>
+</body>
+</html>

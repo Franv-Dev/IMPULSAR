@@ -1,0 +1,257 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input, select, textarea { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-nav--on { color: #33267C; font-weight: 600; border-bottom-color: #3E2F94; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-btn:hover { background: #483BA1; }
+    .u-campo { width: 100%; height: 46px; padding: 0 14px; border: 1px solid #E2E6EE;
+               border-radius: 12px; background: #FFFFFF; color: #1B2430; font-size: 14.5px; }
+    .u-campo:hover { border-color: #C9D0E0; }
+    .u-campo::placeholder { color: #9AA5B5; }
+    .u-etiqueta { display: block; margin-bottom: 7px; font-family: "Poppins", sans-serif;
+                  font-size: 13.5px; font-weight: 600; color: #1B2430; }
+    .u-ayuda { margin: 7px 0 0; font-size: 12.8px; line-height: 1.5; color: #5F6B7C; }
+    .u-seg { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+             height: 44px; border: 1px solid #E2E6EE; border-radius: 12px; background: #FFFFFF;
+             color: #4A5666; font-family: "Poppins", sans-serif; font-size: 13.5px;
+             font-weight: 500; cursor: pointer; }
+    .u-seg:hover { border-color: #C9D0E0; color: #3E2F94; }
+    .u-seg--on { background: #ECEAF7; border-color: #5248AE; color: #33267C; font-weight: 600; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav u-nav--on">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+          <span style="position: absolute; top: 3px; right: 3px; min-width: 18px; height: 18px; padding: 0 4px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; border: 2px solid #FFFFFF">3</span>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: #4A5666">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">L</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 20px 24px 56px">
+
+    <p style="margin: 0 0 16px; font-size: 13.5px">
+      <a href="#" style="color: #5F6B7C">&lsaquo; Volver a la cartelera</a>
+    </p>
+
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 24px">
+      <div style="min-width: 0">
+        <h1 style="font-size: 26px; letter-spacing: -.02em">Contanos qué pasa y cuándo</h1>
+        <p style="margin: 8px 0 0; font-size: 14.2px; line-height: 1.6; color: #5F6B7C; max-width: 620px">
+          Una feria, una pop-up, un taller. No se reservan lugares: publicás la información
+          y la gente se acerca. La fecha y la hora son de Argentina.
+        </p>
+      </div>
+      <a href="#" style="flex-shrink: 0; display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600">Cancelar</a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 28px; align-items: start">
+
+      <form style="display: flex; flex-direction: column; gap: 22px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; min-width: 0">
+
+        <div>
+          <label class="u-etiqueta" for="post">Emprendimiento</label>
+          <div style="position: relative">
+            <select id="post" class="u-campo" style="appearance: none; padding-right: 42px; cursor: pointer">
+              <option>Conservas del Challao</option>
+              <option>Panadería La Cuadra</option>
+            </select>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none"><path d="m6 9.5 6 6 6-6"/></svg>
+          </div>
+          <p class="u-ayuda">El evento aparece en la cartelera y en la ficha de este emprendimiento.</p>
+        </div>
+
+        <!-- EL TIPO ES UN SEGMENTADO, NO UN <select>.
+             Son cuatro opciones fijas y excluyentes: desplegar una lista para
+             elegir entre cuatro es un paso de más, el mismo criterio con el que
+             el orden de Favoritos dejó de ser un select. -->
+        <div>
+          <label class="u-etiqueta">Tipo de evento</label>
+          <div style="display: flex; gap: 8px">
+            <button type="button" class="u-seg u-seg--on">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5 6 4.5h12l2.5 5M3.5 9.5h17M5.5 9.5V20h13V9.5M9.5 20v-5.5h5V20"/></svg>
+              Feria
+            </button>
+            <button type="button" class="u-seg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.4 4.6a3.6 3.6 0 0 1 5 5l-8.2 8.2-5-5ZM6.2 12.8 3.5 20.5l7.7-2.7"/></svg>
+              Taller
+            </button>
+            <button type="button" class="u-seg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16l1.6 5.2H2.4ZM5 9.2V20h14V9.2M10 20v-6.2h4V20"/></svg>
+              Pop-up
+            </button>
+            <button type="button" class="u-seg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4M2.6 20.2a6.4 6.4 0 0 1 12.8 0M16.6 6.4a3.2 3.2 0 0 1 0 5.6M18.4 20.2a6.6 6.6 0 0 0-1.7-4.4"/></svg>
+              Encuentro
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="u-etiqueta" for="titulo">Título</label>
+          <input id="titulo" type="text" class="u-campo" value="Feria de emprendedores de la Plaza Independencia">
+          <p class="u-ayuda" style="display: flex; justify-content: space-between; gap: 16px">
+            <span>Es lo único que se lee entero en la cartelera. Decí qué es y dónde.</span>
+            <span style="flex-shrink: 0; color: #9AA5B5">51 / 120</span>
+          </p>
+        </div>
+
+        <div>
+          <label class="u-etiqueta" for="desc">Descripción corta <span style="font-weight: 400; color: #5F6B7C">(opcional)</span></label>
+          <textarea id="desc" class="u-campo" style="height: 96px; padding: 12px 14px; line-height: 1.6; resize: none">Veinte puestos de alimentos, artesanías y textiles bajo los árboles. Llevá bolsa: la mayoría vende suelto.</textarea>
+          <p class="u-ayuda" style="display: flex; justify-content: space-between; gap: 16px">
+            <span>Tres o cuatro líneas. Lo largo va en la ficha del emprendimiento.</span>
+            <span style="flex-shrink: 0; color: #9AA5B5">104 / 300</span>
+          </p>
+        </div>
+
+        <!-- Campo propio y no la dirección del emprendimiento: la feria de una
+             panadería normalmente no es en la panadería (es el comentario de
+             Event.lugar en el modelo). Vacío, la tarjeta no muestra la línea. -->
+        <div>
+          <label class="u-etiqueta" for="lugar">Lugar <span style="font-weight: 400; color: #5F6B7C">(opcional)</span></label>
+          <input id="lugar" type="text" class="u-campo" value="Plaza Independencia, Ciudad">
+          <p class="u-ayuda">Dónde es de verdad, aunque no sea tu local. Si lo dejás vacío, no se muestra.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+          <div>
+            <label class="u-etiqueta" for="fecha">Fecha</label>
+            <input id="fecha" type="text" class="u-campo" value="sábado 12 de septiembre de 2026">
+          </div>
+          <div>
+            <label class="u-etiqueta" for="hora">Hora <span style="font-weight: 400; color: #5F6B7C">(opcional)</span></label>
+            <input id="hora" type="text" class="u-campo" value="10:00">
+            <p class="u-ayuda">"La feria es el sábado" es un evento válido sin hora.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 14px; background: #F5F7FA">
+          <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-top: 1px; border-radius: 7px; background: #1F7A4D; color: #FFFFFF">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5.5 12.4 4.2 4.2 8.8-9.2"/></svg>
+          </span>
+          <span style="min-width: 0">
+            <span style="display: block; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600">Entrada libre y gratuita</span>
+            <span style="display: block; margin-top: 4px; font-size: 13px; line-height: 1.55; color: #5F6B7C">
+              Se marca con una pastilla verde en la cartelera. Si el evento se cobra o
+              tiene cupo, dejalo apagado y contalo en la descripción.
+            </span>
+          </span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 16px; padding-top: 4px; border-top: 1px solid #EEF1F7">
+          <button type="submit" class="u-btn" style="margin-top: 20px; height: 48px; padding: 0 26px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer">
+            Publicar evento
+          </button>
+          <p style="margin: 20px 0 0; font-size: 13px; color: #5F6B7C">Podés editarlo o borrarlo cuando quieras.</p>
+        </div>
+      </form>
+
+      <aside style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+        <!-- LA VISTA PREVIA ES LA TARJETA DE LA CARTELERA, NO UN DIBUJO APARTE.
+             Es exactamente el mismo bloque de Main: si cambia allá, cambia acá.
+             Lo que todavía no se escribió se muestra en gris, no se inventa. -->
+        <div style="padding: 18px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <h2 style="font-size: 14px; font-weight: 600; color: #5F6B7C; letter-spacing: .02em">Así se va a ver en la cartelera</h2>
+          <div style="display: flex; gap: 13px; margin-top: 14px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+            <div style="flex-shrink: 0; width: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 0; border: 1px solid #E2E6EE; border-radius: 12px; background: #F5F7FA">
+              <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5F6B7C">sáb</span>
+              <span style="font-family: 'Poppins', sans-serif; font-size: 23px; font-weight: 700; line-height: 1.1; letter-spacing: -.02em; color: #33267C">12</span>
+              <span style="font-size: 10.5px; font-weight: 500; color: #5F6B7C">sep</span>
+            </div>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px">
+                <span style="display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 10.5px; font-weight: 600">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5 6 4.5h12l2.5 5M3.5 9.5h17M5.5 9.5V20h13V9.5M9.5 20v-5.5h5V20"/></svg>
+                  Feria
+                </span>
+                <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-family: 'Poppins', sans-serif; font-size: 10.5px; font-weight: 600">Entrada libre</span>
+              </div>
+              <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; line-height: 1.3">Feria de emprendedores de la Plaza Independencia</span>
+              <span style="font-size: 12.2px; color: #4A5666">10:00 · Plaza Independencia, Ciudad</span>
+              <span style="font-size: 12.5px; line-height: 1.55; color: #4A5666">Veinte puestos de alimentos, artesanías y textiles bajo los árboles.</span>
+              <span style="display: flex; align-items: center; gap: 7px; margin-top: 4px; padding-top: 9px; border-top: 1px solid #EEF1F7; font-size: 12px; color: #5F6B7C">
+                <span style="flex-shrink: 0; width: 7px; height: 7px; border-radius: 999px; background: #9A5230"></span>
+                Conservas del Challao
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 20px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <h2 style="font-size: 15.5px">Qué pasa después</h2>
+          <ul style="margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px">
+            <li style="display: flex; gap: 10px; font-size: 13.5px; line-height: 1.55; color: #4A5666">
+              <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">1</span>
+              Aparece en la cartelera y en la ficha del emprendimiento.
+            </li>
+            <li style="display: flex; gap: 10px; font-size: 13.5px; line-height: 1.55; color: #4A5666">
+              <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">2</span>
+              El día se marca en el calendario del inicio y de la cartelera.
+            </li>
+            <li style="display: flex; gap: 10px; font-size: 13.5px; line-height: 1.55; color: #4A5666">
+              <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">3</span>
+              Cuando pasa la fecha se archiva solo. No hace falta borrarlo.
+            </li>
+          </ul>
+        </div>
+
+        <p style="margin: 0; display: flex; gap: 9px; padding: 14px 16px; border-radius: 14px; background: #EEF1F7; font-size: 12.8px; line-height: 1.55; color: #4A5666">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.4M12 7.8h.01"/></svg>
+          No hay borrador: el evento se publica o no se publica. Un botón que no guarda
+          un borrador es peor que no tenerlo.
+        </p>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1280}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

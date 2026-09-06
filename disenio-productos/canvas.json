@@ -1,0 +1,45 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Catálogo de productos — escritorio", "x": 0, "y": 0, "w": 1440, "h": 1420 },
+    { "file": "Detalle.dc.html", "title": "Detalle de producto — escritorio", "x": 1560, "y": 0, "w": 1440, "h": 1560 },
+    { "file": "Movil.dc.html", "title": "Catálogo — teléfono", "x": 3120, "y": 0, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    {
+      "id": "nota-rutas",
+      "x": 0,
+      "y": -300,
+      "w": 660,
+      "text": "ESTO ES LO ÚNICO DE LA TANDA QUE NO EXISTE TODAVÍA.\nHoy /productos/ es sólo el panel privado del dueño (index, nuevo, editar, eliminar, todo con login_required). Un producto únicamente se ve incrustado adentro de la ficha de su emprendimiento.\n\nHacen falta dos rutas públicas:\n· /productos — el catálogo con búsqueda, filtros y orden.\n· /productos/<id> — el detalle.\n\nEl panel del dueño no se toca: sigue en /mi/catalogo o donde quede, pero deja de ser el dueño de la URL pública."
+    },
+    {
+      "id": "nota-modelo",
+      "x": 720,
+      "y": -300,
+      "w": 660,
+      "text": "TRES COSAS QUE EL MODELO DECIDE, Y EL DISEÑO RESPETA.\n\n1) UNA SOLA FOTO. Product.foto es una columna, no una galería. La «galería de imágenes» del pedido no se puede dibujar sin mentir: el detalle muestra la foto grande y un botón de ampliar, y nada más.\n\n2) NO HAY CATEGORÍA DE PRODUCTO. Product no tiene rubro propio: el que se filtra es el del emprendimiento (Post.category, los 7 de siempre). Por eso el punto de color de cada tarjeta es el del rubro del negocio.\n\n3) NO ES UNA TIENDA. El comentario del modelo lo dice con todas las letras: sin stock, sin variantes, sin carrito y sin pago. Así que no hay «Comprar», ni cuotas, ni envío, ni «vendidos». La acción es CONSULTAR, y termina en un mensaje interno.\n\nTampoco hay «más vendido» ni «popular»: no existe ninguna métrica de ventas."
+    },
+    {
+      "id": "nota-filtros",
+      "x": 0,
+      "y": 1480,
+      "w": 760,
+      "text": "LOS FILTROS SON LOS QUE LA BASE PUEDE RESOLVER HOY:\n· Rubro — Post.category.\n· Precio desde/hasta — Product.precio, que es Numeric(10,2), así que el rango es exacto.\n· Disponibles — Product.disponible. Viene encendido: un catálogo que arranca mostrando lo que no hay hace perder tiempo.\n· Abierto ahora — los horarios del emprendimiento, el mismo SQL del listado.\n· Radio en km — Post.latitude/longitude, y sólo se dibuja si hay coordenadas.\n\nOrden: más nuevos (Product.created_at), precio, y cercanía cuando hay ubicación.\n\nSon enlaces que cambian un parámetro de la URL, no un formulario: la búsqueda se comparte, vuelve con el botón de atrás y funciona sin JavaScript. Es el mismo criterio que ya usan el listado y la búsqueda de servicios."
+    },
+    {
+      "id": "nota-detalle",
+      "x": 1560,
+      "y": -300,
+      "w": 660,
+      "text": "EL DETALLE CONTESTA DOS PREGUNTAS, NO UNA.\nQué es (foto, precio, disponible, descripción) y QUIÉN LO VENDE (rubro, puntaje, abierto ahora, distancia). La segunda pesa tanto como la primera: en una plataforma sin pagos ni protección al comprador, lo que decide es la confianza en la persona.\n\n«Consultar por este producto» abre el chat interno con el nombre del producto ya escrito — eso hoy no existe y es un parámetro más en la ruta de mensajes.\n\n«Más de este emprendimiento» sale de Product.post_id, una consulta que ya se puede hacer."
+    },
+    {
+      "id": "nota-movil",
+      "x": 3120,
+      "y": 900,
+      "w": 660,
+      "text": "EN TELÉFONO, dos columnas de tarjetas y NADA que se deslice de costado.\n\nLos seis filtros de escritorio no entran como tira de chips —volvería a cortar contra el borde—, así que se convierten en dos botones: «Filtros», con el número de los que están puestos, que abre una hoja desde abajo; y el orden.\n\nEl precio es lo primero que se lee en la tarjeta, arriba del nombre: en una grilla de dos columnas es el dato que hace comparar."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

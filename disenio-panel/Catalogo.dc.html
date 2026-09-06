@@ -1,0 +1,248 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-btn:hover { background: #483BA1; }
+    .u-lat { display: flex; align-items: center; gap: 11px; height: 42px; padding: 0 12px;
+             border-radius: 10px; color: #4A5666; font-size: 14px; font-weight: 500; }
+    .u-lat:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-lat--on { background: #ECEAF7; color: #33267C; font-weight: 600; }
+    .u-fila:hover { background: #FAFBFD; }
+    .u-accion { width: 38px; height: 38px; display: inline-flex; align-items: center;
+                justify-content: center; border: 1px solid #E2E6EE; border-radius: 10px;
+                background: #FFFFFF; color: #4A5666; cursor: pointer; padding: 0; }
+    .u-accion:hover { border-color: #C9D0E0; color: #3E2F94; }
+    .u-accion--danger:hover { border-color: #B91C1C; color: #B91C1C; background: #FEE2E2; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+          <span style="position: absolute; top: 3px; right: 3px; min-width: 18px; height: 18px; padding: 0 4px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; border: 2px solid #FFFFFF">3</span>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: #ECEAF7; cursor: pointer; color: #3E2F94">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">V</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 26px 24px 56px; display: grid; grid-template-columns: 248px 1fr; gap: 28px; align-items: start">
+
+    <aside style="position: sticky; top: 20px; display: flex; flex-direction: column; gap: 4px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+      <p style="margin: 4px 12px 8px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: #5F6B7C">Mi emprendimiento</p>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>
+        <span style="flex: 1">Inicio del panel</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5 12 4l8 5.5"/><path d="M6 10.5V20h12v-9.5"/><path d="M10 20v-5h4v5"/></svg>
+        <span style="flex: 1">Emprendimientos</span>
+        <span style="font-size: 12.5px; color: #5F6B7C">2</span>
+      </a>
+      <a href="#" class="u-lat u-lat--on">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="13" rx="2.5"/><path d="M8.5 6V4.8a2.3 2.3 0 0 1 2.3-2.3h2.4a2.3 2.3 0 0 1 2.3 2.3V6"/></svg>
+        <span style="flex: 1">Catálogo</span>
+        <span style="font-size: 12.5px; color: #33267C">14</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6.5a3.5 3.5 0 0 1 4.6 4.6l-7.3 7.3-4.6-4.6Z"/><path d="M5.5 18.5h2.5"/></svg>
+        <span style="flex: 1">Servicios</span>
+        <span style="font-size: 12.5px; color: #5F6B7C">3</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9.5 13h5M9.5 16.5h3"/></svg>
+        <span style="flex: 1">Presupuestos</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11px">2</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/><path d="M10 13.5h5"/></svg>
+        <span style="flex: 1">Agenda de turnos</span>
+        <span style="font-size: 12.5px; color: #5F6B7C">1</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h16M6.5 4.5h11a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17V7a2.5 2.5 0 0 1 2.5-2.5Z"/><path d="M9 12.5h6"/></svg>
+        <span style="flex: 1">Eventos y ferias</span>
+        <span style="font-size: 12.5px; color: #5F6B7C">1</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.5 5.1 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8Z"/></svg>
+        <span style="flex: 1">Reseñas recibidas</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11px">1</span>
+      </a>
+    </aside>
+
+    <div style="display: flex; flex-direction: column; gap: 18px; min-width: 0">
+
+      <div style="display: flex; align-items: center; gap: 16px">
+        <h1 style="flex: 1; font-size: 26px; letter-spacing: -.02em">Catálogo</h1>
+        <button type="button" class="u-btn" style="height: 44px; padding: 0 20px; display: flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14.5px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Agregar producto
+        </button>
+      </div>
+
+      <!-- AGRUPADO POR EMPRENDIMIENTO, no una grilla suelta: el tope
+           (MAX_PRODUCTOS_POR_POST) es por emprendimiento, así que un contador
+           global no diría nada sobre el límite que se puede chocar. -->
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+
+        <div style="display: flex; align-items: center; gap: 14px">
+          <span style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(150deg, #E7E2F3, #B9AEDC)"></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 16.5px; font-weight: 600; letter-spacing: -.01em">Estudio Verde Cerámica</span>
+            <span style="font-size: 13px; color: #5F6B7C">14 productos · 2 sin stock</span>
+          </span>
+          <a href="#" style="font-size: 13.5px; font-weight: 600">Ver en la ficha</a>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 9px; padding-top: 14px; border-top: 1px solid #EEF1F7">
+          <div style="flex: 1; height: 40px; display: flex; align-items: center; gap: 9px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; background: #F5F7FA">
+            <span style="color: #5F6B7C; flex-shrink: 0; display: flex">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 14px; color: #5F6B7C">Buscar en tu catálogo</span>
+          </div>
+          <button type="button" style="height: 40px; padding: 0 15px; display: flex; align-items: center; gap: 7px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; cursor: pointer; font-size: 13.5px; font-weight: 500">
+            Todos
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+          </button>
+          <button type="button" style="height: 40px; padding: 0 15px; display: flex; align-items: center; gap: 7px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; cursor: pointer; font-size: 13.5px; font-weight: 500">
+            Nombre (A-Z)
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+          </button>
+        </div>
+
+        <div style="display: flex; flex-direction: column">
+          <sc-for list="{{ productos }}" as="p" hint-placeholder-count="5">
+            <div class="u-fila" style="display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 14px">
+              <span style="flex-shrink: 0; width: 60px; height: 60px; border-radius: 12px; background: {{ p.foto }}"></span>
+
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+                <span style="font-size: 14.5px; font-weight: 600; color: #1B2430">{{ p.nombre }}</span>
+                <span style="font-size: 12.5px; color: #5F6B7C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ p.detalle }}</span>
+              </span>
+
+              <span style="flex-shrink: 0; width: 110px; text-align: right; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: -.02em">{{ p.precio }}</span>
+
+              <!-- El interruptor de "sin stock por ahora" es UN form de un
+                   botón, no un checkbox con JavaScript: hoy apagar un producto
+                   obliga a abrir el formulario entero y guardarlo de nuevo. -->
+              <span style="flex-shrink: 0; width: 132px; display: flex; align-items: center; gap: 9px">
+                <span style="{{ p.pistaCaja }}">
+                  <span style="{{ p.pistaBolita }}"></span>
+                </span>
+                <span style="{{ p.pistaTexto }}">{{ p.estado }}</span>
+              </span>
+
+              <span style="flex-shrink: 0; display: flex; align-items: center; gap: 7px">
+                <button type="button" class="u-accion" aria-label="Editar">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.5a2.1 2.1 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg>
+                </button>
+                <button type="button" class="u-accion u-accion--danger" aria-label="Eliminar">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M9.5 6.5V4.8a1.3 1.3 0 0 1 1.3-1.3h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7"/><path d="M6.5 6.5 7.4 19a1.5 1.5 0 0 0 1.5 1.4h6.2a1.5 1.5 0 0 0 1.5-1.4l.9-12.5"/></svg>
+                </button>
+              </span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 14px; border-top: 1px solid #EEF1F7">
+          <span style="font-size: 13px; color: #5F6B7C">Mostrando 5 de 14</span>
+          <a href="#" style="font-size: 13.5px; font-weight: 600">Ver todos</a>
+        </div>
+      </div>
+
+      <!-- EL SEGUNDO EMPRENDIMIENTO, VACÍO: el mismo hueco de la ficha nueva,
+           dicho acá con la acción al lado. -->
+      <div style="display: flex; align-items: center; gap: 14px; padding: 20px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+        <span style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(150deg, #EEE0D6, #C9AE99)"></span>
+        <span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 16.5px; font-weight: 600; letter-spacing: -.01em">Conservas del Challao</span>
+          <span style="font-size: 13px; color: #5F6B7C">Todavía no tiene productos cargados</span>
+        </span>
+        <a href="#" style="display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 16px; border: 1px solid #D9D4EE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 13.5px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Cargar el primero
+        </a>
+      </div>
+
+      <p style="margin: 0; font-size: 12.5px; color: #5F6B7C">Cada emprendimiento puede tener hasta 50 productos. El tope se avisa recién a partir de los 40 cargados.</p>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const PLANCHAS = [
+      "linear-gradient(150deg, #E7E2F3, #B9AEDC)",
+      "linear-gradient(150deg, #DCE9E1, #A9C6B6)",
+      "linear-gradient(150deg, #F3E4EA, #D6AEC0)",
+      "linear-gradient(150deg, #EEE0D6, #C9AE99)",
+      "linear-gradient(150deg, #DCE4EE, #B9C6D8)"
+    ];
+
+    const datos = [
+      { nombre: "Juego de 4 tazas",   detalle: "Gres esmaltado, 250 ml",       precio: "$ 38.000", hay: true },
+      { nombre: "Bowl hondo",         detalle: "Para ensalada, 22 cm",         precio: "$ 21.500", hay: true },
+      { nombre: "Set de mate",        detalle: "Mate, bombilla y plato",       precio: "$ 44.000", hay: false },
+      { nombre: "Fuente ovalada",     detalle: "Apta horno, 32 cm",            precio: "$ 29.000", hay: true },
+      { nombre: "Vaso bajo x 6",      detalle: "Gres, 300 ml, tono arena",     precio: "$ 33.000", hay: false }
+    ];
+
+    const productos = datos.map((p, n) => Object.assign({}, p, {
+      foto: PLANCHAS[n % PLANCHAS.length],
+      estado: p.hay ? "Disponible" : "Sin stock",
+      pistaCaja: "flex-shrink: 0; width: 38px; height: 22px; display: flex; align-items: center; padding: 2px; border-radius: 999px; "
+        + (p.hay ? "background: #5248AE; justify-content: flex-end" : "background: #C9D0E0; justify-content: flex-start"),
+      pistaBolita: "width: 18px; height: 18px; border-radius: 999px; background: #FFFFFF",
+      pistaTexto: "font-size: 13px; font-weight: 500; " + (p.hay ? "color: #1B2430" : "color: #5F6B7C")
+    }));
+
+    return { productos: productos };
+  }
+}
+</script>
+</body>
+</html>

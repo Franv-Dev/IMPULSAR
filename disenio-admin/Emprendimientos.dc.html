@@ -1,0 +1,296 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input, select { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-lat { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 13px;
+             border-radius: 11px; color: #4A5666; font-family: "Poppins", sans-serif;
+             font-size: 14px; font-weight: 500; }
+    .u-lat:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-lat--on { background: #ECEAF7; color: #33267C; font-weight: 600; }
+    .u-lat--on:hover { background: #ECEAF7; color: #33267C; }
+    .u-sec { border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+             color: #4A5666; font-family: "Poppins", sans-serif; font-weight: 600;
+             cursor: pointer; }
+    .u-sec:hover { border-color: #C9D0E0; color: #3E2F94; }
+    .u-peligro { border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+                 color: #4A5666; font-family: "Poppins", sans-serif; font-weight: 600;
+                 cursor: pointer; }
+    .u-peligro:hover { border-color: #B91C1C; color: #B91C1C; background: #FEE2E2; }
+    .u-fila:hover { background: #F8FAFC; }
+    .u-th { padding: 0 16px; height: 44px; text-align: left; font-family: "Poppins", sans-serif;
+            font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+            color: #5F6B7C; white-space: nowrap; }
+    .u-td { padding: 13px 16px; border-top: 1px solid #EEF1F7; font-size: 13.8px;
+            vertical-align: middle; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: #4A5666">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">T</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 26px 24px 56px">
+    <div style="display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 28px; align-items: start">
+
+      <aside style="position: sticky; top: 24px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 0 4px 14px; border-bottom: 1px solid #EEF1F7">
+          <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: #ECEAF7; color: #33267C">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 4.5 6.1v5.4c0 4.4 3.1 8.2 7.5 9.3 4.4-1.1 7.5-4.9 7.5-9.3V6.1Z"/><path d="m9.2 12 2 2 3.6-3.8"/></svg>
+          </span>
+          <span style="min-width: 0; display: flex; flex-direction: column; gap: 1px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; color: #1B2430">Administración</span>
+            <span style="font-size: 12.5px; color: #5F6B7C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Tomás</span>
+          </span>
+        </div>
+
+        <nav style="display: flex; flex-direction: column; gap: 2px; margin-top: 10px">
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/></svg>
+            <span style="flex: 1">Resumen</span>
+          </a>
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.8 21 19.5H3Z"/><path d="M12 10v3.6M12 16.6h.01"/></svg>
+            <span style="flex: 1">Reportes</span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">2</span>
+          </a>
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 4.5 6.1v5.4c0 4.4 3.1 8.2 7.5 9.3 4.4-1.1 7.5-4.9 7.5-9.3V6.1Z"/><path d="m9.2 12 2 2 3.6-3.8"/></svg>
+            <span style="flex: 1">Verificaciones</span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">3</span>
+          </a>
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 11.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8M2.6 20.2a6.6 6.6 0 0 1 13.2 0M16.8 5.6a3.4 3.4 0 0 1 0 6M18.6 20.2a6.8 6.8 0 0 0-1.8-4.6"/></svg>
+            <span style="flex: 1">Usuarios</span>
+          </a>
+          <a href="#" class="u-lat u-lat--on">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16l1.6 5.2H2.4ZM5 9.2V20h14V9.2M10 20v-6.2h4V20"/></svg>
+            <span style="flex: 1">Emprendimientos</span>
+          </a>
+        </nav>
+      </aside>
+
+      <div style="min-width: 0; display: flex; flex-direction: column; gap: 18px">
+
+        <div>
+          <h1 style="font-size: 25px; letter-spacing: -.02em">Moderar emprendimientos</h1>
+          <p style="margin: 8px 0 0; font-size: 14.2px; line-height: 1.6; color: #5F6B7C; max-width: 660px">
+            312 publicados. Los reportados se marcan en la lista y aparecen primero.
+          </p>
+        </div>
+
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 9px">
+          <div style="display: flex; align-items: center; gap: 10px; width: 340px; height: 42px; padding: 0 6px 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF">
+            <span style="flex-shrink: 0; display: flex; color: #5F6B7C">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+            </span>
+            <input type="text" placeholder="Buscar por título o autor" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 14px; color: #1B2430">
+          </div>
+          <div style="position: relative">
+            <select style="appearance: none; height: 42px; padding: 0 40px 0 16px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; font-size: 14px; color: #1B2430; cursor: pointer">
+              <option>Todas las categorías</option>
+              <option>Alimentos</option>
+              <option>Servicios</option>
+              <option>Hogar</option>
+              <option>Tecnología</option>
+              <option>Artesanías</option>
+              <option>Indumentaria</option>
+              <option>Otros</option>
+            </select>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); pointer-events: none"><path d="m6 9.5 6 6 6-6"/></svg>
+          </div>
+          <button type="button" class="u-sec" style="height: 42px; padding: 0 20px; font-size: 14px">Filtrar</button>
+        </div>
+
+        <div style="border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; overflow: hidden">
+          <table style="width: 100%; border-collapse: collapse">
+            <thead>
+              <tr style="background: #F5F7FA">
+                <th class="u-th">Emprendimiento</th>
+                <th class="u-th">Autor</th>
+                <th class="u-th">Categoría</th>
+                <th class="u-th">Creado</th>
+                <th class="u-th" style="text-align: right">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <!-- LOS REPORTADOS VAN PRIMERO Y SE MARCAN, porque son la única razón
+                   por la que un admin entra a esta pantalla. El aviso dice cuántos
+                   y sin resolver: "reportado" a secas no distingue un caso viejo ya
+                   atendido de uno que está esperando. -->
+              <tr class="u-fila" style="background: #FFF9F4">
+                <td class="u-td">
+                  <span style="display: flex; flex-direction: column; gap: 5px; min-width: 0">
+                    <span style="display: flex; align-items: center; gap: 9px; flex-wrap: wrap">
+                      <a href="#" style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; color: #1B2430">Tortas Mari</a>
+                      <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.8 21 19.5H3Z"/><path d="M12 10v3.6M12 16.6h.01"/></svg>
+                        1 reporte sin resolver
+                      </span>
+                    </span>
+                    <span style="font-size: 12.2px; color: #5F6B7C; font-variant-numeric: tabular-nums">1.847 vistas · 12 reseñas</span>
+                  </span>
+                </td>
+                <td class="u-td"><a href="#">mariposa.dulce</a></td>
+                <td class="u-td">
+                  <span style="display: inline-flex; align-items: center; gap: 7px; color: #4A5666">
+                    <span style="width: 8px; height: 8px; border-radius: 999px; background: #9A5230"></span>
+                    Alimentos
+                  </span>
+                </td>
+                <td class="u-td" style="color: #4A5666; font-variant-numeric: tabular-nums">14/03/2026</td>
+                <td class="u-td" style="text-align: right"><button type="button" class="u-peligro" style="height: 34px; padding: 0 15px; font-size: 13px">Eliminar</button></td>
+              </tr>
+
+              <tr class="u-fila">
+                <td class="u-td">
+                  <span style="display: flex; flex-direction: column; gap: 5px; min-width: 0">
+                    <a href="#" style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; color: #1B2430">Conservas del Challao</a>
+                    <span style="font-size: 12.2px; color: #5F6B7C; font-variant-numeric: tabular-nums">3.204 vistas · 41 reseñas</span>
+                  </span>
+                </td>
+                <td class="u-td"><a href="#">challao.conservas</a></td>
+                <td class="u-td">
+                  <span style="display: inline-flex; align-items: center; gap: 7px; color: #4A5666">
+                    <span style="width: 8px; height: 8px; border-radius: 999px; background: #9A5230"></span>
+                    Alimentos
+                  </span>
+                </td>
+                <td class="u-td" style="color: #4A5666; font-variant-numeric: tabular-nums">02/11/2025</td>
+                <td class="u-td" style="text-align: right"><button type="button" class="u-peligro" style="height: 34px; padding: 0 15px; font-size: 13px">Eliminar</button></td>
+              </tr>
+
+              <tr class="u-fila">
+                <td class="u-td">
+                  <span style="display: flex; flex-direction: column; gap: 5px; min-width: 0">
+                    <a href="#" style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; color: #1B2430">Estudio Verde Cerámica</a>
+                    <span style="font-size: 12.2px; color: #5F6B7C; font-variant-numeric: tabular-nums">2.156 vistas · 28 reseñas</span>
+                  </span>
+                </td>
+                <td class="u-td"><a href="#">estudio.verde</a></td>
+                <td class="u-td">
+                  <span style="display: inline-flex; align-items: center; gap: 7px; color: #4A5666">
+                    <span style="width: 8px; height: 8px; border-radius: 999px; background: #635EA3"></span>
+                    Artesanías
+                  </span>
+                </td>
+                <td class="u-td" style="color: #4A5666; font-variant-numeric: tabular-nums">19/01/2026</td>
+                <td class="u-td" style="text-align: right"><button type="button" class="u-peligro" style="height: 34px; padding: 0 15px; font-size: 13px">Eliminar</button></td>
+              </tr>
+
+              <tr class="u-fila">
+                <td class="u-td">
+                  <span style="display: flex; flex-direction: column; gap: 5px; min-width: 0">
+                    <a href="#" style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; color: #1B2430">Telar de Uco</a>
+                    <span style="font-size: 12.2px; color: #5F6B7C; font-variant-numeric: tabular-nums">874 vistas · 9 reseñas</span>
+                  </span>
+                </td>
+                <td class="u-td"><a href="#">telar.uco</a></td>
+                <td class="u-td">
+                  <span style="display: inline-flex; align-items: center; gap: 7px; color: #4A5666">
+                    <span style="width: 8px; height: 8px; border-radius: 999px; background: #954D71"></span>
+                    Indumentaria
+                  </span>
+                </td>
+                <td class="u-td" style="color: #4A5666; font-variant-numeric: tabular-nums">07/05/2026</td>
+                <td class="u-td" style="text-align: right"><button type="button" class="u-peligro" style="height: 34px; padding: 0 15px; font-size: 13px">Eliminar</button></td>
+              </tr>
+
+              <tr class="u-fila">
+                <td class="u-td">
+                  <span style="display: flex; flex-direction: column; gap: 5px; min-width: 0">
+                    <a href="#" style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; color: #1B2430">Servicios del Oeste</a>
+                    <span style="font-size: 12.2px; color: #5F6B7C; font-variant-numeric: tabular-nums">612 vistas · 4 reseñas</span>
+                  </span>
+                </td>
+                <td class="u-td"><a href="#">oeste.servicios</a></td>
+                <td class="u-td">
+                  <span style="display: inline-flex; align-items: center; gap: 7px; color: #4A5666">
+                    <span style="width: 8px; height: 8px; border-radius: 999px; background: #7C6700"></span>
+                    Servicios
+                  </span>
+                </td>
+                <td class="u-td" style="color: #4A5666; font-variant-numeric: tabular-nums">23/08/2026</td>
+                <td class="u-td" style="text-align: right"><button type="button" class="u-peligro" style="height: 34px; padding: 0 15px; font-size: 13px">Eliminar</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- EL AVISO ES CONCRETO, no un "esta acción no se puede deshacer"
+             genérico: lo que se lleva puesto la cascada está declarado en Post
+             (imágenes, eventos, productos y servicios) y en las FK de reviews y
+             reports. Decir qué se borra es lo que evita el borrado por error. -->
+        <div style="display: flex; align-items: center; gap: 16px">
+          <p style="margin: 0; display: flex; align-items: flex-start; gap: 9px; max-width: 640px; font-size: 13px; line-height: 1.55; color: #5F6B7C">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><path d="M12 3.8 21 19.5H3Z"/><path d="M12 10v3.6M12 16.6h.01"/></svg>
+            Mostrando 5 de 312. Eliminar es definitivo: borra también sus productos,
+            servicios, reseñas, eventos, fotos y reportes.
+          </p>
+          <span style="flex: 1"></span>
+          <div style="display: flex; align-items: center; gap: 6px">
+            <button type="button" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 10px; background: #FFFFFF; color: #C9D0E0; cursor: not-allowed">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6-6 6 6 6"/></svg>
+            </button>
+            <span style="padding: 0 8px; font-size: 13.5px; color: #4A5666; font-variant-numeric: tabular-nums">1 de 63</span>
+            <button type="button" class="u-sec" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

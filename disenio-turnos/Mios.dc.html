@@ -1,0 +1,217 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-btn:hover { background: #483BA1; }
+    .u-borde { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 15px;
+               border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+               font-size: 13.6px; font-weight: 600; color: #4A5666; cursor: pointer; }
+    .u-borde:hover { background: #EEF1F7; color: #33267C; }
+    .u-fecha { display: flex; flex-direction: column; align-items: center; justify-content: center;
+               width: 76px; height: 76px; flex-shrink: 0; border-radius: 16px; }
+    .u-dia { font-family: "Poppins", system-ui, sans-serif; font-weight: 700; font-size: 26px;
+             line-height: 1; letter-spacing: -.02em; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: #ECEAF7; cursor: pointer; color: #3E2F94">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">L</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 920px; margin: 0 auto; padding: 26px 24px 60px; display: flex; flex-direction: column; gap: 24px">
+
+    <div>
+      <h1 style="font-size: 26px; letter-spacing: -.02em">Mis turnos</h1>
+      <p style="margin: 7px 0 0; font-size: 14.2px; line-height: 1.6; color: #5F6B7C">
+        Los que reservaste vos. Los turnos que te sacan a vos están en
+        <a href="#">tu panel</a>, en Agenda.
+      </p>
+    </div>
+
+    <!-- PRÓXIMOS PRIMERO Y EN ORDEN CRECIENTE.
+         Hoy la consulta ordena por fecha DESC y mezcla todo, así que lo primero
+         que se ve es el turno más viejo del historial y el de mañana queda
+         abajo de todo. Acá el corte es por fecha contra hoy. -->
+    <section style="display: flex; flex-direction: column; gap: 12px">
+      <h2 style="font-size: 18px; letter-spacing: -.02em">Próximos</h2>
+
+      <article style="display: flex; gap: 16px; padding: 18px; border: 1px solid #E2E6EE; border-left: 4px solid #3E2F94; border-radius: 16px; background: #FFFFFF">
+        <span class="u-fecha" style="background: #ECEAF7; color: #33267C">
+          <span style="font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em">lun</span>
+          <span class="u-dia">7</span>
+          <span style="font-size: 11.5px">sep</span>
+        </span>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-size: 11.5px; font-weight: 600">Mañana</span>
+            <span style="font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 600">10:00 a 11:30</span>
+          </div>
+          <p style="margin: 0; font-size: 14.4px; line-height: 1.5">
+            <strong style="font-weight: 600">Taller de torno inicial</strong>
+            <span style="color: #5F6B7C"> · <a href="#">Estudio Verde Cerámica</a></span>
+          </p>
+          <p style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13.4px; color: #5F6B7C">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10.5c0 5.5-8 11-8 11s-8-5.5-8-11a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10.3" r="2.7"/></svg>
+            Rodríguez Peña 1240, Godoy Cruz
+          </p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px">
+            <a href="#" class="u-borde">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5 3.5 6.8v12.7L9 17.2l6 2.3 5.5-2.3V4.5L15 6.8Z"/><path d="M9 4.5v12.7M15 6.8v12.7"/></svg>
+              Cómo llegar
+            </a>
+            <a href="#" class="u-borde">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+              Escribirle a Valentina
+            </a>
+            <button type="button" class="u-borde">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6.5 18 18M18 6.5 6 18"/></svg>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- CANCELAR PIDE CONFIRMACIÓN, Y ACÁ MISMO.
+           Hoy es un botón suelto que hace el POST de una: un click de más deja
+           a alguien sin el turno y sin poder deshacerlo, porque el estado
+           cancelado no se revierte (hay que volver a reservar el slot). -->
+      <article style="display: flex; gap: 16px; padding: 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+        <span class="u-fecha" style="background: #EEF1F7; color: #4A5666">
+          <span style="font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em">mié</span>
+          <span class="u-dia">16</span>
+          <span style="font-size: 11.5px">sep</span>
+        </span>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 600">15:00 a 15:45</span>
+          <p style="margin: 0; font-size: 14.4px; line-height: 1.5">
+            <strong style="font-weight: 600">Reparación de notebooks en el taller</strong>
+            <span style="color: #5F6B7C"> · <a href="#">Byte Andino</a></span>
+          </p>
+
+          <div style="display: flex; align-items: flex-start; gap: 13px; padding: 14px 16px; border-radius: 14px; background: #FEE2E2">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><circle cx="12" cy="12" r="9"/><path d="M12 7.8v4.6M12 15.9v.1"/></svg>
+            <div style="flex: 1; min-width: 0">
+              <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 14.4px; font-weight: 600; color: #B91C1C">¿Cancelás este turno?</p>
+              <p style="margin: 5px 0 0; font-size: 13.4px; line-height: 1.6; color: #4A5666">
+                El horario vuelve a quedar libre para otra persona y a Rodrigo le llega
+                un aviso por mail. Si después lo querés de vuelta, tenés que reservarlo
+                otra vez y puede que ya no esté.
+              </p>
+              <div style="display: flex; gap: 8px; margin-top: 12px">
+                <button type="button" style="height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: #B91C1C; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 13.8px; font-weight: 600; cursor: pointer">Sí, cancelar</button>
+                <button type="button" class="u-borde" style="height: 40px">Dejarlo como está</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- PASADOS Y CANCELADOS: el historial, plegado y en gris.
+         Un turno cancelado no se borra, y acá dice de qué lado salió la
+         cancelación, que es lo que guarda la columna cancelado_por. -->
+    <section style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+        <h2 style="font-size: 18px; letter-spacing: -.02em">Pasados</h2>
+        <span style="font-size: 13px; color: #5F6B7C">Los últimos 3</span>
+      </div>
+
+      <div style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; overflow: hidden">
+
+        <div style="display: flex; align-items: center; gap: 14px; padding: 15px 18px">
+          <span style="flex-shrink: 0; width: 44px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; background: #F5F7FA; color: #5F6B7C">
+            <span style="font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 15px; line-height: 1">2</span>
+            <span style="font-size: 10.5px">sep</span>
+          </span>
+          <div style="flex: 1; min-width: 0">
+            <p style="margin: 0; font-size: 14.2px"><strong style="font-weight: 600">Taller de torno inicial</strong> · 16:00 a 17:30</p>
+            <p style="margin: 3px 0 0; font-size: 13px; color: #5F6B7C">Estudio Verde Cerámica</p>
+          </div>
+          <a href="#" class="u-borde">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.5 5.1 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8Z"/></svg>
+            Dejar una reseña
+          </a>
+        </div>
+        <div style="height: 1px; background: #EEF1F7; margin-left: 76px"></div>
+
+        <div style="display: flex; align-items: center; gap: 14px; padding: 15px 18px">
+          <span style="flex-shrink: 0; width: 44px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; background: #F5F7FA; color: #5F6B7C">
+            <span style="font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 15px; line-height: 1">28</span>
+            <span style="font-size: 10.5px">ago</span>
+          </span>
+          <div style="flex: 1; min-width: 0">
+            <p style="margin: 0; font-size: 14.2px; color: #4A5666"><span style="text-decoration: line-through">Corte de vidrio a medida · 11:00 a 11:30</span></p>
+            <p style="margin: 3px 0 0; font-size: 13px; color: #5F6B7C">Vidriería del Oeste · <strong style="font-weight: 600; color: #8C4A22">Lo canceló el prestador</strong></p>
+          </div>
+          <a href="#" class="u-borde">Volver a reservar</a>
+        </div>
+        <div style="height: 1px; background: #EEF1F7; margin-left: 76px"></div>
+
+        <div style="display: flex; align-items: center; gap: 14px; padding: 15px 18px">
+          <span style="flex-shrink: 0; width: 44px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; background: #F5F7FA; color: #5F6B7C">
+            <span style="font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 15px; line-height: 1">21</span>
+            <span style="font-size: 10.5px">ago</span>
+          </span>
+          <div style="flex: 1; min-width: 0">
+            <p style="margin: 0; font-size: 14.2px; color: #4A5666"><span style="text-decoration: line-through">Taller de torno inicial · 10:00 a 11:30</span></p>
+            <p style="margin: 3px 0 0; font-size: 13px; color: #5F6B7C">Estudio Verde Cerámica · <strong style="font-weight: 600">Lo cancelaste vos</strong></p>
+          </div>
+          <a href="#" class="u-borde">Volver a reservar</a>
+        </div>
+      </div>
+    </section>
+
+    <p style="margin: 0; font-size: 13.2px; line-height: 1.6; color: #5F6B7C">
+      No existe reprogramar un turno: para cambiarlo hay que cancelarlo y reservar
+      el horario nuevo. Mientras tanto el que dejás libre lo puede tomar otra persona.
+    </p>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

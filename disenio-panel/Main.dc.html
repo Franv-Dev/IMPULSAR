@@ -1,0 +1,276 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-btn:hover { background: #483BA1; }
+    .u-lat { display: flex; align-items: center; gap: 11px; height: 42px; padding: 0 12px;
+             border-radius: 10px; color: #4A5666; font-size: 14px; font-weight: 500; }
+    .u-lat:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-lat--on { background: #ECEAF7; color: #33267C; font-weight: 600; }
+    .u-pend { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 1px solid #E2E6EE;
+              border-radius: 16px; background: #FFFFFF; transition: border-color .18s ease, box-shadow .18s ease; }
+    .u-pend:hover { border-color: #C9D0E0; box-shadow: 0 14px 32px rgba(23,20,71,.10); }
+    .u-num { font-family: "Poppins", system-ui, sans-serif; font-weight: 700;
+             font-size: 30px; letter-spacing: -.03em; line-height: 1; color: #1B2430; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+          <span style="position: absolute; top: 3px; right: 3px; min-width: 18px; height: 18px; padding: 0 4px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; border: 2px solid #FFFFFF">3</span>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: #ECEAF7; cursor: pointer; color: #3E2F94">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">V</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 26px 24px 56px; display: grid; grid-template-columns: 248px 1fr; gap: 28px; align-items: start">
+
+    <!-- MENÚ DEL PANEL: las seis pantallas que hoy viven sueltas. -->
+    <aside style="position: sticky; top: 20px; display: flex; flex-direction: column; gap: 4px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+      <p style="margin: 4px 12px 8px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: #5F6B7C">Mi emprendimiento</p>
+
+      <a href="#" class="u-lat u-lat--on">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>
+        <span style="flex: 1">Inicio del panel</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5 12 4l8 5.5"/><path d="M6 10.5V20h12v-9.5"/><path d="M10 20v-5h4v5"/></svg>
+        <span style="flex: 1">Emprendimientos</span>
+        <span style="font-size: 12.5px; color: #5F6B7C">2</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="13" rx="2.5"/><path d="M8.5 6V4.8a2.3 2.3 0 0 1 2.3-2.3h2.4a2.3 2.3 0 0 1 2.3 2.3V6"/></svg>
+        <span style="flex: 1">Catálogo</span>
+        <span style="font-size: 12.5px; color: #5F6B7C">14</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6.5a3.5 3.5 0 0 1 4.6 4.6l-7.3 7.3-4.6-4.6Z"/><path d="M5.5 18.5h2.5"/></svg>
+        <span style="flex: 1">Servicios</span>
+        <span style="font-size: 12.5px; color: #5F6B7C">3</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9.5 13h5M9.5 16.5h3"/></svg>
+        <span style="flex: 1">Presupuestos</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11px">2</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/><path d="M10 13.5h5"/></svg>
+        <span style="flex: 1">Agenda de turnos</span>
+        <span style="font-size: 12.5px; color: #5F6B7C">1</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h16M6.5 4.5h11a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17V7a2.5 2.5 0 0 1 2.5-2.5Z"/><path d="M9 12.5h6"/></svg>
+        <span style="flex: 1">Eventos y ferias</span>
+        <span style="font-size: 12.5px; color: #5F6B7C">1</span>
+      </a>
+      <a href="#" class="u-lat">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.5 5.1 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8Z"/></svg>
+        <span style="flex: 1">Reseñas recibidas</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11px">1</span>
+      </a>
+    </aside>
+
+    <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0">
+
+      <div style="display: flex; align-items: center; gap: 16px">
+        <h1 style="flex: 1; font-size: 26px; letter-spacing: -.02em">Hola, Valentina</h1>
+        <a href="#" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; font-size: 14px; font-weight: 600">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          Ver mi ficha pública
+        </a>
+      </div>
+
+      <!-- LO QUE TE ESTÁ ESPERANDO: el panel arranca por lo que hay que hacer,
+           no por los números. Sólo se dibuja lo que tiene algo pendiente: una
+           fila que dice "0" es ruido. -->
+      <section style="display: flex; flex-direction: column; gap: 12px">
+        <h2 style="font-size: 18px; letter-spacing: -.02em">Lo que te está esperando</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+
+          <a href="#" class="u-pend">
+            <span style="flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 13px; background: #FBEDE4; color: #8C4A22">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9.5 13h5M9.5 16.5h3"/></svg>
+            </span>
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600">2 presupuestos sin responder</span>
+              <span style="font-size: 13px; color: #5F6B7C">El más viejo es de hace 3 días</span>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+
+          <a href="#" class="u-pend">
+            <span style="flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 13px; background: #ECEAF7; color: #33267C">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+            </span>
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600">3 mensajes sin leer</span>
+              <span style="font-size: 13px; color: #5F6B7C">De 2 personas distintas</span>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+
+          <a href="#" class="u-pend">
+            <span style="flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 13px; background: #E6F4EC; color: #1F7A4D">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/></svg>
+            </span>
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600">1 turno hoy</span>
+              <span style="font-size: 13px; color: #5F6B7C">Taller de torno, 16:00 · Camila Suárez</span>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+
+          <a href="#" class="u-pend">
+            <span style="flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 13px; background: #FBEDE4; color: #8C4A22">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.5 5.1 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8Z"/></svg>
+            </span>
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600">1 reseña sin responder</span>
+              <span style="font-size: 13px; color: #5F6B7C">4 estrellas, de Julián Ortiz</span>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+        </div>
+      </section>
+
+      <!-- TUS NÚMEROS: los cinco que la base sabe contar, y nada más.
+           Sin flechitas de variación ni sparklines: no hay histórico. -->
+      <section style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+          <h2 style="font-size: 18px; letter-spacing: -.02em">Tus números</h2>
+          <span style="font-size: 13px; color: #5F6B7C">Acumulados de tus 2 emprendimientos</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+          <div style="display: flex; flex-direction: column; gap: 7px; padding: 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+            <span class="u-num">1.204</span>
+            <span style="font-size: 13px; color: #5F6B7C">Visitas a tus fichas</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px; padding: 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+            <span class="u-num">38</span>
+            <span style="font-size: 13px; color: #5F6B7C">Veces que te guardaron</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px; padding: 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+            <span style="display: flex; align-items: center; gap: 8px">
+              <span class="u-num">4,6</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+            </span>
+            <span style="font-size: 13px; color: #5F6B7C">Promedio de 23 reseñas</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px; padding: 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+            <span class="u-num">17</span>
+            <span style="font-size: 13px; color: #5F6B7C">Personas que te siguen</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TUS EMPRENDIMIENTOS: el tope de productos y servicios es POR
+           emprendimiento, así que el panel se organiza por emprendimiento y no
+           en una lista global. -->
+      <section style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+          <h2 style="font-size: 18px; letter-spacing: -.02em">Tus emprendimientos</h2>
+          <a href="#" style="font-size: 13.5px; font-weight: 600">Publicar otro</a>
+        </div>
+
+        <sc-for list="{{ negocios }}" as="n" hint-placeholder-count="2">
+          <article style="display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+            <span style="flex-shrink: 0; width: 76px; height: 76px; border-radius: 16px; background: {{ n.foto }}"></span>
+
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0">
+              <span style="display: flex; align-items: center; gap: 9px">
+                <span style="font-family: 'Poppins', sans-serif; font-size: 16.5px; font-weight: 600; letter-spacing: -.01em">{{ n.nombre }}</span>
+                <span style="{{ n.pastilla }}">{{ n.rubro }}</span>
+              </span>
+              <span style="font-size: 13px; color: #5F6B7C">{{ n.contenido }}</span>
+              <span style="{{ n.avisoCaja }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.5v4.5M12 16.4v.1"/><circle cx="12" cy="12" r="9"/></svg>
+                {{ n.aviso }}
+              </span>
+            </span>
+
+            <span style="flex-shrink: 0; display: flex; align-items: center; gap: 8px">
+              <a href="#" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 999px; font-size: 13.5px; font-weight: 600">Ver ficha</a>
+              <a href="#" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600">Editar</a>
+            </span>
+          </article>
+        </sc-for>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1160}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const RUBROS = {
+      "Artesanías": ["#EEEFFE", "#635EA3"],
+      "Alimentos":  ["#FDECE5", "#9A5230"]
+    };
+
+    const datos = [
+      { nombre: "Estudio Verde Cerámica", rubro: "Artesanías", foto: "linear-gradient(150deg, #E7E2F3, #B9AEDC)",
+        contenido: "8 fotos · 14 productos · 3 servicios · 1 feria cargada", aviso: "" },
+      { nombre: "Conservas del Challao", rubro: "Alimentos", foto: "linear-gradient(150deg, #EEE0D6, #C9AE99)",
+        contenido: "0 fotos · 0 productos · sin horarios", aviso: "Sin horarios no aparecés en «abierto ahora»" }
+    ];
+
+    const negocios = datos.map((n) => {
+      const par = RUBROS[n.rubro] || ["#EEF1F7", "#5F6B7C"];
+      return Object.assign({}, n, {
+        pastilla: "display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: "
+          + par[0] + "; color: " + par[1],
+        avisoCaja: n.aviso
+          ? "display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 2px; padding: 5px 11px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-size: 12.5px; font-weight: 600"
+          : "display: none"
+      });
+    });
+
+    return { negocios: negocios };
+  }
+}
+</script>
+</body>
+</html>

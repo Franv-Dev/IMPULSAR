@@ -1,0 +1,38 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Panel del vendedor — inicio", "x": 0, "y": 0, "w": 1440, "h": 1160 },
+    { "file": "Catalogo.dc.html", "title": "Panel — catálogo", "x": 1560, "y": 0, "w": 1440, "h": 1060 },
+    { "file": "Movil.dc.html", "title": "Panel — teléfono", "x": 3120, "y": 0, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    {
+      "id": "nota-panel",
+      "x": 0,
+      "y": -320,
+      "w": 680,
+      "text": "SEIS PANTALLAS SUELTAS PASAN A SER UNA SECCIÓN.\nHoy «mis emprendimientos», «mi catálogo», «mis servicios», «presupuestos», «turnos» y «eventos» son seis páginas que sólo se tocan desde el menú de la cuenta, cada una con su forma. Acá comparten menú lateral, cabecera y lenguaje.\n\nEL PANEL ARRANCA POR LO QUE HAY QUE HACER, NO POR LOS NÚMEROS. «Lo que te está esperando» va primero: presupuestos sin responder, mensajes sin leer, turnos de hoy y reseñas sin contestar. Los tres primeros contadores ya los devuelve /mensajes/notificaciones, separados.\n\nSólo se dibuja lo que tiene algo pendiente: una fila que dice «0 presupuestos» es ruido, y cuando no hay nada la sección entera no aparece."
+    },
+    {
+      "id": "nota-numeros",
+      "x": 740,
+      "y": -320,
+      "w": 620,
+      "text": "LOS NÚMEROS SON LOS CINCO QUE LA BASE SABE CONTAR.\nSalen tal cual de consultas.estadisticas_de_usuario: suma de views_count, favoritos, promedio y cantidad de reseñas, y seguidores.\n\nSIN FLECHITAS DE VARIACIÓN Y SIN GRÁFICOS. El canvas del perfil dibujaba «+18%» y «+9»: no hay con qué calcularlos, porque la consulta da el total de hoy y no existe histórico. Por el mismo motivo no hay sparklines ni «visitas por semana»: serían una línea inventada.\n\nSi alguna vez se guarda una foto diaria de esas métricas, ahí sí entra un gráfico. Hasta entonces, número y etiqueta."
+    },
+    {
+      "id": "nota-catalogo",
+      "x": 1560,
+      "y": -320,
+      "w": 620,
+      "text": "EL CATÁLOGO SE AGRUPA POR EMPRENDIMIENTO, no en una grilla suelta: el tope (MAX_PRODUCTOS_POR_POST, 50) es por emprendimiento, así que un contador global no diría nada sobre el límite que se puede chocar. El aviso del techo aparece recién a los 40, como ya decide UMBRAL_AVISO_LIMITE.\n\nEL INTERRUPTOR DE «SIN STOCK» ES LO ÚNICO QUE PIDE BACKEND NUEVO: un POST chico, igual al que ya se hizo para /servicios/<id>/disponible. Hoy marcar un producto como sin stock obliga a abrir el formulario entero y volver a guardar los cinco campos, con el riesgo de pisar algo de paso.\n\nEs un form de un botón y no un checkbox con JavaScript, por el mismo criterio que los filtros: tiene que andar sin JS."
+    },
+    {
+      "id": "nota-movil",
+      "x": 3120,
+      "y": 900,
+      "w": 660,
+      "text": "EN TELÉFONO el panel vive adentro de la pestaña Perfil, y es la misma pantalla en tres bloques apilados: lo pendiente, los números en dos columnas, y los emprendimientos.\n\nNo hay menú lateral: cada emprendimiento de la lista abre su propia pantalla con catálogo, servicios y ferias adentro. Un menú de ocho ítems arriba de todo dejaría el contenido debajo del pliegue.\n\nEl botón redondo de la cabecera es «agregar»: producto, servicio o feria, según dónde estés parada."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

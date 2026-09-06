@@ -1,0 +1,54 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Cartelera — escritorio", "x": 0, "y": 0, "w": 1440, "h": 1560, "is_interactive": true },
+    { "file": "Publicar.dc.html", "title": "Publicar un evento — escritorio", "x": 1560, "y": 0, "w": 1440, "h": 1300 },
+    { "file": "Movil.dc.html", "title": "Cartelera — teléfono", "x": 3120, "y": 0, "w": 390, "h": 844 },
+    { "file": "Dia.dc.html", "title": "Hoja del día — teléfono", "x": 3630, "y": 0, "w": 390, "h": 844 },
+    { "file": "PublicarMovil.dc.html", "title": "Publicar — teléfono", "x": 4140, "y": 0, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    {
+      "id": "nota-existe",
+      "x": 0,
+      "y": -420,
+      "w": 700,
+      "text": "ESTO NO PARTE DE CERO: /eventos YA EXISTE Y YA FUE REDISEÑADO UNA VEZ.\nEn agosto salieron templates/eventos/index.html (cartelera + calendario al costado) y form.html (formulario + vista previa), y siguen ahí. Lo que falta es meterlos en el lenguaje de esta tanda: índigo del logo, Poppins/Inter, la barra de tres secciones, las tarjetas de 18 px de radio.\n\nLa nota de la guía que decía «templates/eventos/, sin tocar» estaba vieja.\n\nDEL CÓDIGO SE RESPETA TODO LO QUE YA DECIDIÓ:\n· La fecha es Date y la hora va aparte y es opcional — «la feria es el sábado» es un evento válido (models/event.py).\n· `lugar` es columna propia, texto libre y nullable: la feria de una panadería no es en la panadería, y sin lugar la tarjeta no dibuja la línea.\n· No hay borrador: Event no tiene estado. El formulario no finge uno.\n· La lista se agrupa por mes con services/eventos.agrupar_por_mes() y se pagina."
+    },
+    {
+      "id": "nota-tres",
+      "x": 760,
+      "y": -420,
+      "w": 680,
+      "text": "LOS TRES CAMPOS QUE ESTE DISEÑO PIDE Y LA BASE NO TIENE.\nEstán dibujados a pedido, pero ninguno se puede pasar a código sin tocar el modelo. Son tres tamaños muy distintos de trabajo:\n\n1) TIPO DE EVENTO — Feria · Taller · Pop-up · Encuentro. Es una columna nueva (String o Enum) y una migración chica. Lo caro no es la columna: es cerrar la taxonomía, porque después no se cambia sin re-etiquetar lo cargado. Los cuatro van todos en índigo lavado y se distinguen POR EL ÍCONO, no por el color: es la misma decisión que se tomó con los 13 rubros de servicio. Una taxonomía nueva no se gana una paleta categórica.\n\n2) ENTRADA LIBRE — un booleano y nada más. Es el más barato de los tres. Usa el par de «abierto ahora» (#E6F4EC / #1F7A4D) porque significa lo mismo: un estado bueno y binario.\n\n3) ME INTERESA / INTERESADOS — esto NO es una etiqueta, es una feature entera: tabla nueva (usuario × evento), ruta, permiso, y la pregunta de si el dueño ve quiénes son. El número que se ve en las tarjetas es de mentira. Si hay que recortar algo de los tres, es éste."
+    },
+    {
+      "id": "nota-calendario",
+      "x": 0,
+      "y": 1620,
+      "w": 720,
+      "text": "EL CALENDARIO PASA DE ILUSTRACIÓN A FILTRO.\nHoy partials/_calendario.html pinta los días con eventos contra /api/eventos?mes=AAAA-MM y ahí termina: los puntitos no hacen nada. En este artboard elegir un día filtra la lista de al lado, y volver a tocarlo la suelta. Probalo: es lo único que funciona de verdad acá.\n\nEs comportamiento nuevo pero NO datos nuevos — el endpoint ya devuelve los eventos del mes. En código puede ser un parámetro de la URL (?dia=AAAA-MM-DD), del mismo modo que los filtros del catálogo: se comparte, vuelve con el botón de atrás y anda sin JS.\n\nDOS VACÍOS DISTINTOS, NO UNO. «Todavía no hay eventos anunciados» es cierto con la base vacía y mentira cuando el día elegido no tiene nada. El segundo dice cómo salir del filtro."
+    },
+    {
+      "id": "nota-publicar",
+      "x": 1560,
+      "y": -420,
+      "w": 660,
+      "text": "EL FORMULARIO ES EL DE views/eventos._leer_formulario(), CAMPO POR CAMPO: emprendimiento, título (120), descripción (300), lugar (120), fecha y hora. Nada de más, salvo tipo y entrada libre.\n\nEl tipo es un segmentado de cuatro y no un <select>: desplegar una lista para elegir entre cuatro opciones fijas es un paso de más — el mismo criterio con el que el orden de Favoritos dejó de ser un select.\n\nLA VISTA PREVIA ES LA MISMA TARJETA DE LA CARTELERA, no un dibujo aparte. Si cambia allá, cambia acá. Y no adivina: lo que todavía no se escribió se muestra en gris.\n\nEl emprendimiento no se toma del formulario a ciegas — la vista ya valida que el post_id sea de uno propio. Eso no se dibuja, pero no se pierde."
+    },
+    {
+      "id": "nota-movil",
+      "x": 3120,
+      "y": 900,
+      "w": 900,
+      "text": "EN TELÉFONO, NADA SE DESLIZA DE COSTADO.\nLos cinco tipos más «Entrada libre» no entran en 390 px, así que son dos botones: «Tipo y entrada», que abre la hoja de filtros, y «Calendario», que abre la hoja del día (el tercer artboard). Es la misma salida que ya se usó con los seis chips del catálogo de productos.\n\nEL CALENDARIO NO CABE AL LADO DE LA LISTA, así que deja de ser una columna y pasa a ser una hoja. Ahí los días miden 44 px —el mínimo de la guía para algo que se toca con el pulgar—, contra los 38 del escritorio, donde se apunta con el mouse.\n\nNO HAY BARRA DE ESTADO DIBUJADA ni botón Publicar en la barra de pestañas: publicar sigue viviendo arriba de la pestaña Perfil, como decidió la tanda de navegación."
+    },
+    {
+      "id": "nota-publicar-movil",
+      "x": 4140,
+      "y": 900,
+      "w": 420,
+      "text": "LA BARRA DE ACCIÓN VA FIJA ABAJO.\nAl final del formulario, el botón queda a tres pantallas de scroll y quien llega ahí ya no ve lo que escribió. Fija, además deja lugar a «Ver cómo va a quedar», que es la vista previa del escritorio convertida en un paso: en 390 px no hay columna al costado donde ponerla."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

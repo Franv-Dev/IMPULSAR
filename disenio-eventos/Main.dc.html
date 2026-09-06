@@ -1,0 +1,507 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-nav--on { color: #33267C; font-weight: 600; border-bottom-color: #3E2F94; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-btn:hover { background: #483BA1; }
+    .u-ficha { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 15px;
+               border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+               color: #4A5666; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+    .u-ficha:hover { border-color: #C9D0E0; color: #3E2F94; }
+    .u-evento:hover { border-color: #C9D0E0; box-shadow: 0 14px 34px rgba(23,20,71,.10); }
+    .u-sumar:hover { border-color: #5248AE; color: #33267C; background: #ECEAF7; }
+    .u-celda--con:hover { background: #ECEAF7; border-color: #5248AE; }
+    .u-mesnav:hover { border-color: #C9D0E0; color: #3E2F94; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav u-nav--on">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+          <span style="position: absolute; top: 3px; right: 3px; min-width: 18px; height: 18px; padding: 0 4px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; border: 2px solid #FFFFFF">3</span>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: #4A5666">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">L</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 26px 24px 56px">
+
+    <!-- UN SOLO LLAMADO A PUBLICAR EN LA PÁGINA, y es el bloque índigo del
+         costado. Acá había un botón "Publicar un evento" al lado del título:
+         con el "Publicar" de la barra y el del bloque, la misma acción aparecía
+         tres veces en una pantalla. El del costado es el que se queda porque es
+         el único que además dice por qué (es gratis y no hay comisión). -->
+    <div style="margin-bottom: 20px">
+      <h1 style="font-size: 27px; letter-spacing: -.02em">Ferias y eventos</h1>
+      <p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #5F6B7C; max-width: 640px">
+        Dónde encontrar en persona a los emprendimientos de Mendoza. Primero lo más
+        próximo; cuando pasa la fecha, el evento se archiva solo.
+      </p>
+    </div>
+
+    <!-- LOS CUATRO TIPOS SON UN FILTRO, NO UNA DECORACIÓN.
+         Una cartelera se lee buscando "qué hay para hacer el sábado", y el tipo
+         es el primer corte: no es lo mismo pasar por una feria que anotarse a un
+         taller. Los cuatro comparten el índigo lavado y se distinguen por el
+         ícono, igual que los 13 rubros de servicio: una taxonomía nueva no se
+         gana una paleta categórica. -->
+    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-bottom: 22px">
+      <sc-for list="{{ tipos }}" as="t" hint-placeholder-count="5">
+        <button type="button" onClick="{{ t.elegir }}" class="u-ficha" style="{{ t.estilo }}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="{{ t.estiloIcono }}"><path d="{{ t.trazo }}"/></svg>
+          {{ t.nombre }}
+        </button>
+      </sc-for>
+      <span style="width: 1px; height: 24px; background: #E2E6EE; margin: 0 4px"></span>
+      <button type="button" onClick="{{ alternarLibre }}" class="u-ficha" style="{{ estiloLibre }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+        Entrada libre
+      </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 348px; gap: 28px; align-items: start">
+
+      <div style="min-width: 0">
+
+        <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #E2E6EE; margin-bottom: 4px">
+          <h2 style="flex: 1; min-width: 0; font-size: 15.5px; color: #1B2430">{{ encabezado }}</h2>
+          <button type="button" onClick="{{ limpiar }}" style="{{ estiloLimpiar }}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
+            Ver todas las fechas
+          </button>
+        </div>
+
+        <sc-if value="{{ hayEventos }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 26px; padding-top: 22px">
+            <sc-for list="{{ grupos }}" as="g" hint-placeholder-count="2">
+              <section style="display: flex; flex-direction: column; gap: 12px">
+                <div style="display: flex; align-items: baseline; gap: 10px">
+                  <h3 style="font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5F6B7C">{{ g.nombre }}</h3>
+                  <span style="flex: 1; height: 1px; background: #E2E6EE"></span>
+                  <span style="font-size: 12.5px; color: #5F6B7C">{{ g.cuenta }}</span>
+                </div>
+
+                <sc-for list="{{ g.eventos }}" as="ev" hint-placeholder-count="3">
+                  <article class="u-evento" style="display: flex; gap: 18px; padding: 18px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; transition: border-color .18s ease, box-shadow .18s ease">
+
+                    <!-- El bloque de fecha es la columna que hace escanear la lista:
+                         día de la semana, número grande y mes, siempre en el mismo lugar. -->
+                    <div style="flex-shrink: 0; width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 10px 0; border: 1px solid #E2E6EE; border-radius: 14px; background: #F5F7FA">
+                      <span style="font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5F6B7C">{{ ev.diaSem }}</span>
+                      <span style="font-family: 'Poppins', sans-serif; font-size: 27px; font-weight: 700; line-height: 1.05; letter-spacing: -.02em; color: #33267C">{{ ev.dia }}</span>
+                      <span style="font-size: 11.5px; font-weight: 500; color: #5F6B7C">{{ ev.mesCorto }}</span>
+                    </div>
+
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+
+                      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px">
+                        <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{ ev.tipoTrazo }}"/></svg>
+                          {{ ev.tipo }}
+                        </span>
+                        <span style="{{ ev.estiloLibre }}">Entrada libre</span>
+                      </div>
+
+                      <h4 style="font-family: 'Poppins', sans-serif; font-size: 17.5px; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; margin: 0">
+                        <a href="#" style="color: #1B2430">{{ ev.titulo }}</a>
+                      </h4>
+
+                      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; font-size: 13.5px; color: #4A5666">
+                        <span style="display: inline-flex; align-items: center; gap: 6px">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l3 1.8"/></svg>
+                          {{ ev.cuando }}
+                        </span>
+                        <span style="{{ ev.estiloLugar }}">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/></svg>
+                          {{ ev.lugar }}
+                        </span>
+                      </div>
+
+                      <p style="{{ ev.estiloDesc }}">{{ ev.descripcion }}</p>
+
+                      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: 4px; padding-top: 12px; border-top: 1px solid #EEF1F7">
+                        <span style="display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: #5F6B7C">
+                          <span style="{{ ev.punto }}"></span>
+                          <a href="#" style="color: #4A5666; font-weight: 500">{{ ev.negocio }}</a>
+                        </span>
+                        <span style="flex: 1"></span>
+                        <span style="font-size: 12.5px; color: #5F6B7C">{{ ev.interesados }}</span>
+                        <button type="button" class="u-sumar" style="display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 15px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 13.5px; font-weight: 600; font-family: 'Poppins', sans-serif; cursor: pointer">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6M2.6 20a6.4 6.4 0 0 1 12.8 0M16.5 12.6l2 2 4-4"/></svg>
+                          Me interesa
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                </sc-for>
+              </section>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- EL VACÍO DEL FILTRO NO ES EL VACÍO DE LA CARTELERA.
+             "No hay eventos anunciados por ahora" es cierto cuando la base está
+             vacía y mentira cuando el día elegido simplemente no tiene nada. -->
+        <sc-if value="{{ sinEventos }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 22px; padding: 46px 32px; border: 1px dashed #E2E6EE; border-radius: 18px; background: #FFFFFF; text-align: center">
+            <span style="display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 999px; background: #EEF1F7; color: #5F6B7C">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+            </span>
+            <h3 style="font-size: 16.5px">{{ vacioTitulo }}</h3>
+            <p style="margin: 0; max-width: 380px; font-size: 13.8px; line-height: 1.6; color: #5F6B7C">{{ vacioTexto }}</p>
+          </div>
+        </sc-if>
+      </div>
+
+      <aside style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+        <!-- EL CALENDARIO ES EL MISMO PARCIAL QUE EL INICIO
+             (partials/_calendario.html contra /api/eventos?mes=AAAA-MM). Acá gana
+             una función que hoy no tiene: elegir un día filtra la lista de al
+             lado. Sin eso es una ilustración con puntitos. -->
+        <div style="padding: 18px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; box-shadow: 0 6px 18px rgba(23,20,71,.05)">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px">
+            <h2 style="flex: 1; font-size: 15.5px">{{ mesTitulo }}</h2>
+            <button type="button" onClick="{{ mesAnterior }}" class="u-mesnav" style="{{ estiloPrev }}">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6-6 6 6 6"/></svg>
+            </button>
+            <button type="button" onClick="{{ mesSiguiente }}" class="u-mesnav" style="{{ estiloNext }}">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-bottom: 6px">
+            <sc-for list="{{ diasSemana }}" as="d" hint-placeholder-count="7">
+              <span style="text-align: center; font-size: 11px; font-weight: 600; letter-spacing: .04em; color: #5F6B7C">{{ d }}</span>
+            </sc-for>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px">
+            <sc-for list="{{ celdas }}" as="c" hint-placeholder-count="35">
+              <button type="button" onClick="{{ c.elegir }}" class="{{ c.clase }}" style="{{ c.estilo }}">
+                {{ c.texto }}
+                <span style="{{ c.punto }}"></span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 16px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #EEF1F7; font-size: 11.8px; color: #5F6B7C">
+            <span style="display: inline-flex; align-items: center; gap: 6px">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #5248AE"></span>
+              Día con eventos
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #D97544"></span>
+              Hoy
+            </span>
+          </div>
+        </div>
+
+        <div style="padding: 22px; border-radius: 18px; background: linear-gradient(160deg, #4A3B8E, #3E2F94 52%, #33267C); color: #FFFFFF">
+          <h2 style="font-size: 17px; line-height: 1.35; color: #FFFFFF">¿Organizás una feria o un taller?</h2>
+          <p style="margin: 9px 0 16px; font-size: 13.5px; line-height: 1.6; color: rgba(255,255,255,.82)">
+            Publicalo gratis desde uno de tus emprendimientos. Tarda un minuto, y cuando
+            pasa la fecha se archiva solo.
+          </p>
+          <a href="#" style="display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 22px; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; box-shadow: 0 10px 24px rgba(0,0,0,.20)">Publicar evento</a>
+          <p style="margin: 14px 0 0; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: rgba(255,255,255,.78)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8FD3AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5.5 12.4 4.2 4.2 8.8-9.2"/></svg>
+            Publicar es gratis y no cobramos comisión.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    // El "hoy" del mockup es la fecha en que se dibujó la pantalla.
+    this.state = { anio: 2026, mes: 8, dia: null, tipo: "todos", libre: false };
+  }
+
+  datos() {
+    // Los ocho eventos de muestra. `tipo`, `libre` e `interesados` son los tres
+    // campos que HOY NO EXISTEN en models/event.py (ver la nota del canvas).
+    return [
+      { f: "2026-09-12", hora: "10:00", tipo: "Feria",     titulo: "Feria de emprendedores de la Plaza Independencia",
+        lugar: "Plaza Independencia, Ciudad", negocio: "Conservas del Challao", tinta: "#9A5230", libre: true,  interesados: 34,
+        descripcion: "Veinte puestos de alimentos, artesanías y textiles bajo los árboles. Llevá bolsa: la mayoría vende suelto." },
+      { f: "2026-09-12", hora: "16:30", tipo: "Taller",    titulo: "Taller de encuadernación artesanal",
+        lugar: "Taller Rueda Libre, Godoy Cruz", negocio: "Taller Rueda Libre", tinta: "#635EA3", libre: false, interesados: 12,
+        descripcion: "Tres horas, ocho lugares, materiales incluidos. Salís con un cuaderno cosido a mano." },
+      { f: "2026-09-19", hora: "11:00", tipo: "Pop-up",    titulo: "Pop-up de cerámica en Chacras",
+        lugar: "Chacras de Coria", negocio: "Estudio Verde Cerámica", tinta: "#635EA3", libre: true,  interesados: 21,
+        descripcion: "Piezas de segunda selección y el horno abierto para ver cómo se cocina." },
+      { f: "2026-09-26", hora: "17:00", tipo: "Encuentro", titulo: "Encuentro de tejedoras del Valle de Uco",
+        lugar: "Centro cultural, Tunuyán", negocio: "Telar de Uco", tinta: "#954D71", libre: true,  interesados: 9,
+        descripcion: "" },
+      { f: "2026-09-27", hora: "10:00", tipo: "Feria",     titulo: "Feria del Parque Central",
+        lugar: "Parque Central, Ciudad", negocio: "Panadería La Cuadra", tinta: "#9A5230", libre: true,  interesados: 47,
+        descripcion: "La feria grande del mes. Panadería, conservas, cerámica y ropa de autor." },
+      { f: "2026-10-03", hora: "15:00", tipo: "Taller",    titulo: "Taller de dulce de leche casero",
+        lugar: "El Challao", negocio: "Conservas del Challao", tinta: "#9A5230", libre: false, interesados: 18,
+        descripcion: "De la leche al frasco en una tarde. Te llevás el tuyo." },
+      { f: "2026-10-10", hora: "11:00", tipo: "Feria",     titulo: "Feria de la vendimia chica",
+        lugar: "Maipú", negocio: "Tambo Los Álamos", tinta: "#9A5230", libre: true,  interesados: 62,
+        descripcion: "" },
+      { f: "2026-10-24", hora: "",      tipo: "Encuentro", titulo: "Ronda de emprendedores de Las Heras",
+        lugar: "", negocio: "Dulces de Ana", tinta: "#9A5230", libre: true,  interesados: 7,
+        descripcion: "Media jornada para conocerse y cruzar clientes. Sin agenda cerrada." }
+    ];
+  }
+
+  trazos() {
+    return {
+      "Feria":     "M3.5 9.5 6 4.5h12l2.5 5M3.5 9.5h17M5.5 9.5V20h13V9.5M9.5 20v-5.5h5V20",
+      "Taller":    "M14.4 4.6a3.6 3.6 0 0 1 5 5l-8.2 8.2-5-5ZM6.2 12.8 3.5 20.5l7.7-2.7",
+      "Pop-up":    "M4 4h16l1.6 5.2H2.4ZM5 9.2V20h14V9.2M10 20v-6.2h4V20",
+      "Encuentro": "M9 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4M2.6 20.2a6.4 6.4 0 0 1 12.8 0M16.6 6.4a3.2 3.2 0 0 1 0 5.6M18.4 20.2a6.6 6.6 0 0 0-1.7-4.4",
+      "Todos":     "M3.5 5.5h17M3.5 12h17M3.5 18.5h11"
+    };
+  }
+
+  nombreMes(m) {
+    return ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+            "agosto", "septiembre", "octubre", "noviembre", "diciembre"][m];
+  }
+
+  renderVals() {
+    const trazos = this.trazos();
+    const estado = this.state;
+    const HOY = "2026-09-06";
+
+    // ---- Los tipos, como fichas de filtro -------------------------------
+    const nombres = ["Todos", "Feria", "Taller", "Pop-up", "Encuentro"];
+    const tipos = nombres.map((nombre) => {
+      const clave = nombre === "Todos" ? "todos" : nombre;
+      const puesto = estado.tipo === clave;
+      return {
+        nombre: nombre,
+        trazo: trazos[nombre],
+        estiloIcono: "color: " + (puesto ? "#33267C" : "#5F6B7C"),
+        estilo: puesto
+          ? "background: #ECEAF7; border-color: #5248AE; color: #33267C; font-weight: 600"
+          : "",
+        elegir: () => this.setState({ tipo: clave, dia: null })
+      };
+    });
+
+    const estiloLibre = estado.libre
+      ? "background: #E6F4EC; border-color: #1F7A4D; color: #1F7A4D; font-weight: 600"
+      : "";
+
+    // ---- La lista, filtrada por tipo, entrada libre y día ---------------
+    const todos = this.datos();
+    const porFiltro = todos.filter((ev) => {
+      if (estado.tipo !== "todos" && ev.tipo !== estado.tipo) return false;
+      if (estado.libre && !ev.libre) return false;
+      return true;
+    });
+    const diaElegido = estado.dia;
+    const visibles = diaElegido ? porFiltro.filter((ev) => ev.f === diaElegido) : porFiltro;
+
+    const diasCortos = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
+    const mesesCortos = ["ene", "feb", "mar", "abr", "may", "jun",
+                         "jul", "ago", "sep", "oct", "nov", "dic"];
+
+    const decorar = (ev) => {
+      const partes = ev.f.split("-").map(Number);
+      const d = new Date(partes[0], partes[1] - 1, partes[2]);
+      const diaSemana = (d.getDay() + 6) % 7;
+      const cuando = diaCompleto(d) + (ev.hora ? " · " + ev.hora : "");
+      return {
+        titulo: ev.titulo,
+        tipo: ev.tipo,
+        tipoTrazo: trazos[ev.tipo],
+        diaSem: diasCortos[diaSemana],
+        dia: partes[2],
+        mesCorto: mesesCortos[partes[1] - 1],
+        cuando: cuando,
+        lugar: ev.lugar,
+        negocio: ev.negocio,
+        descripcion: ev.descripcion,
+        interesados: ev.interesados + " interesados",
+        punto: "flex-shrink: 0; width: 8px; height: 8px; border-radius: 999px; background: " + ev.tinta,
+        estiloLugar: ev.lugar
+          ? "display: inline-flex; align-items: center; gap: 6px; min-width: 0"
+          : "display: none",
+        estiloDesc: ev.descripcion
+          ? "margin: 0; font-size: 14px; line-height: 1.6; color: #4A5666"
+          : "display: none",
+        estiloLibre: ev.libre
+          ? "display: inline-flex; align-items: center; height: 26px; padding: 0 11px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600"
+          : "display: none"
+      };
+    };
+
+    function diaCompleto(d) {
+      const nombresDia = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+      const nombresMes = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+                          "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+      return nombresDia[d.getDay()] + " " + d.getDate() + " de " + nombresMes[d.getMonth()];
+    }
+
+    // Agrupados por mes, igual que services/eventos.agrupar_por_mes().
+    const orden = [];
+    const porMes = {};
+    visibles.forEach((ev) => {
+      const clave = ev.f.slice(0, 7);
+      if (!porMes[clave]) { porMes[clave] = []; orden.push(clave); }
+      porMes[clave].push(ev);
+    });
+    const grupos = orden.map((clave) => {
+      const m = Number(clave.slice(5, 7)) - 1;
+      const lista = porMes[clave];
+      return {
+        nombre: this.nombreMes(m) + " de " + clave.slice(0, 4),
+        cuenta: lista.length === 1 ? "1 evento" : lista.length + " eventos",
+        eventos: lista.map(decorar)
+      };
+    });
+
+    // ---- El calendario --------------------------------------------------
+    const primero = new Date(estado.anio, estado.mes, 1);
+    const arranque = (primero.getDay() + 6) % 7;
+    const cuantos = new Date(estado.anio, estado.mes + 1, 0).getDate();
+    const conEventos = {};
+    porFiltro.forEach((ev) => { conEventos[ev.f] = true; });
+
+    const celdas = [];
+    for (let i = 0; i < arranque; i += 1) {
+      celdas.push({ texto: "", clase: "", punto: "display: none",
+                    estilo: "height: 38px; border: 0; background: transparent; cursor: default; padding: 0" });
+    }
+    for (let n = 1; n <= cuantos; n += 1) {
+      const iso = estado.anio + "-" + String(estado.mes + 1).padStart(2, "0") + "-" + String(n).padStart(2, "0");
+      const tiene = Boolean(conEventos[iso]);
+      const puesto = diaElegido === iso;
+      const esHoy = iso === HOY;
+
+      let fondo = "transparent";
+      let borde = "1px solid transparent";
+      let tinta = tiene ? "#1B2430" : "#5F6B7C";
+      let peso = tiene ? "600" : "400";
+      if (puesto) { fondo = "#5248AE"; borde = "1px solid #5248AE"; tinta = "#FFFFFF"; }
+      else if (tiene) { borde = "1px solid #E2E6EE"; fondo = "#FFFFFF"; }
+
+      celdas.push({
+        texto: String(n),
+        clase: tiene && !puesto ? "u-celda--con" : "",
+        elegir: tiene ? () => this.setState({ dia: puesto ? null : iso }) : undefined,
+        estilo: "position: relative; height: 38px; padding: 0; display: flex; align-items: center;"
+          + " justify-content: center; border-radius: 10px; font-size: 13.5px; font-family: 'Inter', sans-serif;"
+          + " background: " + fondo + "; border: " + borde + "; color: " + tinta
+          + "; font-weight: " + peso + "; cursor: " + (tiene ? "pointer" : "default")
+          + "; transition: background .15s ease, border-color .15s ease",
+        punto: tiene && !puesto
+          ? "position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 999px; background: " + (esHoy ? "#D97544" : "#5248AE")
+          : (esHoy && !puesto
+              ? "position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 999px; background: #D97544"
+              : "display: none")
+      });
+    }
+
+    const baseNav = "width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;"
+      + " border: 1px solid #E2E6EE; border-radius: 10px; background: #FFFFFF; transition: border-color .15s ease;";
+    // Septiembre es el mes en curso: no se puede ir a un mes que ya pasó.
+    const puedeAtras = !(estado.anio === 2026 && estado.mes === 8);
+    const puedeAdelante = !(estado.anio === 2026 && estado.mes === 11);
+
+    // ---- El encabezado de la lista y los vacíos -------------------------
+    let encabezado;
+    if (diaElegido) {
+      const p = diaElegido.split("-").map(Number);
+      encabezado = diaCompleto(new Date(p[0], p[1] - 1, p[2]));
+      encabezado = encabezado.charAt(0).toUpperCase() + encabezado.slice(1);
+      encabezado += visibles.length === 1 ? " · 1 evento" : " · " + visibles.length + " eventos";
+    } else {
+      encabezado = visibles.length === 1
+        ? "1 fecha anunciada por los emprendimientos"
+        : visibles.length + " fechas anunciadas por los emprendimientos";
+    }
+
+    const filtrando = diaElegido || estado.tipo !== "todos" || estado.libre;
+
+    return {
+      tipos: tipos,
+      estiloLibre: estiloLibre,
+      alternarLibre: () => this.setState({ libre: !estado.libre, dia: null }),
+      encabezado: encabezado,
+      estiloLimpiar: diaElegido
+        ? "display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 13px; font-weight: 500; cursor: pointer; flex-shrink: 0"
+        : "display: none",
+      limpiar: () => this.setState({ dia: null }),
+      grupos: grupos,
+      hayEventos: visibles.length > 0,
+      sinEventos: visibles.length === 0,
+      vacioTitulo: filtrando ? "Nada con esos filtros" : "Todavía no hay eventos anunciados",
+      vacioTexto: filtrando
+        ? "Probá con otro día o sacá alguno de los filtros: la cartelera sigue teniendo fechas más adelante."
+        : "Cuando un emprendimiento publique una feria, un taller o una pop-up, va a aparecer acá.",
+      mesTitulo: this.nombreMes(estado.mes).charAt(0).toUpperCase()
+        + this.nombreMes(estado.mes).slice(1) + " de " + estado.anio,
+      diasSemana: ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"],
+      celdas: celdas,
+      estiloPrev: baseNav + " color: " + (puedeAtras ? "#4A5666" : "#C9D0E0")
+        + "; cursor: " + (puedeAtras ? "pointer" : "not-allowed"),
+      estiloNext: baseNav + " color: " + (puedeAdelante ? "#4A5666" : "#C9D0E0")
+        + "; cursor: " + (puedeAdelante ? "pointer" : "not-allowed"),
+      mesAnterior: puedeAtras
+        ? () => this.setState({ mes: estado.mes === 0 ? 11 : estado.mes - 1,
+                                anio: estado.mes === 0 ? estado.anio - 1 : estado.anio, dia: null })
+        : undefined,
+      mesSiguiente: puedeAdelante
+        ? () => this.setState({ mes: estado.mes === 11 ? 0 : estado.mes + 1,
+                                anio: estado.mes === 11 ? estado.anio + 1 : estado.anio, dia: null })
+        : undefined
+    };
+  }
+}
+</script>
+</body>
+</html>

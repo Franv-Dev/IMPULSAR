@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input, select, textarea { font-family: inherit; }
+    .u-campo { width: 100%; height: 48px; padding: 0 14px; border: 1px solid #E2E6EE;
+               border-radius: 12px; background: #FFFFFF; color: #1B2430; font-size: 15px; }
+    .u-campo::placeholder { color: #9AA5B5; }
+    .u-etiqueta { display: block; margin-bottom: 7px; font-family: "Poppins", sans-serif;
+                  font-size: 13.5px; font-weight: 600; color: #1B2430; }
+    .u-ayuda { margin: 7px 0 0; font-size: 12.5px; line-height: 1.5; color: #5F6B7C; }
+    .u-seg { display: flex; align-items: center; justify-content: center; gap: 7px; height: 46px;
+             border: 1px solid #E2E6EE; border-radius: 12px; background: #FFFFFF; color: #4A5666;
+             font-family: "Poppins", sans-serif; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+    .u-seg--on { background: #ECEAF7; border-color: #5248AE; color: #33267C; font-weight: 600; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; max-width: 100%; height: 844px; overflow: hidden; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 2; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="height: 56px; padding: 0 8px 0 6px; display: flex; align-items: center; gap: 4px">
+      <button type="button" aria-label="Volver" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 12px; background: transparent; color: #4A5666; cursor: pointer">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5-7 7 7 7"/></svg>
+      </button>
+      <h1 style="flex: 1; min-width: 0; font-size: 16.5px">Publicar un evento</h1>
+      <button type="button" style="height: 36px; padding: 0 13px; display: flex; align-items: center; border: 0; border-radius: 999px; background: transparent; color: #5F6B7C; font-size: 14px; cursor: pointer">Cancelar</button>
+    </div>
+  </header>
+
+  <div style="padding: 16px 16px 0">
+
+    <p style="margin: 0 0 18px; font-size: 13.2px; line-height: 1.55; color: #5F6B7C">
+      Una feria, una pop-up, un taller. No se reservan lugares: publicás la información
+      y la gente se acerca.
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 18px">
+
+      <div>
+        <label class="u-etiqueta" for="post">Emprendimiento</label>
+        <div style="position: relative">
+          <select id="post" class="u-campo" style="appearance: none; padding-right: 42px">
+            <option>Conservas del Challao</option>
+          </select>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none"><path d="m6 9.5 6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- Los cuatro tipos en dos filas de dos: en 390 px, cuatro en una fila
+           dejan botones de 88 px y la palabra "Encuentro" no entra. Cada uno mide
+           46 px de alto, arriba del mínimo de 44 de la guía. -->
+      <div>
+        <label class="u-etiqueta">Tipo de evento</label>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+          <button type="button" class="u-seg u-seg--on">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5 6 4.5h12l2.5 5M3.5 9.5h17M5.5 9.5V20h13V9.5M9.5 20v-5.5h5V20"/></svg>
+            Feria
+          </button>
+          <button type="button" class="u-seg">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.4 4.6a3.6 3.6 0 0 1 5 5l-8.2 8.2-5-5ZM6.2 12.8 3.5 20.5l7.7-2.7"/></svg>
+            Taller
+          </button>
+          <button type="button" class="u-seg">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16l1.6 5.2H2.4ZM5 9.2V20h14V9.2M10 20v-6.2h4V20"/></svg>
+            Pop-up
+          </button>
+          <button type="button" class="u-seg">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4M2.6 20.2a6.4 6.4 0 0 1 12.8 0M16.6 6.4a3.2 3.2 0 0 1 0 5.6M18.4 20.2a6.6 6.6 0 0 0-1.7-4.4"/></svg>
+            Encuentro
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label class="u-etiqueta" for="titulo">Título</label>
+        <input id="titulo" type="text" class="u-campo" placeholder="Feria de la plaza San Martín">
+        <p class="u-ayuda">Es lo único que se lee entero en la cartelera.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.35fr 1fr; gap: 10px">
+        <div>
+          <label class="u-etiqueta" for="fecha">Fecha</label>
+          <input id="fecha" type="text" class="u-campo" style="font-size: 14.5px" value="sáb 12 sep 2026">
+        </div>
+        <div>
+          <label class="u-etiqueta" for="hora">Hora <span style="font-weight: 400; color: #5F6B7C">(opc.)</span></label>
+          <input id="hora" type="text" class="u-campo" value="10:00">
+        </div>
+      </div>
+
+      <div>
+        <label class="u-etiqueta" for="lugar">Lugar <span style="font-weight: 400; color: #5F6B7C">(opcional)</span></label>
+        <input id="lugar" type="text" class="u-campo" placeholder="Plaza San Martín">
+        <p class="u-ayuda">Dónde es de verdad, aunque no sea tu local.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- La barra de acción va fija abajo y no al final del formulario: en el
+       teléfono el botón queda a tres pantallas de scroll, y el que llega hasta
+       ahí ya no ve lo que escribió arriba. -->
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px 26px; background: #FFFFFF; border-top: 1px solid #E2E6EE; box-shadow: 0 -4px 16px rgba(15,23,42,.06)">
+    <button type="button" style="width: 100%; height: 34px; display: flex; align-items: center; justify-content: center; gap: 7px; margin-bottom: 10px; border: 0; background: transparent; color: #3E2F94; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></svg>
+      Ver cómo va a quedar
+    </button>
+    <button type="submit" style="width: 100%; height: 50px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 600; cursor: pointer">
+      Publicar evento
+    </button>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>
