@@ -1337,10 +1337,10 @@ En este orden, y por este motivo:
 3. ~~**Panel administrativo**~~ — dibujada el 2026-09-06 (abajo, punto 7). **La nota
    anterior decía "cinco plantillas viejas" y era medio cierta**: tres ya tenían el
    rediseño de agosto; las que faltaban eran Reportes y Verificaciones.
-4. **Las páginas planas** (`about`, `contact`, `privacy`, `terms`) y las de error
-   (`errors/404.html`, `errors/500.html`), que nunca entraron en ninguna tanda.
-5. **Pasar las tandas aprobadas a código.** Es lo que queda de verdad: siete tandas
-   dibujadas y ninguna en la app.
+4. ~~**Las páginas planas y las de error**~~ — dibujadas el 2026-09-06 (abajo,
+   punto 8).
+5. **Pasar las tandas aprobadas a código.** Es lo único que queda de verdad: ocho
+   tandas dibujadas y ninguna en la app.
 
 `disenio-navegacion/`, `disenio-ficha/`, `disenio-productos/`, `disenio-panel/` y
 `disenio-turnos/` **todavía no están commiteadas**: quedaron afuera del commit `27d1710` a pedido
@@ -1434,3 +1434,87 @@ del resto.
 
 De los diseños viejos no están, porque no hay con qué: "Emprendimientos sin
 actividad" (`Post` no tiene `updated_at`), "Exportar métricas" y "Exportar CSV".
+
+
+### 8. Sobre, contacto y errores (dibujada 2026-09-06, a revisar)
+
+| Qué | Dónde |
+| --- | --- |
+| Artboards | `disenio-paginas/*.dc.html` + `canvas.json` |
+| Canvas publicado | https://claude.ai/code/artifact/b25d9e60-64a7-4343-a846-68ae02a96ba1 |
+
+Seis páginas en cinco artboards: Sobre, Contacto, **un molde legal** (se dibujó
+Privacidad; Términos es la misma cáscara con otro índice y otro texto), **un molde
+de error** (se dibujó el 404) y el 404 en teléfono.
+
+**Tres de las seis tenían un problema que no era de estética:**
+
+1. **`about.html` hablaba del equipo de desarrollo, no del visitante.** Decía que la
+   plataforma se hizo "con Flask (Python) y MySQL, siguiendo buenas prácticas de
+   diseño y una estética moderna en tonos pastel". Lo de pastel además hace rato que
+   es falso. **Reescrita desde el posicionamiento de la guía**: los cinco datos que
+   Mercado Libre no tiene, y los cinco salen de una tabla que existe. Se sumó una
+   sección **"Lo que IMPULSAR no hace"** —sin pagos, sin envíos, sin protección al
+   comprador— porque es la verdad del repo y es el argumento, no una disculpa.
+   **No hay ni un número en la página**: cuántos emprendimientos, desde cuándo o
+   cuánta gente son datos que no existen y no se inventan.
+2. **`contact.html` tenía un emoji** (📧) delante del mail. La guía sólo admite emoji
+   si son de la marca. **Sigue siendo un mailto y no un formulario**: la ruta es un
+   `render_template` sin lógica y no hay tabla de consultas — un form dibujado que no
+   manda nada es peor que un correo honesto. Lo que se agrega son cuatro atajos que
+   ya existen (reportar desde la ficha, el chat, publicar, Ajustes), para que la
+   casilla no sea el cajón de lo que la app ya resuelve sola.
+3. **Privacidad y Términos hacían las listas con `<br>•` adentro de un `<p>`.**
+   Parecen viñetas y para un lector de pantalla son un párrafo con puntos medios.
+   Pasan a `<ul>`. El texto **no se tocó**, palabra por palabra.
+
+**Un hueco real que queda abierto: ninguna de las dos legales tiene fecha de última
+actualización**, así que no se puede saber qué versión aceptó cada usuario. Va
+marcado como `[COMPLETAR]` en el artboard porque no es un dato que se pueda inventar.
+
+**El 404 lleva buscador y los siete rubros**; casi siempre se llega desde un
+emprendimiento dado de baja o un link viejo pasado por WhatsApp, así que dos botones
+sueltos dejan a la persona a mitad de camino. **El 500 NO los lleva**: si el servidor
+se cayó, un buscador que tampoco va a andar es una segunda frustración.
+
+Es la única tanda con un solo artboard de teléfono, y es el 404: es la que más se ve
+en celular. Las de texto en 390 px son la misma columna más angosta.
+
+
+---
+
+## Dónde retomamos (2026-09-06)
+
+Las ocho tandas están dibujadas, publicadas y commiteadas. **Ninguna tocó la app**:
+lo último que entró a código es el commit `27d1710` (inicio, auth, perfil, ajustes y
+servicios).
+
+### Lo único grande que queda: pasar las ocho tandas a código
+
+| Tanda | Carpeta | Canvas |
+| --- | --- | --- |
+| Navegación global | `disenio-navegacion/` | https://claude.ai/code/artifact/b752a01f-a2be-495c-b0cf-ac660dc65c84 |
+| Ficha del emprendimiento | `disenio-ficha/` | https://claude.ai/code/artifact/423b9dbb-2c0d-4eb3-87e1-19bf140d1ace |
+| Catálogo de productos | `disenio-productos/` | https://claude.ai/code/artifact/332d05a2-7ac7-4f03-a0fb-de90acf291e9 |
+| Panel del vendedor | `disenio-panel/` | https://claude.ai/code/artifact/538a4d0a-52cb-4781-a7e6-717557523761 |
+| Turnos | `disenio-turnos/` | https://claude.ai/code/artifact/5566643c-7638-485f-85e7-36cf609cfc55 |
+| Ferias y eventos | `disenio-eventos/` | https://claude.ai/code/artifact/c24946a2-195e-4b54-80cc-8bf8fa82c5d6 |
+| Panel de administración | `disenio-admin/` | https://claude.ai/code/artifact/79f57360-70eb-468d-802b-054dfa9bbf44 |
+| Sobre, contacto y errores | `disenio-paginas/` | https://claude.ai/code/artifact/b25d9e60-64a7-4343-a846-68ae02a96ba1 |
+
+**Empezar por navegación.** Toca `templates/base.html` y
+`templates/partials/_menu_cuenta.html` —dos archivos, no cada pantalla— y desbloquea
+a todas las demás, porque la barra de tres secciones y Publicar en el menú de la
+cuenta ya están decididas y dibujadas en las ocho.
+
+### Pendientes chicos, que salen al paso de eso
+
+- [ ] **Las dos legales no tienen fecha de última actualización.** Sin eso no se
+      puede saber qué versión aceptó cada usuario. El artboard lo marca como
+      `[COMPLETAR]`: es un dato de Tomás, no se inventa.
+- [ ] **La paleta de rubros de la app no es la de la guía** (`styles.css:6199`): el
+      mismo rubro tiene dos colores según la pantalla. Son siete pares.
+- [ ] **Faltan los estados del inicio**: cargando y sin resultados.
+- [ ] **No hay ningún artboard intermedio (~768 px)** en ninguna de las ocho tandas.
+      Sabemos cómo cae todo en 1440 y en 390, y nada de lo que hay en el medio —
+      que es donde entra una tablet y una ventana a media pantalla.
