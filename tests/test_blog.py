@@ -685,6 +685,55 @@ def test_la_direccion_de_texto_sin_maptiler_key_no_rompe_el_listado(
     assert "Panadería del barrio" in resp.get_data(as_text=True)
 
 
+def test_una_direccion_que_no_geocodifica_no_pinta_su_chip(client):
+    """Un chip que anuncia un filtro que no se aplico es peor que no tenerlo.
+
+    Mismo criterio que el radio (ver test_sin_coordenadas_el_radio_no_pinta_su_chip).
+    En testing no hay MAPTILER_KEY, asi que ninguna direccion se resuelve: la
+    vista deja lat en None y la consulta devuelve el listado entero, sin ordenar
+    por cercania. El chip "Cerca de ..." se pintaba igual, con su x al lado, o
+    sea que ofrecia sacar un filtro que nunca estuvo puesto.
+    """
+    html = client.get("/blog/?near=Av+San+Martin+123").get_data(as_text=True)
+
+    assert 'aria-label="Quitar el filtro de cercanía"' not in html
+    # La direccion tampoco aparece adentro de un chip por otra via.
+    assert not re.search(r'<span class="chip">\s*Cerca de', html)
+    # Y siendo "near" lo unico que viaja en la URL, no queda la fila de chips
+    # dibujada y vacia ni el "Limpiar todo" al lado. La clase es la del
+    # rediseño (ficha-filtro--limpiar): en este template ya no existe
+    # filtros__limpiar.
+    assert '<div class="chips">' not in html
+    assert "ficha-filtro--limpiar" not in html
+
+
+def test_una_direccion_que_no_geocodifica_conserva_lo_que_se_tipeo(client):
+    """Lo que NO se saca: el input mantiene el texto para poder corregirlo.
+
+    El input no es un chip que miente (no afirma que se filtro nada), y
+    vaciarlo obligaria a reescribir la direccion entera despues del aviso de
+    que no se pudo ubicar.
+    """
+    html = client.get("/blog/?near=Av+San+Martin+123").get_data(as_text=True)
+
+    assert 'value="Av San Martin 123"' in html
+
+
+def test_con_la_direccion_geocodificada_el_chip_de_cercania_si_aparece(
+    client, monkeypatch
+):
+    """La contracara: cuando si acota, el chip corresponde y tiene que estar."""
+    monkeypatch.setattr(
+        "app.blog.vistas.get_coordinates_from_address",
+        lambda direccion, clave: (-32.89, -68.84),
+    )
+
+    html = client.get("/blog/?near=Obelisco").get_data(as_text=True)
+
+    assert 'aria-label="Quitar el filtro de cercanía"' in html
+    assert re.search(r'<span class="chip">\s*Cerca de Obelisco', html)
+
+
 def test_sin_filtro_de_cercania_el_orden_por_defecto_no_cambia(
     client, crear_usuario, crear_post
 ):

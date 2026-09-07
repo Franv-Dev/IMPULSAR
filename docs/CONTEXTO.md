@@ -1,6 +1,6 @@
 # IMPULSAR — Contexto para retomar
 
-**Última actualización: 6 de septiembre de 2026.** Perfil público, Cuenta, Turnos, calendario, grilla de rubros, Home, Emprendedor, Gestión, Explorar (radio + reseñas + "Abierto ahora"), "Mis servicios" en el menú de cuenta, reordenar fotos/elegir principal, la tanda de validaciones de backend (precios, horarios, título, contacto, views_count), notificaciones por email (Flask-Mail/Gmail, 3 disparadores), búsqueda en catálogo (productos/servicios disponibles, no solo título/body del post), Mis favoritos (orden por fecha de marcado con desempate, filtro por rubro, orden A-Z), tanda chica de backlog (mensaje de hora inválida, assert→ValueError en reordenar fotos, botón duplicado sacado), y la tanda de rediseño del home (buscador unificado, rubros con ícono SVG en grilla 4×2, tarjetas verticales tipo `.tarjeta`, `/api/posts/` con avg_rating/review_count/author_name): todos CERRADOS Y PUSHEADOS. dev_tomy remoto en 27d1710 (confirmado por Sesión 2 tras el push del 6/9). 877 tests passed (el número de 834 reportado antes por Sesión 1 estaba desactualizado; Sesión 2 corrió la suite dos veces y confirmó 877 verde antes y después de sus arreglos).
+**Última actualización: 7 de septiembre de 2026.** Perfil público, Cuenta, Turnos, calendario, grilla de rubros, Home, Emprendedor, Gestión, Explorar (radio + reseñas + "Abierto ahora"), "Mis servicios" en el menú de cuenta, reordenar fotos/elegir principal, la tanda de validaciones de backend (precios, horarios, título, contacto, views_count), notificaciones por email (Flask-Mail/Gmail, 3 disparadores), búsqueda en catálogo (productos/servicios disponibles, no solo título/body del post), Mis favoritos (orden por fecha de marcado con desempate, filtro por rubro, orden A-Z), tanda chica de backlog (mensaje de hora inválida, assert→ValueError en reordenar fotos, botón duplicado sacado), y la tanda de rediseño del home (buscador unificado, rubros con ícono SVG en grilla 4×2, tarjetas verticales tipo `.tarjeta`, `/api/posts/` con avg_rating/review_count/author_name): todos CERRADOS Y PUSHEADOS. Y el chip de cercanía que miente, cerrado el 7/9 y todavía SIN PUSHEAR (falta auditoría). dev_tomy remoto en 4eba082 — el 27d1710 que decía este documento quedó viejo: después se pushearon `e63586e`, `258fb0a` y `4eba082`, los tres de docs y canvas de diseño. 876 tests passed. Sobre el número: la suite medida en limpio el 7/9 daba 873 antes del fix, con `tests/` byte a byte idéntico a 27d1710, así que el 877 que figuraba acá estaba mal anotado (no se borró ningún test); 873 + 3 nuevos = 876.
 
 ## Qué es
 
@@ -81,6 +81,31 @@ Estado: CERRADO POR COMPLETO.
 
 Nota de proceso: `disenio-navegacion/` quedó deliberadamente fuera de este commit — se estaba escribiendo en paralelo en otra carpeta de diseño, se commitea aparte cuando cierre esa tanda.
 
+## Chip de cercanía que miente — CERRADO (7/9), PENDIENTE DE AUDITORÍA
+
+Item que estaba en Backlog pendiente: el chip de cercanía tenía la misma falla del "chip que miente" ya corregida en el chip de radio. En `app/blog/templates/blog/index.html` el chip "Cerca de {{ cerca_de_actual }}" se pintaba con que `cerca_de_actual` tuviera texto, sin mirar si la dirección se había podido geocodificar. Cuando MapTiler no la resuelve (o no hay `MAPTILER_KEY`), la vista deja `lat` en None, la consulta devuelve el listado entero sin ordenar por cercanía, y el chip aparecía igual con su "×" — ofreciendo sacar un filtro que nunca se aplicó.
+
+Fix, con el mismo criterio que el radio (mirar `ordenado_por_distancia`, no `request.args.lat`, porque las coordenadas de una dirección las resuelve la vista y nunca están en la URL):
+
+- Se nombró la condición una sola vez, `{% set cercania_aplicada = cerca_de_actual and ordenado_por_distancia %}`, en vez de repetirla en los tres lugares que la necesitan.
+- `hay_filtros` ahora cuenta `cercania_aplicada` en lugar de `cerca_de_actual` solo.
+- El `{% if %}` del chip pasa a mirar `cercania_aplicada`.
+- El `{% if %}` que envuelve todo el `<div class="chips">` también, para no dibujar el contenedor vacío cuando "near" es lo único que viaja en la URL.
+- NO se tocó el `<input name="near">`: conservar lo tipeado no es un chip que miente, y vaciarlo obligaría a reescribir la dirección después del aviso de que no se pudo ubicar. Hay un test que lo fija.
+
+3 tests nuevos en `tests/test_blog.py`, sección cercanía: `test_una_direccion_que_no_geocodifica_no_pinta_su_chip` (el bug), `test_una_direccion_que_no_geocodifica_conserva_lo_que_se_tipeo` (la guarda del input) y `test_con_la_direccion_geocodificada_el_chip_de_cercania_si_aparece` (la contracara: cuando sí acota, el chip tiene que estar).
+
+Contraprueba hecha, no solo suite en verde: se revirtió el template dejando los tests puestos y el test del bug pasó a rojo mostrando el chip con su `aria-label` renderizado; con el fix vuelve a verde.
+
+Tests: 876 passed. Ojo con el número: la suite medida en limpio en esta máquina antes del cambio daba **873**, no los 877 que decía este documento, con `tests/` byte a byte idéntico a 27d1710. O sea que el 877 estaba mal anotado, no es que se hayan borrado tests. 873 + 3 nuevos = 876.
+
+Hallazgos colaterales, NO arreglados en esta tanda (van a backlog, para no mezclar con el fix pedido):
+
+- La tercera aserción de `test_sin_coordenadas_el_radio_no_pinta_su_chip` está muerta: verifica `class="filtros__limpiar"`, clase que el rediseño renombró a `ficha-filtro--limpiar` en este template. Pasa siempre, mire lo que mire. Los tests nuevos usan la clase correcta.
+- El `<summary>` de la barra de filtros (`barra-filtros__resumen-detalle`) sigue anunciando "cerca de {{ cerca_de_actual }}" sin mirar si se geocodificó — es la misma clase de mentira que el chip, en otro lugar de la pantalla.
+
+Estado: fix y tests listos, sin pushear. Falta la auditoría de Sesión 2.
+
 ## Identidad visual — paleta índigo, VIGENTE
 
 #3E2F94 primario, más tokens de hover/dark/soft del handoff de Design. Nota de accesibilidad: `color-mix()` sobre el primario puede fallar contraste en un tema — usar token propio fijo (`--color-primary-deep: #2A2068`, 13.9:1 en los dos temas) para bloques de marca.
@@ -88,7 +113,8 @@ Nota de proceso: `disenio-navegacion/` quedó deliberadamente fuera de este comm
 ## Backlog pendiente
 
 - Recordatorio de turno próximo — PAUSADO, tiene costo/infraestructura. Investigación ya hecha: el modelo Turno tiene todo lo necesario, el problema es el disparo (no hay scheduler interno) — opción más barata es un endpoint protegido por secreto disparado por cron externo. Retomar cuando se confirme un disparador externo gratis.
-- Chip de cercanía (vecino al de radio) tiene la misma falla del "chip que miente" que se corrigió en el chip de radio — pendiente de arreglar con el mismo criterio.
+- Aserción muerta en `test_sin_coordenadas_el_radio_no_pinta_su_chip`: mira `class="filtros__limpiar"`, que en `blog/index.html` el rediseño renombró a `ficha-filtro--limpiar`. Pasa siempre. Detectado el 7/9 al hacer el chip de cercanía; conviene revisar si hay más aserciones que quedaron apuntando a clases viejas del rediseño.
+- El `<summary>` de la barra de filtros anuncia "cerca de {{ cerca_de_actual }}" sin mirar `ordenado_por_distancia` — misma mentira que el chip de cercanía ya corregido, en otro lugar de la pantalla. Se dejó afuera del fix del 7/9 a propósito, para no mezclar con lo pedido.
 - Unificar `campos_guardados()` y `leer_perfil()` sobre una tupla `CAMPOS_DEL_PERFIL` compartida — hoy coinciden pero si se agrega un campo y se olvida sincronizar una función, falla en silencio.
 - `%`/`_` como comodín de LIKE en el buscador — preexistente, heredado por las ramas nuevas de búsqueda en catálogo sin empeorarlo.
 - `/api/posts/?q=` usa un criterio de búsqueda distinto al de `/blog/` — su propio `Post.title.ilike | Post.body.ilike`, sin pasar por `buscar_posts()`, no encuentra por catálogo. Inconsistencia real entre el listado HTML y la API.

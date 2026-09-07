@@ -46,11 +46,17 @@
 {%- endmacro %}
 
 {% block content %}
+{# La cercania cuenta solo cuando la direccion se pudo geocodificar. El texto
+   que escribio el usuario viaja igual (y se le devuelve al input para no
+   perderselo), pero si MapTiler no la resolvio la consulta no ordeno por
+   distancia y no se acoto nada: contarla dejaria la fila de chips dibujada
+   con un chip que anuncia un filtro que no se aplico. #}
+{% set cercania_aplicada = cerca_de_actual and ordenado_por_distancia %}
 {# Si hay algo aplicado, para el "Limpiar" y la fila de chips. Se dice una sola
    vez y no en cada if. #}
 {# El radio cuenta solo cuando hay coordenadas: sin ellas no acota nada, y
    listarlo dejaria la fila de chips dibujada y vacia. #}
-{% set hay_filtros = busqueda_actual or categoria_actual or cerca_de_actual
+{% set hay_filtros = busqueda_actual or categoria_actual or cercania_aplicada
                      or (radio_actual and ordenado_por_distancia)
                      or con_resenias_actual or abierto_ahora_actual %}
 {# BARRA DE FILTROS
@@ -231,7 +237,7 @@
                     </div>
                 </div>
 
-                {% if busqueda_actual or categoria_actual or cerca_de_actual %}
+                {% if busqueda_actual or categoria_actual or cercania_aplicada %}
                     <div class="chips">
                         {% if busqueda_actual %}
                             <span class="chip">
@@ -245,7 +251,10 @@
                                 <a href="{{ url_sin('category') }}" class="chip__quitar" aria-label="Quitar el filtro de rubro">×</a>
                             </span>
                         {% endif %}
-                        {% if cerca_de_actual %}
+                        {# Mismo criterio que el radio: solo si de verdad acoto
+                           algo. Una direccion que MapTiler no resolvio deja el
+                           listado entero, asi que el chip diria otra cosa. #}
+                        {% if cercania_aplicada %}
                             <span class="chip">
                                 Cerca de {{ cerca_de_actual }}
                                 <a href="{{ url_sin('near') }}" class="chip__quitar" aria-label="Quitar el filtro de cercanía">×</a>
