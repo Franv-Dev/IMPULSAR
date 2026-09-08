@@ -101,7 +101,7 @@ Tests: 876 passed. Ojo con el número: la suite medida en limpio en esta máquin
 
 Hallazgos colaterales, NO arreglados en esta tanda (van a backlog, para no mezclar con el fix pedido):
 
-- La tercera aserción de `test_sin_coordenadas_el_radio_no_pinta_su_chip` está muerta: verifica `class="filtros__limpiar"`, clase que el rediseño renombró a `ficha-filtro--limpiar` en este template. Pasa siempre, mire lo que mire. Los tests nuevos usan la clase correcta.
+- La tercera aserción de `test_sin_coordenadas_el_radio_no_pinta_su_chip` estaba muerta: verificaba `class="filtros__limpiar"`, clase que el rediseño renombró a `ficha-filtro--limpiar` en este template (`filtros__limpiar` hoy solo vive en `servicios/buscar.html`, otra pantalla). Pasaba siempre, mirara lo que mirara. ARREGLADO en la auditoría del 8/9, commit aparte: ahora mira `ficha-filtro--limpiar`. Se verificó que la aserción corregida tiene mordida real (`/blog/?q=` sí pinta esa clase, `/blog/?radio=1` no). Barrido hecho sobre los cinco `tests/test_*.py`, cruzando cada clase BEM afirmada contra el template que renderiza la ruta de su test: esta era la única aserción apuntando a una clase vieja del rediseño.
 - El `<summary>` de la barra de filtros (`barra-filtros__resumen-detalle`) sigue anunciando "cerca de {{ cerca_de_actual }}" sin mirar si se geocodificó — es la misma clase de mentira que el chip, en otro lugar de la pantalla.
 
 Estado: fix y tests listos, sin pushear. Falta la auditoría de Sesión 2.
@@ -113,7 +113,6 @@ Estado: fix y tests listos, sin pushear. Falta la auditoría de Sesión 2.
 ## Backlog pendiente
 
 - Recordatorio de turno próximo — PAUSADO, tiene costo/infraestructura. Investigación ya hecha: el modelo Turno tiene todo lo necesario, el problema es el disparo (no hay scheduler interno) — opción más barata es un endpoint protegido por secreto disparado por cron externo. Retomar cuando se confirme un disparador externo gratis.
-- Aserción muerta en `test_sin_coordenadas_el_radio_no_pinta_su_chip`: mira `class="filtros__limpiar"`, que en `blog/index.html` el rediseño renombró a `ficha-filtro--limpiar`. Pasa siempre. Detectado el 7/9 al hacer el chip de cercanía; conviene revisar si hay más aserciones que quedaron apuntando a clases viejas del rediseño.
 - El `<summary>` de la barra de filtros anuncia "cerca de {{ cerca_de_actual }}" sin mirar `ordenado_por_distancia` — misma mentira que el chip de cercanía ya corregido, en otro lugar de la pantalla. Se dejó afuera del fix del 7/9 a propósito, para no mezclar con lo pedido.
 - Unificar `campos_guardados()` y `leer_perfil()` sobre una tupla `CAMPOS_DEL_PERFIL` compartida — hoy coinciden pero si se agrega un campo y se olvida sincronizar una función, falla en silencio.
 - `%`/`_` como comodín de LIKE en el buscador — preexistente, heredado por las ramas nuevas de búsqueda en catálogo sin empeorarlo.

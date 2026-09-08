@@ -1084,8 +1084,10 @@ def test_sin_coordenadas_el_radio_no_pinta_su_chip(client):
     assert "Hasta 1 km" not in html
     assert 'aria-label="Quitar el filtro de radio"' not in html
     # Y sin ningun otro filtro puesto, tampoco queda la fila de chips vacia
-    # con su "Limpiar" al lado.
-    assert 'class="filtros__limpiar"' not in html
+    # con su "Limpiar" al lado. La clase es la del rediseño
+    # (ficha-filtro--limpiar): filtros__limpiar es la vieja, en este template
+    # ya no existe, asi que mirarla no verificaba nada.
+    assert "ficha-filtro--limpiar" not in html
 
 
 def test_con_una_direccion_geocodificada_si_se_ofrece_el_radio(
