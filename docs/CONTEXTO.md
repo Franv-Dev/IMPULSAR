@@ -1,6 +1,6 @@
 # IMPULSAR — Contexto para retomar
 
-**Última actualización: 8 de septiembre de 2026.** Perfil público, Cuenta, Turnos, calendario, grilla de rubros, Home, Emprendedor, Gestión, Explorar (radio + reseñas + "Abierto ahora"), "Mis servicios" en el menú de cuenta, reordenar fotos/elegir principal, la tanda de validaciones de backend (precios, horarios, título, contacto, views_count), notificaciones por email (Flask-Mail/Gmail, 3 disparadores), búsqueda en catálogo (productos/servicios disponibles, no solo título/body del post), Mis favoritos (orden por fecha de marcado con desempate, filtro por rubro, orden A-Z), tanda chica de backlog (mensaje de hora inválida, assert→ValueError en reordenar fotos, botón duplicado sacado), y la tanda de rediseño del home (buscador unificado, rubros con ícono SVG en grilla 4×2, tarjetas verticales tipo `.tarjeta`, `/api/posts/` con avg_rating/review_count/author_name): todos CERRADOS Y PUSHEADOS. Y los dos "chips que mienten" de la barra de filtros de `/blog/`, AUDITADOS Y PUSHEADOS los dos: el chip de cercanía (cerrado el 7/9, auditado y pusheado el 8/9 en `00e7132`) y el `<summary>` de la barra de filtros, segundo hallazgo de esa misma tanda (cerrado, auditado y pusheado el 8/9 en `e221f67` + `d3d5739`). dev_tomy remoto en `d3d5739`. Ojo con este dato, que ya quedó viejo dos veces: decía 27d1710, después 4eba082, y en el medio se pushearon `e63586e`, `258fb0a`, `4eba082` (docs y canvas), `00e7132`, `16bc7c6`, `e221f67` y `d3d5739`. Verificarlo con `git ls-remote origin dev_tomy` antes de citarlo, no copiarlo de acá. 878 tests passed. Sobre el número: la suite medida en limpio el 7/9 daba 873 antes del fix del chip, con `tests/` byte a byte idéntico a 27d1710, así que el 877 que figuraba acá estaba mal anotado (no se borró ningún test); 873 + 3 del chip = 876, + 2 del `<summary>` = 878.
+**Última actualización: 8 de septiembre de 2026.** Perfil público, Cuenta, Turnos, calendario, grilla de rubros, Home, Emprendedor, Gestión, Explorar (radio + reseñas + "Abierto ahora"), "Mis servicios" en el menú de cuenta, reordenar fotos/elegir principal, la tanda de validaciones de backend (precios, horarios, título, contacto, views_count), notificaciones por email (Flask-Mail/Gmail, 3 disparadores), búsqueda en catálogo (productos/servicios disponibles, no solo título/body del post), Mis favoritos (orden por fecha de marcado con desempate, filtro por rubro, orden A-Z), tanda chica de backlog (mensaje de hora inválida, assert→ValueError en reordenar fotos, botón duplicado sacado), y la tanda de rediseño del home (buscador unificado, rubros con ícono SVG en grilla 4×2, tarjetas verticales tipo `.tarjeta`, `/api/posts/` con avg_rating/review_count/author_name): todos CERRADOS Y PUSHEADOS. Y los dos "chips que mienten" de la barra de filtros de `/blog/`, AUDITADOS Y PUSHEADOS los dos: el chip de cercanía (cerrado el 7/9, auditado y pusheado el 8/9 en `00e7132`) y el `<summary>` de la barra de filtros, segundo hallazgo de esa misma tanda (cerrado, auditado y pusheado el 8/9 en `e221f67` + `d3d5739`). Lo único SIN PUSHEAR hoy es la unificación de `CAMPOS_DEL_PERFIL`, cerrada el 8/9 y esperando la auditoría de Sesión 2. dev_tomy remoto en `90ae52b` (verificado con `git ls-remote` el 8/9). Ojo con este dato, que ya quedó viejo dos veces: decía 27d1710, después 4eba082, y en el medio se pushearon `e63586e`, `258fb0a`, `4eba082` (docs y canvas), `00e7132`, `16bc7c6`, `e221f67`, `d3d5739` y `90ae52b`. Verificarlo con `git ls-remote origin dev_tomy` antes de citarlo, no copiarlo de acá. 882 tests passed. Sobre el número: la suite medida en limpio el 7/9 daba 873 antes del fix del chip, con `tests/` byte a byte idéntico a 27d1710, así que el 877 que figuraba acá estaba mal anotado (no se borró ningún test); 873 + 3 del chip = 876, + 2 del `<summary>` = 878, + 4 de `CAMPOS_DEL_PERFIL` = 882.
 
 ## Qué es
 
@@ -120,6 +120,29 @@ Barrido del resto del archivo por si quedaba otro lugar armando texto o clases c
 
 Estado: CERRADO. Auditado por Sesión 2 y pusheado el 8/9.
 
+## `CAMPOS_DEL_PERFIL` — una sola lista de campos del perfil — CERRADO (8/9), PENDIENTE DE AUDITORÍA
+
+Item que estaba en Backlog pendiente. **El item estaba desactualizado**: nombraba `leer_perfil()`, función que ya no existe — se había partido en `leer_perfil_publico()` y `leer_contacto()` cuando Ajustes se separó en dos pantallas, y las dos ya leían de tuplas compartidas (`CAMPOS_PERFIL_PUBLICO`, `CAMPOS_CONTACTO`) a través de `_leidos()`. O sea que la mitad del trabajo ya estaba hecha y el doc no se había enterado.
+
+Lo que sí seguía duplicado, y es la misma falla que describía el item: `campos_guardados()` (en `app/perfil/formulario.py`) repetía los ocho nombres a mano en un dict literal. Esos ocho son exactamente `CAMPOS_PERFIL_PUBLICO + CAMPOS_CONTACTO`, en ese mismo orden — verificado nombre por nombre, no de vista.
+
+Fix: se agregó `CAMPOS_DEL_PERFIL = CAMPOS_PERFIL_PUBLICO + CAMPOS_CONTACTO` (derivada, no una tercera lista escrita a mano) y `campos_guardados()` pasó a ser un dict por comprensión sobre esa tupla. Va en `formulario.py`, donde ya viven las otras dos constantes y la función: no hace falta módulo neutral ni hay import circular que esquivar.
+
+Lo que NO se unificó, a propósito: el **acceso** al valor. `_leidos()` lee del POST y hace `.strip()`; `campos_guardados()` lee de la base y hace `or ""` para cambiar el None de una columna vacía por el texto vacío que espera el `<input>`. Lo único repetido era la enumeración de nombres; los dos accesos son legítimamente distintos y siguen separados.
+
+Equivalencia comprobada antes de tocar los tests: se corrió la implementación vieja y la nueva sobre el mismo objeto en cuatro casos (todo None, todo `""`, todo con valor, y mezcla con un `0`), comparando el dict entero **y el orden de las claves** — idénticos. El orden importa porque es el orden en que se pintan los `<input>` de Ajustes.
+
+4 tests nuevos en `tests/test_profile.py`, sección "una sola lista de campos del perfil":
+
+- `test_campos_guardados_sigue_a_la_tupla_y_no_a_una_lista_propia` — **el detector**: agrega un campo ficticio a la tupla con `monkeypatch` y exige que aparezca en el dict. Es el único de los cuatro que da rojo si alguien reintroduce la lista a mano.
+- `test_la_tupla_del_perfil_es_la_union_de_las_dos_pantallas` — que `CAMPOS_DEL_PERFIL` siga siendo derivada y sin nombres repetidos.
+- `test_campos_guardados_devuelve_exactamente_la_tupla_compartida` — las claves y su orden.
+- `test_lo_que_leen_las_dos_pantallas_cubre_todos_los_campos_guardados` — el otro lado del mismo olvido: que entre las dos pantallas se lea del POST todo lo que se pinta, ni uno más ni uno menos.
+
+Contraprueba hecha: se revirtió `campos_guardados()` a la lista a mano dejando los tests puestos y el detector pasó a rojo con `KeyError: 'campo_ficticio'`; los otros tres siguieron verdes, que es lo esperado — son guardas, no detectores. El archivo se restauró desde una copia aparte y no con `git checkout`, que en la tanda anterior se llevó puesto el fix junto con la reversión temporal.
+
+Estado: fix y tests listos, sin pushear. Falta la auditoría de Sesión 2.
+
 ## Identidad visual — paleta índigo, VIGENTE
 
 #3E2F94 primario, más tokens de hover/dark/soft del handoff de Design. Nota de accesibilidad: `color-mix()` sobre el primario puede fallar contraste en un tema — usar token propio fijo (`--color-primary-deep: #2A2068`, 13.9:1 en los dos temas) para bloques de marca.
@@ -127,7 +150,6 @@ Estado: CERRADO. Auditado por Sesión 2 y pusheado el 8/9.
 ## Backlog pendiente
 
 - Recordatorio de turno próximo — PAUSADO, tiene costo/infraestructura. Investigación ya hecha: el modelo Turno tiene todo lo necesario, el problema es el disparo (no hay scheduler interno) — opción más barata es un endpoint protegido por secreto disparado por cron externo. Retomar cuando se confirme un disparador externo gratis.
-- Unificar `campos_guardados()` y `leer_perfil()` sobre una tupla `CAMPOS_DEL_PERFIL` compartida — hoy coinciden pero si se agrega un campo y se olvida sincronizar una función, falla en silencio.
 - `%`/`_` como comodín de LIKE en el buscador — preexistente, heredado por las ramas nuevas de búsqueda en catálogo sin empeorarlo.
 - `/api/posts/?q=` usa un criterio de búsqueda distinto al de `/blog/` — su propio `Post.title.ilike | Post.body.ilike`, sin pasar por `buscar_posts()`, no encuentra por catálogo. Inconsistencia real entre el listado HTML y la API.
 - Decidir si SERVER_NAME faltante en ProductionConfig debería ser fatal (como SECRET_KEY) en vez de solo loguear un warning.
