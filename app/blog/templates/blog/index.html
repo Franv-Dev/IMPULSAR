@@ -93,7 +93,7 @@
                         <span class="barra-filtros__resumen-detalle">
                             {%- set partes = [] -%}
                             {%- if categoria_actual %}{% set _ = partes.append(categorias.get(categoria_actual, categoria_actual)) %}{% endif -%}
-                            {%- if cerca_de_actual %}{% set _ = partes.append('cerca de ' ~ cerca_de_actual) %}{% endif -%}
+                            {%- if cercania_aplicada %}{% set _ = partes.append('cerca de ' ~ cerca_de_actual) %}{% endif -%}
                             {{ partes | join(' · ') if partes else 'Todos los rubros' }}
                         </span>
                     </span>

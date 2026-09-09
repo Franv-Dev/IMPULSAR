@@ -734,6 +734,52 @@ def test_con_la_direccion_geocodificada_el_chip_de_cercania_si_aparece(
     assert re.search(r'<span class="chip">\s*Cerca de Obelisco', html)
 
 
+def _resumen_de_filtros(html):
+    """El texto del <summary> que resume la barra de filtros plegada.
+
+    Hay que mirarlo aparte de la fila de chips: los dos dicen "cerca de" y un
+    `in html` pelado daria verde por el chip aunque el resumen mintiera.
+    """
+    m = re.search(
+        r'<span class="barra-filtros__resumen-detalle">(.*?)</span>',
+        html,
+        re.S,
+    )
+    assert m, "no se encontro el resumen de la barra de filtros"
+    return m.group(1)
+
+
+def test_una_direccion_que_no_geocodifica_no_entra_en_el_resumen(client):
+    """La misma mentira del chip, pero en el <summary> de la barra plegada.
+
+    En telefono los filtros van adentro de un <details> cerrado, asi que ese
+    resumen es lo unico que se ve: si dice "cerca de Av San Martin 123" cuando
+    MapTiler no resolvio la direccion, anuncia un filtro que no se aplico
+    (mismo criterio que test_una_direccion_que_no_geocodifica_no_pinta_su_chip).
+    """
+    html = client.get("/blog/?near=Av+San+Martin+123").get_data(as_text=True)
+
+    resumen = _resumen_de_filtros(html)
+    assert "cerca de" not in resumen
+    assert "Av San Martin 123" not in resumen
+    # Sin nada mas filtrado, el resumen cae al texto por defecto.
+    assert "Todos los rubros" in resumen
+
+
+def test_con_la_direccion_geocodificada_el_resumen_si_la_nombra(
+    client, monkeypatch
+):
+    """La contracara: cuando si acota, el resumen tiene que decirlo."""
+    monkeypatch.setattr(
+        "app.blog.vistas.get_coordinates_from_address",
+        lambda direccion, clave: (-32.89, -68.84),
+    )
+
+    html = client.get("/blog/?near=Obelisco").get_data(as_text=True)
+
+    assert "cerca de Obelisco" in _resumen_de_filtros(html)
+
+
 def test_sin_filtro_de_cercania_el_orden_por_defecto_no_cambia(
     client, crear_usuario, crear_post
 ):
