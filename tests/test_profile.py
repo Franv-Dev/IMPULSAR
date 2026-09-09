@@ -9,7 +9,7 @@ from werkzeug.datastructures import FileStorage
 
 from app.blog.modelo_favorito import Favorite
 from app.blog.modelo_resenia import Review
-from app.perfil import reglas
+from app.perfil import formulario, reglas
 from app.servicios.modelo import Service
 from app.turnos.modelo_turno import EstadosTurno, Turno
 from models.user import User
@@ -1165,3 +1165,75 @@ def test_horarios_muestra_el_cartel_que_va_a_encender(
 
     assert "Así te ven" in html
     assert "Todavía no cargaste horarios" in html
+
+
+# ------------------------------- Ajustes: una sola lista de campos del perfil
+
+def test_la_tupla_del_perfil_es_la_union_de_las_dos_pantallas():
+    """CAMPOS_DEL_PERFIL no es una tercera lista: sale de las otras dos.
+
+    Si vuelve a escribirse a mano, el orden o el contenido se despegan de lo
+    que declaran las pantallas y este test lo dice.
+    """
+    assert formulario.CAMPOS_DEL_PERFIL == (
+        formulario.CAMPOS_PERFIL_PUBLICO + formulario.CAMPOS_CONTACTO
+    )
+    # Ningun campo repetido entre las dos pantallas: si uno cayera en las dos,
+    # la union lo contaria dos veces y el dict lo pisaria sin avisar.
+    assert len(set(formulario.CAMPOS_DEL_PERFIL)) == len(
+        formulario.CAMPOS_DEL_PERFIL
+    )
+
+
+def test_campos_guardados_devuelve_exactamente_la_tupla_compartida(crear_usuario):
+    """Las claves del dict que pinta el template, contra la fuente unica.
+
+    Se compara la tupla entera y en orden, no `set(...)`: el orden de las
+    claves es el orden en que se pintan los <input> de Ajustes.
+    """
+    usuario = crear_usuario(username="tomy")
+
+    campos = formulario.campos_guardados(usuario)
+
+    assert tuple(campos) == formulario.CAMPOS_DEL_PERFIL
+
+
+def test_campos_guardados_sigue_a_la_tupla_y_no_a_una_lista_propia(
+    crear_usuario, monkeypatch
+):
+    """El detector de la duplicacion, que es el punto del refactor.
+
+    Agrega un campo ficticio a la tupla y exige que aparezca en el dict. Con la
+    lista escrita a mano adentro de la funcion —como estaba— esto da rojo: la
+    tupla decia nueve campos y el dict devolvia los ocho de siempre.
+
+    Es la falla que se buscaba tapar, y era silenciosa: el campo nuevo no
+    llegaba al template, se veia vacio al entrar a Ajustes y lo guardado en la
+    base quedaba intacto, sin error en ningun lado.
+    """
+    usuario = crear_usuario(username="tomy")
+    usuario.campo_ficticio = "un valor"
+    monkeypatch.setattr(
+        formulario,
+        "CAMPOS_DEL_PERFIL",
+        formulario.CAMPOS_DEL_PERFIL + ("campo_ficticio",),
+    )
+
+    campos = formulario.campos_guardados(usuario)
+
+    assert campos["campo_ficticio"] == "un valor"
+
+
+def test_lo_que_leen_las_dos_pantallas_cubre_todos_los_campos_guardados(app):
+    """El otro lado del mismo olvido: agregar un campo y no leerlo del POST.
+
+    Entre leer_perfil_publico() y leer_contacto() tienen que salir los ocho que
+    campos_guardados() pinta, ni uno mas ni uno menos. Si alguien suma un campo
+    a la tupla y no lo pone en ninguna de las dos pantallas, el <input> se
+    dibuja pero lo que se escriba ahi no se guarda nunca.
+    """
+    with app.test_request_context():
+        publico, _ = formulario.leer_perfil_publico()
+        contacto, _ = formulario.leer_contacto()
+
+    assert set(publico) | set(contacto) == set(formulario.CAMPOS_DEL_PERFIL)

@@ -32,6 +32,13 @@ CAMPOS_CONTACTO = (
     "phone", "whatsapp", "instagram_url", "facebook_url", "twitter_url",
 )
 
+# Los ocho juntos, en el orden en que se pintan. Existe para que campos_guardados()
+# no vuelva a escribir a mano la lista que las dos pantallas ya declararon arriba:
+# repetida, agregar un campo pedia acordarse de tocar los dos lados, y olvidarse
+# de este no rompe nada ruidoso — el campo simplemente no llega al template y se
+# ve vacio al entrar a Ajustes, con lo guardado intacto en la base.
+CAMPOS_DEL_PERFIL = CAMPOS_PERFIL_PUBLICO + CAMPOS_CONTACTO
+
 
 def _leidos(nombres):
     """Los campos pedidos, tal como vinieron y sin espacios de sobra."""
@@ -83,17 +90,13 @@ def campos_guardados(user):
     Van las ocho aunque cada pantalla edite tres o cinco: la de perfil publico
     igual necesita el telefono para decir que hay contacto cargado, y las dos
     pintan la misma vista previa.
+
+    Los nombres salen de CAMPOS_DEL_PERFIL, la misma tupla que leen las dos
+    pantallas: lo unico propio de esta funcion es de donde saca el valor (la
+    base, no el POST) y el `or ""` que cambia el None de una columna vacia por
+    el texto vacio que espera el <input>.
     """
-    return {
-        "biography": user.biography or "",
-        "location": user.location or "",
-        "address_street": user.address_street or "",
-        "phone": user.phone or "",
-        "whatsapp": user.whatsapp or "",
-        "instagram_url": user.instagram_url or "",
-        "facebook_url": user.facebook_url or "",
-        "twitter_url": user.twitter_url or "",
-    }
+    return {nombre: getattr(user, nombre) or "" for nombre in CAMPOS_DEL_PERFIL}
 
 
 def fila_de_horario(dia, etiqueta, cerrado, abre, cierra):
