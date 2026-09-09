@@ -1,6 +1,6 @@
 # IMPULSAR — Contexto para retomar
 
-**Última actualización: 8 de septiembre de 2026.** Perfil público, Cuenta, Turnos, calendario, grilla de rubros, Home, Emprendedor, Gestión, Explorar (radio + reseñas + "Abierto ahora"), "Mis servicios" en el menú de cuenta, reordenar fotos/elegir principal, la tanda de validaciones de backend (precios, horarios, título, contacto, views_count), notificaciones por email (Flask-Mail/Gmail, 3 disparadores), búsqueda en catálogo (productos/servicios disponibles, no solo título/body del post), Mis favoritos (orden por fecha de marcado con desempate, filtro por rubro, orden A-Z), tanda chica de backlog (mensaje de hora inválida, assert→ValueError en reordenar fotos, botón duplicado sacado), y la tanda de rediseño del home (buscador unificado, rubros con ícono SVG en grilla 4×2, tarjetas verticales tipo `.tarjeta`, `/api/posts/` con avg_rating/review_count/author_name): todos CERRADOS Y PUSHEADOS. Y los dos "chips que mienten" de la barra de filtros de `/blog/`, los dos SIN PUSHEAR (falta auditoría): el chip de cercanía, cerrado el 7/9, y el `<summary>` de la barra de filtros, que era el segundo hallazgo de esa misma tanda y quedó cerrado el 8/9. dev_tomy remoto en 4eba082 — el 27d1710 que decía este documento quedó viejo: después se pushearon `e63586e`, `258fb0a` y `4eba082`, los tres de docs y canvas de diseño. 878 tests passed. Sobre el número: la suite medida en limpio el 7/9 daba 873 antes del fix del chip, con `tests/` byte a byte idéntico a 27d1710, así que el 877 que figuraba acá estaba mal anotado (no se borró ningún test); 873 + 3 del chip = 876, + 2 del `<summary>` = 878.
+**Última actualización: 8 de septiembre de 2026.** Perfil público, Cuenta, Turnos, calendario, grilla de rubros, Home, Emprendedor, Gestión, Explorar (radio + reseñas + "Abierto ahora"), "Mis servicios" en el menú de cuenta, reordenar fotos/elegir principal, la tanda de validaciones de backend (precios, horarios, título, contacto, views_count), notificaciones por email (Flask-Mail/Gmail, 3 disparadores), búsqueda en catálogo (productos/servicios disponibles, no solo título/body del post), Mis favoritos (orden por fecha de marcado con desempate, filtro por rubro, orden A-Z), tanda chica de backlog (mensaje de hora inválida, assert→ValueError en reordenar fotos, botón duplicado sacado), y la tanda de rediseño del home (buscador unificado, rubros con ícono SVG en grilla 4×2, tarjetas verticales tipo `.tarjeta`, `/api/posts/` con avg_rating/review_count/author_name): todos CERRADOS Y PUSHEADOS. Y los dos "chips que mienten" de la barra de filtros de `/blog/`, AUDITADOS Y PUSHEADOS los dos: el chip de cercanía (cerrado el 7/9, auditado y pusheado el 8/9 en `00e7132`) y el `<summary>` de la barra de filtros, segundo hallazgo de esa misma tanda (cerrado, auditado y pusheado el 8/9 en `e221f67` + `d3d5739`). dev_tomy remoto en `d3d5739`. Ojo con este dato, que ya quedó viejo dos veces: decía 27d1710, después 4eba082, y en el medio se pushearon `e63586e`, `258fb0a`, `4eba082` (docs y canvas), `00e7132`, `16bc7c6`, `e221f67` y `d3d5739`. Verificarlo con `git ls-remote origin dev_tomy` antes de citarlo, no copiarlo de acá. 878 tests passed. Sobre el número: la suite medida en limpio el 7/9 daba 873 antes del fix del chip, con `tests/` byte a byte idéntico a 27d1710, así que el 877 que figuraba acá estaba mal anotado (no se borró ningún test); 873 + 3 del chip = 876, + 2 del `<summary>` = 878.
 
 ## Qué es
 
@@ -81,7 +81,7 @@ Estado: CERRADO POR COMPLETO.
 
 Nota de proceso: `disenio-navegacion/` quedó deliberadamente fuera de este commit — se estaba escribiendo en paralelo en otra carpeta de diseño, se commitea aparte cuando cierre esa tanda.
 
-## Chip de cercanía que miente — CERRADO (7/9), PENDIENTE DE AUDITORÍA
+## Chip de cercanía que miente — CERRADO (7/9), AUDITADO Y PUSHEADO (8/9)
 
 Item que estaba en Backlog pendiente: el chip de cercanía tenía la misma falla del "chip que miente" ya corregida en el chip de radio. En `app/blog/templates/blog/index.html` el chip "Cerca de {{ cerca_de_actual }}" se pintaba con que `cerca_de_actual` tuviera texto, sin mirar si la dirección se había podido geocodificar. Cuando MapTiler no la resuelve (o no hay `MAPTILER_KEY`), la vista deja `lat` en None, la consulta devuelve el listado entero sin ordenar por cercanía, y el chip aparecía igual con su "×" — ofreciendo sacar un filtro que nunca se aplicó.
 
@@ -104,9 +104,9 @@ Hallazgos colaterales, NO arreglados en esta tanda (van a backlog, para no mezcl
 - La tercera aserción de `test_sin_coordenadas_el_radio_no_pinta_su_chip` estaba muerta: verificaba `class="filtros__limpiar"`, clase que el rediseño renombró a `ficha-filtro--limpiar` en este template (`filtros__limpiar` hoy solo vive en `servicios/buscar.html`, otra pantalla). Pasaba siempre, mirara lo que mirara. ARREGLADO en la auditoría del 8/9, commit aparte: ahora mira `ficha-filtro--limpiar`. Se verificó que la aserción corregida tiene mordida real (`/blog/?q=` sí pinta esa clase, `/blog/?radio=1` no). Barrido hecho sobre los cinco `tests/test_*.py`, cruzando cada clase BEM afirmada contra el template que renderiza la ruta de su test: esta era la única aserción apuntando a una clase vieja del rediseño.
 - El `<summary>` de la barra de filtros (`barra-filtros__resumen-detalle`) anunciaba "cerca de {{ cerca_de_actual }}" sin mirar si se geocodificó — la misma clase de mentira que el chip, en otro lugar de la pantalla. ARREGLADO el 8/9, commit aparte: ver la sección "`<summary>` de la barra de filtros que miente" más abajo.
 
-Estado: fix y tests listos, sin pushear. Falta la auditoría de Sesión 2.
+Estado: CERRADO. Auditado por Sesión 2 y pusheado el 8/9.
 
-## `<summary>` de la barra de filtros que miente — CERRADO (8/9), PENDIENTE DE AUDITORÍA
+## `<summary>` de la barra de filtros que miente — CERRADO Y AUDITADO (8/9)
 
 Segundo hallazgo de la tanda del chip de cercanía, que había quedado anotado en Backlog pendiente. En `app/blog/templates/blog/index.html` el `<summary>` de la barra de filtros armaba su texto con `{%- if cerca_de_actual %}` y agregaba "cerca de {dirección}" aunque MapTiler no hubiera resuelto la dirección — la misma mentira del chip, movida al resumen. Pesa más de lo que parece: en teléfono los filtros van adentro de un `<details>` que `main.js` cierra, así que ese resumen es lo único que se ve.
 
@@ -118,7 +118,7 @@ Contraprueba hecha, no solo suite en verde: se revirtió el template dejando los
 
 Barrido del resto del archivo por si quedaba otro lugar armando texto o clases con `cerca_de_actual` pelado: no queda ninguno. El único uso sin `ordenado_por_distancia` es el `value=` del `<input name="near">` (línea 127), que es deliberado y ya tiene su test (`test_una_direccion_que_no_geocodifica_conserva_lo_que_se_tipeo`).
 
-Estado: fix y tests listos, sin pushear. Falta la auditoría de Sesión 2.
+Estado: CERRADO. Auditado por Sesión 2 y pusheado el 8/9.
 
 ## Identidad visual — paleta índigo, VIGENTE
 
