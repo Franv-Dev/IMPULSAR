@@ -13,7 +13,7 @@ pantalla y vigente en la otra.
 from calendar import monthrange
 from datetime import date, datetime
 
-from models.event import Event
+from models.event import Event, TiposEvento
 from app.blog.modelo_post import Post
 from services.horarios import ZONA_ARGENTINA
 
@@ -182,6 +182,56 @@ def en_rango(query, desde, hasta):
         query.filter(Event.fecha >= desde, Event.fecha <= hasta)
         .order_by(Event.fecha.asc(), Event.hora.asc(), Event.id.asc())
     )
+
+
+
+# ------------------------------------------------- los filtros de la cartelera
+
+def tipo_valido(texto):
+    """El tipo de TiposEvento que nombra ese texto, o None.
+
+    Devuelve None tanto si viene vacio como si viene basura, y las dos cosas
+    significan lo mismo para quien filtra: "todos". Mismo criterio que
+    blog.reglas.categoria_valida -- un ?tipo= inventado a mano no revienta la
+    pantalla, se ignora.
+    """
+    texto = (texto or "").strip().lower()
+    return texto if texto in TiposEvento.TODOS else None
+
+
+def del_dia(query, dia):
+    """Los eventos de una fecha exacta.
+
+    Es el filtro que gana el calendario de la cartelera al dejar de ser una
+    ilustracion: hasta ahora pintaba los dias con eventos y ahi terminaba.
+
+    Sin corte de "ya paso", igual que en_rango() y por lo mismo: si escondiera
+    lo vencido, elegir un dia del pasado en el calendario mostraria un dia vacio
+    y el calendario no serviria para mirar para atras.
+    """
+    return query.filter(Event.fecha == dia).order_by(
+        Event.hora.asc(), Event.id.asc()
+    )
+
+
+def filtrar(query, tipo=None, solo_libres=False):
+    """Aplica los dos filtros de la barra de la cartelera, si vienen.
+
+    `tipo` ya tiene que venir validado (ver tipo_valido): esto no valida, filtra.
+
+    UN EVENTO SIN TIPO NO APARECE EN NINGUN FILTRO POR TIPO, y es lo correcto:
+    `tipo` es nullable porque los eventos cargados antes de la columna no lo
+    tienen (ver models/event.py), y NULL es "no lo dijo", no "es de todos los
+    tipos". Con "Todos" -- que es no pasar tipo -- siguen apareciendo.
+
+    Los dos filtros se combinan con AND y no se excluyen: "talleres con entrada
+    libre" es exactamente la pregunta que alguien hace parado en la cartelera.
+    """
+    if tipo:
+        query = query.filter(Event.tipo == tipo)
+    if solo_libres:
+        query = query.filter(Event.entrada_libre.is_(True))
+    return query
 
 
 def eventos_de_usuario(user_id):

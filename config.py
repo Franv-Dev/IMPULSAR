@@ -146,6 +146,12 @@ class Config:
     # Cantidad de emprendimientos por pagina en los listados.
     POSTS_POR_PAGINA = 9
 
+    # Cantidad de productos por pagina en el catalogo publico. Doce y no nueve
+    # porque la grilla es de cuatro columnas en escritorio y de dos en
+    # telefono: nueve deja una fila de tres y una sola tarjeta colgando abajo,
+    # doce cierra las filas en los dos anchos.
+    PRODUCTOS_POR_PAGINA = 12
+
     @classmethod
     def init_app(cls, app):
         """Gancho para validaciones propias de cada entorno."""

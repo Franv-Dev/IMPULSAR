@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}{{ producto.nombre }} – {{ post.title }} – IMPULSAR{% endblock %}
+{% block meta_description %}{{ producto.descripcion or producto.nombre }} — {{ post.title }}, en IMPULSAR.{% endblock %}
+{% block og_title %}{{ producto.nombre }} – {{ post.title }}{% endblock %}
+{% block og_description %}{{ producto.descripcion or producto.nombre }}{% endblock %}
+
+{#  El detalle de un producto (disenio-productos/Detalle.dc.html).
+
+    CONTESTA DOS PREGUNTAS Y NO UNA: qué es (foto, precio, disponible,
+    descripción) y QUIÉN LO VENDE (rubro, puntaje, abierto ahora, el
+    emprendimiento). La segunda pesa tanto como la primera: en una plataforma
+    sin pagos ni protección al comprador, lo que termina de decidir es la
+    confianza en la persona.
+
+    UNA SOLA FOTO. Product.foto es una columna, no una galería: no hay
+    miniaturas que dibujar y fingirlas sería mentir sobre el modelo. El botón
+    «Ampliar» abre el mismo visor de la ficha (static/js/visor.js), que
+    funciona igual con una foto sola.
+
+    NO HAY «COMPRAR». La acción es consultar, y termina en el chat interno con
+    el nombre del producto ya escrito (?producto=<id> en la ruta de mensajes). #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="migas" aria-label="Dónde estás">
+            <a href="{{ url_for('products.catalogo') }}">Productos</a>
+            <span class="migas__sep" aria-hidden="true">›</span>
+            <a href="{{ url_for('products.catalogo', category=post.category) }}">{{ post.category_label }}</a>
+            <span class="migas__sep" aria-hidden="true">›</span>
+            <a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a>
+            <span class="migas__sep" aria-hidden="true">›</span>
+            <span class="migas__actual">{{ producto.nombre }}</span>
+        </nav>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="producto">
+            <div class="producto__principal">
+                <div class="producto__foto">
+                    {% if producto.foto %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
+                             alt="Foto de {{ producto.nombre }}">
+                        <button type="button" class="producto__ampliar" data-visor="0"
+                                aria-label="Ver la foto en grande">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M15 3h6v6M9 21H3v-6M21 3l-7.5 7.5M3 21l7.5-7.5"/>
+                            </svg>
+                            Ampliar
+                        </button>
+                    {% else %}
+                        {# Sin foto no se dibuja un rectángulo gris con un icono,
+                           que se lee como carga rota: se dice qué falta. #}
+                        <p class="producto__sin-foto">Este producto todavía no tiene foto.</p>
+                    {% endif %}
+                </div>
+
+                {% if producto.descripcion %}
+                    <div class="producto__bloque">
+                        <h2 class="producto__bloque-titulo">Descripción</h2>
+                        <p class="producto__descripcion">{{ producto.descripcion }}</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# LA COLUMNA DE DECISIÓN. #}
+            <aside class="producto__decision">
+                <div class="producto__caja">
+                    {% if producto.disponible %}
+                        <span class="estado estado--si">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m5 12.5 4.5 4.5L19 7.5"/>
+                            </svg>
+                            Disponible
+                        </span>
+                    {% else %}
+                        <span class="estado estado--no">Sin stock por ahora</span>
+                    {% endif %}
+
+                    <h1 class="producto__nombre">{{ producto.nombre }}</h1>
+                    <span class="producto__precio">{{ producto.precio | precio }}</span>
+
+                    <div class="producto__acciones">
+                        {% if es_dueño %}
+                            {# El dueño no se escribe a sí mismo: en su lugar va
+                               el atajo a editarlo, que es lo que viene a hacer. #}
+                            <a href="{{ url_for('products.editar', id=producto.id) }}"
+                               class="btn btn--primary producto__accion">Editar este producto</a>
+                        {% elif g.user %}
+                            <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id, producto=producto.id) }}"
+                               class="btn btn--primary producto__accion">
+                                {% with clave = 'mensaje', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                Consultar por este producto
+                            </a>
+                            <form method="post"
+                                  action="{{ url_for('products.toggle_favorito', id=producto.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn--secondary producto__accion">
+                                    {% if es_favorito %}♥ Guardado{% else %}♡ Guardar{% endif %}
+                                </button>
+                            </form>
+                        {% else %}
+                            <a href="{{ url_for('auth.login') }}" class="btn btn--primary producto__accion">
+                                {% with clave = 'mensaje', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                Entrá para consultar
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    <p class="producto__nota">
+                        {% if not es_dueño %}El mensaje arranca con el nombre del producto ya escrito. {% endif %}
+                        IMPULSAR no cobra comisión ni procesa pagos: el precio, la entrega y la
+                        forma de pago se acuerdan entre ustedes.
+                    </p>
+                </div>
+
+                {# QUIÉN LO VENDE: la mitad de la decisión. #}
+                <div class="producto__caja producto__vendedor">
+                    <div class="producto__vendedor-fila">
+                        <span class="producto__vendedor-avatar" aria-hidden="true">
+                            {% if post.image %}
+                                <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}" alt="">
+                            {% else %}
+                                {{ post.title[0] | upper }}
+                            {% endif %}
+                        </span>
+                        <span class="producto__vendedor-datos">
+                            <a href="{{ url_for('blog.detail', id=post.id) }}"
+                               class="producto__vendedor-nombre">{{ post.title }}</a>
+                            <span class="producto__vendedor-meta">
+                                <span class="rubro-pastilla rubro-pastilla--{{ post.category }}">
+                                    {{ post.category_label }}
+                                </span>
+                                {% if avg_rating %}
+                                    <span class="dato dato--rating"
+                                          aria-label="Calificación promedio: {{ avg_rating }} de 5">
+                                        <span class="dato__estrella" aria-hidden="true">★</span>
+                                        {{ avg_rating }} · {{ review_count }}
+                                    </span>
+                                {% endif %}
+                            </span>
+                        </span>
+                    </div>
+
+                    {# «Abierto ahora» sale de los horarios del emprendedor y del
+                       reloj de Argentina, no del del visitante. Cerrado no se
+                       dibuja como pastilla roja: no es un error, y la hora de
+                       apertura vive en la ficha. #}
+                    {% if abierto %}
+                        <span class="estado estado--si">
+                            <span class="estado__punto" aria-hidden="true"></span>
+                            {# strftime y no el time pelado, igual que en la ficha:
+                               sin eso sale "23:59:00", con los segundos. #}
+                            Abierto{% if cierra %} · cierra {{ cierra.strftime("%H:%M") }}{% endif %}
+                        </span>
+                    {% endif %}
+
+                    <a href="{{ url_for('blog.detail', id=post.id) }}"
+                       class="btn btn--secondary producto__accion">Ver el emprendimiento</a>
+                </div>
+            </aside>
+        </div>
+
+        {# MÁS DEL MISMO EMPRENDIMIENTO. Sale de Product.post_id, y es la mejor
+           forma de que una visita valga por varias. #}
+        {% if hermanos %}
+            <div class="producto__bloque producto__mas">
+                <div class="producto__mas-head">
+                    <h2 class="producto__bloque-titulo">Más de {{ post.title }}</h2>
+                    <a href="{{ url_for('blog.detail', id=post.id) }}#ficha-productos">
+                        Ver los {{ total_productos }} productos
+                    </a>
+                </div>
+                <div class="catalogo__grilla catalogo__grilla--chica">
+                    {% for otro in hermanos %}
+                        <article class="producto-tarjeta">
+                            <a href="{{ url_for('products.detalle', id=otro.id) }}"
+                               class="producto-tarjeta__foto">
+                                {% if otro.foto %}
+                                    <img src="{{ url_for('static', filename='uploads/' ~ otro.foto) }}"
+                                         alt="Foto de {{ otro.nombre }}" loading="lazy">
+                                {% endif %}
+                            </a>
+                            <div class="producto-tarjeta__cuerpo">
+                                <span class="producto-tarjeta__precio">{{ otro.precio | precio }}</span>
+                                <h3 class="producto-tarjeta__nombre">
+                                    <a href="{{ url_for('products.detalle', id=otro.id) }}">{{ otro.nombre }}</a>
+                                </h3>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    {# El visor. Nace oculto y lo abre static/js/visor.js; sin JS la foto sigue
+       estando arriba, sólo que no se agranda. Sin flechas ni pie: hay una sola
+       foto, así que no hay nada que recorrer ni que contar. #}
+    {% if producto.foto %}
+        <div class="visor" id="visor" hidden>
+            <div class="visor__fondo" data-visor-cerrar></div>
+            <button type="button" class="visor__cerrar" data-visor-cerrar aria-label="Cerrar el visor">
+                {% with clave = 'cerrar', tamanio = 22, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            </button>
+            <figure class="visor__marco">
+                <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
+                     alt="Foto de {{ producto.nombre }}"
+                     class="visor__foto"
+                     data-visor-foto="0"
+                     loading="lazy"
+                     hidden>
+            </figure>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if producto.foto %}
+    <script src="{{ url_for('static', filename='js/visor.js') }}"></script>
+{% endif %}
+{% endblock %}

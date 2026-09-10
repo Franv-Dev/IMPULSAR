@@ -11,6 +11,7 @@ sobre la pantalla.
 """
 
 from sqlalchemy import and_, case, func, or_
+from sqlalchemy.orm import joinedload
 
 from app.blog import reglas
 from app.blog.modelo_favorito import Favorite
@@ -20,7 +21,9 @@ from app.blog.modelo_resenia import Review
 from app.perfil.modelo_horario import Horario
 from app.servicios.modelo import Service
 from db import db
+from models.event import Event
 from models.product import Product
+from services.eventos import proximos
 from services.horarios import ventana_actual
 from services.ratings import query_posts_con_rating
 
@@ -44,12 +47,18 @@ def ids_favoritos(user_id):
     return {post_id for (post_id,) in filas}
 
 
-def _distancia_km(lat, lon):
+def distancia_km_sql(lat, lon):
     """Expresion SQL: distancia en km entre (lat, lon) y cada Post.
 
     Formula del semiverseno resuelta con funciones matematicas de MySQL, para
     que el ORDER BY y la paginacion los siga resolviendo la base de datos en
     vez de traer todos los posts a Python para ordenarlos ahi.
+
+    Es publica (era _distancia_km) porque tiene un segundo consumidor: el
+    catalogo publico de productos, que ordena y acota por cercania sobre el
+    MISMO Post -- un producto no tiene coordenadas propias, las hereda del
+    emprendimiento que lo vende. Copiarla alla habria dejado dos versiones de
+    la misma cuenta, y la de alla se olvidaria del CASE que acota el ACOS.
     """
     argumento = (
         func.cos(func.radians(lat)) * func.cos(func.radians(Post.latitude)) *
@@ -68,8 +77,12 @@ def _distancia_km(lat, lon):
     return 6371 * func.acos(argumento_acotado)
 
 
-def _abierto_ahora_sql(ahora=None):
+def abierto_ahora_sql(ahora=None):
     """EXISTS que deja solo los posts cuyo autor esta atendiendo en este momento.
+
+    Publica por lo mismo que distancia_km_sql: el catalogo de productos ofrece
+    el mismo "Abierto ahora", y ahi tambien la pregunta es sobre el
+    emprendimiento que vende, no sobre el producto.
 
     Es la misma regla de services.horarios.esta_abierto() escrita en SQL, y va
     en SQL a proposito: resuelto en Python habria que traer los horarios de
@@ -115,7 +128,7 @@ def _coincide_en_catalogo_sql(patron):
     """EXISTS que dan True si el texto buscado aparece en el catalogo del post.
 
     Uno por tabla -- products y services -- correlacionados con Post por
-    post_id, igual que _abierto_ahora_sql se correlaciona por author.
+    post_id, igual que abierto_ahora_sql se correlaciona por author.
 
     DOS EXISTS Y NO UN JOIN, que es lo que sale primero. Joineando products y
     services, un emprendimiento con cuatro productos que matchean vuelve
@@ -184,7 +197,7 @@ def buscar_posts(
 
     abierto_ahora deja solo los que estan atendiendo en este momento, segun
     los horarios del emprendedor y el reloj de Argentina. Lo resuelve un EXISTS
-    sobre horarios (ver _abierto_ahora_sql), no un bucle sobre las filas.
+    sobre horarios (ver abierto_ahora_sql), no un bucle sobre las filas.
 
     La busqueda por texto mira el titulo y el cuerpo del emprendimiento y
     tambien su catalogo disponible: el nombre y la descripcion de sus
@@ -214,14 +227,14 @@ def buscar_posts(
         query = query.filter(Post.category == categoria)
 
     if abierto_ahora:
-        query = query.filter(_abierto_ahora_sql())
+        query = query.filter(abierto_ahora_sql())
 
     ordenar_por_distancia = lat is not None and lon is not None
     if ordenar_por_distancia:
         # Sin coordenadas propias, un post no tiene con que calcular la
         # distancia: se excluye en vez de mostrarlo con un orden arbitrario.
         query = query.filter(Post.latitude.isnot(None), Post.longitude.isnot(None))
-        distancia = _distancia_km(lat, lon)
+        distancia = distancia_km_sql(lat, lon)
         query = query.add_columns(distancia.label("distance_km"))
         if radio_km is not None:
             # Va la expresion entera y no la etiqueta "distance_km": MySQL no
@@ -343,7 +356,7 @@ def metricas_de_posts(post_ids):
 def _orden_de_favoritos_sql(orden):
     """Las clausulas del ORDER BY de "Mis favoritos", segun lo que eligio el usuario.
 
-    Aparte de favoritos_de() por lo mismo que _abierto_ahora_sql: es una
+    Aparte de favoritos_de() por lo mismo que abierto_ahora_sql: es una
     decision con ramas propias, y adentro de la consulta obligaria a leer todo
     el armado para entender cual es el orden.
 
@@ -404,6 +417,21 @@ def favoritos_de(user_id, pagina, por_pagina, categoria=None, orden=None):
     )
 
 
+def ferias_de(post_id, hoy=None):
+    """Las ferias y eventos del emprendimiento que todavia no pasaron.
+
+    Es el dato que ni Mercado Libre ni Marketplace muestran -- donde encontrar
+    a la persona en vivo -- y la ficha no lo mostraba aunque Post.eventos
+    existe desde la tanda de eventos.
+
+    El filtro y el orden salen de services.eventos.proximos(), que es el mismo
+    que usa la cartelera: ahi ya esta decidido que el corte es por dia y no por
+    hora, y que el id desempata al final porque la hora es opcional. Repetir el
+    order_by aca a mano se comia justamente ese desempate.
+    """
+    return proximos(Event.query.filter(Event.post_id == post_id), hoy).all()
+
+
 def productos_de(post_id, solo_disponibles):
     """El catalogo del emprendimiento.
 
@@ -427,8 +455,16 @@ def servicios_de(post_id, solo_disponibles):
 
 
 def resenias_de(post_id):
+    """Las resenias del emprendimiento, de la mas nueva a la mas vieja.
+
+    Con el autor de cada una traido en la misma consulta. La ficha ahora firma
+    cada resenia con el nombre de quien la escribio, en vez del "Usuario #7"
+    que mostraba antes; leerlo de `r.user` dentro del bucle serian tantas
+    consultas como resenias tenga el emprendimiento.
+    """
     return (
         Review.query
+        .options(joinedload(Review.user))
         .filter_by(post_id=post_id)
         .order_by(Review.created.desc())
         .all()

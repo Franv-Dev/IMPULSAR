@@ -364,13 +364,17 @@ def test_el_detalle_muestra_editado_cuando_corresponde(client, crear_usuario, cr
     login(cliente.id)
     client.post(f"/blog/{post.id}/review", data={"rating": "3", "comment": "Regular"})
 
+    # El rediseño de la ficha cambio el texto: la fecha de la resenia ahora es
+    # relativa ("hace 2 semanas") y el aviso va pegado atras, "· editada", en
+    # vez del "(editado)" suelto de antes. Lo que se fija sigue siendo lo
+    # mismo: que se avise, y solo cuando corresponde.
     sin_editar = client.get(f"/blog/{post.id}").get_data(as_text=True)
-    assert "(editado)" not in sin_editar
+    assert "editada" not in sin_editar
 
     client.post(f"/blog/{post.id}/review", data={"rating": "5", "comment": "Mejoró"})
 
     editado = client.get(f"/blog/{post.id}").get_data(as_text=True)
-    assert "(editado)" in editado
+    assert "editada" in editado
 
 
 def test_el_autor_de_la_resenia_puede_eliminarla(client, crear_usuario, crear_post, login):

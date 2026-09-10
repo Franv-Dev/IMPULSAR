@@ -462,8 +462,9 @@ def test_los_servicios_no_reemplazan_al_catalogo_de_productos(
 
     assert "Caño de PVC" in html
     assert "Destapaciones" in html
-    assert "Qué vende" in html
-    assert "Qué hace" in html
+    # Los dos titulos los renombro el rediseño de la ficha.
+    assert "Lo que vende" in html
+    assert "Lo que hace por encargo" in html
 
 
 # --- busqueda publica por rubro y zona

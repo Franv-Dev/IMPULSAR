@@ -7,6 +7,7 @@ servicio, el horario del dueño y los turnos ya tomados.
 """
 
 from datetime import date, datetime, time, timedelta
+from html.parser import HTMLParser
 
 import pytest
 from sqlalchemy import event
@@ -18,8 +19,11 @@ from app.servicios.modelo import Service
 from app.turnos import consultas as consultas_turnos
 from app.turnos.consultas import horas_tomadas, slots_disponibles
 from app.turnos.modelo_turno import EstadosTurno, QuienCancela, Turno
-from app.turnos.reglas import cortar_en_slots, es_slot_duplicado, fin_de_turno
-from services.eventos import hoy_en_argentina
+from app.turnos.reglas import (
+    cortar_en_slots, es_slot_duplicado, fin_de_turno, huecos_entre,
+    marcar_ocupados, partir_por_fecha,
+)
+from services.eventos import formatear_fecha, hoy_en_argentina
 from services.horarios import ZONA_ARGENTINA
 
 # 2026-09-14 fue lunes (weekday() == 0) y 2026-09-15 martes. Se usan fechas
@@ -489,6 +493,41 @@ def escenario(db, crear_usuario, crear_post, login):
     return _crear
 
 
+class _LectorDeSlots(HTMLParser):
+    """Junta los radios de horario de la pantalla de reservar.
+
+    Con html.parser y no con una expresion regular sobre el HTML: lo que se
+    quiere saber de cada slot es si esta DESHABILITADO, y eso es un atributo que
+    puede ir en cualquier orden y sin valor. Un regex tendria que adivinar el
+    orden de los atributos y romperia con el primer retoque de la plantilla.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.slots = {}
+
+    def handle_starttag(self, tag, attrs):
+        atributos = dict(attrs)
+        if tag != "input" or atributos.get("name") != "hora_inicio":
+            return
+        # True = se puede elegir; False = esta dibujado pero apagado.
+        self.slots[atributos["value"]] = "disabled" not in atributos
+
+
+def _slots_de(pagina):
+    """{"09:00": True, "09:30": False, ...} para la pantalla de reservar."""
+    lector = _LectorDeSlots()
+    lector.feed(pagina)
+    return lector.slots
+
+
+def _reservar_get(client, servicio_id, fecha):
+    return client.get(
+        f"/turnos/servicio/{servicio_id}?fecha={fecha.isoformat()}"
+        f"&desde={fecha.isoformat()}"
+    ).get_data(as_text=True)
+
+
 def _pedir(client, servicio_id, fecha, hora="09:00"):
     return client.post(f"/turnos/servicio/{servicio_id}",
                        data={"fecha": fecha.isoformat(), "hora_inicio": hora})
@@ -524,16 +563,22 @@ def test_reservar_un_slot_crea_el_turno(client, escenario):
     assert turno.cupo_activo == 1
 
 
-def test_un_slot_reservado_desaparece_de_la_pantalla(client, escenario):
+def test_un_slot_reservado_SE_DIBUJA_apagado(client, escenario):
+    """No desaparece: se ve, y no se puede elegir.
+
+    Es el cambio de la tanda de rediseño. Una grilla con cuatro horas sueltas y
+    sin explicacion se lee como que el negocio casi no atiende, y no como que el
+    resto ya se lo llevaron. Lo que si tiene que seguir pasando es que no se
+    pueda reservar, y de eso se ocupa el chequeo de la vista, no el atributo
+    disabled: ver test_no_se_puede_reservar_un_horario_que_no_estaba_en_la_lista.
+    """
     e = escenario()
     _pedir(client, e.servicio.id, e.fecha, "09:30")
 
-    pagina = client.get(
-        f"/turnos/servicio/{e.servicio.id}?fecha={e.fecha.isoformat()}"
-    ).get_data(as_text=True)
+    slots = _slots_de(_reservar_get(client, e.servicio.id, e.fecha))
 
-    assert 'value="09:30"' not in pagina
-    assert 'value="10:00"' in pagina
+    assert slots["09:30"] is False
+    assert slots["10:00"] is True
 
 
 def test_no_se_puede_reservar_un_horario_que_no_estaba_en_la_lista(client, escenario):
@@ -581,14 +626,15 @@ def test_los_slots_de_hoy_que_ya_pasaron_no_se_ofrecen(client, db, escenario, mo
         lambda: datetime.combine(hoy, time(9, 45), tzinfo=ZONA_ARGENTINA),
     )
 
-    pagina = client.get(
-        f"/turnos/servicio/{e.servicio.id}?fecha={hoy.isoformat()}"
-    ).get_data(as_text=True)
+    slots = _slots_de(_reservar_get(client, e.servicio.id, hoy))
 
-    assert 'value="09:00"' not in pagina
-    assert 'value="09:30"' not in pagina
-    assert 'value="10:00"' in pagina
-    assert 'value="10:30"' in pagina
+    # Se ven, como los ocupados, y no se pueden elegir. Sacarlos de la grilla
+    # dejaria el dia de hoy con un agujero al principio que no se distingue de
+    # un dia con poca atencion.
+    assert slots["09:00"] is False
+    assert slots["09:30"] is False
+    assert slots["10:00"] is True
+    assert slots["10:30"] is True
 
 
 def test_el_dueno_no_se_saca_turno_a_si_mismo(client, escenario, login):
@@ -884,7 +930,12 @@ def test_la_agenda_del_vendedor_muestra_lo_que_le_sacaron(client, escenario, log
     _pedir(client, e.servicio.id, e.fecha, "09:00")
     login(e.vendedor.id)
 
-    pagina = client.get("/turnos/agenda").get_data(as_text=True)
+    # Con ?fecha=: la agenda es UN DIA y por defecto muestra hoy, asi que hay
+    # que pedirle el dia del turno igual que se lo pide una persona tocando la
+    # tira de la semana.
+    pagina = client.get(
+        f"/turnos/agenda?fecha={e.fecha.isoformat()}"
+    ).get_data(as_text=True)
 
     assert "Corte" in pagina
     assert "clienta" in pagina
@@ -898,9 +949,12 @@ def test_la_agenda_no_muestra_turnos_de_otro_vendedor(
     ajeno = crear_usuario(username="ajeno")
     login(ajeno.id)
 
-    pagina = client.get("/turnos/agenda").get_data(as_text=True)
+    pagina = client.get(
+        f"/turnos/agenda?fecha={e.fecha.isoformat()}"
+    ).get_data(as_text=True)
 
-    assert "Todavía no te sacaron" in pagina
+    assert "Corte" not in pagina
+    assert "clienta" not in pagina
 
 
 def test_el_cliente_ve_quien_le_cancelo_el_turno(client, escenario, login):
@@ -1080,3 +1134,400 @@ def test_el_cliente_si_puede_tener_dos_turnos_a_la_misma_hora(
                                  hora_inicio=time(9, 0)).all()
     assert len(mios) == 2
     assert {t.service_id for t in mios} == {e.servicio.id, otro_servicio.id}
+
+
+# ==========================================================================
+# LO QUE AGREGA LA TANDA DE REDISEÑO DE TURNOS
+#
+# Las tres pantallas dejan de ser listas planas: reservar tiene una tira de
+# siete dias con lo que le queda a cada uno, mis turnos se parte en proximos y
+# pasados, y la agenda es un dia con sus huecos dibujados. Lo puro va primero,
+# como en el resto del archivo.
+# ==========================================================================
+
+# -------------------------------------------------- marcar_ocupados (puro)
+
+def test_marcar_ocupados_no_saca_nada_solo_marca():
+    slots = [(time(9, 0), time(9, 30)), (time(9, 30), time(10, 0))]
+
+    marcados = marcar_ocupados(slots, {time(9, 0)})
+
+    assert marcados == [
+        (time(9, 0), time(9, 30), True),
+        (time(9, 30), time(10, 0), False),
+    ]
+
+
+def test_marcar_ocupados_sin_nada_tomado_deja_todo_en_false():
+    slots = [(time(9, 0), time(9, 30))]
+
+    assert marcar_ocupados(slots, set()) == [(time(9, 0), time(9, 30), False)]
+
+
+# ------------------------------------------------- partir_por_fecha (puro)
+
+class _TurnoFalso:
+    """Lo unico que mira partir_por_fecha es la fecha, asi que con esto basta."""
+
+    def __init__(self, fecha):
+        self.fecha = fecha
+
+
+def test_partir_por_fecha_da_vuelta_los_proximos():
+    """La consulta los trae por fecha DESC; los proximos se leen al reves.
+
+    Es el bug que arregla la tanda: lo primero que se veia era el turno mas
+    viejo del historial y el de mañana quedaba al final.
+    """
+    hoy = date(2026, 9, 14)
+    turnos = [_TurnoFalso(date(2026, 9, 20)), _TurnoFalso(date(2026, 9, 16)),
+              _TurnoFalso(date(2026, 9, 10)), _TurnoFalso(date(2026, 9, 1))]
+
+    proximos, pasados = partir_por_fecha(turnos, hoy)
+
+    assert [t.fecha for t in proximos] == [date(2026, 9, 16), date(2026, 9, 20)]
+    assert [t.fecha for t in pasados] == [date(2026, 9, 10), date(2026, 9, 1)]
+
+
+def test_el_turno_de_hoy_todavia_es_proximo():
+    """El corte es por FECHA, no por hora: lo de hoy es lo que se mira hoy."""
+    hoy = date(2026, 9, 14)
+
+    proximos, pasados = partir_por_fecha([_TurnoFalso(hoy)], hoy)
+
+    assert len(proximos) == 1
+    assert pasados == []
+
+
+# ---------------------------------------------------- huecos_entre (puro)
+
+def test_un_dia_sin_turnos_es_un_solo_hueco():
+    assert huecos_entre(time(9, 0), time(18, 0), []) == [(time(9, 0), time(18, 0))]
+
+
+def test_un_turno_en_el_medio_deja_un_hueco_de_cada_lado():
+    huecos = huecos_entre(time(9, 0), time(18, 0),
+                          [(time(12, 0), time(13, 30))])
+
+    assert huecos == [(time(9, 0), time(12, 0)), (time(13, 30), time(18, 0))]
+
+
+def test_un_turno_pegado_a_la_apertura_no_genera_un_hueco_de_cero():
+    huecos = huecos_entre(time(9, 0), time(18, 0), [(time(9, 0), time(10, 0))])
+
+    assert huecos == [(time(10, 0), time(18, 0))]
+
+
+def test_el_dia_lleno_no_tiene_huecos():
+    huecos = huecos_entre(time(9, 0), time(10, 0), [(time(9, 0), time(10, 0))])
+
+    assert huecos == []
+
+
+def test_los_huecos_salen_en_orden_de_reloj_aunque_entren_desordenados():
+    """La agenda los intercala con los turnos por hora: el orden importa."""
+    huecos = huecos_entre(time(9, 0), time(18, 0), [
+        (time(15, 0), time(16, 0)),
+        (time(10, 0), time(11, 0)),
+    ])
+
+    assert huecos == [
+        (time(9, 0), time(10, 0)),
+        (time(11, 0), time(15, 0)),
+        (time(16, 0), time(18, 0)),
+    ]
+
+
+def test_un_turno_que_se_pasa_del_cierre_no_deja_un_hueco_al_final():
+    """Una fila vieja puede tener un turno mas largo que el horario de hoy."""
+    huecos = huecos_entre(time(9, 0), time(10, 0), [(time(9, 30), time(11, 0))])
+
+    assert huecos == [(time(9, 0), time(9, 30))]
+
+
+@pytest.mark.parametrize("abre, cierra", [
+    (None, time(18, 0)),
+    (time(9, 0), None),
+    (time(20, 0), time(2, 0)),   # cruza medianoche, excluido en v1
+    (time(9, 0), time(9, 0)),    # el rango ambiguo que nadie puede leer
+])
+def test_sin_rango_de_atencion_no_hay_huecos(abre, cierra):
+    assert huecos_entre(abre, cierra, []) == []
+
+
+# ------------------------------------------------- las consultas de la semana
+
+def test_horas_tomadas_por_dia_agrupa_por_fecha(db, servicio_con_turnos):
+    servicio, dueño, cliente = servicio_con_turnos()
+    _reservar(db, servicio, cliente, LUNES, time(9, 0), time(9, 30))
+    _reservar(db, servicio, cliente, LUNES, time(10, 0), time(10, 30))
+    _reservar(db, servicio, cliente, MARTES, time(9, 0), time(9, 30))
+
+    tomadas = consultas_turnos.horas_tomadas_por_dia(servicio.id, LUNES, MARTES)
+
+    assert tomadas[LUNES] == {time(9, 0), time(10, 0)}
+    assert tomadas[MARTES] == {time(9, 0)}
+
+
+def test_horas_tomadas_por_dia_no_mira_fuera_del_rango(db, servicio_con_turnos):
+    servicio, dueño, cliente = servicio_con_turnos()
+    _reservar(db, servicio, cliente, MARTES, time(9, 0), time(9, 30))
+
+    tomadas = consultas_turnos.horas_tomadas_por_dia(servicio.id, LUNES, LUNES)
+
+    assert tomadas == {}
+
+
+def test_semana_de_slots_devuelve_siete_dias_seguidos(db, servicio_con_turnos):
+    servicio, dueño, _cliente = servicio_con_turnos()
+    ahora = datetime.combine(LUNES, time(0, 1), tzinfo=ZONA_ARGENTINA)
+
+    semana = consultas_turnos.semana_de_slots(servicio, LUNES, ahora)
+
+    assert len(semana) == 7
+    assert [dia["fecha"] for dia in semana][:2] == [LUNES, MARTES]
+
+
+def test_la_tira_cuenta_los_libres_de_cada_dia(db, servicio_con_turnos):
+    """Es lo que reemplaza al <input type=date> a ciegas de la pantalla vieja."""
+    servicio, dueño, cliente = servicio_con_turnos()
+    _reservar(db, servicio, cliente, LUNES, time(9, 0), time(9, 30))
+    ahora = datetime.combine(LUNES, time(0, 1), tzinfo=ZONA_ARGENTINA)
+
+    lunes = consultas_turnos.semana_de_slots(servicio, LUNES, ahora)[0]
+
+    # El horario de la fixture es de 9 a 11 en tramos de 30: cuatro slots.
+    assert len(lunes["slots"]) == 4
+    assert lunes["libres"] == 3
+    assert lunes["motivo"] is consultas_turnos.HAY_LUGAR
+
+
+def test_los_tres_motivos_de_un_dia_vacio_se_distinguen(db, servicio_con_turnos):
+    """La lista vacia de slots_disponibles junta seis casos; aca se separan."""
+    servicio, dueño, cliente = servicio_con_turnos()
+    ahora = datetime.combine(LUNES, time(0, 1), tzinfo=ZONA_ARGENTINA)
+
+    for inicio, fin in cortar_en_slots(time(9, 0), time(11, 0), 30):
+        _reservar(db, servicio, cliente, LUNES, inicio, fin)
+
+    semana = consultas_turnos.semana_de_slots(servicio, LUNES, ahora)
+    por_fecha = {dia["fecha"]: dia["motivo"] for dia in semana}
+
+    # El lunes tiene grilla y esta toda tomada; el martes no tiene horario
+    # cargado (la fixture solo carga el lunes).
+    assert por_fecha[LUNES] == consultas_turnos.COMPLETO
+    assert por_fecha[MARTES] == consultas_turnos.SIN_HORARIO
+
+
+def test_un_dia_marcado_cerrado_dice_que_esta_cerrado(db, servicio_con_turnos):
+    servicio, dueño, _cliente = servicio_con_turnos()
+    db.session.add(Horario(user_id=servicio.post.author, dia_semana=1,
+                           abre=time(9, 0), cierra=time(11, 0), cerrado=True))
+    db.session.commit()
+    ahora = datetime.combine(LUNES, time(0, 1), tzinfo=ZONA_ARGENTINA)
+
+    semana = consultas_turnos.semana_de_slots(servicio, LUNES, ahora)
+
+    assert semana[1]["motivo"] == consultas_turnos.CERRADO
+
+
+def test_un_servicio_que_no_toma_turnos_lo_dice_en_los_siete_dias(
+    db, servicio_con_turnos
+):
+    servicio, dueño, _cliente = servicio_con_turnos()
+    servicio.turnos_habilitados = False
+    db.session.commit()
+    ahora = datetime.combine(LUNES, time(0, 1), tzinfo=ZONA_ARGENTINA)
+
+    semana = consultas_turnos.semana_de_slots(servicio, LUNES, ahora)
+
+    assert {dia["motivo"] for dia in semana} == {consultas_turnos.SIN_TURNOS}
+
+
+def test_turnos_por_dia_cuenta_solo_los_activos(db, servicio_con_turnos):
+    servicio, dueño, cliente = servicio_con_turnos()
+    _reservar(db, servicio, cliente, LUNES, time(9, 0), time(9, 30))
+    _reservar(db, servicio, cliente, LUNES, time(10, 0), time(10, 30),
+              estado=EstadosTurno.CANCELADO)
+    _reservar(db, servicio, cliente, MARTES, time(9, 0), time(9, 30))
+
+    por_dia = consultas_turnos.turnos_por_dia_de(
+        servicio.post.author, LUNES, MARTES
+    )
+
+    assert por_dia == {LUNES: 1, MARTES: 1}
+
+
+def test_los_turnos_del_dia_vienen_en_orden_de_reloj(db, servicio_con_turnos):
+    """La agenda vieja ordenaba por fecha DESC y mostraba el mas viejo primero."""
+    servicio, dueño, cliente = servicio_con_turnos()
+    _reservar(db, servicio, cliente, LUNES, time(10, 0), time(10, 30))
+    _reservar(db, servicio, cliente, LUNES, time(9, 0), time(9, 30))
+
+    del_dia = consultas_turnos.turnos_recibidos_del_dia(servicio.post.author, LUNES)
+
+    assert [turno.hora_inicio for turno in del_dia] == [time(9, 0), time(10, 0)]
+
+
+def test_los_cancelados_del_dia_siguen_viniendo(db, servicio_con_turnos):
+    """El vendedor tiene que ver que alguien se dio de baja del dia que mira."""
+    servicio, dueño, cliente = servicio_con_turnos()
+    _reservar(db, servicio, cliente, LUNES, time(9, 0), time(9, 30),
+              estado=EstadosTurno.CANCELADO)
+
+    del_dia = consultas_turnos.turnos_recibidos_del_dia(servicio.post.author, LUNES)
+
+    assert len(del_dia) == 1
+    assert consultas_turnos.rangos_activos_de(del_dia) == []
+
+
+# --------------------------------------------------------- las tres pantallas
+
+def test_la_pantalla_de_reservar_dibuja_la_tira_de_siete_dias(client, escenario):
+    e = escenario()
+
+    pagina = _reservar_get(client, e.servicio.id, e.fecha)
+
+    # Siete dias, y el elegido marcado: sin la tira habia que adivinar cual
+    # tenia lugar escribiendo fechas en un <input type="date">.
+    assert pagina.count('class="dia ') == 7
+    assert 'aria-current="date"' in pagina
+
+
+def test_un_dia_sin_horario_explica_por_que_esta_vacio(client, escenario):
+    """Antes los seis vacios decian todos "no hay turnos disponibles"."""
+    e = escenario()
+    martes = e.fecha + timedelta(days=1)
+
+    pagina = _reservar_get(client, e.servicio.id, martes)
+
+    assert "Ese día no atiende" in pagina
+    assert _slots_de(pagina) == {}
+
+
+def test_con_el_dia_lleno_lo_dice_y_no_deja_confirmar(client, db, escenario):
+    e = escenario()
+    for hora in ("09:00", "09:30", "10:00", "10:30"):
+        _pedir(client, e.servicio.id, e.fecha, hora)
+
+    pagina = _reservar_get(client, e.servicio.id, e.fecha)
+
+    assert "No queda ningún horario" in pagina
+
+
+def test_reservar_ya_no_manda_un_submit_por_horario(client, escenario):
+    """El cambio de fondo: un click de mas ya no reserva.
+
+    Cada horario era un <button type="submit"> adentro de su propio <form>.
+    Ahora los horarios son radios de UN formulario y el submit es el boton de
+    confirmar, uno solo.
+    """
+    e = escenario()
+
+    pagina = _reservar_get(client, e.servicio.id, e.fecha)
+
+    assert pagina.count('name="hora_inicio"') == 4
+    assert pagina.count('class="slot__radio"') == 4
+    # Un solo boton que envia este formulario, y esta al final.
+    assert pagina.count("resumen-turno__boton") == 1
+
+
+def test_mis_turnos_pone_los_proximos_arriba(client, escenario):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    pagina = client.get("/turnos/mios").get_data(as_text=True)
+
+    assert pagina.index("Próximos") < pagina.index("Corte")
+
+
+def test_mis_turnos_ya_no_lleva_a_la_agenda_del_vendedor(client, escenario):
+    """La agenda vive en el panel: son dos cabezas distintas."""
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+
+    pagina = client.get("/turnos/mios").get_data(as_text=True)
+
+    assert "Turnos que recibí" not in pagina
+
+
+def test_cancelar_pide_confirmacion_antes_del_post(client, escenario):
+    """El boton abre un aviso; el POST esta adentro, y dice las dos consecuencias."""
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    turno = Turno.query.one()
+
+    pagina = client.get("/turnos/mios").get_data(as_text=True)
+
+    assert "¿Cancelás este turno?" in pagina
+    assert "vuelve a quedar libre" in pagina
+    assert "un aviso por mail" in pagina
+    assert f"/turnos/{turno.id}/cancelar" in pagina
+
+
+def test_la_agenda_dibuja_los_huecos_del_dia(client, escenario, login):
+    """Los huecos son lo que todavia se puede reservar: media agenda."""
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:30")
+    login(e.vendedor.id)
+
+    pagina = client.get(
+        f"/turnos/agenda?fecha={e.fecha.isoformat()}"
+    ).get_data(as_text=True)
+
+    # El horario es de 9 a 11 y el turno va de 9:30 a 10:00: quedan dos huecos.
+    assert pagina.count('class="hueco"') == 2
+    assert "lo puede reservar alguien" in pagina
+
+
+def test_la_agenda_arranca_en_hoy_y_lo_marca_en_la_tira(client, escenario, login):
+    """Sin ?fecha= la agenda muestra hoy: es lo que se le pide al entrar."""
+    e = escenario()
+    login(e.vendedor.id)
+
+    pagina = client.get("/turnos/agenda").get_data(as_text=True)
+
+    assert pagina.count('aria-current="date"') == 1
+    assert formatear_fecha(hoy_en_argentina()) in pagina
+
+
+def test_la_agenda_avisa_del_turno_cancelado_de_ese_dia(client, escenario, login):
+    e = escenario()
+    _pedir(client, e.servicio.id, e.fecha, "09:00")
+    turno = Turno.query.one()
+    login(e.vendedor.id)
+    client.post(f"/turnos/{turno.id}/cancelar")
+
+    pagina = client.get(
+        f"/turnos/agenda?fecha={e.fecha.isoformat()}"
+    ).get_data(as_text=True)
+
+    assert "quedar libre" in pagina
+    assert "Lo cancelaste vos" in pagina
+
+
+def test_el_dia_de_hoy_que_ya_arranco_no_dice_que_esta_lleno(
+    client, db, escenario, monkeypatch
+):
+    """"Ya está tomado" y "ya pasó" son dos cosas distintas y se dicen distinto.
+
+    Con un solo motivo, un dia sin ninguna reserva pero ya empezado decia "los
+    turnos de ese día ya están tomados", que es mentira y ademas manda a la
+    persona a buscar un culpable que no existe.
+    """
+    e = escenario()
+    hoy = hoy_en_argentina()
+    Horario.query.filter_by(user_id=e.vendedor.id).delete()
+    db.session.add(Horario(user_id=e.vendedor.id, dia_semana=hoy.weekday(),
+                           abre=time(9, 0), cierra=time(11, 0), cerrado=False))
+    db.session.commit()
+
+    monkeypatch.setattr(
+        "app.turnos.vistas.ahora_en_argentina",
+        lambda: datetime.combine(hoy, time(23, 0), tzinfo=ZONA_ARGENTINA),
+    )
+
+    pagina = _reservar_get(client, e.servicio.id, hoy)
+
+    assert "Por hoy ya no llegás" in pagina
+    assert "ya están tomados" not in pagina

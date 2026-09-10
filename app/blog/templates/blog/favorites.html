@@ -55,6 +55,13 @@
                     </a>
                 </div>
 
+                {# Desde la tanda del catálogo se guardan dos cosas distintas.
+                   Las solapas son un parcial compartido con products.guardados:
+                   ver partials/_solapas_favoritos.html. #}
+                {% with activa = 'emprendimientos' %}
+                    {% include "partials/_solapas_favoritos.html" %}
+                {% endwith %}
+
                 {% with messages = get_flashed_messages() %}
                     {% if messages %}
                         <div class="auth__messages">

@@ -1,0 +1,24 @@
+{#  Las dos solapas de «Mis favoritos»: emprendimientos y productos.
+
+    Desde la tanda del catálogo se guardan las dos cosas, y son tablas
+    distintas (favorites y product_favorites), así que cada solapa la sirve el
+    dominio al que pertenece lo que muestra: blog.my_favorites y
+    products.guardados.
+
+    Es un parcial y no dos copias porque las dos pantallas tienen que ofrecer
+    exactamente el mismo par: apenas se separen, entrar a una sería quedarse
+    sin salida hacia la otra.
+
+    Requiere `activa` en el contexto: "emprendimientos" o "productos". #}
+<nav class="solapas-favoritos" aria-label="Qué guardaste">
+    <a href="{{ url_for('blog.my_favorites') }}"
+       class="solapas-favoritos__tab {% if activa == 'emprendimientos' %}solapas-favoritos__tab--activa{% endif %}"
+       {% if activa == 'emprendimientos' %}aria-current="page"{% endif %}>
+        Emprendimientos
+    </a>
+    <a href="{{ url_for('products.guardados') }}"
+       class="solapas-favoritos__tab {% if activa == 'productos' %}solapas-favoritos__tab--activa{% endif %}"
+       {% if activa == 'productos' %}aria-current="page"{% endif %}>
+        Productos
+    </a>
+</nav>

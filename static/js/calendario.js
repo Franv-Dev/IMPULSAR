@@ -41,6 +41,16 @@
     // la celda y ademas no aporta: el numero exacto lo dice el panel.
     var MAX_PUNTOS = 3;
 
+    // MODO ENLACE: en la cartelera (/eventos/) el dia no es un boton que filtra
+    // en el navegador, es un ENLACE a ?dia=AAAA-MM-DD. Asi la cartelera
+    // filtrada se comparte por link, vuelve con el boton de atras y anda sin
+    // JS -- que es la diferencia entre un calendario que filtra y uno que solo
+    // pinta puntitos. En el home no hay modo enlace: ahi el panel de al lado se
+    // arma en el navegador y recargar la pagina para ver tres eventos seria
+    // peor. Los dos datos los pone el servidor en el HTML del parcial.
+    var enlaceDia = raiz.dataset.enlaceDia || null;
+    var diaActivo = raiz.dataset.diaActivo || null;  // "AAAA-MM-DD", o null
+
     var anio = null;
     var mes = null;          // 1-12
     var hoy = null;          // "AAAA-MM-DD" segun el reloj de Argentina, lo da la API
@@ -207,24 +217,39 @@
         // Solo los dias con eventos son botones: un dia vacio no hace nada, y
         // volverlo foco de teclado obligaria a tabular 30 veces para pasar el
         // calendario.
-        var nodo = document.createElement(tiene ? "button" : "div");
+        var clave = claveDia(a, m, d);
+        var elegido = enlaceDia ? clave === diaActivo : seleccionado === d;
+        // Solo los dias con eventos son interactivos: un dia vacio no hace
+        // nada, y volverlo foco de teclado obligaria a tabular 30 veces para
+        // pasar el calendario.
+        var nodo = document.createElement(
+            tiene ? (enlaceDia ? "a" : "button") : "div"
+        );
         nodo.className = "calendario__dia";
 
         if (tiene) {
-            nodo.type = "button";
             nodo.classList.add("has-events");
             nodo.setAttribute(
                 "aria-label",
                 d + " de " + MESES[m - 1] + ", " + eventos.length +
                 (eventos.length === 1 ? " evento" : " eventos")
             );
-            // aria-pressed y no aria-expanded: el dia ya no despliega nada,
-            // ahora es un filtro que queda apretado o suelto.
-            nodo.setAttribute("aria-pressed", seleccionado === d ? "true" : "false");
-            nodo.addEventListener("click", function () { alternar(d); });
+            if (enlaceDia) {
+                // El dia ya elegido enlaza a la cartelera SIN ?dia=: volver a
+                // tocarlo suelta el filtro, que es lo mismo que hace el boton
+                // en el home.
+                nodo.href = elegido ? enlaceDia : enlaceDia + "dia=" + clave;
+                if (elegido) nodo.setAttribute("aria-current", "date");
+            } else {
+                nodo.type = "button";
+                // aria-pressed y no aria-expanded: el dia ya no despliega nada,
+                // ahora es un filtro que queda apretado o suelto.
+                nodo.setAttribute("aria-pressed", elegido ? "true" : "false");
+                nodo.addEventListener("click", function () { alternar(d); });
+            }
         }
-        if (claveDia(a, m, d) === hoy) nodo.classList.add("is-today");
-        if (seleccionado === d) nodo.classList.add("is-selected");
+        if (clave === hoy) nodo.classList.add("is-today");
+        if (elegido) nodo.classList.add("is-selected");
 
         var numero = document.createElement("span");
         numero.className = "calendario__dia-num";
@@ -415,7 +440,14 @@
         // devolverlo al mes actual de un salto.
         pedido = "inicial";
         raiz.classList.add("is-loading");
-        fetch("/api/eventos/", { headers: { "Accept": "application/json" } })
+        // Con un dia elegido el calendario abre en SU mes y no en el actual: si
+        // no, elegir el 3 de octubre desde septiembre repintaria septiembre y el
+        // dia marcado no se veria en ningun lado. Sin dia elegido no se manda
+        // ?mes= y el servidor contesta con el mes en curso segun el reloj de
+        // Argentina, asi el arranque no depende del huso del visitante.
+        var url = "/api/eventos/";
+        if (diaActivo) url += "?mes=" + diaActivo.slice(0, 7);
+        fetch(url, { headers: { "Accept": "application/json" } })
             .then(function (r) {
                 if (!r.ok) throw new Error("HTTP " + r.status);
                 return r.json();

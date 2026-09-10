@@ -274,7 +274,7 @@ def test_sin_emprendimientos_no_se_puede_cargar_un_producto(client, crear_usuari
 
 
 def test_el_abm_requiere_estar_logueado(client):
-    for url in ("/productos/", "/productos/nuevo"):
+    for url in ("/productos/mios", "/productos/nuevo"):
         assert client.get(url).status_code == 302
 
 
@@ -449,7 +449,7 @@ def test_el_panel_muestra_solo_los_productos_propios(
     crear_producto(crear_post(ajeno.id).id, nombre="Pan ajeno")
     login(dueno.id)
 
-    html = client.get("/productos/").get_data(as_text=True)
+    html = client.get("/productos/mios").get_data(as_text=True)
 
     assert "Pan propio" in html
     assert "Pan ajeno" not in html
@@ -461,7 +461,7 @@ def test_el_panel_muestra_el_precio_formateado(
     _usuario, post = emprendedor_con_post()
     crear_producto(post.id, precio="1500.50")
 
-    html = client.get("/productos/").get_data(as_text=True)
+    html = client.get("/productos/mios").get_data(as_text=True)
 
     assert "$ 1.500,50" in html
 
@@ -475,7 +475,7 @@ def test_el_panel_no_ofrece_planes(client, emprendedor_con_post, crear_producto)
     _usuario, post = emprendedor_con_post()
     crear_producto(post.id)
 
-    html = client.get("/productos/").get_data(as_text=True)
+    html = client.get("/productos/mios").get_data(as_text=True)
 
     assert "plan" not in html.lower()
 
@@ -491,7 +491,7 @@ def test_con_pocos_productos_el_panel_no_muestra_el_limite(
     _usuario, post = emprendedor_con_post()
     crear_producto(post.id, nombre="Pan de campo")
 
-    html = client.get("/productos/").get_data(as_text=True)
+    html = client.get("/productos/mios").get_data(as_text=True)
 
     assert "1 producto" in html
     assert f"de {MAX_PRODUCTOS_POR_POST} productos" not in html
@@ -505,7 +505,7 @@ def test_cerca_del_tope_el_panel_si_muestra_el_limite(
     for numero in range(UMBRAL_AVISO_LIMITE):
         crear_producto(post.id, nombre=f"Pan {numero:02d}")
 
-    html = client.get("/productos/").get_data(as_text=True)
+    html = client.get("/productos/mios").get_data(as_text=True)
 
     assert f"{UMBRAL_AVISO_LIMITE} de {MAX_PRODUCTOS_POR_POST} productos" in html
     assert f"te quedan {MAX_PRODUCTOS_POR_POST - UMBRAL_AVISO_LIMITE}" in html
@@ -526,7 +526,7 @@ def test_el_conteo_es_por_emprendimiento_y_no_global(
     crear_producto(otra.id, nombre="Tomate")
     login(dueno.id)
 
-    html = client.get("/productos/").get_data(as_text=True)
+    html = client.get("/productos/mios").get_data(as_text=True)
 
     # Uno en la panaderia y dos en la huerta, no "3 productos" en ningun lado.
     assert "1 producto" in html
@@ -627,7 +627,10 @@ def test_sin_productos_el_dueno_ve_la_invitacion_a_cargar(
 
     html = client.get(f"/blog/{post.id}").get_data(as_text=True)
 
-    assert "Qué vende" in html
+    # El rediseño de la ficha renombro la seccion: "Lo que vende", al lado de
+    # "Lo que hace por encargo". Lo que se fija sigue siendo lo mismo: que al
+    # dueño se le dibuje el bloque aunque este vacio, con el link para cargar.
+    assert "Lo que vende" in html
     assert "/productos/nuevo" in html
 
 

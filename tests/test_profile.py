@@ -595,15 +595,18 @@ def test_las_pantallas_de_cuenta_marcan_su_item_en_el_menu(
     Se chequea el HTML renderizado y no el include, que es justamente lo que
     dejaba pasar el error: el `{% if etiqueta == seccion %}` con `seccion`
     indefinido no falla, da falso y sigue de largo.
+
+    Las tres pantallas del emprendimiento que estaban aca se fueron al menu del
+    panel con la tanda del panel (ver el test de abajo): _menu_cuenta quedo en
+    las de "Mi actividad" y ajustes.
     """
     usuario = crear_usuario(username="tomy")
     login(usuario.id)
 
     pantallas = (
-        ("/blog/mis-emprendimientos", "Mis emprendimientos"),
-        ("/perfil/tomy/resenias", "Reseñas recibidas"),
         ("/perfil/edit", "Ajustes"),
-        ("/servicios/", "Mis servicios"),
+        ("/mensajes/", "Mensajes"),
+        ("/blog/favoritos", "Favoritos"),
     )
 
     # Los ocho items del menu, activo o no. Ajustes ademas tiene sus propias

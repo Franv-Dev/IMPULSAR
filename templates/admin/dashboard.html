@@ -22,18 +22,33 @@
             {% endwith %}
 
             <div class="admin__contenido">
-                <div class="admin__head">
-                    <div>
-                        <h1 class="admin__titulo">
+                {# UN SOLO NÚMERO GRANDE EN LA PANTALLA, y es el que decide si
+                   hoy hay trabajo. Las métricas de abajo son contexto y van
+                   chicas: si compiten en tamaño con esto, la pantalla deja de
+                   tener un titular y pasa a ser un tablero de cifras sueltas.
+
+                   Con las dos colas vacías el número no se dibuja: un cero a
+                   60 px ocuparía la mitad de la pantalla para decir que no hay
+                   nada que hacer. #}
+                <div class="admin-hero">
+                    {% if pendientes %}
+                        <span class="admin-hero__numero">{{ pendientes }}</span>
+                    {% endif %}
+                    <div class="admin-hero__texto">
+                        <h1 class="admin-hero__titulo">
                             {% if pendientes %}
-                                Hoy hay {{ pendientes }} cosa{{ '' if pendientes == 1 else 's' }} para revisar
+                                cosa{{ '' if pendientes == 1 else 's' }} para revisar hoy
                             {% else %}
                                 No hay nada pendiente
                             {% endif %}
                         </h1>
-                        <p class="admin__bajada">
+                        <p class="admin-hero__bajada">
                             {% if pendientes %}
-                                Las colas pendientes van primero; las métricas de la plataforma, abajo.
+                                {{ metricas.reportes_pendientes }}
+                                reporte{{ '' if metricas.reportes_pendientes == 1 else 's' }} sin resolver
+                                y {{ metricas.verificaciones_pendientes }}
+                                verificación{{ '' if metricas.verificaciones_pendientes == 1 else 'es' }} sin revisar.
+                                Las colas van primero; las métricas de la plataforma, abajo.
                             {% else %}
                                 Las dos colas están vacías. Abajo, las métricas de la plataforma.
                             {% endif %}
@@ -65,59 +80,11 @@
                         </div>
 
                         <div class="admin-cola__items">
+                            {# El mismo parcial que dibuja la cola: el ítem se
+                               ve igual acá y allá porque es el mismo, no dos
+                               copias que se van despegando. #}
                             {% for r in reportes %}
-                                <article class="admin-item">
-                                    <div class="admin-item__cabecera">
-                                        <span class="badge {{ 'badge--estado' if r.review_id else 'badge--category' }}">
-                                            {{ 'Reseña' if r.review_id else 'Emprendimiento' }}
-                                        </span>
-                                        <span class="admin-item__objetivo">
-                                            {% if r.post %}
-                                                <a href="{{ url_for('blog.detail', id=r.post.id) }}">{{ r.post.title }}</a>
-                                            {% elif r.review %}
-                                                <a href="{{ url_for('blog.detail', id=r.review.post_id) }}">
-                                                    Reseña de {{ r.review.user.username if r.review.user else 'usuario borrado' }}
-                                                </a>
-                                            {% else %}
-                                                <span class="text-muted">Contenido eliminado</span>
-                                            {% endif %}
-                                        </span>
-                                        <span class="admin-item__fecha">
-                                            {{ r.created.strftime("%d/%m") if r.created else "" }}
-                                        </span>
-                                    </div>
-
-                                    <p class="admin-item__motivo">«{{ r.reason }}»</p>
-                                    <p class="admin-item__autor">
-                                        Reportó {{ r.reporter.username if r.reporter else '—' }}
-                                    </p>
-
-                                    <div class="admin-item__acciones">
-                                        <form method="post" action="{{ url_for('admin.resolve_report', report_id=r.id) }}">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn--secondary btn--chico">
-                                                Marcar resuelto
-                                            </button>
-                                        </form>
-                                        {% if r.post %}
-                                            <form method="post" action="{{ url_for('admin.delete_post', post_id=r.post.id) }}"
-                                                  data-confirm="¿Seguro que querés eliminar «{{ r.post.title }}»? Se borran también sus productos, servicios, reseñas y eventos.">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn--ghost btn--chico">
-                                                    Eliminar emprendimiento
-                                                </button>
-                                            </form>
-                                        {% elif r.review %}
-                                            <form method="post" action="{{ url_for('admin.delete_review', review_id=r.review.id) }}"
-                                                  data-confirm="¿Seguro que querés eliminar esta reseña? No se puede deshacer.">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn--ghost btn--chico">
-                                                    Eliminar reseña
-                                                </button>
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </article>
+                                {% include "admin/_ficha_reporte.html" %}
                             {% endfor %}
                         </div>
                     </section>
@@ -137,37 +104,14 @@
                         </div>
 
                         <div class="admin-cola__items">
+                            {# `compacta`: en el Resumen el documento es un
+                               enlace en la línea de datos y no una caja propia.
+                               Acá sólo se avisa que existe; donde se decide es
+                               en la cola. #}
                             {% for v in verificaciones %}
-                                <article class="admin-item">
-                                    <div class="admin-item__cabecera">
-                                        <span class="badge badge--category">{{ v.servicio.rubro_label }}</span>
-                                        <span class="admin-item__objetivo">{{ v.servicio.titulo }}</span>
-                                        <span class="admin-item__fecha">
-                                            {{ v.created_at.strftime("%d/%m") if v.created_at else "" }}
-                                        </span>
-                                    </div>
-
-                                    <p class="admin-item__autor">
-                                        {{ v.servicio.post.title }} ·
-                                        <a href="{{ url_for('servicios.foto_de_verificacion', id=v.id) }}">Ver documento</a>
-                                    </p>
-
-                                    <div class="admin-item__acciones">
-                                        <form method="post" action="{{ url_for('admin.aprobar_verificacion', verificacion_id=v.id) }}">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn--secondary btn--chico">Aprobar</button>
-                                        </form>
-                                        <form method="post" action="{{ url_for('admin.rechazar_verificacion', verificacion_id=v.id) }}"
-                                              class="admin-item__rechazo">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <label class="sr-only" for="motivo-{{ v.id }}">Motivo del rechazo (opcional)</label>
-                                            <input type="text" name="motivo_rechazo" id="motivo-{{ v.id }}"
-                                                   class="admin-item__motivo-input"
-                                                   placeholder="Motivo del rechazo (opcional)" maxlength="300">
-                                            <button type="submit" class="btn btn--ghost btn--chico">Rechazar</button>
-                                        </form>
-                                    </div>
-                                </article>
+                                {% with compacta = True %}
+                                    {% include "admin/_ficha_verificacion.html" %}
+                                {% endwith %}
                             {% endfor %}
                         </div>
                     </section>

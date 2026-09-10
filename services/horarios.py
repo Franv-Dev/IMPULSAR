@@ -65,15 +65,21 @@ def _abierto_en(horario, momento):
     return horario.abre <= momento < horario.cierra
 
 
-def esta_abierto(horarios, ahora=None):
-    """True si el negocio esta abierto en este momento.
+def hora_de_cierre(horarios, ahora=None):
+    """A que hora cierra la ventana que esta abierta AHORA, o None si esta cerrado.
 
     `horarios` es la lista de Horario del usuario (uno por dia como mucho).
+    Devuelve un `time`, el `cierra` del horario que cubre este momento.
+
+    Es la respuesta larga a la misma pregunta que contesta esta_abierto(): no
+    solo si esta abierto, sino hasta cuando. La ficha del emprendimiento la
+    necesita para decir "Abierto ahora - cierra 19:00", que es el dato que uno
+    realmente busca; con un si/no pelado hay que abrir la tabla de horarios
+    para saber si conviene salir.
 
     Contempla los rangos que cruzan medianoche (un bar de 20:00 a 02:00): a la
     01:00 del martes el negocio esta abierto por el horario del LUNES, no por
-    el del martes. Sin esto, todo lo que cierra pasada la medianoche figuraba
-    cerrado justo en sus horas de mas movimiento.
+    el del martes, y la hora de cierre que devuelve es la de ese rango.
     """
     hoy, ayer, momento = ventana_actual(ahora)
 
@@ -83,18 +89,30 @@ def esta_abierto(horarios, ahora=None):
     if horario_hoy:
         if horario_hoy.cierra > horario_hoy.abre:
             if _abierto_en(horario_hoy, momento):
-                return True
+                return horario_hoy.cierra
         # Cruza medianoche: desde que abre hasta las 23:59 sigue siendo hoy.
         elif horario_hoy.cierra < horario_hoy.abre and momento >= horario_hoy.abre:
-            return True
+            return horario_hoy.cierra
 
     # La otra mitad del rango que cruza medianoche la aporta el dia anterior.
     horario_ayer = por_dia.get(ayer)
     if horario_ayer and horario_ayer.cierra < horario_ayer.abre:
         if momento < horario_ayer.cierra:
-            return True
+            return horario_ayer.cierra
 
-    return False
+    return None
+
+
+def esta_abierto(horarios, ahora=None):
+    """True si el negocio esta abierto en este momento.
+
+    Se apoya en hora_de_cierre() en vez de repetir su recorrido: son la misma
+    pregunta y no pueden contestar distinto. Antes las dos ramas del cruce de
+    medianoche vivian aca; moverlas a hora_de_cierre() no cambia ninguna
+    respuesta, y saca la posibilidad de que una de las dos se corrija y la otra
+    no.
+    """
+    return hora_de_cierre(horarios, ahora) is not None
 
 
 MINUTOS_POR_DIA = 24 * 60

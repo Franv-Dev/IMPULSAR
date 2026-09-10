@@ -1,54 +1,54 @@
-{% extends "base.html" %}
+{% extends "legal_base.html" %}
 
 {% block title %}Política de Privacidad – IMPULSAR{% endblock %}
 
-{% block content %}
-<section class="section">
-    <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Política de Privacidad</h2>
-                <p class="section__subtitle">
-                    Cómo manejamos tus datos dentro de la plataforma IMPULSAR.
-                </p>
-            </div>
-        </div>
+{#  El texto es el mismo de antes, palabra por palabra. Lo único que cambió es
+    la forma: las tres viñetas de «Para qué los usamos» estaban escritas con
+    `<br>•` adentro del `<p>` y ahora son un `<ul>`; los `<h3>` pasan a `<h2>`
+    con id, para que el índice del costado tenga a dónde llevar. #}
 
-        <div class="legal">
-            <p class="legal__text">
-                En <strong>IMPULSAR</strong> nos tomamos en serio la protección de tus datos.
-                Esta Política de Privacidad explica qué información recopilamos y cómo la utilizamos.
-            </p>
+{% block legal_titulo %}Política de Privacidad{% endblock %}
+{% block legal_bajada %}Cómo manejamos tus datos dentro de la plataforma.{% endblock %}
 
-            <h3 class="legal__subtitle">Datos que recopilamos</h3>
-            <p class="legal__text">
-                Podemos recopilar información que vos proporcionás al registrarte en la plataforma,
-                como nombre de usuario, correo electrónico y datos básicos del emprendimiento.
-                También podemos almacenar información técnica básica (como fecha de registro
-                y uso general de la plataforma).
-            </p>
+{% block legal_indice %}
+    <a href="#que-datos" class="legal__indice-link">Qué datos recopilamos</a>
+    <a href="#para-que" class="legal__indice-link">Para qué los usamos</a>
+    <a href="#con-quien" class="legal__indice-link">Con quién los compartimos</a>
+    <a href="#tus-derechos" class="legal__indice-link">Tus derechos</a>
+{% endblock %}
 
-            <h3 class="legal__subtitle">Uso de la información</h3>
-            <p class="legal__text">
-                Utilizamos tus datos para:
-                <br>• Crear y gestionar tu cuenta de usuario.
-                <br>• Mostrar tu emprendimiento en la plataforma.
-                <br>• Mejorar el funcionamiento y la experiencia de IMPULSAR.
-            </p>
+{% block legal_cuerpo %}
+    <p>
+        En <strong>IMPULSAR</strong> nos tomamos en serio la protección de tus datos.
+        Esta Política de Privacidad explica qué información recopilamos y cómo la utilizamos.
+    </p>
 
-            <h3 class="legal__subtitle">Compartir datos</h3>
-            <p class="legal__text">
-                No vendemos ni compartimos tus datos personales con terceros con fines comerciales.
-                Solo podríamos compartir información si fuera requerido por ley o por una autoridad
-                competente.
-            </p>
+    <h2 id="que-datos">Qué datos recopilamos</h2>
+    <p>
+        Podemos recopilar información que vos proporcionás al registrarte en la plataforma,
+        como nombre de usuario, correo electrónico y datos básicos del emprendimiento.
+        También podemos almacenar información técnica básica (como fecha de registro
+        y uso general de la plataforma).
+    </p>
 
-            <h3 class="legal__subtitle">Tus derechos</h3>
-            <p class="legal__text">
-                Podés solicitar la actualización o eliminación de tus datos de usuario escribiéndonos
-                al correo oficial de la plataforma: <strong>impulsARmdz@gmail.com</strong>.
-            </p>
-        </div>
-    </div>
-</section>
+    <h2 id="para-que">Para qué los usamos</h2>
+    <p>Utilizamos tus datos para:</p>
+    <ul>
+        <li><span class="legal__punto" aria-hidden="true"></span><span>Crear y gestionar tu cuenta de usuario.</span></li>
+        <li><span class="legal__punto" aria-hidden="true"></span><span>Mostrar tu emprendimiento en la plataforma.</span></li>
+        <li><span class="legal__punto" aria-hidden="true"></span><span>Mejorar el funcionamiento y la experiencia de IMPULSAR.</span></li>
+    </ul>
+
+    <h2 id="con-quien">Con quién los compartimos</h2>
+    <p>
+        No vendemos ni compartimos tus datos personales con terceros con fines comerciales.
+        Solo podríamos compartir información si fuera requerido por ley o por una autoridad
+        competente.
+    </p>
+
+    <h2 id="tus-derechos">Tus derechos</h2>
+    <p>
+        Podés solicitar la actualización o eliminación de tus datos de usuario escribiéndonos
+        al correo oficial de la plataforma.
+    </p>
 {% endblock %}

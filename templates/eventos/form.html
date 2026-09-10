@@ -11,7 +11,16 @@
 
     Del diseño no esta "Guardar borrador": Event no tiene estado de borrador
     (ni Post tampoco). Un boton que no guarda un borrador es peor que no
-    tenerlo. #}
+    tenerlo.
+
+    EL TIPO ES UN SEGMENTADO DE CUATRO, NO UN <select>: desplegar una lista
+    para elegir entre cuatro opciones fijas es un paso de mas, el mismo
+    criterio con el que el orden de Favoritos dejo de ser un select. Son radios
+    con la etiqueta estilizada, asi que funcionan sin JavaScript y el teclado
+    los recorre con las flechas, como cualquier grupo de radios.
+
+    "Entrada libre" no es un tipo y no comparte su tono: es un estado bueno y
+    binario, asi que usa el par de "abierto ahora". #}
 
 {% block content %}
 <section class="section">
@@ -29,7 +38,7 @@
                             La fecha y la hora son de Argentina.
                         </p>
                     </div>
-                    <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}"
+                    <a href="{{ url_for('eventos.mios') }}"
                        class="btn btn--secondary">Cancelar</a>
                 </div>
 
@@ -63,6 +72,25 @@
                                     y en la cartelera.
                                 </p>
                             </div>
+
+                            <fieldset class="auth__field segmentado">
+                                <legend class="auth__label">Tipo de evento</legend>
+                                <div class="segmentado__opciones">
+                                    {% for clave_tipo in tipos.TODOS %}
+                                        <label class="segmentado__opcion">
+                                            <input type="radio" name="tipo" value="{{ clave_tipo }}"
+                                                   class="segmentado__radio" required
+                                                   {% if datos.tipo == clave_tipo %}checked{% endif %}>
+                                            {% with clave = 'tipo-' ~ clave_tipo, tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                            <span>{{ tipos.ETIQUETAS[clave_tipo] }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                                <p class="auth__ayuda">
+                                    Es el primer filtro de la cartelera: no es lo mismo
+                                    pasar por una feria que anotarse a un taller.
+                                </p>
+                            </fieldset>
 
                             <div class="auth__field">
                                 <label for="titulo" class="auth__label">Título</label>
@@ -102,6 +130,23 @@
                                 </div>
                             </div>
 
+                            {# Un checkbox y no un par de radios "gratis / pago":
+                               la pregunta es "¿puedo pasar sin plata?", y sin
+                               marcar no afirma nada -- la tarjeta simplemente no
+                               dibuja el chip. Un radio obligaria a declarar que
+                               se cobra, que es un dato que nadie pidio. #}
+                            <div class="auth__field">
+                                <label class="entrada-libre">
+                                    <input type="checkbox" name="entrada_libre" value="1"
+                                           {% if datos.entrada_libre %}checked{% endif %}>
+                                    <span class="entrada-libre__texto">
+                                        <strong>Entrada libre</strong>
+                                        Se puede entrar sin pagar. Si el evento se cobra,
+                                        dejalo sin marcar.
+                                    </span>
+                                </label>
+                            </div>
+
                             <div class="form-empren__acciones">
                                 <button type="submit" class="btn btn--primary">
                                     {{ "Guardar cambios" if evento else "Publicar evento" }}
@@ -134,6 +179,19 @@
                                         {% endif %}
                                     </div>
                                     <div class="eventos-lista__cuerpo">
+                                        {% if datos.tipo or datos.entrada_libre %}
+                                            <div class="evento__chips">
+                                                {% if datos.tipo %}
+                                                    <span class="chip-tipo">
+                                                        {% with clave = 'tipo-' ~ datos.tipo, tamanio = 14 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                                        {{ tipos.ETIQUETAS[datos.tipo] }}
+                                                    </span>
+                                                {% endif %}
+                                                {% if datos.entrada_libre %}
+                                                    <span class="chip-libre">Entrada libre</span>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
                                         <h3 class="eventos-lista__titulo">
                                             {{ datos.titulo or "Título del evento" }}
                                         </h3>

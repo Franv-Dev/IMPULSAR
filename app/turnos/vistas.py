@@ -21,11 +21,14 @@ DOS FRENOS DISTINTOS A LA DOBLE RESERVA, y conviene no confundirlos:
   que es dev y los tests, no hay candado y no hace falta: es monoproceso.
 """
 
+from datetime import timedelta
+
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for
 )
 from sqlalchemy.exc import IntegrityError
 
+from app.panel.consultas import contadores_de as contadores_del_panel
 from app.servicios import consultas as consultas_servicios
 from app.servicios import reglas as reglas_servicios
 from app.turnos import consultas, reglas
@@ -63,14 +66,77 @@ def _turno_visible(id):
     return turno, None
 
 
-def _fecha_pedida():
-    """La fecha que mira el calendario: la de ?fecha=, o hoy en Argentina.
+def _fecha_pedida(nombre="fecha", minima=None):
+    """La fecha que mira la pantalla: la de ese parametro, o hoy en Argentina.
 
     Una fecha mal escrita cae en hoy en vez de cortar con un 400, mismo criterio
     que blog.reglas.categoria_valida con un rubro inexistente: la URL se escribe
     a mano y no tiene por que reventar la pantalla.
+
+    `minima` es el piso: la pantalla de reservar no muestra dias que ya pasaron
+    -- no hay nada que reservar ahi --, asi que un ?fecha= viejo se acomoda a
+    hoy en vez de dibujar una semana muerta. La agenda no pasa piso, porque
+    mirar el lunes pasado es exactamente para lo que sirve.
     """
-    return parsear_fecha(request.args.get("fecha")) or hoy_en_argentina()
+    fecha = parsear_fecha(request.args.get(nombre)) or hoy_en_argentina()
+    if minima is not None and fecha < minima:
+        return minima
+    return fecha
+
+
+# Cuantos dias muestra la tira de la semana. Es el mismo numero en las dos
+# pantallas que la tienen (reservar y la agenda) y no por casualidad: son la
+# misma tira leida de los dos lados del mostrador.
+DIAS_DE_LA_TIRA = 7
+
+
+def _lunes_de(fecha):
+    """El lunes de la semana de esa fecha.
+
+    La tira de la agenda es una semana de calendario ("del 7 al 13") y no siete
+    dias corridos desde hoy, al reves que la de reservar: quien atiende piensa
+    la semana entera, incluidos los dias que ya pasaron, y quien reserva solo
+    mira para adelante.
+
+    Lunes primero, que es el criterio de weekday() y el mismo con el que
+    services.horarios.DIAS ordena los dias del perfil.
+    """
+    return fecha - timedelta(days=fecha.weekday())
+
+
+def _por_que_no_hay(dia, servicio):
+    """(titulo, texto) para un dia sin ningun horario libre. None si tiene.
+
+    Los seis vacios de consultas.slots_disponibles son una lista vacia sola, y
+    en la pantalla vieja se decian todos igual ("no hay turnos disponibles").
+    No son lo mismo para quien mira: uno se arregla eligiendo otro dia, otro
+    eligiendo otro servicio, y el tercero no se arregla.
+
+    El texto es copia para el usuario, asi que se arma aca y no en consultas:
+    ese modulo devuelve el motivo, que es el dato, y esta es la vista eligiendo
+    como se dice. Mismo reparto que _reservar con los cuatro rechazos.
+    """
+    motivo = dia["motivo"]
+    if motivo is consultas.HAY_LUGAR:
+        return None
+    if motivo == consultas.SIN_TURNOS:
+        return ("Este servicio no toma turnos",
+                "Podés pedirle un presupuesto y arreglar el día con "
+                f"{servicio.post.title}.")
+    if motivo == consultas.COMPLETO:
+        return ("No queda ningún horario",
+                "Los turnos de ese día ya están tomados. Probá con otro día "
+                "de la semana: los que tienen lugar están marcados arriba.")
+    if motivo == consultas.PASO:
+        return ("Por hoy ya no llegás",
+                "Los horarios de hoy ya empezaron. El turno se reserva hasta "
+                "la hora en que arranca, así que probá con otro día.")
+    if motivo == consultas.CERRADO:
+        return ("Ese día no atiende",
+                f"{servicio.post.title} tiene ese día marcado como cerrado.")
+    return ("Ese día no atiende",
+            "No hay horario de atención cargado para ese día. Los días con "
+            "lugar están marcados arriba.")
 
 
 @turnos.route("/servicio/<int:id>", methods=("GET", "POST"))
@@ -112,13 +178,40 @@ def reservar(id):
             )
             return redirect(url_for("turnos.mios"))
         flash(error)
-        return redirect(url_for("turnos.reservar", id=servicio.id,
-                                fecha=fecha.isoformat()))
+        # Vuelve al mismo dia Y a la misma tira: si solo se conservara la fecha,
+        # un error dejaria al cliente en la semana que arranca hoy, mirando otro
+        # dia del que estaba eligiendo.
+        return redirect(url_for(
+            "turnos.reservar", id=servicio.id, fecha=fecha.isoformat(),
+            desde=request.form.get("desde") or fecha.isoformat(),
+        ))
 
-    libres = reglas.descartar_pasados(slots_disponibles(servicio, fecha), fecha, ahora)
+    # La tira arranca en ?desde= y el dia elegido es ?fecha=, los dos con piso
+    # en hoy. Son dos parametros y no uno porque son dos cosas distintas: mover
+    # la semana con las flechas no elige un dia, y elegir un dia no mueve la
+    # semana. Con un solo parametro, cada click en un dia recentraria la tira y
+    # los otros seis se moverian debajo del dedo.
+    hoy = ahora.date()
+    desde = _fecha_pedida("desde", minima=hoy)
+    dias = consultas.semana_de_slots(servicio, desde, ahora, DIAS_DE_LA_TIRA)
+
+    # El dia elegido tiene que ser uno de los que la tira muestra, o la grilla
+    # de abajo hablaria de un dia que no esta marcado arriba.
+    elegido = next((dia for dia in dias if dia["fecha"] == fecha), dias[0])
+
     return render_template(
-        "turnos/reservar.html", servicio=servicio, fecha=fecha, slots=libres,
-        hoy=ahora.date(),
+        "turnos/reservar.html", servicio=servicio, fecha=elegido["fecha"],
+        dia=elegido, dias=dias, desde=desde, hoy=hoy,
+        # Las dos semanas vecinas se calculan aca y no en la plantilla: sumar
+        # dias es aritmetica de fechas, y Jinja no tiene timedelta.
+        desde_anterior=max(hoy, desde - timedelta(days=DIAS_DE_LA_TIRA)),
+        desde_siguiente=desde + timedelta(days=DIAS_DE_LA_TIRA),
+        # Los libres de verdad, que son los que el POST va a aceptar: la grilla
+        # del dia dibuja tambien los ocupados y los que ya pasaron.
+        libres=reglas.descartar_pasados(
+            slots_disponibles(servicio, elegido["fecha"]), elegido["fecha"], ahora
+        ),
+        vacio=_por_que_no_hay(elegido, servicio),
     )
 
 
@@ -224,13 +317,28 @@ def cancelar(id):
 @turnos.route("/mios")
 @login_required
 def mios():
-    """Los turnos que el usuario reservo como cliente."""
+    """Los turnos que el usuario reservo como cliente, proximos primero.
+
+    La consulta los trae mezclados y por fecha DESC, asi que sin este corte lo
+    primero que se ve es el turno mas viejo del historial y el de mañana queda
+    al final. Se parten aca y no en la consulta porque el corte necesita saber
+    que dia es hoy en Argentina, que es un dato del request y no de la base.
+    """
+    ahora = ahora_en_argentina()
+    proximos, pasados = reglas.partir_por_fecha(
+        consultas.turnos_de_cliente(g.user.id), ahora.date()
+    )
     return render_template(
         "turnos/mios.html",
-        turnos=consultas.turnos_de_cliente(g.user.id),
+        proximos=proximos,
+        pasados=pasados,
+        # "Hoy" y "Mañana" en la pastilla de la fila. Se calcula aca y no en la
+        # plantilla por lo mismo que las semanas vecinas de reservar: Jinja no
+        # tiene timedelta.
+        manana=ahora.date() + timedelta(days=1),
         estados=EstadosTurno,
         quien=QuienCancela,
-        ahora=ahora_en_argentina(),
+        ahora=ahora,
     )
 
 
@@ -245,10 +353,49 @@ def agenda():
     turnos que uno saco se miran en momentos distintos y con cabezas distintas
     (uno es "que tengo que hacer mañana", el otro "adonde tengo que ir").
     """
+    ahora = ahora_en_argentina()
+    fecha = _fecha_pedida()
+    lunes = _lunes_de(_fecha_pedida("desde") if request.args.get("desde") else fecha)
+    domingo = lunes + timedelta(days=DIAS_DE_LA_TIRA - 1)
+
+    # El dia que se mira tiene que caer adentro de la semana que se dibuja: si
+    # las flechas movieron la tira, el dia se va con ella y no queda uno
+    # marcado abajo que arriba no aparece.
+    if not lunes <= fecha <= domingo:
+        fecha = lunes
+
+    # Los siete horarios de una vez, y el del dia sale del mismo diccionario:
+    # la tira necesita los siete para marcar los dias cerrados, asi que pedir
+    # ademas el del dia por separado seria una consulta de mas.
+    horarios = consultas.horarios_de(g.user.id)
+    horario = horarios.get(fecha.weekday())
+    del_dia = consultas.turnos_recibidos_del_dia(g.user.id, fecha)
+
     return render_template(
         "turnos/agenda.html",
-        turnos=consultas.turnos_recibidos_por(g.user.id),
+        fecha=fecha,
+        lunes=lunes,
+        domingo=domingo,
+        semana=[lunes + timedelta(days=numero)
+                for numero in range(DIAS_DE_LA_TIRA)],
+        horarios=horarios,
+        por_dia=consultas.turnos_por_dia_de(g.user.id, lunes, domingo),
+        turnos=del_dia,
+        # Los activos aparte: son los que ocupan el dia y los que se intercalan
+        # con los huecos. Los cancelados van abajo, en su propia lista.
+        activos=[turno for turno in del_dia if turno.esta_activo],
+        horario=horario,
+        semana_anterior=lunes - timedelta(days=DIAS_DE_LA_TIRA),
+        semana_siguiente=lunes + timedelta(days=DIAS_DE_LA_TIRA),
+        # Los huecos del dia: lo que todavia se puede reservar, que es la mitad
+        # de la informacion de una agenda y la lista vieja no dejaba ver.
+        huecos=reglas.huecos_entre(
+            horario.abre if horario and not horario.cerrado else None,
+            horario.cierra if horario and not horario.cerrado else None,
+            consultas.rangos_activos_de(del_dia),
+        ),
         estados=EstadosTurno,
         quien=QuienCancela,
-        ahora=ahora_en_argentina(),
+        ahora=ahora,
+        contadores=contadores_del_panel(g.user.id, ahora.date()),
     )

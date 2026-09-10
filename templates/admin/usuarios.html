@@ -66,7 +66,7 @@
                         <a href="{{ url_for('admin.usuarios', filtro=clave, q=busqueda or None) }}"
                            class="chip-filtro {% if clave == filtro_actual %}chip-filtro--activo{% endif %}"
                            {% if clave == filtro_actual %}aria-current="true"{% endif %}>
-                            {{ par[0] }} <span class="chip-filtro__total">{{ conteos[clave] }}</span>
+                            {{ par[0] }} <span class="chip-filtro__total num">{{ conteos[clave] }}</span>
                         </a>
                     {% endfor %}
                 </div>
@@ -94,18 +94,37 @@
                                                 <div>
                                                     <a href="{{ url_for('profile.view_profile', slug=u.slug) }}">{{ u.username }}</a>
                                                     <span class="admin-usuario__alta">
-                                                        desde {{ u.created_at.strftime("%m/%Y") if u.created_at else "—" }}
+                                                        desde <span class="num">{{ u.created_at.strftime("%m/%Y") if u.created_at else "—" }}</span>
                                                     </span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>{{ u.email }}</td>
-                                        <td>{{ u.rol }}</td>
+                                        {# La etiqueta y no el valor crudo de la columna:
+                                           el <select> del filtro ya dice "Emprendedores",
+                                           y la tabla decía "emprendedor" en minúscula. #}
+                                        <td>{{ etiquetas_de_rol.get(u.rol, u.rol) }}</td>
                                         <td>
+                                            {# El estado NUNCA se dice sólo con color: cada
+                                               pastilla lleva ícono y palabra. Un lector de
+                                               pantalla y alguien que no distingue rojo de
+                                               verde leen lo mismo que el resto. #}
                                             {% if u.is_banned %}
-                                                <span class="admin-badge admin-badge--danger">Baneado</span>
+                                                <span class="admin-badge admin-badge--danger">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                        <circle cx="12" cy="12" r="8.6"/><path d="m6.5 6.5 11 11"/>
+                                                    </svg>
+                                                    Baneado
+                                                </span>
                                             {% else %}
-                                                <span class="admin-badge admin-badge--ok">Activo</span>
+                                                <span class="admin-badge admin-badge--ok">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                         stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                        <path d="m5.5 12.4 4.2 4.2 8.8-9.2"/>
+                                                    </svg>
+                                                    Activo
+                                                </span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -113,7 +132,8 @@
                                                 <form method="post" action="{{ url_for('admin.toggle_ban', user_id=u.id) }}"
                                                     data-confirm="¿Seguro que querés {{ 'desbanear' if u.is_banned else 'banear' }} a {{ u.username }}?">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="btn btn--ghost btn--chico">
+                                                    <button type="submit"
+                                                            class="btn btn--chico {{ 'btn--secondary' if u.is_banned else 'btn--peligro' }}">
                                                         {{ 'Desbanear' if u.is_banned else 'Banear' }}
                                                     </button>
                                                 </form>

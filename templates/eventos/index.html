@@ -3,50 +3,118 @@
 {% block title %}Ferias y eventos – IMPULSAR{% endblock %}
 {% block meta_description %}Ferias, pop-ups y talleres de los emprendimientos de IMPULSAR.{% endblock %}
 
-{#  La pantalla "Cartelera de eventos" del rediseño: la lista agrupada por mes
-    en la columna principal y el calendario al costado, que es el mismo del
-    home (partials/_calendario.html, cableado contra /api/eventos).
+{#  La cartelera (disenio-eventos/Main.dc.html y Movil.dc.html).
 
-    El numero del titulo es el conteo real de fechas anunciadas. El mockup
-    decia "18 fechas anunciadas por emprendimientos de San Rafael", pero la
-    ciudad no es un dato que Post tenga: misma decision que ya se tomo en
-    templates/auth/_panel.html, la frase se queda con lo que se puede sostener.
+    LO QUE CAMBIA respecto de la versión de agosto, que ya tenía la lista
+    agrupada por mes y el calendario al costado:
 
-    Del diseño NO estan, porque no hay con que:
-      - el tipo de evento (Feria / Taller / Encuentro) y sus colores: Event no
-        tiene tipo, y ponerselo es una taxonomia que hay que decidir antes;
-      - el chip "Entrada libre": no hay gratis/pago;
-      - los asistentes y el boton "Me interesa": no hay tabla de asistencia,
-        es una feature entera y no una etiqueta.
-    Los tres estan anotados como pendientes, no maquetados en falso. #}
+    1. EL CALENDARIO PASA DE ILUSTRACIÓN A FILTRO. Pintaba los días con eventos
+       contra /api/eventos y ahí terminaba: los puntitos no hacían nada. Ahora
+       cada día es un enlace a ?dia=AAAA-MM-DD, así la cartelera filtrada se
+       comparte, vuelve con el botón de atrás y anda sin JS.
+    2. LOS CUATRO TIPOS SON UN FILTRO, no una decoración. Una cartelera se lee
+       buscando "qué hay para hacer el sábado", y el tipo es el primer corte:
+       no es lo mismo pasar por una feria que anotarse a un taller.
+    3. TRES VACÍOS DISTINTOS. "Todavía no hay eventos anunciados" solo es cierto
+       con la base vacía: es mentira cuando el día elegido no tiene nada (ahí el
+       mensaje dice cómo salir del filtro) y también cuando hay eventos pero
+       todos ya pasaron (ahí manda al calendario, que navega para atrás).
+    4. UN SOLO LLAMADO A PUBLICAR. Había un botón al lado del título además del
+       bloque del costado: con el "Publicar" de la barra, la misma acción
+       aparecía tres veces en una pantalla. Queda el del costado, que es el
+       único que además dice por qué (es gratis y no hay comisión).
+
+    Los tipos se distinguen POR EL ÍCONO y no por el color: los cuatro van en
+    índigo lavado, igual que los 13 rubros de servicio.
+
+    Del diseño sigue sin estar "Me interesa" y el conteo de interesados: no es
+    una etiqueta, es una feature entera (tabla usuario × evento, ruta, permiso,
+    y decidir si el dueño ve quiénes son). Queda anotado, no maquetado en falso. #}
+
+{# La base para los enlaces de los filtros: cada ficha conserva los otros dos
+   y se saca a sí misma. Se arma una vez acá y no en cada enlace. #}
+{% set url_sin_tipo = url_for('eventos.index', dia=dia.isoformat() if dia else none,
+                              libre='1' if solo_libres else none) %}
 
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h1 class="section__title">Ferias y eventos</h1>
-                <p class="section__subtitle">
-                    {% if paginacion.total == 1 -%}
-                        1 fecha anunciada por los emprendimientos.
-                    {%- else -%}
-                        {{ paginacion.total }} fechas anunciadas por los emprendimientos.
-                    {%- endif %}
-                    Primero lo más próximo.
-                </p>
-            </div>
-            {% if g.user %}
-                <a href="{{ url_for('eventos.nuevo') }}" class="btn btn--primary">Publicar un evento</a>
-            {% endif %}
+
+        <div class="cartelera__intro">
+            <h1 class="cartelera__titulo">Ferias y eventos</h1>
+            <p class="cartelera__bajada">
+                Dónde encontrar en persona a los emprendimientos. Primero lo más
+                próximo; cuando pasa la fecha, el evento se archiva solo.
+            </p>
+        </div>
+
+        {# --- La barra de filtros ------------------------------------------ #}
+        <div class="filtros-eventos">
+            <a class="ficha-tipo {% if not tipo %}ficha-tipo--activa{% endif %}"
+               href="{{ url_sin_tipo }}"
+               {% if not tipo %}aria-current="true"{% endif %}>
+                {% with clave = 'flecha', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                Todos
+            </a>
+
+            {% for clave_tipo in tipos.TODOS %}
+                {% set activo = tipo == clave_tipo %}
+                <a class="ficha-tipo {% if activo %}ficha-tipo--activa{% endif %}"
+                   {# Tocar el tipo ya elegido lo suelta: es el mismo gesto que
+                      el día del calendario. #}
+                   href="{{ url_for('eventos.index',
+                                    tipo=none if activo else clave_tipo,
+                                    dia=dia.isoformat() if dia else none,
+                                    libre='1' if solo_libres else none) }}"
+                   {% if activo %}aria-current="true"{% endif %}>
+                    {% with clave = 'tipo-' ~ clave_tipo, tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    {{ tipos.ETIQUETAS[clave_tipo] }}
+                </a>
+            {% endfor %}
+
+            <span class="filtros-eventos__corte" aria-hidden="true"></span>
+
+            {# "Entrada libre" NO es un tipo y no comparte su tono: es un estado
+               bueno y binario, así que usa el par de "abierto ahora". #}
+            <a class="ficha-libre {% if solo_libres %}ficha-libre--activa{% endif %}"
+               href="{{ url_for('eventos.index',
+                                tipo=tipo,
+                                dia=dia.isoformat() if dia else none,
+                                libre=none if solo_libres else '1') }}"
+               {% if solo_libres %}aria-current="true"{% endif %}>
+                {% with clave = 'check', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                Entrada libre
+            </a>
         </div>
 
         <div class="cartelera">
             <div class="cartelera__principal">
+
+                <div class="cartelera__encabezado">
+                    <h2 class="cartelera__cuenta">
+                        {% if dia %}
+                            {{ dia | fecha_evento }} ·
+                            {{ paginacion.total }} evento{{ '' if paginacion.total == 1 else 's' }}
+                        {% elif paginacion.total == 1 %}
+                            1 fecha anunciada por los emprendimientos
+                        {% else %}
+                            {{ paginacion.total }} fechas anunciadas por los emprendimientos
+                        {% endif %}
+                    </h2>
+                    {% if filtrando %}
+                        <a class="cartelera__limpiar" href="{{ url_for('eventos.index') }}">
+                            {% with clave = 'cerrar', tamanio = 14 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                            Ver todas las fechas
+                        </a>
+                    {% endif %}
+                </div>
+
                 {% if meses %}
                     {% for mes in meses %}
                         <section class="cartelera__mes">
                             <div class="cartelera__mes-head">
-                                <h2 class="cartelera__mes-titulo">{{ mes.nombre }}</h2>
+                                <h3 class="cartelera__mes-titulo">{{ mes.nombre }}</h3>
+                                <span class="cartelera__mes-linea" aria-hidden="true"></span>
                                 <span class="cartelera__mes-total">
                                     {{ mes.eventos|length }} evento{{ '' if mes.eventos|length == 1 else 's' }}
                                 </span>
@@ -54,26 +122,56 @@
 
                             <ul class="eventos-lista eventos-lista--cartelera">
                                 {% for evento in mes.eventos %}
-                                    <li class="eventos-lista__item">
-                                        <div class="eventos-lista__fecha">
-                                            <span class="eventos-lista__diasem">{{ evento.fecha | dia_semana_corto }}</span>
-                                            <span class="eventos-lista__dia">{{ evento.fecha.day }}</span>
-                                            <span class="eventos-lista__mes">{{ evento.fecha | mes_corto }}</span>
+                                    <li class="evento">
+                                        <div class="evento__fecha" aria-hidden="true">
+                                            <span class="evento__diasem">{{ evento.fecha | dia_semana_corto }}</span>
+                                            <span class="evento__dia">{{ evento.fecha.day }}</span>
+                                            <span class="evento__mes">{{ evento.fecha | mes_corto }}</span>
                                         </div>
-                                        <div class="eventos-lista__cuerpo">
-                                            <h3 class="eventos-lista__titulo">
-                                                <a href="{{ url_for('blog.detail', id=evento.post.id) }}">{{ evento.titulo }}</a>
-                                            </h3>
-                                            <p class="eventos-lista__cuando">
-                                                {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora.strftime("%H:%M") }}{% endif %}{% if evento.lugar %} · {{ evento.lugar }}{% endif %}
-                                            </p>
-                                            {% if evento.descripcion %}
-                                                <p class="eventos-lista__descripcion">{{ evento.descripcion }}</p>
+
+                                        <div class="evento__cuerpo">
+                                            {% if evento.tipo or evento.entrada_libre %}
+                                                <div class="evento__chips">
+                                                    {# El chip solo si el evento tiene tipo: los que se
+                                                       cargaron antes de que existiera la columna no lo
+                                                       tienen, y NULL es "no lo dijo", no un quinto tipo. #}
+                                                    {% if evento.tipo %}
+                                                        <span class="chip-tipo">
+                                                            {% with clave = 'tipo-' ~ evento.tipo, tamanio = 14 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                                            {{ evento.tipo_label }}
+                                                        </span>
+                                                    {% endif %}
+                                                    {% if evento.entrada_libre %}
+                                                        <span class="chip-libre">Entrada libre</span>
+                                                    {% endif %}
+                                                </div>
                                             {% endif %}
-                                            {# El link al perfil de quien lo publico, que es de
-                                               donde sale el resto de sus datos de contacto. #}
-                                            <p class="eventos-lista__post">
-                                                Publicado por
+
+                                            <h4 class="evento__titulo">
+                                                <a href="{{ url_for('blog.detail', id=evento.post.id) }}">{{ evento.titulo }}</a>
+                                            </h4>
+
+                                            <div class="evento__datos">
+                                                <span class="evento__dato">
+                                                    {% with clave = 'reloj', tamanio = 15 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                                    {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora | hora }}{% endif %}
+                                                </span>
+                                                {# Sin lugar no se dibuja la línea, en vez de mostrar la
+                                                   dirección del emprendimiento: la feria de una panadería
+                                                   normalmente no es en la panadería. #}
+                                                {% if evento.lugar %}
+                                                    <span class="evento__dato">
+                                                        {% with clave = 'ubicacion', tamanio = 15 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                                        {{ evento.lugar }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+
+                                            {% if evento.descripcion %}
+                                                <p class="evento__descripcion">{{ evento.descripcion }}</p>
+                                            {% endif %}
+
+                                            <p class="evento__pie">
                                                 <a href="{{ url_for('profile.view_profile', slug=evento.post.author_user.slug) }}">
                                                     {{ evento.post.author_user.username }}
                                                 </a>
@@ -88,14 +186,50 @@
 
                     {% include "partials/_paginacion.html" %}
                 {% else %}
-                    <div class="catalogo__vacio">
-                        <p>No hay eventos anunciados por ahora.</p>
+                    {# LOS TRES VACÍOS, que son tres preguntas distintas. Con
+                       filtros puestos hay fechas más adelante y lo que falta es
+                       cómo soltarlos. Sin filtros pero con eventos cargados,
+                       todos ya pasaron: decir "todavía no hay" sería mentira, y
+                       el calendario de al lado les pinta el puntito. Sin filtros
+                       y sin ningún evento, la cartelera está vacía de verdad. #}
+                    <div class="cartelera__vacio">
+                        <span class="cartelera__vacio-icono" aria-hidden="true">
+                            {% with clave = 'eventos', tamanio = 26 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </span>
+                        {% if filtrando %}
+                            <h3 class="cartelera__vacio-titulo">Nada con esos filtros</h3>
+                            <p class="cartelera__vacio-texto">
+                                Probá con otro día o sacá alguno de los filtros: la
+                                cartelera sigue teniendo fechas más adelante.
+                            </p>
+                            <a class="btn btn--secondary" href="{{ url_for('eventos.index') }}">
+                                Ver todas las fechas
+                            </a>
+                        {% elif hay_eventos %}
+                            <h3 class="cartelera__vacio-titulo">No hay fechas próximas</h3>
+                            <p class="cartelera__vacio-texto">
+                                Lo que se anunció hasta ahora ya pasó. Los eventos
+                                de los meses anteriores siguen en el calendario: movete
+                                para atrás con las flechas y tocá un día marcado.
+                            </p>
+                        {% else %}
+                            <h3 class="cartelera__vacio-titulo">Todavía no hay eventos anunciados</h3>
+                            <p class="cartelera__vacio-texto">
+                                Cuando un emprendimiento publique una feria, un taller
+                                o una pop-up, va a aparecer acá.
+                            </p>
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
 
             <aside class="cartelera__lateral">
-                {% include "partials/_calendario.html" %}
+                {# El calendario en modo enlace: cada día lleva a ?dia=. La base
+                   arrastra los otros dos filtros, así elegir un día no los
+                   suelta. Termina en ? o & porque el JS le pega "dia=" atrás. #}
+                {% with dia_activo = dia.isoformat() if dia else none %}
+                    {% include "partials/_calendario.html" %}
+                {% endwith %}
 
                 <div class="cartelera__cta">
                     <h2 class="cartelera__cta-titulo">¿Organizás una feria o un taller?</h2>
@@ -104,10 +238,14 @@
                         y cuando pasa la fecha se archiva solo.
                     </p>
                     {% if g.user %}
-                        <a href="{{ url_for('eventos.nuevo') }}" class="btn btn--primary">Publicar evento</a>
+                        <a href="{{ url_for('eventos.nuevo') }}" class="btn cartelera__cta-boton">Publicar evento</a>
                     {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="btn btn--primary">Entrar para publicar</a>
+                        <a href="{{ url_for('auth.login') }}" class="btn cartelera__cta-boton">Entrar para publicar</a>
                     {% endif %}
+                    <p class="cartelera__cta-nota">
+                        {% with clave = 'check', tamanio = 15 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        Publicar es gratis y no cobramos comisión.
+                    </p>
                 </div>
             </aside>
         </div>

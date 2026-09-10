@@ -24,7 +24,8 @@ from db import db
 from services.eventos import (
     dia_semana_corto, formatear_fecha, mes_corto, parsear_fecha,
 )
-from services.formatting import render_biography
+from services.formatting import render_biography, tiempo_relativo
+from services.horarios import formatear as formatear_hora
 from services.notificaciones_email import mail
 from services.precios import formatear as formatear_precio
 from services.precios import texto_para_formulario as precio_para_formulario
@@ -37,6 +38,7 @@ from services.uploads import MAX_IMAGE_BYTES
 from app.blog import consultas as consultas_blog
 from app.blog.modelo_post import Categorias, Post
 from app.blog.vistas import blog
+from app.panel.vistas import panel
 from app.perfil.vistas import profile
 from app.servicios.vistas import servicios
 from app.turnos.vistas import turnos
@@ -113,6 +115,7 @@ def _registrar_blueprints(app):
     app.register_blueprint(pages)
     app.register_blueprint(profile)
     app.register_blueprint(messages)
+    app.register_blueprint(panel)
     app.register_blueprint(admin)
 
 
@@ -143,12 +146,22 @@ def _registrar_filtros_jinja(app):
     # seguro (ver services/formatting.py). Se registra como filtro para no
     # tener que importarlo en cada vista que renderiza una biografia.
     app.jinja_env.filters["render_bio"] = render_biography
+    # "hace 2 semanas". Fecha las resenias de la ficha: leyendo una resenia
+    # lo que importa es si es de esta temporada o de hace dos anios, no el
+    # dia exacto (que igual queda en el title del elemento).
+    app.jinja_env.filters["hace"] = tiempo_relativo
     # "13 de septiembre de 2026". Se registra como filtro por lo mismo que
     # render_bio: lo usan el perfil y la cartelera, y asi no hay que pasarlo
     # como variable de contexto desde cada vista.
     app.jinja_env.filters["fecha_evento"] = formatear_fecha
     app.jinja_env.filters["mes_corto"] = mes_corto
     app.jinja_env.filters["dia_semana_corto"] = dia_semana_corto
+    # "09:30". El mismo formateo de hora que ya usaba el perfil, ahora tambien
+    # en las tres pantallas de turnos, que muestran horas en cada fila. Filtro
+    # y no strftime en la plantilla: strftime("%H:%M") repetido veinte veces es
+    # el formato escrito veinte veces, y ademas devuelve "" con una hora vacia
+    # en vez de reventar.
+    app.jinja_env.filters["hora"] = formatear_hora
     # "2026-09-13" -> date, para la vista previa del formulario de evento,
     # que trabaja sobre el texto crudo que mando el usuario. Devuelve None
     # si esta vacio o mal escrito, y la plantilla ya pregunta antes de usarlo.
@@ -187,7 +200,12 @@ def _registrar_manejadores_de_error(app):
 
     @app.errorhandler(404)
     def manejar_no_encontrado(e):
-        return render_template("errors/404.html"), 404
+        # Los rubros van a la plantilla porque el 404 dejo de ser un cartel y
+        # pasa a ser una bifurcacion: casi siempre se llega desde un
+        # emprendimiento dado de baja o un link viejo, y la persona venia a
+        # buscar algo. Es el mismo Categorias.ETIQUETAS del listado, no una
+        # lista propia de esta pantalla.
+        return render_template("errors/404.html", categorias=Categorias.ETIQUETAS), 404
 
     @app.errorhandler(500)
     def manejar_error_interno(e):

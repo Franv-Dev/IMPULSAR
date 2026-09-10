@@ -216,6 +216,10 @@ def usuarios():
         filtro_actual=filtro,
         busqueda=busqueda,
         Roles=Roles,
+        # La columna "Rol" mostraba el valor crudo de la base ("emprendedor")
+        # al lado de un filtro que dice "Emprendedores". Las etiquetas viven en
+        # Roles, no en la plantilla, por lo mismo que las de Categorias.
+        etiquetas_de_rol=Roles.ETIQUETAS,
     )
 
 

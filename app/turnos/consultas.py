@@ -12,7 +12,9 @@ dominio de turnos, y de la unica cosa compartida que necesita -- como se lee un
 Horario -- ya se ocupa services/horarios.py.
 """
 
-from sqlalchemy import select
+from datetime import timedelta
+
+from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 
 from app.blog.modelo_post import Post
@@ -20,7 +22,9 @@ from app.perfil.modelo_horario import Horario
 from app.servicios.modelo import Service
 from app.servicios.reglas import acepta_turnos
 from app.turnos.modelo_turno import EstadosTurno, Turno
-from app.turnos.reglas import cortar_en_slots
+from app.turnos.reglas import (
+    cortar_en_slots, descartar_pasados, marcar_ocupados
+)
 from db import db
 from models.user import User
 
@@ -102,6 +106,202 @@ def slots_disponibles(servicio, fecha):
 
     ocupadas = horas_tomadas(servicio.id, fecha)
     return [(inicio, fin) for inicio, fin in slots if inicio not in ocupadas]
+
+
+def horarios_de(user_id):
+    """Los Horario de esa persona, indexados por dia de la semana.
+
+    Una sola consulta para los siete dias, contra una por dia de
+    horario_del_dia(). La tira de la semana necesita los siete a la vez, y siete
+    consultas para leer siete filas de la misma tabla es el N+1 de siempre.
+
+    horario_del_dia() se queda igual y se sigue usando donde se mira un dia
+    solo (el calculo de un dia de slots): pedir la semana entera para mirar el
+    lunes seria el desperdicio simetrico.
+    """
+    return {horario.dia_semana: horario
+            for horario in Horario.query.filter_by(user_id=user_id).all()}
+
+
+def horas_tomadas_por_dia(service_id, desde, hasta):
+    """Las horas de inicio ya reservadas de ese servicio, por fecha, en el rango.
+
+    Devuelve {fecha: set de horas}, con [desde, hasta] inclusive de los dos
+    lados. Es horas_tomadas() para varios dias de una: la tira de siete dias de
+    la pantalla de reservar los necesita todos, y una consulta por dia son
+    siete viajes para leer una tabla sola.
+
+    Las fechas sin ningun turno no aparecen en el diccionario. Quien lo lee usa
+    .get(fecha, set()), que es lo mismo que devolveria horas_tomadas() para ese
+    dia.
+    """
+    filas = (
+        Turno.query
+        .with_entities(Turno.fecha, Turno.hora_inicio)
+        .filter(
+            Turno.service_id == service_id,
+            Turno.fecha >= desde,
+            Turno.fecha <= hasta,
+            Turno.estado == EstadosTurno.ACTIVO,
+        )
+        .all()
+    )
+    tomadas = {}
+    for fecha, hora in filas:
+        tomadas.setdefault(fecha, set()).add(hora)
+    return tomadas
+
+
+# Por que un dia no tiene nada que ofrecer. Son los seis vacios que
+# slots_disponibles() junta en una lista vacia, agrupados en los que se pueden
+# DECIR: quien mira necesita saber si el negocio no atiende ese dia, si no
+# queda lugar, o si el servicio directamente no toma turnos. Se ven distintos
+# en pantalla y no se arreglan igual.
+SIN_TURNOS = "sin-turnos"       # el servicio no los toma, o no tiene duracion
+CERRADO = "cerrado"             # ese dia esta marcado cerrado
+SIN_HORARIO = "sin-horario"     # el dueño no cargo horario para ese dia
+COMPLETO = "completo"           # hay grilla, pero ya se reservaron todas
+PASO = "paso"                   # quedaban libres, pero su hora ya paso (es hoy)
+HAY_LUGAR = None                # queda al menos una
+
+
+def dia_de_slots(servicio, fecha, horario, tomadas, ahora):
+    """Como se ve un dia en la pantalla de reservar: su grilla y por que esta asi.
+
+    Devuelve un dict con la fecha, el horario de atencion, los slots ya
+    marcados (inicio, fin, ocupado) y `motivo`, que es None cuando queda alguna
+    libre y una de las constantes de arriba cuando no.
+
+    RECIBE EL HORARIO Y LAS HORAS TOMADAS YA CONSULTADAS, no las busca: se lo
+    llama siete veces seguidas para armar la tira de la semana, y buscarlas
+    adentro serian catorce consultas. Por eso es una funcion aparte y no una
+    variante de slots_disponibles().
+
+    Lo que ya paso queda AFUERA DE LOS LIBRES pero adentro de la grilla: el
+    turno de las 10:00 de hoy, a las 15:00, se dibuja como un tramo mas del dia
+    y no se puede tocar. Sacarlo de la grilla dejaria el dia de hoy con un
+    agujero al principio que no se distingue de un dia con poca atencion.
+    """
+    vacio = {"fecha": fecha, "horario": None, "slots": [], "libres": 0}
+
+    if not acepta_turnos(servicio):
+        return dict(vacio, motivo=SIN_TURNOS)
+    if horario is None:
+        return dict(vacio, motivo=SIN_HORARIO)
+    if horario.cerrado:
+        return dict(vacio, horario=horario, motivo=CERRADO)
+
+    grilla = cortar_en_slots(
+        horario.abre, horario.cierra, servicio.duracion_turno_minutos
+    )
+    if not grilla:
+        # Un horario que cruza medianoche, o mas corto que la duracion del
+        # turno: hay dia de atencion, pero no entra ni uno. Para quien mira es
+        # el mismo caso que un dia sin horario cargado -- no hay nada que
+        # reservar --, asi que se dice igual y no se inventa otro mensaje.
+        return dict(vacio, horario=horario, motivo=SIN_HORARIO)
+
+    slots = marcar_ocupados(grilla, tomadas)
+    reservables = {inicio for inicio, _fin in
+                   descartar_pasados(grilla, fecha, ahora)}
+    libres = [par for par in slots if not par[2] and par[0] in reservables]
+
+    # Sin nada que reservar, POR QUE no lo hay son dos cosas distintas y se
+    # dicen distinto: que se lo hayan llevado todo no es lo mismo que que el dia
+    # ya haya arrancado. Solo el dia de hoy puede caer en el segundo caso.
+    motivo = HAY_LUGAR
+    if not libres:
+        quedaban = any(not ocupado for _inicio, _fin, ocupado in slots)
+        motivo = PASO if quedaban else COMPLETO
+
+    return {
+        "fecha": fecha,
+        "horario": horario,
+        "slots": slots,
+        "libres": len(libres),
+        "motivo": motivo,
+    }
+
+
+def semana_de_slots(servicio, desde, ahora, dias=7):
+    """Los dias de la tira de la pantalla de reservar, a partir de `desde`.
+
+    Dos consultas para toda la semana: los horarios de la persona y las horas
+    tomadas del rango. Lo demas es el corte de reglas.cortar_en_slots, que es
+    puro.
+
+    Reemplaza al <input type="date"> a ciegas de la pantalla vieja, donde habia
+    que adivinar que dia tenia lugar: aca cada dia trae cuantas horas libres le
+    quedan antes de tocarlo.
+    """
+    fechas = [desde + timedelta(days=numero) for numero in range(dias)]
+    horarios = horarios_de(servicio.post.author)
+    tomadas = horas_tomadas_por_dia(servicio.id, fechas[0], fechas[-1])
+    return [
+        dia_de_slots(servicio, fecha, horarios.get(fecha.weekday()),
+                     tomadas.get(fecha, set()), ahora)
+        for fecha in fechas
+    ]
+
+
+def turnos_recibidos_del_dia(user_id, fecha):
+    """Los turnos que le sacaron ese dia, en orden de reloj, cancelados incluidos.
+
+    La agenda es un dia y no una lista de tarjetas por fecha DESC: lo que se le
+    pide a una agenda es "que tengo mañana", y para eso el orden es el del
+    reloj.
+
+    Los cancelados vienen tambien, y a proposito: el vendedor tiene que ver que
+    alguien se dio de baja del dia que esta mirando. Se dibujan aparte, porque
+    su horario ya no esta tomado y no participa de los huecos.
+    """
+    return (
+        Turno.query
+        .join(Service, Service.id == Turno.service_id)
+        .join(Post, Post.id == Service.post_id)
+        .options(
+            joinedload(Turno.servicio).joinedload(Service.post),
+            joinedload(Turno.cliente),
+        )
+        .filter(Post.author == user_id, Turno.fecha == fecha)
+        .order_by(Turno.hora_inicio)
+        .all()
+    )
+
+
+def turnos_por_dia_de(user_id, desde, hasta):
+    """Cuantos turnos activos le sacaron cada dia del rango. {fecha: cantidad}.
+
+    Es el numerito de cada dia de la tira de la semana de la agenda. Un COUNT
+    agrupado y no las filas: de los otros dias solo se muestra cuantos son, y
+    traer los turnos enteros de siete dias para contarlos es cargar la semana
+    para dibujar seis numeros.
+    """
+    filas = (
+        db.session.query(Turno.fecha, func.count(Turno.id))
+        .join(Service, Service.id == Turno.service_id)
+        .join(Post, Post.id == Service.post_id)
+        .filter(
+            Post.author == user_id,
+            Turno.fecha >= desde,
+            Turno.fecha <= hasta,
+            Turno.estado == EstadosTurno.ACTIVO,
+        )
+        .group_by(Turno.fecha)
+        .all()
+    )
+    return {fecha: cantidad for fecha, cantidad in filas}
+
+
+def rangos_activos_de(turnos):
+    """Los (inicio, fin) de los turnos activos de esa lista, ya consultada.
+
+    Es lo que reglas.huecos_entre necesita para dibujar lo que queda libre. No
+    consulta nada: la agenda ya tiene los turnos del dia en la mano, y volver a
+    pedirlos a la base para mirarles dos columnas seria una consulta de mas.
+    """
+    return [(turno.hora_inicio, turno.hora_fin)
+            for turno in turnos if turno.esta_activo]
 
 
 def turno_por_id_o_404(id):

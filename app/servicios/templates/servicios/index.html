@@ -51,8 +51,8 @@
 <section class="section">
     <div class="container">
         <div class="cuenta">
-            {% with seccion = "Mis servicios" %}
-                {% include "partials/_menu_cuenta.html" with context %}
+            {% with seccion = "Servicios" %}
+                {% include "partials/_menu_panel.html" with context %}
             {% endwith %}
 
             <div class="cuenta__contenido">
@@ -200,7 +200,7 @@
                             Un servicio es un trabajo que hacés a pedido: "destapación de
                             cañerías", "corte de pasto". Si lo que vendés tiene precio fijo
                             y se lleva puesto, eso va en
-                            <a href="{{ url_for('products.index') }}">tu catálogo</a>.
+                            <a href="{{ url_for('products.mios') }}">tu catálogo</a>.
                         </p>
                         <a href="{{ url_for('servicios.nuevo') }}" class="btn btn--primary">
                             Agregá el primero acá

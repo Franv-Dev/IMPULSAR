@@ -69,8 +69,12 @@
                   action="{{ url_for('messages.conversation', post_id=post.id, client_id=client_id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label for="chat-body" class="sr-only">Tu mensaje</label>
+                {# `borrador` viene con el nombre del producto ya escrito cuando se
+                   entra desde "Consultar por este producto" del catálogo, y vacío
+                   en cualquier otro caso (ver _borrador_por_producto). Es un valor
+                   inicial y nada más: se puede borrar y escribir otra cosa. #}
                 <textarea name="body" id="chat-body" rows="2" class="auth__input"
-                          placeholder="Escribí tu mensaje…" required></textarea>
+                          placeholder="Escribí tu mensaje…" required>{{ borrador }}</textarea>
                 <button type="submit" class="btn btn--primary">Enviar</button>
             </form>
         </div>

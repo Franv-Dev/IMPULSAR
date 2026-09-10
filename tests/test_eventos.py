@@ -4,10 +4,10 @@ from datetime import date, time, timedelta
 
 import pytest
 
-from models.event import Event
+from models.event import Event, TiposEvento
 from services.eventos import (
     agrupar_por_mes, en_rango, hoy_en_argentina, mes_y_anio, parsear_fecha,
-    parsear_mes, pasados, proximos, rango_del_mes,
+    parsear_mes, pasados, proximos, rango_del_mes, tipo_valido,
 )
 from views import eventos_api
 
@@ -68,6 +68,7 @@ def test_publicar_un_evento_lo_guarda(client, emprendedor_con_post):
         "descripcion": "En la plaza principal",
         "fecha": "2026-09-13",
         "hora": "10:30",
+        "tipo": "feria",
     }, follow_redirects=True)
 
     assert respuesta.status_code == 200
@@ -83,6 +84,7 @@ def test_la_hora_es_opcional(client, emprendedor_con_post):
 
     client.post("/eventos/nuevo", data={
         "post_id": post.id, "titulo": "Feria", "fecha": "2026-09-13", "hora": "",
+        "tipo": "feria",
     })
 
     assert Event.query.one().hora is None
@@ -93,7 +95,7 @@ def test_publicar_un_evento_guarda_el_lugar(client, emprendedor_con_post):
 
     client.post("/eventos/nuevo", data={
         "post_id": post.id, "titulo": "Feria", "fecha": "2026-09-13",
-        "lugar": "Plaza San Martín",
+        "lugar": "Plaza San Martín", "tipo": "feria",
     })
 
     assert Event.query.one().lugar == "Plaza San Martín"
@@ -109,6 +111,7 @@ def test_el_lugar_es_opcional_y_queda_en_none(client, emprendedor_con_post):
 
     client.post("/eventos/nuevo", data={
         "post_id": post.id, "titulo": "Feria", "fecha": "2026-09-13", "lugar": "",
+        "tipo": "feria",
     })
 
     assert Event.query.one().lugar is None
@@ -129,6 +132,7 @@ def test_el_lugar_no_sale_de_la_direccion_del_emprendimiento(
 
     client.post("/eventos/nuevo", data={
         "post_id": post.id, "titulo": "Feria", "fecha": "2026-09-13", "lugar": "",
+        "tipo": "feria",
     })
 
     evento = Event.query.one()
@@ -158,6 +162,7 @@ def test_editar_un_evento_actualiza_el_lugar(
     client.post(f"/eventos/{evento.id}/editar", data={
         "post_id": post.id, "titulo": evento.titulo,
         "fecha": evento.fecha.isoformat(), "lugar": "Centro cultural",
+        "tipo": "feria",
     })
 
     assert Event.query.one().lugar == "Centro cultural"
@@ -192,6 +197,7 @@ def test_no_se_puede_colgar_un_evento_del_emprendimiento_de_otro(
 
     client.post("/eventos/nuevo", data={
         "post_id": post_ajeno.id, "titulo": "Feria colada", "fecha": "2026-09-13",
+        "tipo": "feria",
     }, follow_redirects=True)
 
     assert Event.query.count() == 0
@@ -222,6 +228,7 @@ def test_el_dueño_edita_su_evento(client, emprendedor_con_post, crear_evento):
 
     client.post(f"/eventos/{evento.id}/editar", data={
         "post_id": post.id, "titulo": "Nombre nuevo", "fecha": "2026-10-01",
+        "tipo": "feria",
     }, follow_redirects=True)
 
     assert Event.query.get(evento.id).titulo == "Nombre nuevo"
@@ -247,6 +254,7 @@ def test_un_extraño_no_puede_editar_un_evento_ajeno(
 
     respuesta = client.post(f"/eventos/{evento.id}/editar", data={
         "post_id": post.id, "titulo": "Secuestrado", "fecha": "2026-10-01",
+        "tipo": "feria",
     }, follow_redirects=True)
 
     assert respuesta.status_code == 200
@@ -396,6 +404,7 @@ def test_el_perfil_muestra_los_avisos(client, emprendedor_con_post):
 
     respuesta = client.post("/eventos/nuevo", data={
         "post_id": post.id, "titulo": "Feria", "fecha": "2026-09-13",
+        "tipo": "feria",
     }, follow_redirects=True)
 
     assert "Evento publicado correctamente." in respuesta.get_data(as_text=True)
@@ -787,9 +796,13 @@ def test_api_no_expone_campos_de_mas(client, crear_usuario, crear_post, crear_ev
     # `lugar` entra a proposito: es tan publico como el titulo o la
     # descripcion, se muestra en la cartelera y dejarlo afuera del contrato
     # seria arbitrario. El calendario del home todavia no lo pinta.
+    # `tipo` y `entrada_libre` entran por lo mismo que `lugar`: son tan
+    # publicos como el titulo, ya se muestran en la cartelera, y dejarlos
+    # afuera del contrato seria arbitrario. El calendario del home todavia no
+    # los pinta.
     assert set(item) == {
         "id", "post_id", "titulo", "descripcion", "fecha", "hora", "lugar",
-        "emprendimiento", "url",
+        "tipo", "tipo_label", "entrada_libre", "emprendimiento", "url",
     }
 
 
@@ -912,19 +925,39 @@ def test_la_cartelera_cuenta_las_fechas_sin_inventar_la_ciudad(
 def test_la_cartelera_no_maqueta_lo_que_no_existe(
     client, emprendedor_con_post, crear_evento
 ):
-    """Ni tipo de evento, ni gratis/pago, ni asistentes: nada de eso existe.
+    """De los tres que el canvas pedia, "Me interesa" sigue sin existir.
 
-    Los tres van a backlog como epica (taxonomia + tabla nueva), no
-    maquetados en falso.
+    Tipo y entrada libre entraron con la tanda de rediseño (columnas nuevas,
+    migracion c7d92f4a1b83). "Me interesa" no: no es una etiqueta, es una
+    feature entera -- tabla usuario x evento, ruta, permiso, y decidir si el
+    dueño ve quienes son -- y sigue en backlog, no maquetada en falso.
     """
     _usuario, post = emprendedor_con_post()
     crear_evento(post.id, titulo="Feria de la plaza")
 
     html = client.get("/eventos/").get_data(as_text=True)
 
-    assert "Entrada libre" not in html
     assert "Me interesa" not in html
-    assert "van</" not in html
+    assert "interesados" not in html
+
+
+def test_un_evento_sin_tipo_no_dibuja_el_chip(
+    client, emprendedor_con_post, crear_evento
+):
+    """Los cargados antes de la columna tienen tipo NULL, que es "no lo dijo".
+
+    No se les inventa un tipo ni se los manda a un "Otros" que no existe: la
+    tarjeta simplemente no lleva chip. Lo mismo con entrada libre, que nace en
+    False y en False no afirma nada.
+    """
+    _usuario, post = emprendedor_con_post()
+    crear_evento(post.id, titulo="Feria vieja")
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert "Feria vieja" in html
+    assert "chip-tipo" not in html
+    assert "chip-libre" not in html
 
 
 def test_el_formulario_de_evento_no_ofrece_guardar_borrador(
@@ -950,7 +983,465 @@ def test_la_vista_previa_aguanta_una_fecha_mal_escrita(
 
     respuesta = client.post("/eventos/nuevo", data={
         "post_id": post.id, "titulo": "Feria", "fecha": "13/09/2026",
+        "tipo": "feria",
     })
 
     assert respuesta.status_code == 200
     assert "Así se va a ver en la cartelera" in respuesta.get_data(as_text=True)
+
+
+# ==========================================================================
+# LO QUE AGREGA LA TANDA DE REDISEÑO DE EVENTOS
+#
+# Dos columnas nuevas (tipo y entrada_libre), el calendario que pasa de
+# ilustracion a filtro, los dos vacios distintos, y /eventos/mios, que es la
+# pantalla propia que le faltaba al menu del panel.
+# ==========================================================================
+
+# ------------------------------------------------ el tipo, puro y en la base
+
+def test_tipo_valido_acepta_los_cuatro_y_nada_mas():
+    for clave in TiposEvento.TODOS:
+        assert tipo_valido(clave) == clave
+
+
+@pytest.mark.parametrize("texto", ["", None, "  ", "otros", "FERIA?", "'; DROP"])
+def test_un_tipo_inventado_se_ignora_en_vez_de_reventar(texto):
+    """Un ?tipo= escrito a mano no rompe la pantalla: vale como "todos".
+
+    Mismo criterio que blog.reglas.categoria_valida con un rubro inexistente.
+    """
+    assert tipo_valido(texto) is None
+
+
+def test_tipo_valido_no_distingue_mayusculas():
+    assert tipo_valido("Feria") == TiposEvento.FERIA
+
+
+def test_un_evento_sin_tipo_no_tiene_etiqueta(db, crear_usuario, crear_post,
+                                              crear_evento):
+    """NULL es "no lo dijo", no un quinto tipo, y por eso la etiqueta es vacia."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    evento = crear_evento(post.id)
+
+    assert evento.tipo is None
+    assert evento.tipo_label == ""
+    # entrada_libre, en cambio, nace en False y no en NULL: False no afirma
+    # nada porque el chip solo se dibuja cuando es True.
+    assert evento.entrada_libre is False
+
+
+# ------------------------------------------------- guardar los dos campos
+
+def test_publicar_guarda_el_tipo_y_la_entrada_libre(client, emprendedor_con_post):
+    _usuario, post = emprendedor_con_post()
+
+    client.post("/eventos/nuevo", data={
+        "post_id": post.id, "titulo": "Taller de torno", "fecha": "2026-09-13",
+        "tipo": "taller", "entrada_libre": "1",
+    })
+
+    evento = Event.query.one()
+    assert evento.tipo == TiposEvento.TALLER
+    assert evento.entrada_libre is True
+
+
+def test_sin_marcar_entrada_libre_queda_en_false(client, emprendedor_con_post):
+    """Un checkbox sin marcar no viaja en el POST: eso es False, no None."""
+    _usuario, post = emprendedor_con_post()
+
+    client.post("/eventos/nuevo", data={
+        "post_id": post.id, "titulo": "Taller pago", "fecha": "2026-09-13",
+        "tipo": "taller",
+    })
+
+    assert Event.query.one().entrada_libre is False
+
+
+def test_el_tipo_es_obligatorio_al_publicar(client, emprendedor_con_post):
+    """La columna es nullable para los eventos viejos, no para los nuevos.
+
+    Si el formulario no lo exigiera, el NULL nunca se agotaria y el filtro por
+    tipo dejaria de servir a medida que se carguen eventos.
+    """
+    _usuario, post = emprendedor_con_post()
+
+    respuesta = client.post("/eventos/nuevo", data={
+        "post_id": post.id, "titulo": "Sin tipo", "fecha": "2026-09-13",
+    }, follow_redirects=True)
+
+    assert Event.query.count() == 0
+    assert "Elegí qué tipo de evento es." in respuesta.get_data(as_text=True)
+
+
+def test_un_tipo_que_no_existe_se_rechaza_como_si_faltara(
+    client, emprendedor_con_post
+):
+    """El segmentado tiene cuatro botones, pero el POST se manda a mano."""
+    _usuario, post = emprendedor_con_post()
+
+    client.post("/eventos/nuevo", data={
+        "post_id": post.id, "titulo": "Colado", "fecha": "2026-09-13",
+        "tipo": "asado",
+    })
+
+    assert Event.query.count() == 0
+
+
+def test_editar_cambia_el_tipo_y_apaga_la_entrada_libre(
+    client, db, emprendedor_con_post, crear_evento
+):
+    _usuario, post = emprendedor_con_post()
+    evento = crear_evento(post.id)
+    evento.tipo = TiposEvento.FERIA
+    evento.entrada_libre = True
+    db.session.commit()
+
+    client.post(f"/eventos/{evento.id}/editar", data={
+        "post_id": post.id, "titulo": evento.titulo,
+        "fecha": evento.fecha.isoformat(), "tipo": "popup",
+    })
+
+    guardado = Event.query.get(evento.id)
+    assert guardado.tipo == TiposEvento.POPUP
+    assert guardado.entrada_libre is False
+
+
+# ------------------------------------------------------ los filtros de la lista
+
+def _crear_tres(db, crear_usuario, crear_post, crear_evento_en):
+    """Una feria libre, un taller pago y un evento viejo sin tipo, el mismo dia."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    dia = hoy_en_argentina() + timedelta(days=5)
+
+    feria = crear_evento_en(post.id, dia, titulo="Feria de la plaza")
+    feria.tipo = TiposEvento.FERIA
+    feria.entrada_libre = True
+
+    taller = crear_evento_en(post.id, dia, titulo="Taller de torno")
+    taller.tipo = TiposEvento.TALLER
+
+    crear_evento_en(post.id, dia, titulo="Evento sin tipo")
+    db.session.commit()
+    return dia
+
+
+def test_el_filtro_de_tipo_deja_solo_ese_tipo(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    _crear_tres(db, crear_usuario, crear_post, crear_evento_en)
+
+    html = client.get("/eventos/?tipo=taller").get_data(as_text=True)
+
+    assert "Taller de torno" in html
+    assert "Feria de la plaza" not in html
+
+
+def test_un_evento_sin_tipo_no_entra_en_ningun_filtro_de_tipo(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    """NULL no es "de todos los tipos": es "no lo dijo"."""
+    _crear_tres(db, crear_usuario, crear_post, crear_evento_en)
+
+    for clave in TiposEvento.TODOS:
+        html = client.get(f"/eventos/?tipo={clave}").get_data(as_text=True)
+        assert "Evento sin tipo" not in html
+
+    # Con "Todos" -- o sea sin ?tipo= -- sigue apareciendo.
+    assert "Evento sin tipo" in client.get("/eventos/").get_data(as_text=True)
+
+
+def test_el_filtro_de_entrada_libre_deja_solo_las_gratis(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    _crear_tres(db, crear_usuario, crear_post, crear_evento_en)
+
+    html = client.get("/eventos/?libre=1").get_data(as_text=True)
+
+    assert "Feria de la plaza" in html
+    assert "Taller de torno" not in html
+
+
+def test_los_dos_filtros_se_combinan(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    """"Talleres con entrada libre" es la pregunta que se hace de verdad."""
+    _crear_tres(db, crear_usuario, crear_post, crear_evento_en)
+
+    html = client.get("/eventos/?tipo=taller&libre=1").get_data(as_text=True)
+
+    assert "Taller de torno" not in html
+    assert "Feria de la plaza" not in html
+    assert "Nada con esos filtros" in html
+
+
+# ------------------------------------------- el calendario, ahora que filtra
+
+def test_elegir_un_dia_deja_solo_ese_dia(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    hoy = hoy_en_argentina()
+    crear_evento_en(post.id, hoy + timedelta(days=3), titulo="La del jueves")
+    crear_evento_en(post.id, hoy + timedelta(days=9), titulo="La de la otra semana")
+
+    dia = (hoy + timedelta(days=3)).isoformat()
+    html = client.get(f"/eventos/?dia={dia}").get_data(as_text=True)
+
+    assert "La del jueves" in html
+    assert "La de la otra semana" not in html
+
+
+def test_un_dia_ya_pasado_se_puede_mirar(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    """El calendario navega meses para atras: si ?dia= escondiera lo vencido,
+    esos meses se verian vacios y la navegacion no serviria de nada."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    ayer = hoy_en_argentina() - timedelta(days=1)
+    crear_evento_en(post.id, ayer, titulo="La feria de ayer")
+
+    # Sin filtro no esta: la cartelera es lo que viene.
+    assert "La feria de ayer" not in client.get("/eventos/").get_data(as_text=True)
+
+    html = client.get(f"/eventos/?dia={ayer.isoformat()}").get_data(as_text=True)
+    assert "La feria de ayer" in html
+
+
+def test_un_dia_mal_escrito_no_filtra_ni_revienta(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    crear_evento_en(post.id, hoy_en_argentina() + timedelta(days=3),
+                    titulo="La del jueves")
+
+    respuesta = client.get("/eventos/?dia=13/09/2026")
+
+    assert respuesta.status_code == 200
+    assert "La del jueves" in respuesta.get_data(as_text=True)
+
+
+def test_el_calendario_de_la_cartelera_enlaza_los_dias(client):
+    """En la cartelera el dia es un ENLACE a ?dia=, no un boton de JavaScript.
+
+    Es lo que lo vuelve un filtro de verdad: se comparte por link y vuelve con
+    el boton de atras. El HTML solo lleva la base -- las celdas las arma el JS
+    contra /api/eventos -- asi que lo que se chequea es que la base este.
+    """
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert "data-enlace-dia=" in html
+
+
+def test_el_calendario_del_home_no_enlaza(client):
+    """En el home el dia filtra el panel de al lado sin recargar la pagina."""
+    html = client.get("/").get_data(as_text=True)
+
+    assert "data-enlace-dia=" not in html
+
+
+def test_el_dia_elegido_viaja_al_calendario(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    """Para marcarlo y para que el calendario abra en SU mes, no en el actual."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    dia = hoy_en_argentina() + timedelta(days=3)
+    crear_evento_en(post.id, dia)
+
+    html = client.get(f"/eventos/?dia={dia.isoformat()}").get_data(as_text=True)
+
+    assert f'data-dia-activo="{dia.isoformat()}"' in html
+
+
+# --------------------------------------------------------- los tres vacios
+
+def test_con_la_base_vacia_dice_que_todavia_no_hay_nada(client):
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert "Todavía no hay eventos anunciados" in html
+    assert "Nada con esos filtros" not in html
+
+
+def test_con_un_dia_sin_nada_dice_como_salir_del_filtro(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    """El vacio del filtro no es el vacio de la cartelera: decir "todavia no
+    hay eventos" cuando hay tres la semana que viene es mentira."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    crear_evento_en(post.id, hoy_en_argentina() + timedelta(days=9))
+
+    vacio = (hoy_en_argentina() + timedelta(days=3)).isoformat()
+    html = client.get(f"/eventos/?dia={vacio}").get_data(as_text=True)
+
+    assert "Nada con esos filtros" in html
+    assert "Todavía no hay eventos anunciados" not in html
+    assert "Ver todas las fechas" in html
+
+
+def test_con_todo_vencido_no_dice_que_todavia_no_hay_eventos(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    """EL TERCER VACIO. Sin filtros y con la cartelera vacia hay dos motivos
+    distintos, y solo uno de los dos permite decir "todavia no hay eventos".
+
+    Aca hay tres eventos cargados y los tres ya pasaron. Los eventos vencidos no
+    se borran nunca (la cartelera publica solo los esconde), asi que este es el
+    estado normal de una cartelera en temporada baja. Decir "todavia no hay
+    eventos anunciados" seria mentira, y encima el calendario del costado les
+    sigue pintando el puntito: la pantalla se contradecia sola.
+    """
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    for dias in (30, 10, 1):
+        crear_evento_en(post.id, hoy_en_argentina() - timedelta(days=dias))
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert "Todavía no hay eventos anunciados" not in html
+    assert "No hay fechas próximas" in html
+    # Y dice donde estan: el calendario navega para atras.
+    assert "calendario" in html
+    # Sigue sin ser el vacio del filtro, porque no hay ningun filtro puesto.
+    assert "Nada con esos filtros" not in html
+
+
+def test_con_todo_vencido_y_un_filtro_gana_el_vacio_del_filtro(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    """Con un filtro puesto manda el del filtro: es el que se puede soltar."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    crear_evento_en(post.id, hoy_en_argentina() - timedelta(days=10))
+
+    html = client.get("/eventos/?tipo=taller").get_data(as_text=True)
+
+    assert "Nada con esos filtros" in html
+    assert "No hay fechas próximas" not in html
+    assert "Todavía no hay eventos anunciados" not in html
+
+
+def test_sin_filtros_no_hay_boton_de_limpiar(
+    client, db, crear_usuario, crear_post, crear_evento_en
+):
+    """Un boton que no tiene nada que limpiar es un boton muerto."""
+    usuario = crear_usuario(username="panaderia")
+    post = crear_post(usuario.id)
+    crear_evento_en(post.id, hoy_en_argentina() + timedelta(days=3))
+
+    html = client.get("/eventos/").get_data(as_text=True)
+
+    assert "cartelera__limpiar" not in html
+
+
+# ------------------------------------------------------------- mis eventos
+
+def test_mis_eventos_junta_los_de_todos_sus_emprendimientos(
+    client, db, crear_usuario, crear_post, crear_evento_en, login
+):
+    """Es lo que no existia: quien tiene dos emprendimientos no tenia ningun
+    lado donde ver sus fechas juntas."""
+    usuario = crear_usuario(username="tomy")
+    uno = crear_post(usuario.id, title="Panadería")
+    otro = crear_post(usuario.id, title="Cerámica")
+    login(usuario.id)
+    crear_evento_en(uno.id, hoy_en_argentina() + timedelta(days=3),
+                    titulo="Feria del pan")
+    crear_evento_en(otro.id, hoy_en_argentina() + timedelta(days=5),
+                    titulo="Pop-up de tazas")
+
+    html = client.get("/eventos/mios").get_data(as_text=True)
+
+    assert "Feria del pan" in html
+    assert "Pop-up de tazas" in html
+
+
+def test_mis_eventos_no_muestra_los_ajenos(
+    client, db, crear_usuario, crear_post, crear_evento_en, login
+):
+    ajena = crear_usuario(username="ajena")
+    post_ajeno = crear_post(ajena.id, title="Otra")
+    crear_evento_en(post_ajeno.id, hoy_en_argentina() + timedelta(days=3),
+                    titulo="Feria ajena")
+
+    mia = crear_usuario(username="tomy")
+    crear_post(mia.id)
+    login(mia.id)
+
+    html = client.get("/eventos/mios").get_data(as_text=True)
+
+    assert "Feria ajena" not in html
+
+
+def test_mis_eventos_parte_proximos_de_pasados(
+    client, db, crear_usuario, crear_post, crear_evento_en, login
+):
+    usuario = crear_usuario(username="tomy")
+    post = crear_post(usuario.id)
+    login(usuario.id)
+    crear_evento_en(post.id, hoy_en_argentina() + timedelta(days=3),
+                    titulo="La que viene")
+    crear_evento_en(post.id, hoy_en_argentina() - timedelta(days=20),
+                    titulo="La del mes pasado")
+
+    html = client.get("/eventos/mios").get_data(as_text=True)
+
+    # Lo que viene primero: es lo que hay que mirar. El historial se repasa.
+    assert html.index("La que viene") < html.index("La del mes pasado")
+    assert "Ya pasaron" in html
+
+
+def test_los_pasados_no_se_borran_solos(
+    client, db, crear_usuario, crear_post, crear_evento_en, login
+):
+    """La cartelera publica los esconde; la pantalla del dueño no."""
+    usuario = crear_usuario(username="tomy")
+    post = crear_post(usuario.id)
+    login(usuario.id)
+    crear_evento_en(post.id, hoy_en_argentina() - timedelta(days=20),
+                    titulo="La del mes pasado")
+
+    assert "La del mes pasado" not in client.get("/eventos/").get_data(as_text=True)
+    assert "La del mes pasado" in client.get("/eventos/mios").get_data(as_text=True)
+
+
+def test_borrar_desde_mis_eventos_pide_confirmacion(
+    client, db, crear_usuario, crear_post, crear_evento_en, login
+):
+    """Borrar un evento no se revierte: el POST vive detras de un aviso."""
+    usuario = crear_usuario(username="tomy")
+    post = crear_post(usuario.id)
+    login(usuario.id)
+    evento = crear_evento_en(post.id, hoy_en_argentina() + timedelta(days=3))
+
+    html = client.get("/eventos/mios").get_data(as_text=True)
+
+    assert "¿Borrás este evento?" in html
+    assert "No se puede deshacer" in html
+    assert f"/eventos/{evento.id}/eliminar" in html
+
+
+def test_mis_eventos_pide_sesion(client):
+    respuesta = client.get("/eventos/mios")
+
+    assert respuesta.status_code == 302
+    assert "login" in respuesta.headers["Location"]
+
+
+def test_publicar_vuelve_a_mis_eventos(client, emprendedor_con_post):
+    """Antes volvia al perfil, que era el unico lado donde se veian. Ahora hay
+    una pantalla que los junta y es de donde se entro."""
+    _usuario, post = emprendedor_con_post()
+
+    respuesta = client.post("/eventos/nuevo", data={
+        "post_id": post.id, "titulo": "Feria", "fecha": "2026-09-13",
+        "tipo": "feria",
+    })
+
+    assert respuesta.headers["Location"].endswith("/eventos/mios")

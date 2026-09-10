@@ -14,8 +14,8 @@
 <section class="section">
     <div class="container">
         <div class="cuenta">
-            {% with seccion = "Mis emprendimientos" %}
-                {% include "partials/_menu_cuenta.html" with context %}
+            {% with seccion = "Emprendimientos" %}
+                {% include "partials/_menu_panel.html" with context %}
             {% endwith %}
 
             <div class="cuenta__contenido">
@@ -101,7 +101,7 @@
                                     <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--primary btn--chico">
                                         Editar
                                     </a>
-                                    <a href="{{ url_for('products.index') }}" class="btn btn--secondary btn--chico">
+                                    <a href="{{ url_for('products.mios') }}" class="btn btn--secondary btn--chico">
                                         Catálogo y eventos
                                     </a>
                                     <div class="mi-post__secundarias">

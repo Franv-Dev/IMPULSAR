@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Mi cuenta – IMPULSAR{% endblock %}
+
+{#  "Mi cuenta" del telefono (artboard disenio-navegacion/MovilPerfil.dc.html):
+    el destino de la pestana Perfil de la barra de abajo.
+
+    Mismos items y mismo orden que el menu que cuelga del avatar en escritorio
+    (partials/_menu_cuenta_desplegable.html), en la forma que pide el telefono:
+    las cuatro de "Mi actividad" como filas anchas de 46px, y las cuatro de "Mi
+    emprendimiento" como fichas de dos columnas, que en 390px se leen de un
+    vistazo y no obligan a bajar cuatro filas mas.
+
+    La barra de arriba de esta pantalla dice "Mi cuenta" en vez de las secciones,
+    y ahi va el switch de tema: es la unica pantalla del telefono con encabezado
+    propio. #}
+
+{% block content %}
+<section class="cuenta-movil">
+    <div class="container cuenta-movil__contenido">
+
+        <h1 class="cuenta-movil__titulo">Mi cuenta</h1>
+
+        <a href="{{ url_for('profile.view_profile', slug=user.slug) }}" class="cuenta-movil__usuario">
+            <span class="cuenta-movil__avatar" aria-hidden="true">{{ user.username[0]|upper }}</span>
+            <span class="cuenta-movil__usuario-datos">
+                <span class="cuenta-movil__usuario-nombre">{{ user.username }}</span>
+                <span class="cuenta-movil__usuario-link">Ver mi perfil público</span>
+            </span>
+            {% with clave = 'chevron-derecha', tamanio = 18, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+        </a>
+
+        {# El unico boton lleno de la pantalla, como en el artboard: publicar es
+           la accion de dueno, y no entra en la barra de abajo. #}
+        <a href="{{ url_for('blog.create') }}" class="cuenta-movil__publicar">
+            {% with clave = 'publicar', tamanio = 19, trazo = 1.9 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            Publicar un emprendimiento
+        </a>
+
+        <section class="cuenta-movil__seccion" aria-labelledby="cuenta-movil-actividad">
+            <h2 class="cuenta-movil__rotulo" id="cuenta-movil-actividad">Mi actividad</h2>
+            <div class="cuenta-movil__lista">
+                <a href="{{ url_for('messages.inbox') }}" class="cuenta-movil__fila">
+                    {% with clave = 'mensajes' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    <span class="cuenta-movil__etiqueta">Mensajes</span>
+                    <span class="badge-notif" data-notif="unread_messages" hidden aria-live="polite"></span>
+                    {% with clave = 'chevron-derecha', tamanio = 17, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </a>
+                <a href="{{ url_for('servicios.solicitudes') }}" class="cuenta-movil__fila">
+                    {% with clave = 'presupuestos' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    <span class="cuenta-movil__etiqueta">Presupuestos</span>
+                    <span class="badge-notif badge-notif--suave" data-notif="pending_service_requests" hidden aria-live="polite"></span>
+                    {% with clave = 'chevron-derecha', tamanio = 17, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </a>
+                <a href="{{ url_for('turnos.mios') }}" class="cuenta-movil__fila">
+                    {% with clave = 'turnos' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    <span class="cuenta-movil__etiqueta">Mis turnos</span>
+                    {% with clave = 'chevron-derecha', tamanio = 17, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </a>
+                <a href="{{ url_for('blog.my_favorites') }}" class="cuenta-movil__fila">
+                    {% with clave = 'favoritos' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    <span class="cuenta-movil__etiqueta">Favoritos</span>
+                    {% with clave = 'chevron-derecha', tamanio = 17, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </a>
+            </div>
+        </section>
+
+        <section class="cuenta-movil__seccion" aria-labelledby="cuenta-movil-emprendimiento">
+            <h2 class="cuenta-movil__rotulo" id="cuenta-movil-emprendimiento">Mi emprendimiento</h2>
+            <div class="cuenta-movil__fichas">
+                {# La portada del panel va primera y a lo ancho: en el telefono
+                   esta pantalla ES el menu del panel (ahi no hay columna
+                   lateral), asi que la entrada tiene que ser la primera cosa
+                   de la seccion. #}
+                <a href="{{ url_for('panel.inicio') }}" class="cuenta-movil__ficha cuenta-movil__ficha--ancha">
+                    <span class="cuenta-movil__ficha-icono">
+                        {% with clave = 'resumen' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    </span>
+                    Mi panel
+                </a>
+                <a href="{{ url_for('blog.my_posts') }}" class="cuenta-movil__ficha">
+                    <span class="cuenta-movil__ficha-icono">
+                        {% with clave = 'emprendimientos' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    </span>
+                    Emprendimientos
+                </a>
+                <a href="{{ url_for('products.mios') }}" class="cuenta-movil__ficha">
+                    <span class="cuenta-movil__ficha-icono">
+                        {% with clave = 'catalogo' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    </span>
+                    Mi catálogo
+                </a>
+                <a href="{{ url_for('servicios.index') }}" class="cuenta-movil__ficha">
+                    <span class="cuenta-movil__ficha-icono">
+                        {% with clave = 'servicios' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    </span>
+                    Mis servicios
+                </a>
+                <a href="{{ url_for('turnos.agenda') }}" class="cuenta-movil__ficha">
+                    <span class="cuenta-movil__ficha-icono">
+                        {% with clave = 'agenda' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    </span>
+                    Agenda de turnos
+                </a>
+            </div>
+
+            <div class="cuenta-movil__lista cuenta-movil__lista--suelta">
+                <a href="{{ url_for('profile.reviews', slug=user.slug) }}" class="cuenta-movil__fila">
+                    {% with clave = 'resenias' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    <span class="cuenta-movil__etiqueta">Reseñas recibidas</span>
+                    <span class="badge-notif badge-notif--suave" data-notif="unanswered_reviews" hidden aria-live="polite"></span>
+                    {% with clave = 'chevron-derecha', tamanio = 17, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </a>
+            </div>
+        </section>
+
+        <section class="cuenta-movil__seccion">
+            <div class="cuenta-movil__lista">
+                {% if user.rol == 'admin' %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="cuenta-movil__fila">
+                        {% with clave = 'admin' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        <span class="cuenta-movil__etiqueta">Panel de administración</span>
+                        {% with clave = 'chevron-derecha', tamanio = 17, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    </a>
+                {% endif %}
+                <a href="{{ url_for('profile.edit') }}" class="cuenta-movil__fila">
+                    {% with clave = 'ajustes' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    <span class="cuenta-movil__etiqueta">Ajustes</span>
+                    {% with clave = 'chevron-derecha', tamanio = 17, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="cuenta-movil__fila cuenta-movil__fila--danger">
+                    {% with clave = 'salir' %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    <span class="cuenta-movil__etiqueta">Salir</span>
+                </a>
+            </div>
+        </section>
+
+    </div>
+</section>
+{% endblock %}

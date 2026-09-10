@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{#  El molde de las dos legales (disenio-paginas/Legal.dc.html).
+
+    Privacidad y Términos son la MISMA cáscara con otro índice y otro texto, así
+    que el canvas dibujó una sola y acá hay un solo molde. Lo que cambia entre
+    las dos son cuatro bloques: `legal_titulo`, `legal_bajada`, `legal_indice` y
+    `legal_cuerpo`.
+
+    LO QUE CAMBIA RESPECTO DE ANTES NO ES SÓLO LA PALETA. Las listas estaban
+    hechas con `<br>•` adentro de un `<p>`: visualmente parecen viñetas, pero
+    para un lector de pantalla son un párrafo con un punto medio en el medio. Acá
+    son `<ul>` de verdad. El texto no se tocó, palabra por palabra.
+
+    La medida de lectura es 66ch, lo único en toda la app con línea larga de
+    verdad: son las dos únicas pantallas que se leen de corrido. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="legal">
+            <aside class="legal__indice">
+                <p class="legal__indice-rotulo">En esta página</p>
+                <nav class="legal__indice-lista" aria-label="Secciones de esta página">
+                    {% block legal_indice %}{% endblock %}
+                </nav>
+                <div class="legal__indice-otra">
+                    {# La otra legal, siempre a un click: quien viene a leer una
+                       casi siempre termina buscando la otra. #}
+                    <a href="{{ legal_otra_url }}" class="legal__indice-link legal__indice-link--otra">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M6 3h8l4.5 4.5V21H6Z"/><path d="M14 3v5h4.5"/>
+                        </svg>
+                        {{ legal_otra_texto }}
+                    </a>
+                </div>
+            </aside>
+
+            <div class="legal__columna">
+                <h1 class="legal__titulo">{% block legal_titulo %}{% endblock %}</h1>
+
+                <div class="legal__meta">
+                    <p class="legal__bajada">{% block legal_bajada %}{% endblock %}</p>
+                    {# Una legal sin fecha no sirve del todo: no se puede saber qué
+                       versión aceptó cada usuario. Hoy ninguna de las dos la
+                       tiene, y no es un dato que se pueda inventar — la pastilla
+                       aparece cuando `actualizada_el` esté cargada en
+                       views/pages.py. #}
+                    {% if actualizada_el %}
+                        <span class="legal__fecha">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3.5" y="5" width="17" height="15.5" rx="3"/>
+                                <path d="M3.5 10h17M8 3v4M16 3v4"/>
+                            </svg>
+                            Última actualización: {{ actualizada_el }}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="legal__cuerpo">
+                    {% block legal_cuerpo %}{% endblock %}
+
+                    <div class="legal__correo">
+                        <span class="legal__correo-icono" aria-hidden="true">
+                            {% with clave = 'mensajes', tamanio = 21, trazo = 1.7 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </span>
+                        <span class="legal__correo-datos">
+                            <span class="legal__correo-rotulo">Correo oficial</span>
+                            <a href="mailto:impulsARmdz@gmail.com">impulsARmdz@gmail.com</a>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

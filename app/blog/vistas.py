@@ -34,9 +34,16 @@ from app.blog.modelo_imagen import PostImage
 from app.blog.modelo_post import MAX_IMAGENES_POR_POST, Categorias, Post
 from app.blog.modelo_reporte import Report
 from app.blog.modelo_resenia import Review
+from app.panel.consultas import contadores_de as contadores_del_panel
 from db import utcnow
+from services.eventos import hoy_en_argentina
 from services.geocoding import get_coordinates_from_address
-from services.horarios import ETIQUETAS_DIAS, esta_abierto
+from services.horarios import (
+    ETIQUETAS_DIAS,
+    esta_abierto,
+    hora_de_cierre,
+    ventana_actual,
+)
 from services.ratings import serializar_con_rating
 from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
 from views.auth import login_required
@@ -218,7 +225,20 @@ def detail(id):
         # Argentina y no con el del visitante.
         horarios=sorted(post.author_user.horarios, key=lambda h: h.dia_semana),
         abierto=esta_abierto(post.author_user.horarios),
+        # Hasta que hora sigue abierto, para decir "Abierto ahora - cierra
+        # 19:00" en vez de un si/no pelado: con el si/no hay que bajar hasta la
+        # tabla de horarios para saber si conviene salir ahora. None cuando
+        # esta cerrado, que es lo mismo que dice `abierto`.
+        cierra=hora_de_cierre(post.author_user.horarios),
         etiquetas_dias=ETIQUETAS_DIAS,
+        # Que dia es hoy, para marcar su fila en la tabla de horarios. Sale de
+        # ventana_actual() y no de datetime.today() por lo mismo que
+        # esta_abierto: la referencia es el reloj de Argentina, no el del
+        # servidor ni el del visitante.
+        hoy_semana=ventana_actual()[0],
+        # Las ferias del emprendimiento que todavia no pasaron. Post.eventos
+        # existe desde la tanda de eventos y la ficha no lo mostraba.
+        ferias=consultas.ferias_de(id),
         MAPTILER_KEY=current_app.config["MAPTILER_KEY"],
     )
 
@@ -255,7 +275,8 @@ def my_posts():
     ]
 
     return render_template(
-        "blog/my_posts.html", posts=posts, paginacion=paginacion
+        "blog/my_posts.html", posts=posts, paginacion=paginacion,
+        contadores=contadores_del_panel(g.user.id, hoy_en_argentina()),
     )
 
 

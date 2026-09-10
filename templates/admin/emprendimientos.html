@@ -82,14 +82,23 @@
                                     <tr {% if reportes %}class="admin-fila--reportado"{% endif %}>
                                         <td>
                                             <a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a>
+                                            {# El estado nunca se dice sólo con color: la
+                                               pastilla lleva ícono y palabra, y la fila
+                                               entera se tiñe (ver .admin-fila--reportado).
+                                               En veinte filas, un rojo suelto en la cuarta
+                                               columna se pierde. #}
                                             {% if reportes %}
-                                                <span class="admin-aviso">
+                                                <span class="admin-badge admin-badge--aviso">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                        <path d="M12 3.8 21 19.5H3Z"/><path d="M12 10v3.6M12 16.6h.01"/>
+                                                    </svg>
                                                     {{ reportes }} reporte{{ '' if reportes == 1 else 's' }} sin resolver
                                                 </span>
                                             {% endif %}
                                             <span class="admin-usuario__alta">
-                                                {{ post.views_count }} vista{{ '' if post.views_count == 1 else 's' }}
-                                                · {{ resenias }} reseña{{ '' if resenias == 1 else 's' }}
+                                                <span class="num">{{ post.views_count }}</span> vista{{ '' if post.views_count == 1 else 's' }}
+                                                · <span class="num">{{ resenias }}</span> reseña{{ '' if resenias == 1 else 's' }}
                                             </span>
                                         </td>
                                         <td>
@@ -98,12 +107,12 @@
                                             {% endif %}
                                         </td>
                                         <td>{{ post.category_label }}</td>
-                                        <td>{{ post.created.strftime("%d/%m/%Y") if post.created else "" }}</td>
+                                        <td class="num">{{ post.created.strftime("%d/%m/%Y") if post.created else "" }}</td>
                                         <td>
                                             <form method="post" action="{{ url_for('admin.delete_post', post_id=post.id) }}"
                                                 data-confirm="¿Seguro que querés eliminar «{{ post.title }}»? Se borran también sus productos, servicios, reseñas, eventos y reportes. No se puede deshacer.">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn--ghost btn--chico">
+                                                <button type="submit" class="btn btn--peligro btn--chico">
                                                     Eliminar
                                                 </button>
                                             </form>

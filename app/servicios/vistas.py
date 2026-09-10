@@ -21,11 +21,13 @@ from flask import (
 )
 from sqlalchemy.exc import IntegrityError
 
+from app.panel.consultas import contadores_de as contadores_del_panel
 from app.servicios import consultas, formulario, reglas
 from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from app.servicios.modelo_verificacion import EstadosVerificacion, VerificationRequest
 from db import utcnow
+from services.eventos import hoy_en_argentina
 from services.notificaciones_email import notificar_solicitud_respondida
 from services.precios import texto_para_formulario
 from models.user import Roles
@@ -186,6 +188,7 @@ def index():
         ),
         estados_verificacion=EstadosVerificacion,
         pendientes=consultas.cuantas_solicitudes_pendientes_para(g.user.id),
+        contadores=contadores_del_panel(g.user.id, hoy_en_argentina()),
     )
 
 
@@ -478,6 +481,7 @@ def solicitudes():
         lado=lado,
         resumen=reglas.resumen_de_solicitudes(recibidas, utcnow()),
         estados=EstadosSolicitud,
+        contadores=contadores_del_panel(g.user.id, hoy_en_argentina()),
     )
 
 

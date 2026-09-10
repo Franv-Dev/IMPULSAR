@@ -108,7 +108,7 @@ def test_pagina_404_personalizada(client):
     resp = client.get("/una-url-que-no-existe")
 
     assert resp.status_code == 404
-    assert "No encontramos esta página" in resp.get_data(as_text=True)
+    assert "Esta página ya no está" in resp.get_data(as_text=True)
 
 
 def test_el_limite_de_subida_esta_configurado(app):

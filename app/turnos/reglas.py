@@ -266,3 +266,83 @@ def descartar_pasados(slots, fecha, ahora):
     if fecha < ahora.date():
         return []
     return [(inicio, fin) for inicio, fin in slots if inicio > ahora.time()]
+
+
+# ------------------------------------------------- lo que necesitan las pantallas
+
+def marcar_ocupados(slots, ocupadas):
+    """Los mismos slots, cada uno con un tercer valor: si esa hora ya esta tomada.
+
+    Devuelve tuplas (inicio, fin, ocupado). Es la vuelta de lo que hace
+    consultas.slots_disponibles, que los FILTRA: la pantalla de reservar los
+    dibuja apagados en vez de sacarlos, porque una tira con cuatro horas
+    sueltas y sin explicacion se lee como que el negocio casi no atiende, y no
+    como que el resto ya se lo llevaron.
+
+    Quien decide que se puede reservar de verdad sigue siendo la vista, con
+    slots_disponibles y descartar_pasados: esto es lo que se muestra, no lo que
+    se acepta. Los dos calculos salen del mismo cortar_en_slots, asi que no
+    pueden discrepar sobre que horas existen.
+    """
+    return [(inicio, fin, inicio in ocupadas) for inicio, fin in slots]
+
+
+def partir_por_fecha(turnos, hoy):
+    """Parte una lista de turnos en (proximos, pasados), por fecha contra hoy.
+
+    Los proximos quedan en orden CRECIENTE -- el de mañana primero -- y los
+    pasados en decreciente, que es como se lee un historial. La consulta los
+    trae toda por fecha DESC, asi que los proximos se dan vuelta aca.
+
+    El corte es por fecha y no por hora de inicio: el turno de hoy a las 09:00
+    sigue en "Proximos" a las 11:00. Es a proposito -- lo de hoy es lo que uno
+    esta mirando hoy --, y ademas es el mismo criterio con el que la fila
+    muestra o esconde el boton de cancelar.
+    """
+    proximos = [turno for turno in turnos if turno.fecha >= hoy]
+    pasados = [turno for turno in turnos if turno.fecha < hoy]
+    proximos.reverse()
+    return proximos, pasados
+
+
+def huecos_entre(abre, cierra, ocupados):
+    """Los tramos libres que quedan en el rango de atencion, en orden de reloj.
+
+    `ocupados` son los (inicio, fin) ya tomados de ESE dia. Devuelve los
+    pedazos de [abre, cierra) que no pisa ninguno.
+
+    Es lo que la agenda del vendedor dibuja entre turno y turno: los huecos son
+    la mitad de la informacion de una agenda -- son lo que todavia se puede
+    reservar --, y una lista que solo muestra lo tomado no deja verlos.
+
+    NO son slots reservables, y por eso no se cortan en tramos: cada servicio
+    del vendedor tiene su propia duracion y todos se cortan del mismo horario
+    de la persona, asi que un hueco de 13:45 a 16:00 puede recibir un turno de
+    45 minutos o uno de 90. Cortarlo aca obligaria a elegir una duracion y
+    mentiria sobre las otras.
+
+    Un rango que cruza medianoche devuelve vacio, igual que cortar_en_slots: la
+    exclusion de v1 vale para todo el dominio y no solo para el corte.
+    """
+    if abre is None or cierra is None or cruza_medianoche(abre, cierra):
+        return []
+
+    huecos = []
+    libre_desde = _en_minutos(abre)
+    fin_del_dia = _en_minutos(cierra)
+
+    for inicio, fin in sorted(ocupados):
+        arranca = _en_minutos(inicio)
+        termina = _en_minutos(fin)
+        if arranca > libre_desde:
+            huecos.append((_en_hora(libre_desde), _en_hora(min(arranca, fin_del_dia))))
+        # max() y no una asignacion directa: dos turnos superpuestos -- que la
+        # base no puede tener, pero una fila vieja si -- no deben hacer
+        # retroceder el borde y generar un hueco de tiempo negativo.
+        libre_desde = max(libre_desde, termina)
+        if libre_desde >= fin_del_dia:
+            return huecos
+
+    if libre_desde < fin_del_dia:
+        huecos.append((_en_hora(libre_desde), _en_hora(fin_del_dia)))
+    return huecos

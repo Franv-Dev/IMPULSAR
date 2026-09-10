@@ -10,8 +10,18 @@
     asi que cada una lo pone donde le corresponde. El JS ya lo trata como
     opcional (ver su comentario en la funcion que lo dibuja).
 
+    DOS MODOS. En el home el dia es un boton que filtra el panel de al lado sin
+    recargar. En la cartelera es un ENLACE a ?dia=AAAA-MM-DD: asi el calendario
+    deja de ser una ilustracion con puntitos y pasa a filtrar de verdad, la
+    URL filtrada se comparte, vuelve con el boton de atras y anda sin JS. Lo
+    enciende `enlace_dia` (la URL base de la cartelera, ya con el resto de los
+    filtros y terminada en ? o &); `dia_activo` es el dia elegido en ISO, para
+    marcarlo y para abrir el calendario en SU mes.
+
     Quien la incluya tiene que cargar js/calendario.js en su bloque scripts. #}
-<div class="calendario" id="calendario-card">
+<div class="calendario" id="calendario-card"
+     {% if enlace_dia %}data-enlace-dia="{{ enlace_dia }}"{% endif %}
+     {% if dia_activo %}data-dia-activo="{{ dia_activo }}"{% endif %}>
     <div class="calendario__head">
         <h3 class="calendario__mes" id="calendario-mes" aria-live="polite">&nbsp;</h3>
         <div class="calendario__nav">

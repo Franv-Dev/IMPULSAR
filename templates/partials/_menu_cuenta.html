@@ -23,7 +23,7 @@
     <nav class="cuenta__nav" aria-label="Mi cuenta">
         {% set items = [
             ('Mis emprendimientos', url_for('blog.my_posts')),
-            ('Mi catálogo', url_for('products.index')),
+            ('Mi catálogo', url_for('products.mios')),
             ('Mis servicios', url_for('servicios.index')),
             ('Presupuestos', url_for('servicios.solicitudes')),
             ('Mensajes', url_for('messages.inbox')),

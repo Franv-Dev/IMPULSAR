@@ -2,22 +2,44 @@
 
 {% block title %}Reservar turno – {{ servicio.titulo }}{% endblock %}
 
+{#  Reservar un turno (disenio-turnos/Main.dc.html y Movil.dc.html).
+
+    LO QUE REEMPLAZA: un <input type="date"> con "Ver ese día" y, abajo, una
+    fila de botones sueltos donde CADA BOTON ERA UN SUBMIT. Habia que adivinar
+    que dia tenia lugar, y un click de mas ya reservaba.
+
+    Ahora son tres cosas distintas y se ven como tres cosas distintas:
+
+    - la tira de siete dias, que dice de antemano cuantos horarios le quedan a
+      cada uno (consultas.semana_de_slots);
+    - la grilla del dia elegido, donde los ocupados se dibujan APAGADOS en vez
+      de desaparecer -- cuatro horas sueltas sin explicacion se leen como que el
+      negocio casi no atiende;
+    - un unico boton de confirmar, al final, que es el que manda el POST.
+
+    Los dias son enlaces GET y no botones de un formulario: elegir un dia no
+    reserva nada, y asi la URL de un dia queda compartible y el boton de atras
+    del navegador funciona. La hora, en cambio, es un radio adentro del mismo
+    formulario que confirma: ahi si hay una eleccion que se envia.
+
+    SIN JAVASCRIPT ESTO FUNCIONA IGUAL. El resumen del costado no se actualiza
+    solo (main.js lo hace si esta), pero el radio se marca, el boton envia y la
+    vista rechaza con "Elegí un horario de la lista" si no se eligio ninguno. #}
+
 {% block content %}
 <section class="section">
-    <div class="container" style="max-width: 720px;">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Reservar un turno</h2>
-                <p class="section__subtitle">
-                    {{ servicio.titulo }} · {{ servicio.post.title }}
-                    · {{ servicio.duracion_turno_minutos }} minutos
-                </p>
-            </div>
-        </div>
+    <div class="container">
+
+        <p class="reserva__volver">
+            <a href="{{ url_for('blog.detail', id=servicio.post_id) }}">
+                {% with clave = 'volver', tamanio = 15 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                Volver a {{ servicio.post.title }}
+            </a>
+        </p>
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
+                <div class="auth__messages reserva__avisos">
                     {% for message in messages %}
                         <div class="auth__alert">{{ message }}</div>
                     {% endfor %}
@@ -25,44 +47,239 @@
             {% endif %}
         {% endwith %}
 
-        {# El dia se elige con un GET, asi la URL del dia queda compartible y el
-           navegador no repregunta por un POST al volver atras. #}
-        <form method="get" class="auth__form" style="margin-bottom:1.5rem;">
-            <div class="auth__field">
-                <label for="fecha" class="auth__label">Día</label>
-                <input type="date" name="fecha" id="fecha" class="auth__input"
-                       value="{{ fecha.isoformat() }}" min="{{ hoy.isoformat() }}">
+        {# El formulario envuelve la grilla Y la columna de la derecha: el radio
+           de la hora esta en una y el boton que lo manda en la otra. #}
+        <form method="post" class="reserva">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="fecha" value="{{ fecha.isoformat() }}">
+            <input type="hidden" name="desde" value="{{ desde.isoformat() }}">
+
+            <div class="reserva__principal">
+
+                <div class="reserva__intro">
+                    <h1 class="reserva__titulo">Reservar un turno</h1>
+                    <p class="reserva__bajada">
+                        Elegí el día y la hora. El horario que reserves queda tomado
+                        en el momento: nadie tiene que confirmártelo después.
+                    </p>
+                </div>
+
+                {# --- La tira de dias ------------------------------------- #}
+                <section class="tira">
+                    <div class="tira__cabecera">
+                        <h2 class="tira__titulo">
+                            Del {{ desde.day }} al {{ dias[-1].fecha | fecha_evento }}
+                        </h2>
+                        {# La semana anterior solo si no arranca hoy: para atras
+                           no hay nada que reservar. #}
+                        {% if desde > hoy %}
+                            <a class="tira__flecha"
+                               href="{{ url_for('turnos.reservar', id=servicio.id,
+                                                desde=desde_anterior.isoformat(),
+                                                fecha=desde_anterior.isoformat()) }}"
+                               aria-label="Semana anterior">
+                                {% with clave = 'volver', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                            </a>
+                        {% else %}
+                            <span class="tira__flecha tira__flecha--muerta" aria-hidden="true">
+                                {% with clave = 'volver', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                            </span>
+                        {% endif %}
+                        <a class="tira__flecha"
+                           href="{{ url_for('turnos.reservar', id=servicio.id,
+                                            desde=desde_siguiente.isoformat(),
+                                            fecha=desde_siguiente.isoformat()) }}"
+                           aria-label="Semana siguiente">
+                            {% with clave = 'chevron-derecha', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </a>
+                    </div>
+
+                    <div class="tira__dias">
+                        {% for uno in dias %}
+                            {% set apagado = uno.libres == 0 %}
+                            {% set activo = uno.fecha == fecha %}
+                            {% if apagado %}
+                                <span class="dia dia--apagado">
+                            {% else %}
+                                <a class="dia {% if activo %}dia--activo{% endif %}"
+                                   href="{{ url_for('turnos.reservar', id=servicio.id,
+                                                    desde=desde.isoformat(),
+                                                    fecha=uno.fecha.isoformat()) }}"
+                                   {% if activo %}aria-current="date"{% endif %}>
+                            {% endif %}
+                                <span class="dia__nombre">
+                                    {% if uno.fecha == hoy %}hoy{% else %}{{ uno.fecha | dia_semana_corto }}{% endif %}
+                                </span>
+                                <span class="dia__numero">{{ uno.fecha.day }}</span>
+                                <span class="dia__pie">
+                                    {% if uno.motivo == 'completo' %}completo
+                                    {% elif uno.motivo == 'paso' %}ya pasó
+                                    {% elif uno.motivo %}cerrado
+                                    {% elif uno.libres == 1 %}1 libre
+                                    {% else %}{{ uno.libres }} libres{% endif %}
+                                </span>
+                            {% if apagado %}</span>{% else %}</a>{% endif %}
+                        {% endfor %}
+                    </div>
+                </section>
+
+                {# --- Los horarios del dia elegido ------------------------ #}
+                <section class="slots">
+                    <div class="slots__cabecera">
+                        <h2 class="slots__titulo">Horarios del {{ fecha | fecha_evento }}</h2>
+                        <span class="slots__atencion">
+                            {% if dia.horario and not dia.horario.cerrado %}
+                                Atiende de {{ dia.horario.abre | hora }} a {{ dia.horario.cierra | hora }}
+                            {% else %}
+                                Cerrado
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    {% if vacio %}
+                        {% set titulo_vacio, texto_vacio = vacio %}
+                        <div class="slots__vacio">
+                            <span class="slots__vacio-icono" aria-hidden="true">
+                                {% with clave = 'turnos', tamanio = 20 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                            </span>
+                            <div>
+                                <p class="slots__vacio-titulo">{{ titulo_vacio }}</p>
+                                <p class="slots__vacio-texto">{{ texto_vacio }}</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        {# Mañana y tarde, cortadas al mediodia. Una grilla de
+                           doce horarios seguidos no se lee: el corte es el que
+                           uno hace en la cabeza al elegir. #}
+                        {% set reservables = libres | map(attribute=0) | list %}
+                        {% for rotulo, desde_hora, hasta_hora in [
+                            ('Mañana', 0, 12), ('Tarde', 12, 24)] %}
+                            {% set tramos = dia.slots | selectattr('0.hour', 'ge', desde_hora)
+                                                      | selectattr('0.hour', 'lt', hasta_hora) | list %}
+                            {% if tramos %}
+                                <div class="slots__franja">
+                                    <p class="slots__rotulo">{{ rotulo }}</p>
+                                    <div class="slots__grilla">
+                                        {% for inicio, fin, ocupado in tramos %}
+                                            {% set libre = not ocupado and inicio in reservables %}
+                                            <label class="slot {% if not libre %}slot--tomado{% endif %}">
+                                                <input type="radio" name="hora_inicio" class="slot__radio"
+                                                       value="{{ inicio | hora }}"
+                                                       {% if not libre %}disabled{% endif %}
+                                                       data-hasta="{{ fin | hora }}">
+                                                <span class="slot__hora">{{ inicio | hora }}</span>
+                                                <span class="slot__pie">
+                                                    {% if ocupado %}ocupado
+                                                    {% elif not libre %}ya pasó
+                                                    {% else %}a {{ fin | hora }}{% endif %}
+                                                </span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </section>
+
+                {# --- Que pasa despues de reservar, que hoy no se dice ---- #}
+                <section class="reserva__reglas">
+                    <div class="regla">
+                        <span class="regla__icono regla__icono--ok" aria-hidden="true">
+                            {% with clave = 'check', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </span>
+                        <p class="regla__titulo">Queda tomado al instante</p>
+                        <p class="regla__texto">
+                            No hay una espera a que te lo aprueben: el horario sale
+                            de la lista apenas lo reservás.
+                        </p>
+                    </div>
+                    <div class="regla">
+                        <span class="regla__icono regla__icono--marca" aria-hidden="true">
+                            {% with clave = 'cerrar', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </span>
+                        <p class="regla__titulo">Lo cancelás cuando quieras</p>
+                        <p class="regla__texto">
+                            Desde Mis turnos, hasta la hora del turno. A
+                            {{ servicio.post.author_user.username }} le llega un aviso por mail.
+                        </p>
+                    </div>
+                    <div class="regla">
+                        <span class="regla__icono regla__icono--aviso" aria-hidden="true">
+                            {% with clave = 'info', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </span>
+                        <p class="regla__titulo">Se arregla en el lugar</p>
+                        <p class="regla__texto">
+                            IMPULSAR no cobra el turno ni se queda una comisión:
+                            el pago lo arreglás directo con quien te atiende.
+                        </p>
+                    </div>
+                </section>
             </div>
-            <button type="submit" class="btn btn--secondary">Ver ese día</button>
+
+            {# --- Que estas reservando, y el paso de confirmacion --------- #}
+            <aside class="reserva__lateral">
+                <section class="ficha-servicio">
+                    <div class="ficha-servicio__cabecera">
+                        <span class="ficha-servicio__icono" aria-hidden="true">
+                            {% with clave = 'servicios', tamanio = 28 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </span>
+                        <div>
+                            <h2 class="ficha-servicio__titulo">{{ servicio.titulo }}</h2>
+                            <p class="ficha-servicio__quien">
+                                <a href="{{ url_for('blog.detail', id=servicio.post_id) }}">{{ servicio.post.title }}</a>
+                                · {{ servicio.rubro_label }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <ul class="ficha-servicio__datos">
+                        <li>
+                            {% with clave = 'reloj', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                            <span>Dura <strong>{{ servicio.duracion_turno_minutos }} minutos</strong></span>
+                        </li>
+                        {% if servicio.precio_estimado %}
+                            <li>
+                                {% with clave = 'presupuestos', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                <span>Desde <strong>{{ servicio.precio_estimado | precio }}</strong></span>
+                            </li>
+                        {% endif %}
+                        {% if servicio.post.address_street %}
+                            <li>
+                                {% with clave = 'ubicacion', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                <span>En <strong>{{ servicio.post.address_street }}</strong></span>
+                            </li>
+                        {% elif servicio.zona_cobertura %}
+                            <li>
+                                {% with clave = 'ubicacion', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                <span>Zona: <strong>{{ servicio.zona_cobertura }}</strong></span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </section>
+
+                {# El resumen nace en "todavía no elegiste": main.js lo completa
+                   al marcar un radio. Sin JavaScript se queda asi y el boton
+                   funciona igual -- por eso no esta deshabilitado. #}
+                <section class="resumen-turno" data-resumen-turno>
+                    <p class="resumen-turno__rotulo">Tu turno</p>
+                    <p class="resumen-turno__fecha" data-resumen-fecha>
+                        {% if libres %}El {{ fecha | fecha_evento }}{% else %}Todavía no hay horario para elegir{% endif %}
+                    </p>
+                    <p class="resumen-turno__hora" data-resumen-hora>
+                        {% if libres %}Elegí uno de los horarios libres.{% else %}Probá con otro día de la tira.{% endif %}
+                    </p>
+                    <button type="submit" class="btn btn--primary resumen-turno__boton"
+                            {% if not libres %}disabled{% endif %}>
+                        Confirmar el turno
+                    </button>
+                    <p class="resumen-turno__pie">
+                        Al confirmar, el horario queda tomado y le avisamos a
+                        {{ servicio.post.author_user.username }}.
+                    </p>
+                </section>
+            </aside>
         </form>
-
-        {% if slots %}
-            <p class="section__subtitle">
-                Horarios libres para el {{ fecha | fecha_evento }}:
-            </p>
-            <div class="card__tags" style="gap:.5rem; flex-wrap:wrap;">
-                {% for inicio, fin in slots %}
-                    <form method="post" style="display:inline;">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="fecha" value="{{ fecha.isoformat() }}">
-                        <input type="hidden" name="hora_inicio"
-                               value="{{ inicio.strftime('%H:%M') }}">
-                        <button type="submit" class="btn btn--primary">
-                            {{ inicio.strftime('%H:%M') }} a {{ fin.strftime('%H:%M') }}
-                        </button>
-                    </form>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="section__subtitle">
-                No hay turnos disponibles para el {{ fecha | fecha_evento }}.
-                Probá con otro día.
-            </p>
-        {% endif %}
-
-        <p class="auth__footer">
-            Volver a <a href="{{ url_for('blog.detail', id=servicio.post_id) }}">{{ servicio.post.title }}</a>.
-        </p>
     </div>
 </section>
 {% endblock %}

@@ -309,7 +309,10 @@ def test_el_resumen_cuenta_lo_que_hay_pendiente(
     login(admin.id)
     html = client.get("/admin/").get_data(as_text=True)
 
-    assert "Hoy hay 1 cosa para revisar" in html
+    # El número va suelto y grande, separado del texto: es el único número
+    # grande de la pantalla y el que decide si hoy hay trabajo.
+    assert '<span class="admin-hero__numero">1</span>' in html
+    assert "cosa para revisar hoy" in html
 
 
 def test_sin_nada_pendiente_el_resumen_no_dice_que_hay_cosas(
@@ -688,3 +691,311 @@ def test_una_pagina_fuera_de_rango_deja_volver(client, crear_usuario, login):
     assert 'class="pagination"' in html
     assert "/admin/usuarios?page=2" in html
     assert "/admin/usuarios?page=998" not in html
+
+
+# ============================================================================
+# LAS DOS COLAS COMO PANTALLA  (tanda de disenio-admin/)
+# ----------------------------------------------------------------------------
+# Reportes y Verificaciones eran una tabla pelada, con estilos inline y SIN EL
+# MENU DEL PANEL, aunque el menu las enlaza: se entraba y se perdia la
+# navegacion. Ahora son una ficha por item, con el mismo molde en las dos y con
+# el mismo parcial que dibuja el recorte del Resumen.
+# ============================================================================
+
+
+def _verificacion_pendiente(db, crear_usuario, crear_post, foto="matricula.jpg"):
+    """Un pedido de verificacion sin revisar, con o sin documento adjunto."""
+    from app.servicios.modelo import Service
+    from app.servicios.modelo_verificacion import EstadosVerificacion, VerificationRequest
+
+    duenio = crear_usuario(username=f"prestador{foto or 'nada'}")
+    post = crear_post(duenio.id, title="Servicios del Oeste")
+    servicio = Service(
+        post_id=post.id, titulo="Instalaciones eléctricas domiciliarias",
+        descripcion="Trabajo a domicilio.", rubro="electricidad",
+        zona_cobertura="Gran Mendoza",
+    )
+    db.session.add(servicio)
+    db.session.commit()
+
+    pedido = VerificationRequest(
+        service_id=servicio.id, foto=foto, estado=EstadosVerificacion.PENDIENTE
+    )
+    db.session.add(pedido)
+    db.session.commit()
+    return pedido
+
+
+def test_las_dos_colas_traen_el_menu_del_panel(client, crear_usuario, login):
+    """Era lo mas grave: el menu enlazaba a las dos y las dos lo perdian.
+
+    La unica salida era un "← Volver al panel" suelto arriba a la derecha.
+    """
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    for url in ("/admin/reportes", "/admin/verificaciones"):
+        html = client.get(url).get_data(as_text=True)
+        assert 'class="admin-menu"' in html, url
+        # Los cinco items, no solo el de la pantalla en la que se esta.
+        for destino in ("/admin/", "/admin/reportes", "/admin/verificaciones",
+                        "/admin/usuarios", "/admin/emprendimientos"):
+            assert f'href="{destino}"' in html, f"{url}: falta {destino}"
+        assert "Volver al panel" not in html, url
+
+
+def test_las_dos_colas_marcan_su_item_del_menu(client, crear_usuario, login):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/reportes").get_data(as_text=True)
+    activo = html.split('admin-menu__item--activo')[0].split('<a href="')[-1]
+
+    assert activo.startswith("/admin/reportes")
+
+
+def test_la_cola_de_reportes_no_es_una_tabla(client, db, crear_usuario, crear_post, login):
+    """Una cita de un reporte no entra en una celda: la tabla vieja la cortaba
+    con un max-width de 280 px, justo lo que hay que leer para decidir."""
+    _post, _review = _resenia_reportada(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/reportes").get_data(as_text=True)
+    cuerpo = html.split("<main>")[1].split("</main>")[0]
+
+    assert "admin-ficha" in cuerpo
+    assert "<table" not in cuerpo
+    assert "style=" not in cuerpo
+
+
+def test_la_cola_de_verificaciones_no_es_una_tabla(
+    client, db, crear_usuario, crear_post, login
+):
+    _verificacion_pendiente(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/verificaciones").get_data(as_text=True)
+    cuerpo = html.split("<main>")[1].split("</main>")[0]
+
+    assert "admin-ficha" in cuerpo
+    assert "<table" not in cuerpo
+    assert "style=" not in cuerpo
+
+
+def test_el_documento_tiene_su_propia_caja(client, db, crear_usuario, crear_post, login):
+    """Es lo unico que hay que mirar para decidir; en la tabla era un link en
+    una celda."""
+    _verificacion_pendiente(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    pedido = _verificacion_pendiente(db, crear_usuario, crear_post, foto="otra.jpg")
+    html = client.get("/admin/verificaciones").get_data(as_text=True)
+
+    assert "admin-doc" in html
+    assert "Matrícula profesional" in html
+    # POR LA RUTA DEL BLUEPRINT Y NO POR /static: la matricula lleva nombre y
+    # numero reales, asi que se sirve por la ruta que chequea permiso (ver
+    # servicios.foto_de_verificacion). Un href a /static/uploads seria el
+    # documento colgado en internet.
+    assert f"/servicios/verificaciones/{pedido.id}/foto" in html
+    assert "/static/uploads/otra.jpg" not in html
+
+
+def test_sin_documento_no_se_puede_aprobar(client, db, crear_usuario, crear_post, login):
+    """Sin foto es un ESTADO, no un hueco: no hay nada que mirar, asi que no
+    hay nada que aprobar. La celda vieja decia "Sin foto" en gris y el boton
+    de aprobar seguia ahi, invitando a poner un sello sobre nada."""
+    _verificacion_pendiente(db, crear_usuario, crear_post, foto=None)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/verificaciones").get_data(as_text=True)
+
+    assert "No adjuntó documento" in html
+    assert "disabled" in html
+
+
+def test_sin_documento_el_motivo_del_rechazo_viene_escrito(
+    client, db, crear_usuario, crear_post, login
+):
+    """Es el unico rechazo posible, y el prestador necesita saber exactamente
+    eso para poder volver a mandarlo."""
+    _verificacion_pendiente(db, crear_usuario, crear_post, foto=None)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/verificaciones").get_data(as_text=True)
+
+    assert 'value="Falta la foto de la matrícula."' in html
+
+
+def test_con_documento_el_motivo_arranca_vacio(
+    client, db, crear_usuario, crear_post, login
+):
+    _verificacion_pendiente(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/verificaciones").get_data(as_text=True)
+
+    assert "Falta la foto de la matrícula." not in html
+    assert "disabled" not in html
+
+
+def test_el_motivo_viaja_con_el_rechazo_y_no_aparte(
+    client, db, crear_usuario, crear_post, login
+):
+    """Un solo <form>: si el motivo fuera otra pantalla, el prestador se
+    quedaria sin saber que corregir cada vez que el admin tiene apuro."""
+    pedido = _verificacion_pendiente(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/verificaciones").get_data(as_text=True)
+    formulario = html.split(
+        f"/admin/verificaciones/{pedido.id}/rechazar"
+    )[1].split("</form>")[0]
+
+    assert 'name="motivo_rechazo"' in formulario
+
+
+def test_la_cola_vacia_lo_dice_sin_tabla(client, crear_usuario, login):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    assert "No hay reportes pendientes" in client.get("/admin/reportes").get_data(as_text=True)
+    assert "No hay verificaciones pendientes" in client.get(
+        "/admin/verificaciones"
+    ).get_data(as_text=True)
+
+
+def test_el_resumen_y_la_cola_dibujan_el_mismo_item(
+    client, db, crear_usuario, crear_post, login
+):
+    """Son el mismo parcial: si se despegaran, el admin veria dos versiones del
+    mismo reporte segun por donde entre."""
+    _post, _review = _resenia_reportada(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    resumen = client.get("/admin/").get_data(as_text=True)
+    cola = client.get("/admin/reportes").get_data(as_text=True)
+
+    for pedazo in ("admin-ficha__cita", "Marcar resuelto", "Eliminar reseña"):
+        assert pedazo in resumen, pedazo
+        assert pedazo in cola, pedazo
+
+
+# --- el estado nunca se dice solo con color
+
+def test_las_pastillas_de_estado_llevan_palabra_y_no_solo_color(
+    client, db, crear_usuario, login
+):
+    """En una tabla de veinte filas, un rojo suelto en la cuarta columna se
+    pierde -- y para quien no distingue rojo de verde, no dice nada."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    baneado = crear_usuario(username="baneado")
+    baneado.is_banned = True
+    db.session.commit()
+    login(admin.id)
+
+    html = client.get("/admin/usuarios").get_data(as_text=True)
+    cuerpo = html.split("<tbody>")[1].split("</tbody>")[0]
+
+    assert "Baneado" in cuerpo
+    assert "Activo" in cuerpo
+    # Y cada pastilla lleva un <svg> ademas de la palabra: dos pastillas, dos
+    # iconos. Sin esto, el estado se estaria diciendo solo con color.
+    for clase in ("admin-badge--danger", "admin-badge--ok"):
+        pastilla = cuerpo.split(clase)[1].split("</span>")[0]
+        assert "<svg" in pastilla, clase
+
+
+def test_la_fila_del_baneado_se_tiñe_entera(client, db, crear_usuario, login):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    baneado = crear_usuario(username="mario")
+    baneado.is_banned = True
+    db.session.commit()
+    login(admin.id)
+
+    html = client.get("/admin/usuarios").get_data(as_text=True)
+
+    assert "admin-fila--baneado" in html
+
+
+def test_el_rol_se_muestra_con_su_etiqueta(client, crear_usuario, login):
+    """La columna mostraba el valor crudo de la base ("emprendedor") al lado de
+    un filtro que dice "Emprendedores"."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    crear_usuario(username="unemprendedor", rol=Roles.EMPRENDEDOR)
+    login(admin.id)
+
+    html = client.get("/admin/usuarios?filtro=emprendedores").get_data(as_text=True)
+    cuerpo = html.split("<tbody>")[1].split("</tbody>")[0]
+
+    assert "Emprendedor" in cuerpo
+    assert ">emprendedor<" not in cuerpo
+
+
+def test_el_emprendimiento_reportado_lo_dice_con_palabra(
+    client, db, crear_usuario, crear_post, login
+):
+    reportante = crear_usuario(username="quien.reporta")
+    duenio = crear_usuario(username="duenio")
+    post = crear_post(duenio.id, title="Tortas Mari")
+    db.session.add(Report(reporter_id=reportante.id, post_id=post.id, reason="Fotos ajenas."))
+    db.session.commit()
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/emprendimientos").get_data(as_text=True)
+
+    assert "1 reporte sin resolver" in html
+    assert "admin-fila--reportado" in html
+
+
+# --- el telefono
+
+def test_en_el_telefono_el_panel_se_recorta_a_la_cola(client, crear_usuario, login):
+    """Las tablas de cinco columnas y las metricas no entran ni tienen por que:
+    al celular se viene a resolver algo urgente. El menu lateral se apaga por
+    CSS y en su lugar quedan el contador y un segmentado de dos."""
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/reportes").get_data(as_text=True)
+
+    assert 'class="admin-seg"' in html
+    # Las dos colas, y solo las dos.
+    segmentado = html.split('class="admin-seg"')[1].split("</nav>")[0]
+    assert "/admin/reportes" in segmentado
+    assert "/admin/verificaciones" in segmentado
+    assert "/admin/usuarios" not in segmentado
+    assert "/admin/emprendimientos" not in segmentado
+
+
+def test_sin_pendientes_el_telefono_no_muestra_un_cero_grande(
+    client, crear_usuario, login
+):
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/reportes").get_data(as_text=True)
+
+    assert "admin-movil__pendientes" not in html
+
+
+def test_con_pendientes_el_telefono_muestra_el_contador(
+    client, db, crear_usuario, crear_post, login
+):
+    _resenia_reportada(db, crear_usuario, crear_post)
+    admin = crear_usuario(username="jefa", rol=Roles.ADMIN)
+    login(admin.id)
+
+    html = client.get("/admin/reportes").get_data(as_text=True)
+
+    assert "admin-movil__pendientes" in html
+    assert "cosa para revisar" in html

@@ -363,79 +363,79 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // =============================
-// MENÚ DE USUARIO EN LA NAVBAR
+// MENÚ DE LA CUENTA EN LA BARRA
 // =============================
 document.addEventListener("DOMContentLoaded", () => {
-    
-    // --- LÓGICA MENÚ DE USUARIO (la que ya tenías) ---
-    const userToggle = document.querySelector(".navbar__user-toggle");
-    const userMenu = document.getElementById("user-menu");
+    const boton = document.getElementById("user-menu-toggle");
+    const menu = document.getElementById("user-menu");
+    if (!boton || !menu) return; // no hay sesion: no existe el avatar
 
-    if (userToggle && userMenu) {
-        // Abrir/cerrar menú al hacer click en el usuario
-        userToggle.addEventListener("click", (event) => {
-            event.stopPropagation();
-            const abierto = userMenu.classList.toggle("user-menu--open");
-            userToggle.setAttribute("aria-expanded", abierto ? "true" : "false");
-        });
-
-        // Cerrar menú al hacer click fuera
-        document.addEventListener("click", () => {
-            userMenu.classList.remove("user-menu--open");
-            userToggle.setAttribute("aria-expanded", "false");
-        });
+    function cerrar() {
+        menu.classList.remove("menu-cuenta--abierto");
+        boton.setAttribute("aria-expanded", "false");
     }
 
-    // --- LÓGICA MENÚ MÓVIL (NUEVO) ---
-    const mobileToggle = document.querySelector(".navbar__toggle");
-    const navbar = document.querySelector(".navbar"); // El contenedor principal
+    boton.addEventListener("click", (evento) => {
+        evento.stopPropagation();
+        const abierto = menu.classList.toggle("menu-cuenta--abierto");
+        boton.setAttribute("aria-expanded", abierto ? "true" : "false");
+    });
 
-    if (mobileToggle && navbar) {
-        mobileToggle.addEventListener("click", (event) => {
-            event.stopPropagation();
-            // Añade/quita la clase .navbar--mobile-open al <header class="navbar">
-            const abierto = navbar.classList.toggle("navbar--mobile-open");
-            mobileToggle.setAttribute("aria-expanded", abierto ? "true" : "false");
-        });
-    }
+    // Un click adentro del menu no lo cierra: son nueve links y uno de ellos
+    // puede estar abajo del todo, con el menu scrolleado.
+    menu.addEventListener("click", (evento) => evento.stopPropagation());
 
-    // Opcional: Cerrar menú móvil si se hace clic fuera de él (en 'main' o 'footer')
-    const mainContent = document.querySelector("main");
-    if (mainContent && navbar) {
-        mainContent.addEventListener("click", () => {
-            navbar.classList.remove("navbar--mobile-open");
-            if (mobileToggle) mobileToggle.setAttribute("aria-expanded", "false");
-        });
-    }
+    document.addEventListener("click", cerrar);
 
+    // Escape cierra y devuelve el foco al avatar: el menu se abre con teclado
+    // igual que con el mouse, y sin esto quedaria abierto y sin salida.
+    document.addEventListener("keydown", (evento) => {
+        if (evento.key !== "Escape") return;
+        if (!menu.classList.contains("menu-cuenta--abierto")) return;
+        cerrar();
+        boton.focus();
+    });
 });
 
-// =============================
-// BADGE DE NOTIFICACIONES (mensajes sin leer + reseñas sin responder)
-// =============================
-document.addEventListener("DOMContentLoaded", () => {
-    const badge = document.getElementById("notif-badge");
-    if (!badge) return; // no esta logueado, no existe el link de Mensajes
+// La hamburguesa se fue con el rediseño de navegacion: en telefono la
+// navegacion es la barra de pestañas de abajo (partials/_tabbar.html), que es
+// marcado y CSS, sin JS que la abra ni la cierre.
 
-    function actualizarBadge() {
+// =============================
+// CONTADORES DE LA NAVEGACIÓN
+// =============================
+// Un numero por item y no un total pegado a "Mensajes". El endpoint ya devolvia
+// las tres claves por separado; lo que sumaba era esto. Cada elemento dice cual
+// quiere con data-notif, y el mismo contador puede aparecer en varios lugares a
+// la vez (el sobre de la barra, la pestaña del telefono, el menu de la cuenta).
+document.addEventListener("DOMContentLoaded", () => {
+    const contadores = document.querySelectorAll("[data-notif]");
+    if (!contadores.length) return; // no esta logueado
+
+    function pintar(elemento, cantidad) {
+        if (cantidad > 0) {
+            elemento.textContent = cantidad > 9 ? "9+" : String(cantidad);
+            elemento.hidden = false;
+        } else {
+            elemento.hidden = true;
+        }
+    }
+
+    function actualizar() {
         fetch("/mensajes/notificaciones")
             .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-            .then((data) => {
-                const total = data.total || 0;
-                if (total > 0) {
-                    badge.textContent = total > 9 ? "9+" : String(total);
-                    badge.style.display = "inline-block";
-                } else {
-                    badge.style.display = "none";
-                }
+            .then((datos) => {
+                contadores.forEach((elemento) => {
+                    pintar(elemento, datos[elemento.dataset.notif] || 0);
+                });
             })
             .catch(() => {
                 // Un polling fallido no debe romper la navegacion normal.
             });
     }
 
-    actualizarBadge();
-    setInterval(actualizarBadge, 20000);
+    actualizar();
+    setInterval(actualizar, 20000);
 });
 
 // =============================
@@ -472,7 +472,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 latInput.value = posicion.coords.latitude;
                 lonInput.value = posicion.coords.longitude;
                 nearInput.value = "";
-                boton.closest("form").submit();
+                // El form que se manda es EL DEL CAMPO, no el que envuelve al
+                // boton: desde el rediseño de la barra de filtros, "Cerca de
+                // mí" vive en la fila de fichas, afuera del <form>, así que
+                // `boton.closest("form")` daba null y el click moría con un
+                // TypeError sin buscar nada. Y aunque el botón estuviera dentro
+                // de algún form, el que tiene que viajar es el que lleva las
+                // coordenadas que se acaban de escribir.
+                latInput.form.submit();
             },
             () => {
                 alert("No pudimos acceder a tu ubicación.");
@@ -1019,4 +1026,33 @@ document.addEventListener("DOMContentLoaded", () => {
             if (nota) nota.hidden = disponible.checked;
         });
     }
+});
+
+
+// Reservar un turno: el resumen del costado sigue al horario elegido.
+//
+// El horario es un <input type="radio"> adentro del formulario que confirma, y
+// el resumen nace diciendo "elegí uno de los horarios libres" desde el HTML.
+// Esto solo lo va completando. SIN JAVASCRIPT LA PANTALLA FUNCIONA IGUAL: el
+// radio se marca, el botón envía y la vista rechaza con "Elegí un horario de la
+// lista" si no se eligió ninguno; lo único que falta es ver el turno escrito
+// antes de confirmar.
+document.addEventListener("DOMContentLoaded", () => {
+    const resumen = document.querySelector("[data-resumen-turno]");
+    if (!resumen) return;
+
+    const fecha = resumen.querySelector("[data-resumen-fecha]");
+    const hora = resumen.querySelector("[data-resumen-hora]");
+    // El día que se está mirando, tal como lo escribió el servidor: el resumen
+    // no lo recalcula, solo lo repite al lado de la hora elegida.
+    const dia = fecha.textContent.trim();
+
+    document.querySelectorAll(".slot__radio").forEach((radio) => {
+        radio.addEventListener("change", () => {
+            if (!radio.checked) return;
+            resumen.classList.add("resumen-turno--elegido");
+            fecha.textContent = dia;
+            hora.textContent = `De ${radio.value} a ${radio.dataset.hasta}`;
+        });
+    });
 });

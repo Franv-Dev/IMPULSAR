@@ -2,18 +2,34 @@
 
 {% block title %}Error del servidor – IMPULSAR{% endblock %}
 
+{#  El 500. Es el mismo molde que el 404 (`.error`) con otro texto, y con una
+    diferencia que importa: acá NO van el buscador ni los rubros. Si el servidor
+    se cayó, ofrecer un buscador que tampoco va a andar es una segunda
+    frustración.
+
+    Los dos botones son reintentar y Contacto — no «ver emprendimientos», que es
+    justo lo que en este momento puede estar roto. #}
+
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="error-page">
-            <p class="error-page__code">500</p>
-            <h2 class="error-page__title">Algo salió mal de nuestro lado</h2>
-            <p class="error-page__text">
-                Ya quedó registrado el error. Probá de nuevo en unos minutos;
-                si sigue pasando, escribinos desde la sección de contacto.
+        <div class="error">
+            <p class="error__codigo">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.4M12 7.8h.01"/>
+                </svg>
+                ERROR 500
             </p>
-            <div class="error-page__actions">
-                <a href="{{ url_for('index') }}" class="btn btn--primary">Volver al inicio</a>
+
+            <h1 class="error__titulo">Algo salió mal de nuestro lado</h1>
+            <p class="error__texto">
+                Ya quedó registrado el error. Probá de nuevo en unos minutos; si sigue
+                pasando, escribinos y contanos qué estabas haciendo.
+            </p>
+
+            <div class="error__acciones">
+                <a href="{{ request.url }}" class="btn btn--primary">Reintentar</a>
                 <a href="{{ url_for('pages.contact') }}" class="btn btn--secondary">Contacto</a>
             </div>
         </div>

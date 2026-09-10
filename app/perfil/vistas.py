@@ -16,6 +16,7 @@ from flask import (
 )
 from sqlalchemy.exc import IntegrityError
 
+from app.panel.consultas import contadores_de as contadores_del_panel
 from app.perfil import consultas, formulario, reglas
 from app.perfil.modelo_horario import Horario
 from app.perfil.modelo_follow import Follow
@@ -24,6 +25,7 @@ from app.perfil.modelo_follow import Follow
 from app.servicios import consultas as consultas_servicios
 from app.turnos import consultas as consultas_turnos
 from models.user import Roles
+from services.eventos import hoy_en_argentina
 from services.geocoding import get_coordinates_from_address
 from services.horarios import DIAS, ahora_en_argentina, esta_abierto
 from services.ratings import serializar_con_rating
@@ -166,11 +168,18 @@ def reviews(slug):
         page=request.args.get("page", 1, type=int),
         per_page=current_app.config["POSTS_POR_PAGINA"],
     )
+    # El menu del panel solo se dibuja para el dueño, asi que sus contadores
+    # solo se consultan para el dueño: esta URL es publica y un visitante no
+    # tiene por que pagar seis COUNT que no va a ver.
+    es_dueno = g.user is not None and g.user.id == user.id
     return render_template(
         "profile/reviews.html",
         user=user,
         paginacion=paginacion,
         resumen=consultas.resumen_de_resenias_recibidas(user.id),
+        contadores=(
+            contadores_del_panel(user.id, hoy_en_argentina()) if es_dueno else None
+        ),
     )
 
 
@@ -419,3 +428,22 @@ def edit_contacto():
         campos=formulario.campos_guardados(g.user),
         error=None,
     )
+
+
+@profile.route("/mi-cuenta")
+@login_required
+def cuenta():
+    """La pantalla "Mi cuenta" del telefono (artboard
+    disenio-navegacion/MovilPerfil.dc.html).
+
+    Es el destino de la pestana Perfil de la barra de abajo. En escritorio lo
+    mismo esta en el menu que cuelga del avatar, asi que ahi la ruta existe
+    igual pero nadie la enlaza: no se esconde ni se redirige porque un link
+    compartido tiene que seguir abriendo algo, y lo que muestra es correcto en
+    los dos anchos.
+
+    No consulta nada: son links a rutas que ya existen. Los contadores los
+    rellena main.js con /mensajes/notificaciones, el mismo endpoint que el
+    resto de la navegacion.
+    """
+    return render_template("profile/cuenta.html", user=g.user)
