@@ -1261,7 +1261,7 @@ presupuestos, turnos y eventos.
 - En teléfono el panel vive adentro de la pestaña Perfil, sin menú lateral: cada
   emprendimiento abre su pantalla con catálogo, servicios y ferias adentro.
 
-### 5. Turnos (dibujada, a revisar)
+### 5. Turnos (dibujada, PASADA A CÓDIGO el 9/9)
 
 Canvas en `disenio-turnos/`: seis artboards (reservar, mis turnos y la agenda, cada
 una con su teléfono). Reemplaza a las cuatro plantillas de `app/turnos/templates/`.
@@ -1315,6 +1315,48 @@ existen y dibujarlos sería inventar una columna.
 Los cinco artboards estáticos no tienen comportamiento; el de reservar sí: la tira de
 días y los horarios se eligen de verdad, para poder probar el paso de confirmación.
 
+
+#### Lo que se decidió al pasarla a código (9/9)
+
+**Un quinto vacío que el canvas no tenía.** El artboard dibuja tres mensajes
+para el día sin horarios (cerrado, sin horario cargado, todo tomado). En la
+verificación visual apareció el cuarto caso real: el día de HOY, ya empezado y
+**sin ninguna reserva**, caía en «todo tomado» y decía «los turnos de ese día ya
+están tomados» — mentira, y además manda a buscar un culpable que no existe. Es
+`consultas.PASO`, y dice «Por hoy ya no llegás». `descartar_pasados` ya existía
+desde 2a; lo que faltaba era decirlo distinto.
+
+**La tira lleva dos parámetros, no uno** (`?desde=` y `?fecha=`). Mover la
+semana con las flechas no elige un día, y elegir un día no mueve la semana: con
+un solo parámetro, cada click recentraría la tira y los otros seis días se
+moverían debajo del dedo.
+
+**Los horarios son radios de un solo formulario.** El canvas lo resuelve con
+estado de componente; en la app son `<input type="radio">` y un único submit al
+final, así el paso de confirmación existe sin JavaScript. `main.js` solo hace
+que el resumen del costado siga al horario elegido.
+
+**Cancelar es un `<details>`**, de los dos lados. Mismo recurso con el que la
+barra de filtros del catálogo se pliega en el teléfono: la confirmación no
+puede depender de que haya cargado un script, porque cancelar no se revierte.
+
+**Los huecos de la agenda no se cortan en tramos.** El artboard los dibuja como
+bloques y así quedaron: cada servicio tiene su duración y todos salen del mismo
+horario de la persona, así que un hueco de 13:45 a 16:00 puede recibir un turno
+de 45 minutos o uno de 90. Cortarlo obligaría a elegir una duración y mentiría
+sobre las otras.
+
+**Tres cosas del canvas quedaron afuera, con motivo:** «Cómo llegar» (no hay más
+que `address_street`; armar un link a un mapa externo es una decisión de
+producto que nadie tomó), «Dejar una reseña» en el historial (habría que saber
+si ya la dejó — otra consulta, otra tanda) y el filtro por emprendimiento de la
+agenda (hoy sería un filtro de un solo valor).
+
+**El repaso a 390 px quedó pendiente**: la extensión de Chrome no estaba
+conectada. Las media queries están escritas siguiendo las dos reglas de teléfono
+de más abajo —siete columnas siempre, nada se desliza de costado— pero no se
+miraron con un navegador.
+
 ### Dos cosas aprendidas en el teléfono
 
 - **Nada se desliza de costado.** La tira de productos de la ficha móvil cortaba
@@ -1347,7 +1389,7 @@ En este orden, y por este motivo:
 propio, mientras Tomás las revisaba.
 
 
-### 6. Ferias y eventos (dibujada 2026-09-06, a revisar)
+### 6. Ferias y eventos (dibujada 2026-09-06, PASADA A CÓDIGO el 9/9)
 
 | Qué | Dónde |
 | --- | --- |
@@ -1387,6 +1429,49 @@ ningún dato nuevo** — el endpoint ya devuelve el mes.
 la base vacía y mentira cuando el día elegido no tiene nada; el segundo dice cómo
 salir del filtro.
 
+
+
+#### Lo que se decidió al pasarla a código (9/9)
+
+**De los tres campos que la base no tenía entran DOS**, decidido con Tomás antes
+de escribir la migración (`c7d92f4a1b83`, la única de todo el rediseño):
+
+- **Tipo de evento**: `events.tipo`, `String(20)`, **nullable**. La taxonomía es
+  la de acá —Feria · Taller · Pop-up · Encuentro— y queda cerrada: cambiarla
+  después obliga a re-etiquetar lo cargado. **Sin «Otros»**, al revés que los
+  rubros de emprendimiento: el cajón de sastre desde el día uno garantiza que la
+  mitad caiga ahí y que el filtro no sirva. Nullable porque los eventos viejos no
+  tienen tipo y no hay de dónde sacarlo — NULL es «no lo dijo», la tarjeta no
+  dibuja el chip, y ningún filtro por tipo lo cuenta. El formulario sí lo exige.
+- **Entrada libre**: `events.entrada_libre`, `Boolean` NOT NULL, default False.
+  La asimetría con el tipo es deliberada: el chip solo aparece en True, así que
+  False no afirma nada, mientras que un tipo equivocado sí afirma algo falso.
+- **«Me interesa» no entró.** El propio canvas dice que si hay que recortar algo
+  de los tres es éste, y por eso se recortó: es una feature entera, no una
+  etiqueta.
+
+**El calendario ya filtra.** Los días son enlaces a `?dia=AAAA-MM-DD`. El parcial
+tiene dos modos (`data-enlace-dia`): enlace en la cartelera, botón en el home,
+donde el panel de al lado se arma en el navegador y recargar para ver tres
+eventos sería peor. Con un día elegido, el calendario abre en SU mes.
+
+**El día manda sobre «todavía no pasó»**: elegir una fecha del pasado la muestra,
+porque el calendario navega meses para atrás y esconder lo vencido dejaría esos
+meses vacíos.
+
+**Una pantalla que el canvas no dibuja: `/eventos/mios`.** Es la que le faltaba
+al ítem «Eventos y ferias» del menú del panel, que quedó pendiente de la tanda
+anterior. Próximos y pasados, editar y borrar; el borrar con el mismo aviso en
+`<details>` que cancelar un turno.
+
+**Los cuatro tipos van todos en índigo lavado y se distinguen por el ícono**, tal
+como pedía el canvas. En el formulario son un segmentado de cuatro radios, no un
+`<select>`.
+
+**El repaso a 390 px quedó pendiente** (la extensión de Chrome no estaba
+conectada). En teléfono los filtros envuelven en dos filas en vez de esconderse
+detrás del botón «Tipo y entrada» del artboard: hace lo mismo sin agregar una
+capa que hay que abrir para ver qué hay.
 
 ### 7. Panel de administración (dibujada 2026-09-06, a revisar)
 
@@ -1483,35 +1568,815 @@ en celular. Las de texto en 390 px son la misma columna más angosta.
 
 ---
 
+## Navegación pasada a código (2026-09-08)
+
+Primera de las ocho tandas dibujadas que entra a la app. Toca `templates/base.html`
+y tres parciales nuevos; ninguna pantalla de contenido se tocó.
+
+### La barra: dos bandas en vez de una fila
+
+| | Antes | Ahora |
+| --- | --- | --- |
+| Filas | 1 | 2: identidad + secciones + acciones (68 px), y el buscador solo (52 px) |
+| Secciones | 4 (Inicio, Emprendimientos, Eventos, Servicios) | 3, centradas, la activa subrayada en índigo |
+| Buscador | un campo, y sólo desde 1200 px | dos campos (`q` + `near`) y un botón, en todas las pantallas menos las dos que ya tienen el suyo |
+| Favoritos y Mensajes | adentro del menú, a dos clicks | iconos visibles en la barra |
+| Publicar | no estaba en la barra (sólo en el pie) | botón lleno arriba del menú de la cuenta |
+| Nombre de usuario | en la barra, con tope de 9 rem | sólo el avatar; el nombre está arriba del menú |
+
+**"Inicio" se fue** de las secciones: el logo ya es el inicio.
+
+**Los dos breakpoints viejos se recalcularon.** Con el buscador fuera de la fila 1,
+esa fila sólo tiene que albergar logo (~110 px) + secciones (344 px) + acciones. El
+caso más ancho sigue siendo el del visitante ("Acceder" + "Crear cuenta" + el
+switch, 262 px): con dos gaps de 20 px y los 48 px de padding del container son
+804 px. El corte de la vista de teléfono baja de 879 a **859 px**; el de 960 px (a
+partir de dónde las secciones se pueden centrar) queda igual porque mide otra cosa.
+
+**El buscador de la barra no se dibuja en el home ni en el listado**: esas dos
+pantallas ya abren con su propia banda de búsqueda, y encima más completa (las dos
+suman el rubro). Se vio en pantalla antes de decidirlo: quedaban dos buscadores
+apilados preguntando lo mismo. Cuál de los dos sobrevive en el listado se decide
+cuando toque `disenio-inicio/Resultados`.
+
+### El menú de la cuenta: tres grupos, no una lista de nueve
+
+`partials/_menu_cuenta_desplegable.html`. Mi actividad (Mensajes, Presupuestos, Mis
+turnos, Favoritos) · Mi emprendimiento (Mis emprendimientos, Mi catálogo, Mis
+servicios, Agenda de turnos, Reseñas recibidas) · y abajo Ajustes y Salir, con el
+panel de administración sólo para el admin.
+
+**Mis turnos y Agenda de turnos entran acá por primera vez**: `/turnos/mios` y
+`/turnos/agenda` existían desde la tanda de turnos y no estaban en ningún menú.
+
+Ojo que **no es el mismo archivo** que `partials/_menu_cuenta.html`, que es la
+columna izquierda de las diez pantallas de cuenta y sigue como estaba.
+
+### El contador que mentía
+
+`/mensajes/notificaciones` **ya devolvía los tres números por separado**
+(`unread_messages`, `pending_service_requests`, `unanswered_reviews`) desde la tanda
+de servicios; el que los sumaba y pegaba el total al ítem "Mensajes" era el JS. No
+hizo falta tocar el backend: cada elemento dice cuál quiere con `data-notif="..."`,
+y `main.js` rellena todos los que encuentre. El mismo contador puede estar en varios
+lugares a la vez (el sobre de la barra, la pestaña del teléfono, el menú).
+
+Tokens nuevos: `--color-badge-bg: #A85527` y `--color-badge-ink: #FFFFFF`, **iguales
+en los dos temas** a propósito, como `--color-primary-deep`: es una marca de alerta
+con texto blanco fijo, no una superficie que siga al tema. No es el `#D97544` del
+artboard porque el blanco encima de ese da **3.19:1** y el badge es texto chico en
+negrita, o sea que necesita 4.5:1; el tono un paso más oscuro da **5.26:1**. El par
+suave (presupuestos, reseñas) reusa `--color-warning-bg` / `--color-warning-text`,
+que ya estaba verificado.
+
+### El teléfono: se fue la hamburguesa
+
+Cinco pestañas abajo con sesión (Inicio · Explorar · Favoritos · Mensajes · Perfil),
+62 px de alto. Publicar **no** entra: es una acción de dueño y vive arriba de la
+pantalla Mi cuenta. Nada de botón flotante, que taparía una tarjeta.
+
+Dos cosas que el canvas no había resuelto y se decidieron acá:
+
+- **Qué hace "Explorar".** El artboard dice que agrupa las tres entradas de
+  escritorio pero nunca dibujó esa agrupación. Va al listado, y las tres secciones
+  reaparecen como una fila de solapas arriba del contenido, sólo en teléfono y sólo
+  en esas tres pantallas. Sin scroll lateral y sin pantalla nueva.
+- **Qué ve un visitante.** Los dos artboards de teléfono están con sesión iniciada.
+  Sin cuenta son tres pestañas (Inicio · Explorar · Entrar) y no cinco: Favoritos y
+  Mensajes piden login, así que como pestañas sólo rebotarían.
+
+`/perfil/mi-cuenta` es la pantalla nueva de la pestaña Perfil. Se dibuja igual en
+escritorio (columna angosta y centrada): la ruta existe en los dos anchos aunque
+sólo la enlace la barra de abajo, porque un link compartido tiene que abrir algo.
+Va en `SLUGS_RESERVADOS`, como toda ruta estática bajo `/perfil/`.
+
+### Lo que quedó afuera, a propósito
+
+**La pastilla de zona del top bar del teléfono.** El artboard la dibuja al lado del
+logo, pero el propio canvas anota que *"falta cablear que la zona elegida se recuerde
+entre pantallas"*: sin esa memoria, la pastilla no tiene nada que decir ni dónde
+guardar lo que se elija. La zona se dice en el campo "dónde" del buscador, que sí
+manda un `near` real al listado. Cuando exista la memoria de zona, la pastilla entra.
+
+### Un bug de CSS que salió al mirarlo
+
+Los contadores nacen con el atributo `hidden`, pero `hidden` vale menos que
+cualquier `display` de una clase propia: con `display: flex` encima se seguían
+viendo, y pintaban un punto naranja vacío aunque no hubiera nada. Se agregó
+`[hidden] { display: none !important; }` al reseteo. Un test puede afirmar que el
+atributo está, no que el CSS lo respete: esto se vio en pantalla, no en la suite.
+
+---
+
+## Ficha del emprendimiento pasada a código (2026-09-09)
+
+Segunda de las ocho tandas. Reescribe `blog/detail.html` entero (466 líneas) y
+suma tres piezas de backend chicas. La navegación de la tanda anterior ya está
+puesta, así que la ficha hereda la barra de dos bandas sin tocarla.
+
+### Los siete problemas que el canvas anotó, y qué se hizo con cada uno
+
+| Lo que estaba mal | Ahora |
+| --- | --- |
+| Las reseñas decían «Usuario #7» | Firman con el nombre, traído en el mismo query (`joinedload`) |
+| Las estrellas eran los glifos ★ y ☆, y había un 📍 por servicio | SVG en `partials/_estrellas.html` y en `_icono_nav.html` |
+| Las ferias no aparecían nunca | Bloque «Dónde encontrarla», con `Post.eventos` |
+| «Abierto ahora» no decía a qué hora cierra | «Abierto ahora · cierra 19:00» |
+| Las miniaturas abrían el archivo suelto de `/static/uploads/` | Visor propio, con teclado y foco |
+| Ningún estado vacío pensado | Cada hueco explica por qué conviene llenarlo |
+| La distancia no se mostraba aunque hay lat/lon | **Sigue sin mostrarse** — ver más abajo |
+
+### Anclas, no pestañas
+
+El pedido evaluaba «Inicio · Productos · Servicios · Reseñas · Información» como
+solapas. No van: la mayoría de los emprendimientos tiene dos o tres productos y
+ninguna reseña, así que tres de las cuatro abrirían vacías y la ficha parecería
+abandonada. Quedó una barra de anclas que se pega arriba al scrollear. Nada se
+esconde detrás de un click y la página sigue siendo una sola para buscadores y
+para compartir. En teléfono la barra no va: los bloques ya están uno abajo del
+otro y una barra pegada come pantalla sin ahorrar scroll.
+
+Las visitas (`views_count`) se mudaron a la barra de dueña, no al lado del
+nombre: son un dato del dueño, no algo que ayude a decidir a quien entra.
+
+### Los nueve bloques son una lista plana
+
+El teléfono los quiere en otro orden que el escritorio — **horarios y ferias
+ANTES de las reseñas**, porque son lo que decide si conviene ir ahora — y con
+dos columnas anidadas ese reordenamiento no se puede hacer con CSS. En el HTML
+van los nueve seguidos; en escritorio los dos envoltorios arman la grilla de dos
+columnas, y en teléfono se vuelven `display: contents` y cada bloque se acomoda
+con su propio `order`. Cada bloque dice su lugar por su propia clase
+(`--identidad`, `--ferias`, `--mapa`…), no por en qué envoltorio estaba.
+
+### Lo que se sumó al backend
+
+Tres cosas chicas, todas contra datos que ya existían:
+
+- **`services/horarios.hora_de_cierre()`**, que devuelve el `time` de la ventana
+  abierta ahora, o None. `esta_abierto()` pasó a ser `hora_de_cierre(...) is not
+  None`: son la misma pregunta y no pueden contestar distinto. Las dos ramas del
+  cruce de medianoche viven ahora en un solo lugar. Ninguna respuesta cambia —
+  los 39 tests de horarios pasan sin tocarlos.
+- **`consultas.ferias_de()`**, que reusa `services.eventos.proximos()`. Ahí ya
+  estaba decidido que el corte es por día y no por hora, y que el id desempata al
+  final porque la hora es opcional; repetir el `order_by` a mano se comía ese
+  desempate.
+- **El filtro `hace`** (`services/formatting.tiempo_relativo`): «hace 2
+  semanas». Leyendo una reseña lo que importa es si es de esta temporada o de
+  hace dos años, no el día; la fecha exacta queda en el `title`.
+
+**`/mensajes/notificaciones` no se tocó** — igual que en la tanda anterior, el
+dato ya estaba y lo que faltaba era mostrarlo.
+
+### La ficha recién publicada
+
+Es el estado en el que va a estar TODA ficha nueva, y la app no lo diseñaba: se
+veían bloques en blanco y ya. Ahora:
+
+- Una **barra de dueña** arriba de todo dice que estás parada en tu propia ficha,
+  con las visitas, «Editar los datos» y «Eliminar». Sin eso los huecos se leen
+  como una pantalla rota en vez de como algo que falta cargar.
+- **Cada hueco explica por qué conviene llenarlo.** El de la galería no es un
+  rectángulo gris con un iconito —eso se lee como carga rota— sino la invitación
+  con el motivo.
+- **«Completá tu ficha»** son cinco tareas contra campos que existen: nombre y
+  descripción, dirección, fotos, horarios, y un producto o un servicio. El aviso
+  de abajo es cierto: sin horarios la ficha no entra en el filtro «abierto
+  ahora». La caja desaparece sola cuando las cinco están.
+- El vacío de reseñas aclara que **no se piden ni se cargan a mano**. Es la duda
+  que trae cualquiera que viene de otra plataforma.
+- **Productos y servicios son dos bloques distintos.** A la dueña se le muestran
+  los dos siempre; a un visitante sólo el que tenga algo adentro, así un
+  emprendimiento que es puro servicio no muestra un «Lo que vende» en blanco.
+
+### El teléfono
+
+La barra de contacto va fija abajo: es LA acción de la pantalla y no puede vivir
+al final de dos mil píxeles de scroll ni en una columna que ahí no existe. Ocupa
+el lugar de la barra de pestañas — la ficha es una pantalla abierta ENCIMA de
+Explorar — y `detail.html` apaga las pestañas sobreescribiendo el bloque
+`tabbar`. A la dueña no se le dibuja: sus acciones están arriba.
+
+### Lo que quedó afuera, a propósito
+
+**La distancia («a 400 m tuyo»).** Necesita saber dónde está parado quien mira, y
+eso todavía no existe: es la misma memoria de zona entre pantallas que la tanda
+de navegación dejó anotada como pendiente. Mostrar una distancia sin ese dato
+sería inventarla. Entra cuando entre la zona.
+
+**Los botones de compartir y favorito siguen con emoji** (🔗 y ♥/♡). Van contra
+la misma regla que las estrellas, pero viven en `partials/` y los usan también
+las tarjetas del listado y del inicio, y `share.js` les pisa el `textContent`
+para el estado «copiado» — cambiarlos a SVG es su propia tanda chica, no un
+arreglo al paso de ésta.
+
+### Un desborde lateral que salió al medirlo
+
+En 390 px la pantalla se deslizaba de costado: `scrollWidth` daba 434. El culpable
+era «Entrá para pedir presupuesto» con `white-space: nowrap`, cuyo ancho mínimo
+de contenido (410 px) se lo comía el bloque entero —los bloques son items flex por
+el `display: contents`— y después el `body`. Se arregló dejándolo envolver y
+poniéndole `min-width: 0` a los bloques. Medido de nuevo: 371 px, sin scroll
+lateral. Va con la regla que ya estaba: **nada se desliza de costado en móvil.**
+
+## Catálogo de productos pasado a código (2026-09-09)
+
+La tercera tanda que entra a la app, después de navegación y ficha. Es la única
+de las ocho que **necesitaba rutas nuevas**: hasta ahora `/productos` era el
+panel privado del dueño y un producto sólo se veía incrustado adentro de la
+ficha de su emprendimiento, o sea que para encontrarlo había que saber antes
+quién lo vende.
+
+### Las URL se dieron vuelta
+
+| Antes | Ahora | Quién |
+| --- | --- | --- |
+| `/productos/` → panel del dueño | `/productos/` → **catálogo público** | cualquiera |
+| — | `/productos/<id>` → **detalle del producto** | cualquiera |
+| — | `/productos/<id>/favorito` (POST) | con sesión |
+| — | `/productos/guardados` | con sesión |
+| `/productos/` | `/productos/mios` → panel del dueño | el dueño |
+
+La URL corta se la queda la pública porque es la única que alguien linkea o
+comparte. El endpoint del panel dejó de llamarse `products.index` y pasó a
+`products.mios`; los doce `url_for` que lo nombraban están actualizados, y
+`templates/products/index.html` es ahora `mios.html`.
+
+### Los seis filtros, y por qué esos
+
+Todos viajan como parámetros de la URL, no como un formulario que se postea: la
+búsqueda se comparte, vuelve con el botón de atrás y funciona sin JavaScript.
+Es el mismo criterio que ya usan el listado y la búsqueda de servicios.
+
+- **Texto** — mira `Product.nombre` y `Product.descripcion`, no el
+  emprendimiento: el que busca «dulce de leche» acá está buscando la cosa. Para
+  encontrar el negocio está el listado, que además ya mira adentro del catálogo.
+- **Rubro** — `Post.category`. `Product` no tiene categoría propia, y por eso el
+  punto de color de cada tarjeta es el del rubro del negocio.
+- **Precio desde/hasta** — `Product.precio` es `Numeric(10,2)`, así que el rango
+  es exacto. Lo lee **el mismo `parsear_precio` del formulario de carga**, o sea
+  que «1.500,50» y «1500.50» se entienden igual en los dos lados. Un precio mal
+  escrito no acota nada pero el texto crudo vuelve al campo, para que no se
+  vacíe solo mientras alguien escribe.
+- **Disponibles** — viene **encendido**, y por eso lo que viaja en la URL es el
+  apagado (`?disponibles=0`), al revés que los checkboxes de sí/no del listado.
+  Un catálogo que arranca mostrando lo que no hay hace perder tiempo.
+- **Abierto ahora** — el mismo `abierto_ahora_sql` del listado, sobre los
+  horarios del emprendedor.
+- **Radio en km** — el mismo `distancia_km_sql`, y sólo se dibuja si hay
+  coordenadas: sin ellas la consulta lo ignora, y ofrecer un filtro que no hace
+  nada es peor que no tenerlo. Los radios son los tres de `reglas.RADIOS_KM`.
+
+Las dos funciones del listado que hacían falta (`_distancia_km` y
+`_abierto_ahora_sql`) **pasaron a ser públicas** (`distancia_km_sql`,
+`abierto_ahora_sql`) en vez de copiarse: la copia se habría olvidado del `CASE`
+que acota el `ACOS`, que es justamente el detalle que costó encontrar.
+
+**El orden** son cuatro: más nuevos (el default), precio de menor a mayor, de
+mayor a menor, y cercanía — esta última sólo aparece cuando hay coordenadas. Si
+la ubicación se pudo resolver, el default pasa a ser cercanía: quien se tomó el
+trabajo de decir dónde está quiere lo de al lado primero, y el control queda
+marcado en lo que se aplicó, así que no es un orden secreto.
+
+**«18 productos de 11 emprendimientos»** es un `COUNT(DISTINCT post_id)` que
+pasa por el mismo `_filtrar_catalogo` que la grilla. Escrito dos veces, el
+número miente en cuanto alguien toque un filtro — es el problema que servicios
+ya había resuelto con su `_filtrar_busqueda`.
+
+### El detalle contesta dos preguntas
+
+Qué es (foto, precio, disponible, descripción) y **quién lo vende** (rubro,
+puntaje, abierto ahora, el emprendimiento). La segunda pesa tanto como la
+primera: sin pagos ni protección al comprador, lo que decide es la confianza en
+la persona.
+
+- **Una sola foto**, con «Ampliar». `Product.foto` es una columna, no una
+  galería: no hay miniaturas que dibujar y fingirlas sería mentir sobre el
+  modelo. El botón abre **el mismo visor de la ficha** (`static/js/visor.js`),
+  que funciona igual con una foto sola: sin flechas ni contador, porque no hay
+  nada que recorrer.
+- **No hay «Comprar»**, ni cuotas, ni envío, ni «más vendido». La acción es
+  **«Consultar por este producto»**, y termina en el chat interno.
+- **«Más de este emprendimiento»** sale de `Product.post_id`, y el «Ver los N
+  productos» sale del mismo `metricas_de_posts` que ya trae el promedio y la
+  cantidad de reseñas: una consulta para los tres datos.
+- **Las migas de pan** son la única pantalla que las tiene, y por un motivo: se
+  llega desde cuatro lados (el catálogo, un rubro, la ficha, un link
+  compartido). En 390 px se esconde la última, que es la más larga y la única
+  que no lleva a ningún lado.
+
+### El chat que ya sabe de qué se habla
+
+`?producto=<id>` en `messages.conversation` deja el campo con «Hola, quería
+consultar por «...».» ya escrito. Es la diferencia entre un chat en blanco
+—donde el que pregunta tiene que volver a explicar por cuál de los catorce
+frascos escribe— y uno donde el dueño ya sabe de qué se trata.
+
+**Se exige que el producto sea de ese emprendimiento.** Sin ese chequeo, un id
+cualquiera en la URL escribiría en el campo el nombre de un producto ajeno, que
+es una forma barata de poner palabras en boca del que pregunta. Si no coincide
+no se precarga nada, que es lo mismo que entrar por «Enviar un mensaje». Y es
+sólo un valor inicial: se borra y se escribe otra cosa.
+
+### Favoritos de productos: tabla nueva
+
+El corazón de las tarjetas necesitaba dónde guardar. `Favorite` es de
+emprendimientos, así que va **`product_favorites`**, tabla propia
+(`models/product_favorite.py`, migración `a4c17b8e6d20`): un favorito de negocio
+y uno de producto se guardan igual pero se miran distinto, y meterlos en la
+misma tabla con un `post_id` o un `product_id` nullable obligaría a un CHECK de
+«uno u otro» y a que cada consulta se acuerde de cuál está buscando.
+
+Las dos FK con `ondelete="CASCADE"` y nombre explícito desde el vamos, y el
+`UNIQUE (user_id, product_id)` que es lo que de verdad corta el doble click —el
+`SELECT` de «¿ya lo tiene?» y el `INSERT` no son atómicos. Verificado el ciclo
+upgrade → downgrade → upgrade en SQLite y en una base MySQL descartable, y ahí
+mismo que las dos cascadas y el UNIQUE hacen lo que dicen.
+
+**«Mis favoritos» pasó a tener dos solapas**, Emprendimientos y Productos, en un
+parcial compartido (`partials/_solapas_favoritos.html`): separadas, entrar a una
+sería quedarse sin salida hacia la otra.
+
+### Cómo se entra al catálogo
+
+**Productos no entra en la barra global**, como ya estaba decidido: con cuatro
+secciones la nav, que va centrada al 50 % exacto, se monta encima del bloque de
+acciones. Quedan tres puertas:
+
+- El pie, columna «Explorar».
+- Una ficha en la barra de filtros del listado, **que se lleva el texto
+  buscado**: quien escribió «dulce de leche» y no encontró el negocio va a
+  encontrar la cosa.
+- Cada producto de la ficha del emprendimiento, que dejó de ser un cartel y
+  pasó a ser un enlace a su detalle.
+
+En las tres pantallas del catálogo la barra marca **«Emprendimientos»**, que es
+de donde se viene, y la pestaña de teléfono marca **«Explorar»**.
+
+### Lo que quedó afuera, a propósito
+
+**La hoja de filtros que sube desde abajo en teléfono.** El artboard móvil la
+dibuja como dos botones —«Filtros (2)» y el orden— que abren una hoja. En código
+son el mismo `<details>` que ya usa el listado, que `main.js` cierra en
+pantallas chicas: mismos seis filtros, misma URL, sin JavaScript nuevo. La hoja
+es una tanda propia y, si se hace, se hace para las dos pantallas a la vez —
+tener dos formas distintas de abrir los mismos filtros sería peor que la que hay.
+
+**La distancia en el detalle.** Igual que en la ficha: necesita la memoria de
+zona entre pantallas, que todavía no existe. En la grilla sí se muestra, porque
+ahí la ubicación la acaba de escribir el visitante en el buscador.
+
+**El precio como tweak/rango con slider.** El canvas lo dibuja como dos
+pastillas «desde $ / hasta $»; en código son dos campos de la misma barra de
+filtros. Es la misma pregunta y ahorra una barra distinta para lo mismo.
+
+### Nada se desliza de costado
+
+La grilla es de cuatro columnas en escritorio, tres hasta 960 px y **dos en
+teléfono** — nunca una tira que se desliza. El precio va arriba del nombre en
+cada tarjeta justamente para eso: en dos columnas es el dato que hace comparar,
+y en una sola habría que hacer memoria.
+
+### Un botón muerto que salió al paso
+
+**«Cerca de mí» no funcionaba en ninguna de las dos pantallas.** El JS hacía
+`boton.closest("form").submit()`, y desde el rediseño de la barra de filtros ese
+botón vive en la fila de fichas, **afuera del `<form>`**: `closest` daba `null` y
+el click moría con un `TypeError` sin buscar nada. Se cambió por
+`latInput.form.submit()` — el form que tiene que viajar es el que lleva las
+coordenadas que el botón acaba de escribir, no el que casualmente lo envuelva.
+Verificado en el navegador con la geolocalización simulada: manda
+`barra-filtros__form` con la latitud ya puesta. **Arregla también el listado de
+emprendimientos**, donde estaba igual de muerto.
+
+## Sobre, contacto y errores pasados a código (2026-09-09)
+
+La cuarta tanda, y la más chica: seis pantallas, ninguna ruta nueva, ninguna
+migración. Lo que cambió no fue sólo la paleta — tres de las seis tenían un
+problema que no era de estética.
+
+### 1. «Sobre» hablaba del equipo de desarrollo, no del visitante
+
+Decía que la plataforma «fue desarrollada por un equipo académico utilizando
+**Flask (Python)** y **MySQL**, siguiendo buenas prácticas de diseño y una
+estética moderna en tonos pastel». Tres datos que no le sirven a nadie que entre
+a buscar un emprendimiento, y el último además hace rato que es falso: la paleta
+es el índigo del logo.
+
+En su lugar va **el posicionamiento que la guía ya decidió**: los cinco datos que
+Mercado Libre no tiene, y **los cinco salen de una tabla que existe** — horarios,
+`latitude`/`longitude`, el autor con antigüedad y reseñas, los eventos, y el chat
+interno. Ninguno es una promesa a futuro. La sexta tarjeta es la única de marca y
+es la que pide algo (publicar); va última porque es la acción, no un argumento.
+
+**«Lo que IMPULSAR no hace»** entra como sección propia: sin pagos, sin envíos,
+sin protección al comprador. Es la verdad del repo y es el argumento, no una
+disculpa — decirlo acá es lo que evita que alguien se sienta estafado a mitad del
+chat, y es también por qué la ficha muestra tan adelante quién vende. La cruz de
+cada punto va en gris y no en rojo: no son errores.
+
+**No hay ni un número en la página.** Cuántos emprendimientos, desde cuándo o
+cuánta gente son datos que no existen y no se inventan; hay un test que lo
+vigila, porque es exactamente el tipo de cosa que alguien agrega de memoria.
+
+### 2. Contacto tenía un emoji, y sigue sin formulario
+
+El mail estaba escrito como «📧 impulsARmdz@gmail.com». La guía sólo admite emoji
+si son de la marca, y ahí era decoración: queda un ícono de trazo, como el resto.
+
+**Sigue siendo un `mailto` y no un formulario**, a propósito: la ruta es un
+`render_template` sin lógica y no hay tabla de consultas ni envío de mail. Un
+formulario dibujado que en realidad no manda nada es peor que un correo honesto.
+El canvas dibujaba el mail como texto con un botón «Copiar»; en código es **el
+enlace `mailto` entero**, que ya abre el cliente de correo en cualquier
+dispositivo y no necesita JavaScript para funcionar.
+
+Lo que se agrega son **cuatro atajos, y los cuatro existen hoy**: reportar desde
+la ficha, escribirle al emprendimiento por el chat, publicar, y Ajustes. Sin
+ellos la casilla se vuelve el cajón donde caen «este emprendimiento es trucho» y
+«quiero cambiar mi mail», que la app ya resuelve sola y más rápido. Los dos que
+piden sesión llevan a entrar cuando no la hay, en vez de a una URL que va a
+rebotar igual.
+
+### 3. Las legales hacían las listas con `<br>•` adentro de un `<p>`
+
+Se ven como viñetas y para un lector de pantalla son **un párrafo con puntos
+medios en el medio**. Ahora son `<ul>` de verdad, con la viñeta dibujada aparte
+para poder alinearla con la primera línea de los textos que envuelven.
+
+**El texto no se tocó, palabra por palabra.** Lo que se suma es el índice al
+costado (`sticky`, con las secciones de esa página y el enlace cruzado a la
+otra legal) y la medida de lectura de **66ch**, lo único en toda la app con línea
+larga de verdad: son las dos únicas pantallas que se leen de corrido.
+
+Las dos comparten un molde, `templates/legal_base.html`, con cuatro bloques
+(`legal_titulo`, `legal_bajada`, `legal_indice`, `legal_cuerpo`): son la misma
+cáscara, y por eso el canvas dibujó una sola. Los `<h3>` pasaron a `<h2>` con
+`id`, que es lo que le da destino al índice; hay un test que verifica que ningún
+ítem del índice apunte a un ancla que no existe.
+
+**La fecha sigue siendo un hueco real.** Ninguna de las dos tiene «última
+actualización», así que no se puede saber qué versión aceptó cada usuario. En
+código son dos constantes en `views/pages.py` (`ACTUALIZADA_PRIVACIDAD`,
+`ACTUALIZADA_TERMINOS`) **en `None`**: mientras lo estén, la pastilla no se
+dibuja. Un `[COMPLETAR]` a la vista del usuario sería peor que no decir nada, y
+la fecha es un dato de Tomás. Cuando se carguen, la pastilla aparece sola.
+
+### 4. Un 404 no es un cartel, es una bifurcación
+
+Casi siempre se llega desde un emprendimiento dado de baja o un link viejo pasado
+por WhatsApp: la persona venía a buscar algo concreto, y dos botones sueltos
+—que es lo que había, centrados en una tarjetita de 480 px— la dejan a mitad de
+camino. Ahora **el buscador entra a la pantalla** (manda al listado, que es donde
+la búsqueda vive) y **los siete rubros van abajo**, con el mismo `.punto-rubro`
+que estrenó el catálogo: un rubro no cambia de color según la pantalla.
+
+**El 500 es el mismo molde con otro texto y SIN buscador ni rubros**: si el
+servidor se cayó, ofrecer un buscador que tampoco va a andar es una segunda
+frustración. Sus dos botones son reintentar (a `request.url`, la URL que falló) y
+Contacto — no «ver emprendimientos», que es justo lo que puede estar roto.
+
+En 390 px los dos botones van apilados y a lo ancho (uno al lado del otro quedan
+en 165 px y «Ver todos los emprendimientos» no entra sin cortarse), el buscador
+se apila igual, y los rubros van en **grilla de dos columnas** — nunca una tira
+que se desliza de costado. Medido: 371 de `scrollWidth` en las seis pantallas, a
+390 y a 768.
+
+### Lo que quedó afuera, a propósito
+
+**El botón «Copiar» del mail.** Necesita JavaScript para hacer algo, y el enlace
+`mailto` ya resuelve el caso real. Si algún día se agrega, va con el mismo
+criterio que el resto: dibujado escondido y encendido por el JS, para que sin él
+no quede un botón que no responde.
+
+**Las páginas de texto en teléfono no tienen artboard propio** y no hacía falta:
+son la misma columna más angosta. El único artboard de teléfono de la tanda es el
+404, que es la que más se ve en celular.
+
+### Barrido de CSS muerto
+
+Al reescribir las seis quedaron sin dueño diez reglas: `.about`, `.about__text`,
+`.contact`, `.contact__text`, `.contact__info`, `.contact__email` (+ `:hover`),
+`.legal__text`, `.legal__subtitle` y el bloque entero de `.error-page` con sus
+cuatro hijas. Se borraron cruzando cada clase contra todos los templates y el JS
+como token entero. `.legal` sobrevive con el mismo nombre pero es otra cosa: era
+una columna de 720 px y ahora es la grilla de índice + cuerpo.
+
+## Panel de administración pasado a código (2026-09-09)
+
+La quinta tanda. **Ninguna ruta nueva, ninguna migración**: de las cinco
+plantillas, tres ya tenían el rediseño de agosto y lo que faltaba era lo que se
+había quedado afuera.
+
+### Reportes y Verificaciones no eran «pintura pendiente»: no existían con la forma del resto
+
+Las dos seguían con `.section__header`, una tabla pelada, estilos inline
+(`style="font-size:0.8rem"`) y —lo grave— **sin el menú del panel, aunque el
+menú les enlazaba**: entrabas a Reportes y perdías la navegación, con un
+«← Volver al panel» suelto como única salida. Por eso el artboard de la cola era
+el central de la tanda.
+
+**La cola es una pantalla, no una tabla.** Una verificación se resuelve mirando
+un documento y escribiendo un motivo, y eso no entra en una celda de una fila de
+seis columnas — donde vivía, en un `<textarea rows="1" style="min-width:180px">`
+apretado en la columna «Acción». Ahora es una ficha por ítem: la cita del reporte
+entera (antes cortada por un `max-width: 280px`), el documento en su propia caja,
+y las acciones abajo separadas por una línea.
+
+**El motivo sigue viajando en el mismo envío que el rechazo** — un solo `<form>`
+con el campo y el botón. Si fuera otra pantalla, el prestador se quedaría sin
+saber qué corregir cada vez que el admin tiene apuro. Eso ya lo había decidido el
+código (`admin.rechazar_verificacion`) y se respeta.
+
+**Sin foto es un estado, no un hueco.** `foto` es nullable y la celda decía «Sin
+foto» en gris, con el botón de aprobar al lado invitando a poner un sello sobre
+nada. Ahora la caja del documento va con borde punteado, **aprobar se apaga** y
+el motivo del rechazo **viene escrito** («Falta la foto de la matrícula.»), que
+es la única salida sensata. El `disabled` es la pantalla diciendo lo obvio, no un
+permiso: el permiso vive en `@admin_required`, y la ruta no lo rechaza porque un
+admin podría tener el documento por otro lado.
+
+### El Resumen y la cola dibujaban el mismo ítem dos veces
+
+Eran dos copias del mismo marcado, con las mismas dos acciones escritas en dos
+archivos. Pasaron a **dos parciales compartidos**,
+`admin/_ficha_reporte.html` y `admin/_ficha_verificacion.html`. Lo único que
+cambia entre las dos pantallas es una bandera, `compacta`: en el Resumen el
+documento es un enlace en la línea de datos y en la cola tiene su propia caja —
+la cola es donde se decide, el Resumen sólo avisa que existe.
+
+Eso dejó sin dueño `.admin-item*` (nueve reglas) y `.admin-aviso`, que se
+borraron.
+
+### Un solo número grande por pantalla
+
+El Resumen lidera con **lo pendiente a 60 px** y las tres métricas quedan abajo a
+30: si compiten en tamaño, la pantalla deja de tener un titular y pasa a ser un
+tablero de cifras sueltas. Antes era un `<h1>` de texto («Hoy hay 5 cosas para
+revisar»), que es la misma información sin jerarquía.
+
+**Con las dos colas vacías el número no se dibuja**: un cero a 60 px ocuparía
+media pantalla para decir que no hay nada que hacer.
+
+Sigue **sin flecha de tendencia y sin sparkline**, y no por pereza: la consulta
+da el total de hoy y la fecha de alta de cada fila, no hay histórico contra el
+que comparar. «+47 en 30 días» es lo que se puede sostener.
+
+### El estado nunca se dice sólo con color
+
+Cada pastilla lleva **ícono y palabra** (Activo con tilde, Baneado con cruz, «1
+reporte sin resolver» con el triángulo) y **la fila entera se tiñe**, no sólo una
+celda: en veinte filas, un rojo suelto en la cuarta columna se pierde — y para
+quien no distingue rojo de verde, no dice nada. Hay un test que abre cada
+pastilla y exige que adentro haya un `<svg>`.
+
+De paso, la columna «Rol» mostraba **el valor crudo de la base** («emprendedor»,
+en minúscula) al lado de un filtro que dice «Emprendedores». Las etiquetas viven
+ahora en `Roles.ETIQUETAS`, al lado de los valores, igual que las de `Categorias`.
+
+**`tabular-nums` en columnas** (fechas, vistas, reseñas, conteos de los chips)
+con una clase `.num`, para que aliñen verticalmente. Los números grandes sueltos
+—el del Resumen, los totales de las métricas— van con las cifras proporcionales:
+a 30 y 60 px las tabulares quedan flojas.
+
+**`.btn--peligro`**, la acción destructiva: blanca en reposo y roja al acercarse.
+No es roja desde el principio a propósito — en una tabla de veinte filas, veinte
+botones rojos convierten el rojo en el color de fondo del panel y deja de avisar
+de nada.
+
+### En el teléfono el panel se recorta a la cola
+
+Las tablas de cinco columnas y las métricas no entran ni tienen por qué: al
+celular se viene a resolver algo urgente. El menú lateral se apaga y en su lugar
+quedan **el contador de pendientes y un segmentado de dos** (Reportes y
+Verificaciones). Los dos viven en el mismo `_menu_admin.html` para que ninguna
+pantalla del panel se olvide de una.
+
+Usuarios y Emprendimientos siguen accesibles por URL: su tabla scrollea dentro de
+su propia caja (`.admin-table-wrapper`), no la página. Medido: 371 de
+`scrollWidth` en las cinco pantallas, a 390 y a 768.
+
+**Las acciones van apiladas y a lo ancho, de 44 px**, así «Eliminar» no cae nunca
+justo al lado del pulgar que iba a «Marcar resuelto».
+
+### Lo que quedó afuera, a propósito
+
+**«Emprendimientos sin actividad»**: `Post` no tiene `updated_at` y habría que
+elegir qué es «actividad» (¿su último evento? ¿su último producto? ¿su última
+reseña?). Sería una métrica inventada.
+
+**«Exportar métricas» y «Exportar CSV»**: no hay exportación de nada en el
+proyecto.
+
+**El menú lateral no se convierte en un cajón desplegable en teléfono.** El
+diseño dice que ahí el panel *es* la cola, no que el menú se esconda: agregarlo
+sería devolver a la pantalla chica justo lo que la tanda decidió sacarle.
+
+---
+
+## Panel del vendedor pasado a código (2026-09-09)
+
+La sexta tanda. **Una ruta nueva (`/panel`), un POST nuevo
+(`/productos/<id>/disponible`), ninguna migración.**
+
+### Seis pantallas sueltas pasan a ser una sección
+
+«Mis emprendimientos», «Mi catálogo», «Mis servicios», «Presupuestos», la agenda
+de turnos y las reseñas recibidas eran seis páginas que solo se tocaban desde el
+menú de la cuenta, cada una con su forma: cuatro compartían `_menu_cuenta.html`,
+la agenda no tenía ningún menú y era un `.section__header` suelto. Ahora las
+siete (con la portada nueva) comparten `partials/_menu_panel.html`: rótulo «Mi
+emprendimiento», ícono por ítem y el número de lo que hay cargado.
+
+**`_menu_cuenta.html` no se borró: se repartió.** Queda en las pantallas de «Mi
+actividad» y de ajustes (mensajes, favoritos, guardados, editar perfil,
+contacto, horarios). Es el mismo corte que ya hacía el menú del avatar desde la
+tanda de navegación: lo que me pasa a mí, y lo que administro.
+
+**El contador en cero no se dibuja.** Un «0» al lado de Catálogo no dice nada
+que la pantalla no diga mejor, y pinta de pendiente lo que no lo es. Los dos que
+sí son pendientes (presupuestos y reseñas sin responder) van en la pastilla
+naranja; el resto, en gris.
+
+**No está «Eventos y ferias», que el artboard dibuja**: hoy no hay pantalla de
+los eventos propios — un `Event` se carga y se edita desde la ficha de su
+emprendimiento, y `/eventos` es la cartelera pública de todos. El ítem entra con
+la tanda de eventos, que es la que hace esa pantalla.
+
+### El panel arranca por lo que hay que hacer, no por los números
+
+«Lo que te está esperando» va primero: presupuestos sin responder, mensajes sin
+leer, turnos de hoy y reseñas sin contestar. **Solo se dibuja lo que tiene algo
+pendiente**, y con las cuatro en cero la sección entera no aparece: una fila que
+dice «0 presupuestos» es ruido.
+
+Los tres primeros conteos ya existían escritos a mano adentro de
+`/mensajes/notificaciones` (el badge de la barra). Se mudaron a
+`app/panel/consultas.py` y esa vista los pide de ahí: el criterio de «esto
+espera una respuesta tuya» se define una sola vez.
+
+El turno de hoy se muestra con su servicio, su hora y quién lo sacó, y no como
+un número: la fila tiene que servir para saber qué es sin entrar a la agenda.
+Los cancelados no cuentan.
+
+### Los números son los cinco que la base sabe contar
+
+Salen tal cual de `perfil.consultas.estadisticas_de_usuario`: suma de
+`views_count`, favoritos, promedio y cantidad de reseñas, y seguidores.
+
+**Sin flechitas de variación y sin gráficos.** El canvas del perfil dibujaba
+«+18%» y «+9»: no hay con qué calcularlos, porque la consulta da el total de hoy
+y no existe histórico. Por lo mismo no hay sparklines ni «visitas por semana».
+Si alguna vez se guarda una foto diaria de esas métricas, ahí entra el gráfico.
+
+### Cada emprendimiento dice qué le falta, y uno solo
+
+`_aviso_de()` devuelve el primero que aplique: sin fotos, sin productos ni
+servicios, o sin horarios. No los tres apilados — casi siempre vienen juntos (el
+emprendimiento recién creado no tiene nada) y tres avisos en una fila la
+convierten en un reto. El de los horarios va último aunque sea el más caro de
+arreglar: cuelga del **usuario** y no del emprendimiento, así que con dos
+emprendimientos aparece en los dos, y decirlo primero taparía lo que sí es de
+ese emprendimiento.
+
+### El catálogo del dueño: filas, y el interruptor de «sin stock»
+
+`/productos/mios` era la última pantalla vieja que había dejado la tanda del
+catálogo. Ahora es una caja por emprendimiento con sus productos en filas
+(foto, nombre, precio, estado y las dos acciones).
+
+**Los grupos se arman desde los emprendimientos y no desde los productos**: el
+que no cargó ninguno también aparece, en su caja chica con «Cargar el primero»
+al lado. Antes se recorrían los productos y un emprendimiento vacío no existía
+en la pantalla.
+
+**El interruptor de «sin stock» es el único backend nuevo de la tanda**: un POST
+chico, igual al que ya se había hecho para `/servicios/<id>/disponible`. Hasta
+ahora apagar un producto obligaba a abrir el formulario de cinco campos,
+releerlos y volver a guardarlos, con el riesgo de pisar algo de paso. Es un
+`<form>` de un botón y no un checkbox con JavaScript, por el mismo criterio que
+los filtros del catálogo: tiene que andar sin JS. Lleva `aria-pressed` y no
+`role="switch"`: para un lector de pantalla es un botón que está apretado o no.
+Y el estado se dice además con la palabra al lado («Disponible» / «Sin stock»):
+la opacidad de la fila es refuerzo, no el mensaje.
+
+**Del diseño NO están el buscador del catálogo propio, el filtro «Todos», el
+orden «Nombre (A-Z)» ni el «Mostrando 5 de 14 · Ver todos»**, que el artboard
+dibuja adentro de cada grupo. Con el tope de 50 por emprendimiento las filas
+entran todas: serían cuatro controles con backend propio para filtrar una lista
+que ya se ve entera.
+
+### En el teléfono el panel no lleva menú lateral
+
+`.panel-menu` se apaga a 879px, como dice la nota del artboard móvil: ocho ítems
+arriba de todo dejan el contenido debajo del pliegue. El menú de esas mismas
+pantallas es `/perfil/mi-cuenta`, que es adonde va la pestaña Perfil de la barra
+de abajo — y ahí se agregó «Mi panel» como primera ficha, a lo ancho. En
+escritorio la entrada equivalente está en el menú del avatar, arriba de «Mis
+emprendimientos».
+
+Las filas del catálogo se apilan a 768px con sus 44px de alto, para que
+«Eliminar» no caiga al lado del pulgar que iba al interruptor.
+
+### Archivos
+
+`app/panel/` (nuevo: `__init__.py`, `consultas.py`, `vistas.py`,
+`templates/panel/inicio.html`), `templates/partials/_menu_panel.html` (nuevo),
+`templates/products/mios.html`, `templates/partials/_icono_nav.html` (dos íconos
+nuevos: `editar` y `eliminar`), `templates/partials/_menu_cuenta_desplegable.html`,
+`app/perfil/templates/profile/cuenta.html`, `app/turnos/templates/turnos/agenda.html`,
+`app/blog/templates/blog/my_posts.html`,
+`app/servicios/templates/servicios/index.html` y `solicitudes.html`,
+`app/perfil/templates/profile/reviews.html`, `views/products.py`,
+`views/messages.py`, `app/blog/vistas.py`, `app/servicios/vistas.py`,
+`app/turnos/vistas.py`, `app/perfil/vistas.py`, `main.py`,
+`static/css/styles.css`, `tests/test_panel.py` (18 tests nuevos),
+`tests/test_profile.py`, `disenio-inicio/DISENIO.md`.
+
+## Un nombre de clase es un recurso compartido (2026-09-10, de la auditoría de cierre)
+
+Regla que salió de la auditoría del conjunto, después de encontrar el mismo bug
+dos veces en las ocho tandas: **antes de bautizar un componente, buscar el nombre
+en `styles.css`**. Las ocho tandas escriben en un solo archivo de ~16.700 líneas
+donde, a igual especificidad, gana el que va más abajo. Reusar un nombre no da
+un error ni rompe ningún test: le cambia el dibujo a una pantalla que nadie
+volvió a mirar, y el HTML de esa pantalla sigue igual, así que la suite pasa.
+
+Los dos casos, los dos con la tanda nueva pisando a una pantalla ya pusheada:
+
+- **`.interruptor`** — el interruptor de «sin stock» del panel del vendedor tomó
+  las mismas clases que el de los horarios de Cuenta. Le dejaba la pastilla en
+  38×22 en vez de 44×26 (abajo del piso de 44 px que fijó la auditoría del 6/9) y
+  le cambiaba el fondo a `--color-border`, que es **justo el valor que el bloque
+  viejo le pone al estado `:checked`**: el interruptor de horarios terminaba gris
+  en los DOS estados y el color dejaba de decir si el día estaba abierto. Ahora
+  el del panel es `.interruptor-stock*`.
+- **`.resenias`** — la lista plana de reseñas de la ficha tomó el nombre de la
+  grilla de dos columnas de «Reseñas recibidas». Su `display: flex` le ganaba al
+  `display: grid`, y el resumen del costado se apilaba abajo a todo el ancho en
+  vez de ir en su columna de 300 px. Ahora la de la ficha es `.resenias-ficha`.
+
+**Se renombra siempre lo NUEVO, nunca lo viejo**: lo viejo ya está pusheado y
+mirado, así que el riesgo se queda del lado de lo que todavía no salió.
+
+Y un corolario para el barrido de CSS muerto: **un bloque duplicado no es
+necesariamente borrable**. El análisis de choques sólo ve las propiedades que se
+contradicen; las que no chocan cascadean y se suman. La sección vieja de «MI
+CATALOGO» parecía muerta y no lo estaba: `.producto` le sigue aportando a
+`products/detalle.html` el borde, el radio, el fondo y el `overflow` que el
+bloque nuevo no redeclara, y `.catalogo__vacio` vive ahí dentro y es su única
+declaración, usada por cuatro pantallas. Se borraron sólo las diez reglas que no
+le quedaron a nadie, cruzando cada clase contra todos los templates y el JS como
+token entero. Hay tres guardas de esto en `tests/test_css_compartido.py`.
+
 ## Dónde retomamos (2026-09-06)
 
-Las ocho tandas están dibujadas, publicadas y commiteadas. **Ninguna tocó la app**:
-lo último que entró a código es el commit `27d1710` (inicio, auth, perfil, ajustes y
-servicios).
+Las ocho tandas están dibujadas, publicadas y commiteadas, y al 9/9 **las ocho
+están pasadas a código**: navegación, ficha del emprendimiento, catálogo de
+productos, sobre/contacto/errores, el panel de administración, el panel del
+vendedor, turnos y ferias y eventos (cada una con su sección más arriba). Antes
+de eso, en `27d1710`, ya habían entrado inicio, auth, perfil, ajustes y
+servicios.
 
 ### Lo único grande que queda: pasar las ocho tandas a código
 
 | Tanda | Carpeta | Canvas |
 | --- | --- | --- |
-| Navegación global | `disenio-navegacion/` | https://claude.ai/code/artifact/b752a01f-a2be-495c-b0cf-ac660dc65c84 |
-| Ficha del emprendimiento | `disenio-ficha/` | https://claude.ai/code/artifact/423b9dbb-2c0d-4eb3-87e1-19bf140d1ace |
-| Catálogo de productos | `disenio-productos/` | https://claude.ai/code/artifact/332d05a2-7ac7-4f03-a0fb-de90acf291e9 |
-| Panel del vendedor | `disenio-panel/` | https://claude.ai/code/artifact/538a4d0a-52cb-4781-a7e6-717557523761 |
-| Turnos | `disenio-turnos/` | https://claude.ai/code/artifact/5566643c-7638-485f-85e7-36cf609cfc55 |
-| Ferias y eventos | `disenio-eventos/` | https://claude.ai/code/artifact/c24946a2-195e-4b54-80cc-8bf8fa82c5d6 |
-| Panel de administración | `disenio-admin/` | https://claude.ai/code/artifact/79f57360-70eb-468d-802b-054dfa9bbf44 |
-| Sobre, contacto y errores | `disenio-paginas/` | https://claude.ai/code/artifact/b25d9e60-64a7-4343-a846-68ae02a96ba1 |
+| ~~Navegación global~~ **PASADA A CÓDIGO el 8/9** | `disenio-navegacion/` | https://claude.ai/code/artifact/b752a01f-a2be-495c-b0cf-ac660dc65c84 |
+| ~~Ficha del emprendimiento~~ **PASADA A CÓDIGO el 9/9** | `disenio-ficha/` | https://claude.ai/code/artifact/423b9dbb-2c0d-4eb3-87e1-19bf140d1ace |
+| ~~Catálogo de productos~~ **PASADA A CÓDIGO el 9/9** | `disenio-productos/` | https://claude.ai/code/artifact/332d05a2-7ac7-4f03-a0fb-de90acf291e9 |
+| ~~Panel del vendedor~~ **PASADA A CÓDIGO el 9/9** | `disenio-panel/` | https://claude.ai/code/artifact/538a4d0a-52cb-4781-a7e6-717557523761 |
+| ~~Turnos~~ **PASADA A CÓDIGO el 9/9** | `disenio-turnos/` | https://claude.ai/code/artifact/5566643c-7638-485f-85e7-36cf609cfc55 |
+| ~~Ferias y eventos~~ **PASADA A CÓDIGO el 9/9** | `disenio-eventos/` | https://claude.ai/code/artifact/c24946a2-195e-4b54-80cc-8bf8fa82c5d6 |
+| ~~Panel de administración~~ **PASADA A CÓDIGO el 9/9** | `disenio-admin/` | https://claude.ai/code/artifact/79f57360-70eb-468d-802b-054dfa9bbf44 |
+| ~~Sobre, contacto y errores~~ **PASADA A CÓDIGO el 9/9** | `disenio-paginas/` | https://claude.ai/code/artifact/b25d9e60-64a7-4343-a846-68ae02a96ba1 |
 
-**Empezar por navegación.** Toca `templates/base.html` y
-`templates/partials/_menu_cuenta.html` —dos archivos, no cada pantalla— y desbloquea
-a todas las demás, porque la barra de tres secciones y Publicar en el menú de la
-cuenta ya están decididas y dibujadas en las ocho.
+**LAS OCHO ESTÁN HECHAS** (ver sus secciones más arriba). Se empezó por
+navegación porque toca `templates/base.html` y
+`templates/partials/_menu_cuenta.html` —dos archivos, no cada pantalla— y
+desbloquea a todas las demás, porque la barra de tres secciones y Publicar en el
+menú de la cuenta ya están decididas y dibujadas en las ocho. Se terminó por
+eventos, que era la única con migración.
+
+**Lo que sigue es la auditoría del conjunto**, una sola vez sobre las ocho: es
+lo que se decidió el 9/9 para no cargar el contexto de cada tanda dos veces y
+para no pisar en una lo arreglado en otra (varias comparten la barra, las fichas
+de filtro, los parciales y el CSS). Ahí también se decide qué falta agregar.
+Recién después se pushea, y después de eso se abre el PR dev_tomy → main.
+
+**Dos cosas para la auditoría, anotadas al cerrar sus tandas:** el repaso a
+390 px de turnos y de eventos quedó sin hacer —la extensión de Chrome no estaba
+conectada— y las media queries de las dos están escritas pero no miradas en un
+navegador.
 
 ### Pendientes chicos, que salen al paso de eso
 
 - [ ] **Las dos legales no tienen fecha de última actualización.** Sin eso no se
-      puede saber qué versión aceptó cada usuario. El artboard lo marca como
-      `[COMPLETAR]`: es un dato de Tomás, no se inventa.
+      puede saber qué versión aceptó cada usuario. Es un dato de Tomás, no se
+      inventa. **Ya está el lugar**: `ACTUALIZADA_PRIVACIDAD` y
+      `ACTUALIZADA_TERMINOS` en `views/pages.py`, hoy en `None`; con el texto
+      cargado ("14 de agosto de 2026") la pastilla aparece sola.
 - [ ] **La paleta de rubros de la app no es la de la guía** (`styles.css:6199`): el
       mismo rubro tiene dos colores según la pantalla. Son siete pares.
 - [ ] **Faltan los estados del inicio**: cargando y sin resultados.

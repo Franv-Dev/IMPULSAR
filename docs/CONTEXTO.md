@@ -1,6 +1,6 @@
 # IMPULSAR — Contexto para retomar
 
-**Última actualización: 8 de septiembre de 2026.** Perfil público, Cuenta, Turnos, calendario, grilla de rubros, Home, Emprendedor, Gestión, Explorar (radio + reseñas + "Abierto ahora"), "Mis servicios" en el menú de cuenta, reordenar fotos/elegir principal, la tanda de validaciones de backend (precios, horarios, título, contacto, views_count), notificaciones por email (Flask-Mail/Gmail, 3 disparadores), búsqueda en catálogo (productos/servicios disponibles, no solo título/body del post), Mis favoritos (orden por fecha de marcado con desempate, filtro por rubro, orden A-Z), tanda chica de backlog (mensaje de hora inválida, assert→ValueError en reordenar fotos, botón duplicado sacado), y la tanda de rediseño del home (buscador unificado, rubros con ícono SVG en grilla 4×2, tarjetas verticales tipo `.tarjeta`, `/api/posts/` con avg_rating/review_count/author_name): todos CERRADOS Y PUSHEADOS. Y los dos "chips que mienten" de la barra de filtros de `/blog/`, AUDITADOS Y PUSHEADOS los dos: el chip de cercanía (cerrado el 7/9, auditado y pusheado el 8/9 en `00e7132`) y el `<summary>` de la barra de filtros, segundo hallazgo de esa misma tanda (cerrado, auditado y pusheado el 8/9 en `e221f67` + `d3d5739`). Y la unificación de `CAMPOS_DEL_PERFIL`, cerrada el 8/9, auditada y pusheada el mismo día en `e0b7c03` + `7c51f92`. No queda nada sin pushear. **El hash del remoto ya no se anota acá**: quedó viejo tres veces seguidas (decía 27d1710, después 4eba082, después `d3d5739`), siempre porque el commit que lo escribía cambiaba el remoto al pushearse — un dato que se invalida solo en el acto de guardarlo. Se consulta con `git ls-remote origin dev_tomy`, que es la fuente real. 882 tests passed. Sobre el número: la suite medida en limpio el 7/9 daba 873 antes del fix del chip, con `tests/` byte a byte idéntico a 27d1710, así que el 877 que figuraba acá estaba mal anotado (no se borró ningún test); 873 + 3 del chip = 876, + 2 del `<summary>` = 878, + 4 de `CAMPOS_DEL_PERFIL` = 882.
+**Última actualización: 10 de septiembre de 2026.** Perfil público, Cuenta, Turnos, calendario, grilla de rubros, Home, Emprendedor, Gestión, Explorar (radio + reseñas + "Abierto ahora"), "Mis servicios" en el menú de cuenta, reordenar fotos/elegir principal, la tanda de validaciones de backend (precios, horarios, título, contacto, views_count), notificaciones por email (Flask-Mail/Gmail, 3 disparadores), búsqueda en catálogo (productos/servicios disponibles, no solo título/body del post), Mis favoritos (orden por fecha de marcado con desempate, filtro por rubro, orden A-Z), tanda chica de backlog (mensaje de hora inválida, assert→ValueError en reordenar fotos, botón duplicado sacado), y la tanda de rediseño del home (buscador unificado, rubros con ícono SVG en grilla 4×2, tarjetas verticales tipo `.tarjeta`, `/api/posts/` con avg_rating/review_count/author_name): todos CERRADOS Y PUSHEADOS. Y los dos "chips que mienten" de la barra de filtros de `/blog/`, AUDITADOS Y PUSHEADOS los dos: el chip de cercanía (cerrado el 7/9, auditado y pusheado el 8/9 en `00e7132`) y el `<summary>` de la barra de filtros, segundo hallazgo de esa misma tanda (cerrado, auditado y pusheado el 8/9 en `e221f67` + `d3d5739`). Y la unificación de `CAMPOS_DEL_PERFIL`, cerrada el 8/9, auditada y pusheada el mismo día en `e0b7c03` + `7c51f92`. Y **LAS OCHO TANDAS DE REDISEÑO, AUDITADAS JUNTAS Y PUSHEADAS**: **navegación** (8/9), **ficha del emprendimiento**, **catálogo de productos**, **sobre/contacto/errores**, **panel de administración**, **panel del vendedor**, **turnos** y **ferias y eventos** (pasadas a código el 9/9), auditadas de punta a punta el 10/9 en una sola vuelta sobre el conjunto, como decía el plan. **La auditoría encontró tres bugs reales y los tres se arreglaron en la misma vuelta**: el vacío de la cartelera que decía «todavía no hay eventos» con la base llena de eventos vencidos, y dos choques de nombres de clase en el `styles.css` compartido (`.interruptor`, que dejaba el interruptor de horarios gris en los dos estados, y `.resenias`, que le rompía la grilla de dos columnas a «Reseñas recibidas»). Los dos choques son ENTRE tandas, o sea justo lo que auditar de a una no habría encontrado. Detalle completo en «Auditoría de cierre del rediseño». **El rediseño global por secciones está CERRADO.** Lo único pendiente es abrir el PR dev_tomy → main. **El hash del remoto ya no se anota acá**: quedó viejo tres veces seguidas (decía 27d1710, después 4eba082, después `d3d5739`), siempre porque el commit que lo escribía cambiaba el remoto al pushearse — un dato que se invalida solo en el acto de guardarlo. Se consulta con `git ls-remote origin dev_tomy`, que es la fuente real. **1099 tests passed** (corridos completos por la auditoría el 10/9, no heredados de un reporte: 1094 antes de la auditoría + 2 del tercer vacío de la cartelera + 3 guardas de clases compartidas). Sobre el número: la suite medida en limpio el 7/9 daba 873 antes del fix del chip, con `tests/` byte a byte idéntico a 27d1710, así que el 877 que figuraba acá estaba mal anotado (no se borró ningún test); 873 + 3 del chip = 876, + 2 del `<summary>` = 878, + 4 de `CAMPOS_DEL_PERFIL` = 882.
 
 ## Qué es
 
@@ -13,10 +13,10 @@ Frentes en curso:
 - Grilla de rubros en el home: CERRADA y pusheada, y ahora rediseñada de nuevo con íconos SVG en la tanda del 6/9 (ver abajo).
 - Cuenta (4 pantallas): CERRADA y pusheada.
 - Perfil público: CERRADO y pusheado (427d419).
-- Rediseño visual (paleta índigo): VIGENTE, UI-first. Home, Emprendedor, Gestión y Explorar (radio + reseñas + "Abierto ahora") CERRADOS Y PUSHEADOS. Home recibió una segunda pasada de rediseño el 6/9 (buscador unificado, rubros con ícono, cards verticales).
+- Rediseño visual (paleta índigo): **CERRADO** (era el frente grande). Las ocho tandas dibujadas se pasaron a código el 8 y 9/9, se auditaron juntas el 10/9 y están pusheadas; ver sus secciones abajo y «Auditoría de cierre del rediseño». Home, Emprendedor, Gestión y Explorar (radio + reseñas + "Abierto ahora") ya estaban cerrados y pusheados de antes. Home recibió una segunda pasada de rediseño el 6/9 (buscador unificado, rubros con ícono, cards verticales).
 - Separación de navegación emprendimientos/servicios: CERRADA Y PUSHEADA (5fdcf44).
 
-Pendiente, deliberadamente pospuesto: abrir el PR dev_tomy → main — se retoma después de que el rediseño visual esté razonablemente completo.
+**Lo único pendiente: abrir el PR dev_tomy → main.** La condición que lo tenía pospuesto («que el rediseño visual esté razonablemente completo») se cumplió el 10/9 con la auditoría del conjunto aprobada. El PR NO se abrió todavía: se confirma con Tomy antes.
 
 ## Stack
 
@@ -143,6 +143,804 @@ Contraprueba hecha: se revirtió `campos_guardados()` a la lista a mano dejando 
 
 Estado: CERRADO. Auditado por Sesión 2 y pusheado el 8/9.
 
+## Navegación — primera de las ocho tandas de rediseño pasada a código (8/9) — CERRADA Y AUDITADA (10/9)
+
+Arranque de "pasar uno por uno los rediseños a código". De las doce carpetas
+`disenio-*`, cinco ya estaban en código (inicio, auth, perfil, ajustes y servicios,
+commit `27d1710`) y ocho estaban dibujadas y sin tocar la app. Se empezó por
+navegación porque es el cromo compartido: toca `base.html` y parciales, no cada
+pantalla, y todo lo demás se ve adentro.
+
+Qué entró, en corto (el detalle largo, con las cuentas de contraste y de
+breakpoints, está en `disenio-inicio/DISENIO.md`, sección "Navegación pasada a
+código"):
+
+- **La barra pasa de una fila a dos bandas**: identidad + tres secciones centradas +
+  acciones (68 px), y abajo el buscador solo (`q` + `near` + botón, 52 px). "Inicio"
+  se fue de las secciones — el logo ya es el inicio.
+- **Favoritos y Mensajes salen del menú** y pasan a ser iconos visibles.
+  **"Publicar" sale de la barra** y pasa a ser el botón lleno arriba del menú de la
+  cuenta, igual que en teléfono.
+- **El menú de la cuenta queda en tres grupos rotulados** en vez de una lista de
+  nueve, y suma "Mis turnos" y "Agenda de turnos", que existían como rutas desde la
+  tanda de turnos y no estaban en ningún menú.
+- **El badge deja de mentir.** `/mensajes/notificaciones` ya devolvía los tres
+  números por separado; el que los sumaba era el JS. Ahora cada elemento pide el
+  suyo con `data-notif="..."`. **No hizo falta tocar el backend.**
+- **Se fue la hamburguesa.** En teléfono hay una barra de cinco pestañas abajo
+  (tres sin sesión) y una pantalla nueva, `/perfil/mi-cuenta`, para la pestaña
+  Perfil. Ya está en `SLUGS_RESERVADOS`.
+
+Archivos: `templates/base.html`, `templates/partials/_icono_nav.html` (nuevo),
+`_menu_cuenta_desplegable.html` (nuevo), `_tabbar.html` (nuevo),
+`app/perfil/templates/profile/cuenta.html` (nuevo), `app/perfil/vistas.py`,
+`services/slugs.py`, `static/css/styles.css`, `static/js/main.js`,
+`tests/test_navegacion.py` (nuevo), `disenio-inicio/DISENIO.md`.
+
+Ojo con `partials/_menu_cuenta.html`: **no se tocó**. Es la columna izquierda de las
+diez pantallas de cuenta, otra cosa que el desplegable nuevo.
+
+Tres decisiones que el canvas dejaba abiertas y se cerraron acá, con Tomy:
+
+- **"Explorar" del teléfono** va al listado, y las tres secciones reaparecen como
+  solapas arriba del contenido de esas tres pantallas. El artboard decía que
+  "Explorar" agrupa las tres pero nunca dibujó la agrupación.
+- **Un visitante ve tres pestañas** (Inicio · Explorar · Entrar), no cinco: los dos
+  artboards de teléfono están con sesión y Favoritos/Mensajes sólo rebotarían al
+  login.
+- **La banda del buscador no se dibuja en el home ni en el listado**: las dos ya
+  tienen la suya, más completa. Se vio en pantalla que quedaban dos buscadores
+  apilados. Cuál sobrevive en el listado se decide en la tanda de Resultados.
+
+Queda afuera a propósito: **la pastilla de zona del top bar del teléfono**. El propio
+canvas anota que falta cablear que la zona se recuerde entre pantallas; sin esa
+memoria la pastilla no tiene qué decir ni dónde guardar. La zona se dice en el campo
+"dónde" del buscador, que sí manda un `near` real.
+
+Un bug encontrado mirándolo en el navegador, no en la suite: los contadores nacen
+con `hidden`, pero `hidden` pierde contra cualquier `display` de una clase propia, y
+se veía un punto naranja vacío. Se agregó `[hidden] { display: none !important; }`
+al reseteo de `styles.css`.
+
+Verificado en pantalla con un servidor descartable (SQLite temporal, **no
+impulsar_db**): barra con y sin sesión, menú desplegado, `/perfil/mi-cuenta`, y los
+dos anchos de teléfono en iframe de 390 px — sin scroll lateral nuevo.
+
+**Auditada el 10/9** con revisión COMPLETA, como correspondía por tocar el cromo
+compartido de todas las pantallas. Verificado en Chrome a 390 y 768 px: las dos
+bandas, las tres secciones (sin «Inicio»), los badges separados por `data-notif`
+(`unread_messages`, `pending_service_requests`, `unanswered_reviews`, sin sumar),
+el `[hidden]` respetado, cinco pestañas con sesión y tres sin ella. Sin hallazgos
+propios.
+
+## Ficha del emprendimiento — segunda tanda de rediseño pasada a código (9/9) — CERRADA Y AUDITADA (10/9)
+
+Reescribe `app/blog/templates/blog/detail.html` entero (466 líneas) y suma tres
+piezas chicas de backend. El detalle largo está en `disenio-inicio/DISENIO.md`,
+sección "Ficha del emprendimiento pasada a código".
+
+Los siete problemas que el canvas había anotado, y qué pasó con cada uno:
+
+- Las reseñas decían **"Usuario #7"** → firman con el nombre. `resenias_de()`
+  ahora trae al autor con `joinedload`; hay un test que mide que sigan siendo
+  **una sola consulta** con el identity map vaciado.
+- Las estrellas eran los glifos **★ y ☆** y había un **📍** por servicio → SVG.
+- **Las ferias no aparecían nunca** aunque `Post.eventos` existe desde la tanda
+  de eventos → bloque "Dónde encontrarla". `ferias_de()` reusa
+  `services.eventos.proximos()` en vez de repetir el `order_by`, que se comía el
+  desempate por id.
+- **"Abierto ahora" no decía a qué hora cierra** → `hora_de_cierre()` nuevo en
+  `services/horarios.py`, y `esta_abierto()` pasó a apoyarse en él (son la misma
+  pregunta; ninguna respuesta cambia, los 39 tests de horarios pasan intactos).
+- **Las miniaturas abrían el archivo suelto** de `/static/uploads/` en otra
+  pestaña → visor propio (`static/js/visor.js`), con teclado y devolución de foco.
+- **No había ningún estado vacío pensado** → barra de dueña, "Completá tu ficha"
+  de cinco tareas contra campos que existen, y cada hueco explicando por qué
+  conviene llenarlo.
+- **La distancia sigue sin mostrarse**: necesita saber dónde está parado quien
+  mira, que es la misma memoria de zona que dejó pendiente la tanda de
+  navegación. Sin ese dato sería inventarla.
+
+Decisiones de forma: **anclas, no pestañas** (con solapas, tres de las cuatro
+abrirían vacías en la mayoría de los emprendimientos), y los **nueve bloques como
+lista plana** con `display: contents` + `order`, porque el teléfono los quiere en
+otro orden que el escritorio (horarios y ferias ANTES de las reseñas).
+
+Archivos: `app/blog/templates/blog/detail.html`, `app/blog/consultas.py`,
+`app/blog/vistas.py`, `services/horarios.py`, `services/formatting.py`,
+`main.py` (filtro `hace`), `templates/partials/_estrellas.html` (nuevo),
+`templates/partials/_icono_nav.html`, `static/js/visor.js` (nuevo),
+`static/css/styles.css`, `tests/test_ficha.py` (nuevo, 22 tests),
+`tests/test_blog.py` (un texto que cambió), `disenio-inicio/DISENIO.md`.
+
+Barrido de CSS muerto: al reescribir la ficha quedaron sin dueño 20 reglas
+(`.detalle__principal`, `.lateral__accion`, `.galeria-grid*`, `.post-detail-card`,
+`.back-link`, `.ficha__rating`/`__estrella`…). Se borraron cruzando cada clase
+contra todos los templates y JS como token entero, no como substring. Las dos
+reglas del formulario de reseña se reapuntaron a `.resenia-propia`, que es su
+envoltorio nuevo.
+
+Un desborde lateral encontrado midiendo, no leyendo: en 390 px el `scrollWidth`
+daba 434 por el `white-space: nowrap` de "Entrá para pedir presupuesto". Corregido
+y vuelto a medir: 371.
+
+**Auditada el 10/9.** Un hallazgo real, de CSS compartido: su `.resenias` le
+pisaba la grilla de dos columnas de «Reseñas recibidas». Arreglado renombrando el
+wrapper de la ficha a `.resenias-ficha` (ver «Auditoría de cierre», abajo).
+
+## Catálogo de productos — tercera tanda de rediseño pasada a código (9/9) — CERRADA Y AUDITADA (10/9)
+
+La única de las ocho que necesitaba **rutas nuevas**. El detalle largo está en
+`disenio-inicio/DISENIO.md`, sección "Catálogo de productos pasado a código".
+
+**Las URL se dieron vuelta.** `/productos/` era el panel privado del dueño y un
+producto sólo se veía incrustado en la ficha de su emprendimiento. Ahora:
+
+| Ruta | Endpoint | Quién |
+| --- | --- | --- |
+| `/productos/` | `products.catalogo` | público |
+| `/productos/<id>` | `products.detalle` | público |
+| `/productos/<id>/favorito` (POST) | `products.toggle_favorito` | con sesión |
+| `/productos/guardados` | `products.guardados` | con sesión |
+| `/productos/mios` | `products.mios` (era `products.index`) | el dueño |
+
+**Seis filtros, todos como parámetros de la URL** (se comparte, vuelve con atrás,
+anda sin JS): texto sobre `Product.nombre`/`descripcion`, rubro sobre
+`Post.category`, precio desde/hasta con el mismo `parsear_precio` del formulario
+de carga, disponibles (**encendido por defecto**, se apaga con `?disponibles=0`),
+abierto ahora y radio en km. **Cuatro órdenes**: más nuevos, precio ↑, precio ↓ y
+cercanía — esta última sólo si hay coordenadas, y ahí pasa a ser el default.
+
+`_distancia_km` y `_abierto_ahora_sql` de `app/blog/consultas.py` **pasaron a ser
+públicas** (`distancia_km_sql`, `abierto_ahora_sql`) en vez de copiarse: la copia
+se habría olvidado del `CASE` que acota el `ACOS`. El "N productos de M
+emprendimientos" es un `COUNT(DISTINCT post_id)` que pasa por el mismo
+`_filtrar_catalogo` que la grilla, para que no pueda mentir.
+
+**Tabla nueva: `product_favorites`** (migración `a4c17b8e6d20`). El corazón de las
+tarjetas necesitaba dónde guardar y `Favorite` es de emprendimientos. Las dos FK
+con `ondelete CASCADE` y nombre explícito, más el `UNIQUE (user_id, product_id)`
+que es lo que corta el doble click. Ciclo upgrade → downgrade → upgrade verificado
+en SQLite y en una base MySQL descartable, y ahí mismo las dos cascadas y el
+UNIQUE con filas reales. **"Mis favoritos" pasó a tener dos solapas**
+(Emprendimientos / Productos) en un parcial compartido.
+
+**El chat ya sabe de qué se habla**: `?producto=<id>` en `messages.conversation`
+precarga "Hola, quería consultar por «…»". Se exige que el producto sea de ese
+emprendimiento — sin el chequeo, un id cualquiera en la URL pondría palabras en
+boca del que pregunta.
+
+Productos **no entra en la barra global** (cuatro secciones se montan sobre el
+bloque de acciones). Tres puertas: el pie, una ficha en los filtros del listado
+que se lleva el texto buscado, y cada producto de la ficha, que dejó de ser un
+cartel y pasó a ser un enlace.
+
+Lo que quedó afuera a propósito: la **hoja de filtros que sube desde abajo** en
+teléfono (en código es el mismo `<details>` del listado: mismos filtros, misma
+URL, sin JS nuevo) y **la distancia en el detalle** (misma memoria de zona que
+sigue pendiente desde navegación).
+
+Un desborde lateral encontrado midiendo: en 390 px el `scrollWidth` daba 437 por
+el `flex-wrap: nowrap` que el listado le pone a las fichas de filtro. En el
+catálogo son seis, con un "Ordenar por" largo, así que **envuelven en vez de
+deslizarse** (`.fichas-filtro--catalogo`). Medido de nuevo: 371, y 749 en 768 px.
+
+Archivos: `views/products.py`, `views/messages.py`, `models/product_favorite.py`
+(nuevo), `migrations/versions/a4c17b8e6d20_*.py` (nuevo), `app/blog/consultas.py`,
+`config.py` (`PRODUCTOS_POR_PAGINA`), `templates/products/catalogo.html` +
+`detalle.html` + `guardados.html` (nuevos), `templates/products/index.html` →
+`mios.html`, `templates/partials/_solapas_favoritos.html` (nuevo),
+`templates/base.html`, `templates/partials/_tabbar.html`,
+`templates/messages/conversation.html`, `app/blog/templates/blog/index.html` +
+`detail.html` + `favorites.html`, `static/css/styles.css`,
+`tests/test_catalogo.py` (nuevo, 40 tests), `tests/test_products.py` y
+`tests/test_navegacion.py` (la URL del panel), `disenio-inicio/DISENIO.md`.
+
+De paso salió un botón muerto: **«Cerca de mí» no andaba en ninguna pantalla**.
+El JS hacía `boton.closest("form").submit()` y ese botón vive afuera del `<form>`
+desde el rediseño de la barra de filtros, así que `closest` daba `null` y el
+click moría con un `TypeError`. Ahora manda `latInput.form.submit()`, que es el
+form con las coordenadas recién escritas. **Arregla también `/blog/`.**
+
+**Auditada el 10/9**, incluida su migración `a4c17b8e6d20` (reverificada en
+SQLite y en MySQL 8 descartables). Sin hallazgos propios.
+
+## Sobre, contacto y errores — cuarta tanda de rediseño pasada a código (9/9) — CERRADA Y AUDITADA (10/9)
+
+La más chica: seis pantallas, **ninguna ruta nueva y ninguna migración**. El
+detalle largo está en `disenio-inicio/DISENIO.md`, sección «Sobre, contacto y
+errores pasados a código». Tres de las seis tenían un problema que no era de
+estética:
+
+- **`about.html` hablaba del equipo de desarrollo**, no del visitante: decía
+  «Flask (Python) y MySQL… una estética moderna en tonos pastel» (lo de pastel
+  hace rato que es falso). Reescrita desde el posicionamiento de la guía: los
+  cinco datos que Mercado Libre no tiene, **y los cinco salen de una tabla que
+  existe**. Se suma **«Lo que IMPULSAR no hace»** —sin pagos, sin envíos, sin
+  protección al comprador— porque es el argumento, no una disculpa. **Ni un
+  número en la página**, y hay un test que lo vigila.
+- **`contact.html` tenía un emoji** (📧) delante del mail. Se fue. **Sigue sin
+  formulario** a propósito: no hay tabla de consultas ni envío de mail, y un form
+  que no manda nada es peor que un `mailto` honesto. Se suman los **cuatro
+  atajos** que ya existen (reportar, chat, publicar, Ajustes); los dos que piden
+  sesión llevan a entrar cuando no la hay.
+- **Privacidad y Términos hacían las listas con `<br>•` adentro de un `<p>`**:
+  para un lector de pantalla es un párrafo con puntos medios. Ahora son `<ul>`.
+  **El texto no se tocó, palabra por palabra.** Las dos comparten un molde nuevo
+  (`templates/legal_base.html`) con índice sticky, enlace cruzado a la otra
+  legal, y medida de lectura de 66ch.
+
+**El 404 dejó de ser un cartel**: buscador en la pantalla (manda al listado) y
+los siete rubros abajo, con el mismo `.punto-rubro` del catálogo. **El 500 es el
+mismo molde sin buscador ni rubros** — si el servidor se cayó, un buscador que
+tampoco anda es una segunda frustración; sus botones son reintentar (a
+`request.url`) y Contacto.
+
+**La fecha de las legales sigue faltando y ahora tiene lugar**:
+`ACTUALIZADA_PRIVACIDAD` y `ACTUALIZADA_TERMINOS` en `views/pages.py`, hoy en
+`None`. Mientras lo estén, la pastilla de «Última actualización» no se dibuja: un
+`[COMPLETAR]` a la vista del usuario sería peor que no decir nada. **Es un dato
+de Tomás.**
+
+Barrido de CSS muerto: diez reglas sin dueño (`.about*`, `.contact*`,
+`.legal__text`, `.legal__subtitle` y el bloque entero de `.error-page`).
+`.legal` sobrevive con otro significado: era una columna de 720 px y ahora es la
+grilla de índice + cuerpo.
+
+Medido en las seis pantallas a 390 y a 768 px: sin scroll lateral.
+
+Archivos: `templates/about.html`, `contact.html`, `privacy.html`, `terms.html`,
+`legal_base.html` (nuevo), `errors/404.html`, `errors/500.html`,
+`views/pages.py`, `main.py` (el 404 recibe los rubros),
+`static/css/styles.css`, `tests/test_paginas.py` (nuevo, 21 tests),
+`tests/test_app.py` (el texto del 404), `disenio-inicio/DISENIO.md`.
+
+## Panel de administración — quinta tanda de rediseño pasada a código (9/9) — CERRADA Y AUDITADA (10/9)
+
+Ninguna ruta nueva, ninguna migración. De las cinco plantillas, tres ya tenían el
+rediseño de agosto; lo que faltaba era lo que se había quedado afuera. El detalle
+largo está en `disenio-inicio/DISENIO.md`, sección «Panel de administración
+pasado a código».
+
+**Reportes y Verificaciones no eran pintura pendiente: no existían con la forma
+del resto.** Tabla pelada, estilos inline y **sin el menú del panel, aunque el
+menú les enlazaba** — entrabas y perdías la navegación. Ahora son una **ficha por
+ítem**: la cita del reporte entera (antes cortada por un `max-width: 280px`), el
+documento de la verificación en su propia caja, y las acciones abajo.
+
+- **El motivo sigue viajando en el mismo envío que el rechazo** (un solo
+  `<form>`): si fuera otra pantalla, el prestador se quedaría sin saber qué
+  corregir. Lo decidió el código y se respeta.
+- **Sin foto es un estado, no un hueco**: caja punteada, **aprobar deshabilitado**
+  y el motivo del rechazo ya escrito. El `disabled` es la pantalla diciendo lo
+  obvio, no un permiso — ése vive en `@admin_required`.
+
+**El Resumen y la cola dibujaban el mismo ítem dos veces.** Pasaron a dos
+parciales compartidos (`admin/_ficha_reporte.html` y `_ficha_verificacion.html`),
+con una sola bandera de diferencia (`compacta`: en el Resumen el documento es un
+enlace, en la cola una caja). Eso dejó sin dueño `.admin-item*` y `.admin-aviso`,
+que se borraron.
+
+**Un solo número grande por pantalla**: el Resumen lidera con lo pendiente a
+60 px y las métricas quedan a 30. Antes era un `<h1>` de texto — la misma
+información sin jerarquía. Con las dos colas vacías el número no se dibuja.
+
+**El estado nunca se dice sólo con color**: cada pastilla lleva ícono y palabra y
+la fila entera se tiñe. Hay un test que abre cada pastilla y exige un `<svg>`
+adentro. De paso, la columna «Rol» mostraba el valor crudo de la base
+(«emprendedor») al lado de un filtro que dice «Emprendedores»: las etiquetas
+viven ahora en `Roles.ETIQUETAS`. Y `tabular-nums` en columnas con una clase
+`.num` — nunca en los números grandes, que a 60 px quedan flojos.
+
+**`.btn--peligro`**: blanca en reposo, roja al acercarse. No es roja desde el
+principio porque veinte botones rojos en una tabla convierten el rojo en el color
+de fondo del panel.
+
+**En el teléfono el panel se recorta a la cola**: el menú lateral se apaga y
+quedan el contador de pendientes y un segmentado de dos. Las acciones van
+apiladas y a lo ancho de 44 px, para que «Eliminar» no caiga al lado del pulgar
+que iba a «Marcar resuelto». Medido: 371 de `scrollWidth` en las cinco
+pantallas, a 390 y a 768.
+
+Quedó afuera, porque no hay con qué: «Emprendimientos sin actividad» (`Post` no
+tiene `updated_at`), «Exportar métricas» y «Exportar CSV».
+
+Archivos: `templates/admin/reportes.html`, `verificaciones.html`,
+`dashboard.html`, `usuarios.html`, `emprendimientos.html`, `_menu_admin.html`,
+`_ficha_reporte.html` y `_ficha_verificacion.html` (nuevos), `views/admin.py`,
+`models/user.py` (`Roles.ETIQUETAS`), `templates/partials/_icono_nav.html`
+(cinco íconos nuevos), `static/css/styles.css`, `tests/test_admin.py` (18 tests
+nuevos), `disenio-inicio/DISENIO.md`.
+
+## Panel del vendedor — sexta tanda de rediseño pasada a código (9/9) — CERRADA Y AUDITADA (10/9)
+
+**Una ruta nueva (`/panel`), un POST nuevo (`/productos/<id>/disponible`),
+ninguna migración.** Las seis pantallas del dueño eran seis páginas sueltas:
+cuatro compartían `_menu_cuenta.html`, la agenda de turnos no tenía menú
+ninguno. Ahora las siete (con la portada nueva) comparten
+`partials/_menu_panel.html`, y `_menu_cuenta.html` queda en las de «Mi
+actividad» y ajustes — el mismo corte que ya hacía el menú del avatar.
+
+**El panel arranca por lo pendiente, no por los números.** Presupuestos sin
+responder, mensajes sin leer, turnos de hoy y reseñas sin contestar, y **solo se
+dibuja lo que tiene algo**: con las cuatro en cero la sección entera no aparece.
+Los tres primeros conteos vivían escritos a mano adentro de
+`/mensajes/notificaciones`; se mudaron a `app/panel/consultas.py` y esa vista
+los pide de ahí, así que el criterio de «esto espera respuesta tuya» está en un
+solo lugar.
+
+**Los números son los cinco que la base sabe contar** (los de
+`estadisticas_de_usuario`). Sin flechitas de variación ni gráficos: la consulta
+da el total de hoy y no hay histórico, así que un «+18%» sería inventado.
+
+**El aviso de cada emprendimiento es uno solo**, el primero que aplique (sin
+fotos → sin productos ni servicios → sin horarios). El de horarios va último
+porque cuelga del USUARIO y no del emprendimiento: con dos emprendimientos
+aparece en los dos.
+
+**El catálogo del dueño** (`/productos/mios`, la última pantalla vieja que dejó
+la tanda del catálogo) pasa a filas agrupadas por emprendimiento, y **los grupos
+se arman desde los emprendimientos y no desde los productos**: el que no cargó
+ninguno también aparece, con «Cargar el primero» al lado.
+
+**El interruptor de «sin stock» es el único backend nuevo**: un POST chico,
+calcado de `/servicios/<id>/disponible`. Form de un botón y no checkbox con JS,
+`aria-pressed` y no `role="switch"`, y el estado dicho además con la palabra al
+lado — la opacidad es refuerzo, no el mensaje.
+
+**En el teléfono el panel no lleva menú lateral** (`.panel-menu` se apaga a
+879px): ocho ítems arriba de todo dejan el contenido debajo del pliegue. El menú
+de esas pantallas es `/perfil/mi-cuenta`, donde se agregó «Mi panel» como
+primera ficha; en escritorio, arriba de «Mis emprendimientos» en el menú del
+avatar.
+
+Quedó afuera: **«Eventos y ferias» del menú** (no hay pantalla de los eventos
+propios — se cargan desde la ficha, y `/eventos` es la cartelera pública; entra
+con la tanda de eventos) y el **buscador, filtro, orden y paginado del catálogo
+propio** que el artboard dibuja adentro de cada grupo (con el tope de 50 las
+filas entran todas: serían cuatro controles con backend propio para filtrar una
+lista que ya se ve entera).
+
+Archivos: `app/panel/` (nuevo), `templates/partials/_menu_panel.html` (nuevo),
+`templates/products/mios.html`, `_icono_nav.html` (íconos `editar` y
+`eliminar`), `_menu_cuenta_desplegable.html`, `profile/cuenta.html`,
+`turnos/agenda.html`, `blog/my_posts.html`, `servicios/index.html` y
+`solicitudes.html`, `profile/reviews.html`, `views/products.py`,
+`views/messages.py`, `app/blog/vistas.py`, `app/servicios/vistas.py`,
+`app/turnos/vistas.py`, `app/perfil/vistas.py`, `main.py`,
+`static/css/styles.css`, `tests/test_panel.py` (18 tests nuevos),
+`tests/test_profile.py`, `disenio-inicio/DISENIO.md`.
+
+## Turnos — séptima tanda de rediseño pasada a código (9/9) — CERRADA Y AUDITADA (10/9)
+
+**Ninguna ruta nueva, ninguna migración, y el único backend nuevo son cuatro
+consultas de lectura.** Las tres pantallas (`reservar`, `mios`, `agenda`) se
+reescribieron enteras y `turnos/_lista.html` — el macro que compartían mis
+turnos y la agenda — se borró: eran dos pantallas distintas usando la misma
+fila, y eso era justamente el problema.
+
+**Reservar deja de ser un `<input type="date">` a ciegas.** Antes había que
+adivinar qué día tenía lugar, y abajo cada horario era un `<button
+type="submit">` adentro de su propio `<form>`: **un click de más ya reservaba**,
+y cancelado no se revierte. Ahora:
+
+- una **tira de siete días** que dice de antemano cuántos horarios le quedan a
+  cada uno (`consultas.semana_de_slots`, dos consultas para la semana entera:
+  los horarios de la persona y las horas tomadas del rango);
+- **los ocupados se dibujan apagados** en vez de desaparecer. Una grilla con
+  cuatro horas sueltas y sin explicación se lee como que el negocio casi no
+  atiende. Los horarios son `<input type="radio">` de UN formulario y el submit
+  es uno solo, al final;
+- **los seis vacíos de `slots_disponibles()` son cinco mensajes distintos**
+  (`SIN_TURNOS`, `CERRADO`, `SIN_HORARIO`, `COMPLETO`, `PASO`). El quinto salió
+  de la verificación visual: el día de hoy, ya empezado y sin ninguna reserva,
+  decía «los turnos de ese día ya están tomados», que es mentira. `PASO` y
+  `COMPLETO` no son lo mismo y no se dicen igual.
+
+**Los días son enlaces GET, no botones.** Elegir un día no reserva nada, así que
+la URL de un día queda compartible y el botón de atrás funciona. Viajan dos
+parámetros y no uno (`?desde=` la tira, `?fecha=` el día elegido): con uno solo,
+cada click en un día recentraría la tira y los otros seis se moverían debajo del
+dedo.
+
+**Mis turnos se parte en próximos y pasados.** `turnos_de_cliente()` ordena por
+fecha DESC y mezclaba todo: lo primero que se veía era el turno más viejo del
+historial. El corte va en la vista y no en la consulta porque necesita saber qué
+día es hoy en Argentina, que es un dato del request. Y es por FECHA, no por
+hora: el turno de hoy a las 09:00 sigue en «Próximos» a las 11:00.
+
+**Cancelar pide confirmación, y en la misma fila**, con las dos consecuencias
+reales escritas (se libera el horario, sale un mail). Es un `<details>`, no
+JavaScript. **Se fue el botón «Turnos que recibí»**: la agenda vive en el panel
+desde la tanda anterior.
+
+**La agenda es un día, no una lista de tarjetas**, y **los huecos se dibujan**:
+son lo que todavía se puede reservar, o sea la mitad de la información de una
+agenda. `reglas.huecos_entre` los calcula sobre el rango de atención y NO los
+corta en tramos, porque cada servicio tiene su duración y todos salen del mismo
+horario de la persona: un hueco de 13:45 a 16:00 puede recibir un turno de 45
+minutos o uno de 90. Los cancelados del día van abajo y aparte — su horario ya
+volvió a los huecos de arriba, pero el vendedor tiene que verlos. **No hay
+«cumplido» ni «ausente»**: esos estados no existen y dibujarlos sería inventar
+una columna.
+
+**Sin JavaScript las tres pantallas funcionan.** Lo único que agrega `main.js`
+es que el resumen del costado de reservar siga al horario elegido; el radio se
+marca, el botón envía y la vista rechaza con «Elegí un horario de la lista» si
+no se eligió ninguno.
+
+Quedó afuera, y no es descuido: **«Cómo llegar»** (no hay más que
+`address_street`, y armar un link a un mapa externo es una decisión de producto
+que nadie tomó), **«Dejar una reseña» en el historial** (habría que saber si ya
+la dejó, y eso es otra consulta y otra tanda), y **el filtro por emprendimiento
+de la agenda** que dibuja el artboard (los chips «Los dos emprendimientos» /
+uno / otro): entra cuando haya alguien con dos emprendimientos y servicios en
+los dos, hoy sería un filtro de un solo valor.
+
+Verificado con el servidor descartable en 5050 (SQLite temporal, nunca
+`impulsar_db`): las tres pantallas con sesión, el día lleno, el día cerrado, el
+día ya pasado y el día con huecos intercalados entre dos turnos. **El repaso a
+390 px quedó sin hacer**: la extensión de Chrome no está conectada en esta
+máquina. Las media queries están escritas (siete columnas siempre, nada se
+desliza de costado, la hora de la fila pasa a renglón propio) pero no se
+miraron con un navegador — va a la auditoría.
+
+**Auditada el 10/9.** El repaso a 390 px que había quedado sin hacer está hecho:
+sin desborde lateral en las tres pantallas, a 390 y a 768 px. Sin hallazgos
+propios.
+
+Archivos: `app/turnos/vistas.py`, `consultas.py`, `reglas.py`,
+`templates/turnos/reservar.html`, `mios.html` y `agenda.html` (los tres
+reescritos), `_lista.html` (borrado), `main.py` (filtro `hora`),
+`static/css/styles.css` (sección «TURNOS»), `static/js/main.js`,
+`tests/test_turnos.py` (35 tests nuevos, 4 adaptados),
+`disenio-inicio/DISENIO.md`.
+
+## Ferias y eventos — octava y última tanda de rediseño pasada a código (9/9) — CERRADA Y AUDITADA (10/9)
+
+**La única tanda del rediseño con migración: `c7d92f4a1b83`**, dos columnas en
+`events`. El resto de las ocho no tocó el modelo.
+
+**Se decidió con Tomás cuáles de los tres campos dibujados entraban.** El canvas
+pedía tres que la base no tenía; entran dos y queda uno:
+
+- **`tipo`** — Feria · Taller · Pop-up · Encuentro (`TiposEvento`). **NULLABLE y
+  sin `server_default`**, igual que `lugar` en `f3c81a25b7d0`: los eventos ya
+  cargados no tienen tipo y no hay de dónde sacarlo. Ponerles «feria» a todos
+  etiquetaría de mentira lo que quizá era un taller. NULL es «no lo dijo»: la
+  tarjeta no dibuja el chip y ningún filtro por tipo lo cuenta. El formulario sí
+  lo exige para los nuevos, así que el NULL se agota solo. **No hay «Otros»**, al
+  revés que `Categorias`: ofrecer el cajón de sastre desde el día uno garantiza
+  que la mitad caiga ahí y que el filtro deje de servir.
+- **`entrada_libre`** — `Boolean`, NOT NULL, `server_default "0"`. **La asimetría
+  con `tipo` es deliberada**: el chip solo se dibuja en True, así que False no
+  afirma nada, mientras que marcarle entrada libre a un taller pago prometería
+  gratis lo que se cobra.
+- **«Me interesa» NO entró**, y lo dice el propio canvas: no es una etiqueta, es
+  una feature entera (tabla usuario × evento, ruta, permiso, y decidir si el
+  dueño ve quiénes son). Sigue en backlog, no maquetada en falso.
+
+Índice sobre `tipo` porque la cartelera filtra por ahí; sobre `entrada_libre` no,
+que a un booleano de dos valores ningún plan de consulta le saca provecho.
+
+**El calendario pasa de ilustración a filtro.** Pintaba los días con eventos
+contra `/api/eventos?mes=` y ahí terminaba: los puntitos no hacían nada. Ahora
+cada día es un **enlace a `?dia=AAAA-MM-DD`**, así la cartelera filtrada se
+comparte, vuelve con el botón de atrás y el filtro anda sin JS (el calendario en
+sí sigue siendo JS: sin él no hay calendario, igual que antes). El parcial tiene
+dos modos, con `data-enlace-dia`: en el home el día sigue siendo un botón que
+filtra el panel de al lado sin recargar, que ahí es lo correcto. Con un día
+elegido el calendario **abre en SU mes** y no en el actual.
+
+**El día manda sobre «todavía no pasó».** Elegir una fecha muestra ese día
+aunque ya haya pasado: el calendario navega meses para atrás, y esconder lo
+vencido dejaría esos meses vacíos. Sin día elegido, la cartelera es lo que viene.
+
+**Dos vacíos distintos, no uno.** «Todavía no hay eventos anunciados» es cierto
+con la base vacía y mentira cuando el día elegido no tiene nada; el segundo dice
+cómo salir del filtro y trae el botón para hacerlo.
+
+**Una pantalla nueva: `/eventos/mios`**, que es la que le faltaba al ítem
+«Eventos y ferias» del menú del panel — por eso quedó afuera de la tanda del
+panel del vendedor. Hasta ahora un evento se cargaba y se editaba desde la ficha
+de cada emprendimiento, y `/eventos` es la cartelera pública de todos: quien
+tiene tres emprendimientos no tenía ningún lado donde ver sus fechas juntas.
+Próximos y pasados, como «mis turnos»; los pasados no se borran solos (la
+cartelera pública sí los esconde). Borrar pide confirmación con el mismo
+`<details>` de la tanda de turnos. Las tres vueltas del ABM (alta, edición,
+borrado) ahora van ahí y no al perfil.
+
+**Un solo llamado a publicar en la cartelera.** Había un botón al lado del
+título además del bloque del costado: con el «Publicar» de la barra, la misma
+acción aparecía tres veces en una pantalla. Queda el del costado, que es el
+único que además dice por qué (es gratis y no hay comisión), y pasa a ser el
+bloque índigo profundo del canvas.
+
+**Los cuatro tipos se distinguen por el ÍCONO, no por el color** — los cuatro en
+índigo lavado, igual que los 13 rubros de servicio. Con cuatro colores más, el
+chip de tipo competiría con el verde de «entrada libre», que sí tiene que saltar
+porque cambia la decisión de ir. El tipo en el formulario es un segmentado de
+cuatro radios y no un `<select>`: desplegar una lista para elegir entre cuatro
+opciones fijas es un paso de más.
+
+**La migración se verificó aislada**, no solo bajando desde head: se cargaron
+dos eventos con el esquema anterior, se aplicó el paso solo, y se comparó fila
+por fila antes y después (en SQLite `batch_alter_table` RECREA la tabla, o sea
+que copia). Ida y vuelta, con `foreign_key_check` limpio. Nota de método: hay
+que correrla con `FLASK_ENV=development`, no `testing` — `TestingConfig` fija
+`sqlite:///:memory:` a mano, así que con `testing` Alembic imprime que aplicó
+todo sobre una base que se evapora y el archivo queda vacío, en silencio.
+
+Verificado con el servidor descartable en 5050: la cartelera entera, filtrada
+por tipo, el vacío del filtro, «mis eventos» y el formulario. **El repaso a
+390 px quedó sin hacer**, igual que en turnos: la extensión de Chrome no está
+conectada en esta máquina. Las media queries están escritas (los chips
+envuelven, el segmentado pasa a dos columnas, las acciones ocupan el ancho) pero
+no se miraron con un navegador — va a la auditoría.
+
+Quedó afuera además: el artboard de teléfono mete los filtros en una hoja detrás
+de un botón «Tipo y entrada»; acá envuelven en dos filas, que hace lo mismo sin
+agregar una capa que hay que abrir para ver qué hay.
+
+**Auditada el 10/9**, y su migración `c7d92f4a1b83` reproducida de cero por la
+auditoría en bases descartables de SQLite y de MySQL 8 (ver «Auditoría de
+cierre»). Un hallazgo real: el vacío «Todavía no hay eventos anunciados» también
+salía con la base NO vacía y todo vencido. Arreglado con un tercer vacío. El
+repaso a 390 px, que había quedado sin hacer, está hecho.
+
+Archivos: `models/event.py` (`TiposEvento`, dos columnas, `tipo_label`),
+`migrations/versions/c7d92f4a1b83_...py` (nueva), `views/eventos.py`,
+`services/eventos.py` (`tipo_valido`, `del_dia`, `filtrar`),
+`app/panel/consultas.py` (contador de eventos),
+`templates/eventos/index.html` y `form.html`, `templates/eventos/mios.html`
+(nueva), `templates/partials/_menu_panel.html` (el octavo ítem),
+`_calendario.html` (modo enlace), `_icono_nav.html` (cinco íconos nuevos),
+`static/js/calendario.js`, `static/css/styles.css` (sección «FERIAS Y EVENTOS»),
+`tests/test_eventos.py` (35 tests nuevos, 10 adaptados), `tests/test_panel.py`,
+`disenio-inicio/DISENIO.md`.
+
+## Auditoría de cierre del rediseño (las ocho tandas juntas) — HECHA 10/9, APROBADA
+
+Auditoría COMPLETA de punta a punta sobre las ocho tandas juntas, la que pedía el
+plan de abajo, hecha antes del push y antes de abrir el PR. **Tres hallazgos
+reales, los tres arreglados en la misma vuelta** (coordinados con la otra sesión,
+que verificó los renames por su cuenta).
+
+### La migración `c7d92f4a1b83`, reproducida de cero por la auditoría
+
+No se confió en el resultado reportado: se rehízo la verificación entera en bases
+descartables propias, **en SQLite y también en MySQL 8 real** (base
+`auditoria_cierre_tmp`, creada y dropeada por el script, con `impulsar_db`
+comprobada intacta al final). Vale la pena hacer las dos porque esta migración se
+comporta distinto en cada motor: en SQLite `batch_alter_table` RECREA la tabla y
+copia las filas, en MySQL sale un `ALTER` normal — probar sólo en SQLite deja sin
+probar el camino que corre en producción.
+
+Verificado, todo verde:
+
+- Dos eventos cargados con el esquema anterior (`a4c17b8e6d20`), el paso aplicado
+  aislado, y comparación **fila por fila por nombre de columna** (no por
+  posición: el batch reordena). Intactas las 8 columnas viejas, y el conteo de
+  filas de las 17 tablas idéntico.
+- **`tipo` es nullable de verdad**: `IS_NULLABLE=YES`, sin default, `VARCHAR(20)`,
+  y un `INSERT` sin tipo entra. Los eventos preexistentes quedaron en `(NULL, 0)`.
+- `entrada_libre` NOT NULL con default `0`, y MySQL **rechaza** un NULL explícito.
+- `ix_events_tipo` existe y va sobre `tipo`; **no** hay índice sobre
+  `entrada_libre`, como se había decidido.
+- La FK `post_id → posts` sobrevive idéntica con su `ON DELETE CASCADE`.
+- **`downgrade` desde head y vuelta a `upgrade`** (no sólo el upgrade): sin perder
+  ninguna fila ni ningún dato de las columnas viejas, el índice se va y vuelve, la
+  FK queda igual. Se probó también con `tipo` y `entrada_libre` YA cargados: lo
+  que se pierde en el downgrade es sólo el contenido de las dos columnas
+  dropeadas, que es lo esperado.
+- `foreign_key_check` limpio en SQLite (verificado por la auditoría, no reportado)
+  y `PRAGMA foreign_keys` en ON en todo momento. Sin `_alembic_tmp_*` colgada.
+- **Sin drift contra el ORM**: `compare_metadata()` no encuentra ninguna
+  diferencia entre el esquema migrado y los modelos.
+- La cadena entera `base → head` (34 pasos) y `head → base` corren limpias en
+  SQLite.
+
+### Hallazgo 1 — el vacío de la cartelera mentía con todo vencido (ARREGLADO)
+
+`/eventos/` tenía dos vacíos y le faltaba uno. Sin ningún filtro puesto y con la
+base **no** vacía pero **todos los eventos ya vencidos**, `proximos()` volvía
+vacío, `filtrando` era `False` y la pantalla decía «Todavía no hay eventos
+anunciados» — mentira, hubo eventos y ya pasaron. Peor: el calendario del costado
+les sigue pintando el puntito, así que **la pantalla se contradecía sola**. Y no
+es un caso raro: los eventos pasados no se borran nunca (la cartelera pública sólo
+los esconde), así que es el estado normal de una cartelera en temporada baja.
+
+Arreglado con un tercer vacío: `views/eventos.py` pasa `hay_eventos` (un `EXISTS`
+que **sólo se consulta con la página vacía y sin filtros**, para no agregarle una
+consulta a cada carga) y la plantilla ramifica en tres. Con todo vencido dice «No
+hay fechas próximas» y manda a navegar el calendario para atrás, que es donde esos
+eventos están. Dos tests nuevos en `tests/test_eventos.py`.
+
+### Hallazgo 2 — `.interruptor`: el interruptor de horarios quedó gris en los dos estados (ARREGLADO)
+
+El primero de dos choques de nombres en el `styles.css` compartido, y el más
+grave porque **rompía una pantalla ya pusheada**. El interruptor de «sin stock»
+del panel del vendedor tomó las mismas clases que el de los horarios de Cuenta
+(`.interruptor`, `__pista`, `__texto`) y, al ir después en el archivo, le pisaba
+cuatro propiedades. Medido en Chrome, no leído:
+
+- la pastilla pasaba de 44×26 a **38×22** (abajo del piso de 44 px que fijó la
+  auditoría del 6/9), y la bolita del bloque viejo es un `::after` de 20 px en
+  `left: 21px` = 41 px, o sea **se desbordaba** de una pista de 38;
+- el fondo pasaba de `--color-primary-boton` a `--color-border`, que es **justo el
+  valor que el bloque viejo le pone al estado `:checked`**: los dos estados
+  quedaban del mismo gris `rgb(226,230,238)` y **el color dejaba de decir si el
+  día estaba abierto o cerrado**;
+- el texto perdía el verde de `--color-success-text` y quedaba gris en los dos
+  estados.
+
+Arreglado renombrando **lo nuevo** (`.interruptor-stock*` en el bloque, en la
+media query de 768 px y en los cuatro usos de `templates/products/mios.html`), no
+lo viejo: lo viejo ya está pusheado y mirado. Verificado después: horarios vuelve
+a 44×26 con índigo/verde en abierto y gris/muted en cerrado, y el de stock
+conserva su propio dibujo.
+
+**No** era cierto que horarios perdiera además su alineación a la derecha: el
+`margin-left: auto` vive sólo en el bloque viejo y el nuevo no declara ninguno, así
+que nunca hubo choque ahí (medido: resolvía a 216 px). Se verificó también el
+riesgo simétrico —que `products/mios.html` perdiera algo que venía heredando sin
+chocar— y no aplica: el flex item de la fila es el `<form>`, no el botón.
+
+### Hallazgo 3 — `.resenias`: dos listas distintas con el mismo nombre (ARREGLADO)
+
+La lista plana de reseñas de la ficha tomó el nombre de la grilla de dos columnas
+de «Reseñas recibidas». Hacía daño **en las dos direcciones**:
+
+- el `display: flex` de la ficha le ganaba al `display: grid` de la otra, y el
+  `<aside class="resenias__resumen">` se apilaba abajo a todo el ancho en vez de
+  ir en su columna de 300 px (medido a 1440 px, donde el grid sí tiene que
+  aplicar: a 768 apilan las dos por la media query de 1100 y el bug no se ve);
+- y la ficha heredaba de la grilla un `align-items: start` que ahí no va: las
+  reseñas no se estiraban y cada una quedaba del ancho de su texto (medido: 477 px
+  y 301 px), así que **el `border-bottom` que las separa cortaba a lo largo
+  distinto en cada una y terminaba en el aire**.
+
+Arreglado renombrando el wrapper de la ficha a `.resenias-ficha`. Verificado a
+1440 px: «Reseñas recibidas» vuelve al grid `748px 300px` con el resumen al lado,
+y las reseñas de la ficha se estiran a 618 px las dos, con un separador prolijo.
+
+### El repaso a 390 px que había quedado sin hacer
+
+Turnos y eventos habían quedado con las media queries escritas pero sin mirar en
+un navegador. Hecho ahora con Playwright y Chrome real (`setViewportSize`, o sea
+`innerWidth` de verdad 390, no un iframe): **29 pantallas × 2 anchos = 58
+mediciones, cero desborde lateral**. `document.scrollWidth` da exactamente 390 y
+768 en todas. Incluye home, listado, ficha, cartelera (con filtro y con día),
+mis eventos, formulario, catálogo, detalle, mis productos, guardados, panel, las
+cinco de admin, mis turnos, agenda, reservar, mi cuenta, reseñas, horarios, las
+cuatro legales/institucionales y el 404.
+
+La `.admin-table` mide 655 px a 390, pero va dentro de `.admin-table-wrapper` con
+`overflow-x: auto` y la página no se desliza: es el patrón sancionado para tablas,
+no un hallazgo.
+
+### El calendario con enlaces `?dia=`, verificado en navegador
+
+- Modo enlace en la cartelera: los días con eventos son `<a href="?dia=...">`.
+- **Ida y vuelta con el botón de atrás**: atrás vuelve a `/eventos/` sin filtro y
+  con la lista completa; adelante vuelve al día filtrado. Las dos direcciones.
+- **Enlace compartible**: pegando en frío `?dia=` de un día del mes siguiente, el
+  calendario abre en **su** mes («Octubre 2026») con el día marcado
+  (`aria-current="date"`), no en el mes actual.
+- El día ya elegido enlaza sin `?dia=`, así que volver a tocarlo suelta el filtro.
+- Con `?tipo=taller` puesto, el día viaja como `?tipo=taller&dia=...`: elegir una
+  fecha **no** suelta el tipo.
+- **El modo «botón» del home no se rompió**: ahí los días son `<button>` sin
+  `href`, tocarlos filtra el panel de al lado sin recargar (la URL sigue en `/`),
+  el panel dice «Domingo 13 de septiembre» con su «Ver todo el mes», y volver a
+  tocar suelta.
+
+### Los dos estados vacíos y `/eventos/mios`
+
+- «Todavía no hay eventos anunciados» ya sale **sólo** con la base realmente
+  vacía (ver hallazgo 1); con filtros que no matchean sale «Nada con esos
+  filtros», que explica cómo soltarlos y trae «Ver todas las fechas».
+- Un evento **sin tipo** aparece en «Todos», no dibuja chip y **no entra en
+  ninguno de los cuatro filtros por tipo** (probado con un evento con `tipo=NULL`,
+  los cuatro filtros uno por uno). Un `?tipo=` inventado se ignora.
+- `/eventos/mios` resuelve el permiso **server-side**: `@login_required` más el
+  join `Post.author == g.user.id`. Sin sesión rebota al login; con la sesión de
+  otro usuario no se ve ni un evento ajeno; editar o borrar un evento de otro
+  rebota y **no** borra la fila.
+- **El menú del panel tiene sus 8 ítems** y los 8 responden 200 para el dueño y
+  302 al login sin sesión: Inicio del panel, Emprendimientos, Catálogo,
+  Servicios, Presupuestos, Agenda de turnos, Eventos y ferias, Reseñas recibidas.
+  Ningún ítem anterior se rompió al agregar el octavo.
+
+### Navegación y ficha: nada de las seis tandas nuevas las pisó
+
+La navegación quedó intacta: dos bandas, tres secciones (sin «Inicio», que es el
+logo), Favoritos y Mensajes como iconos, «Publicar» fuera de la barra, los badges
+pidiendo **cada uno su número** por `data-notif` (`unread_messages`,
+`pending_service_requests`, `unanswered_reviews` — no sumados), el
+`[hidden] { display: none !important }` haciendo efecto, cinco pestañas abajo con
+sesión y tres sin ella (Inicio · Explorar · Entrar). La ficha también: nueve
+bloques, estrellas en SVG, reseñas firmadas con nombre (ningún «Usuario #7»),
+«Dónde encontrarla» presente, productos como enlaces. Lo único que sí las pisó fue
+el `.resenias` del hallazgo 3, ya arreglado.
+
+### Barrido del CSS compartido
+
+Las ocho tandas escriben en un solo `styles.css` de ~16.700 líneas donde, a igual
+especificidad, gana el que va más abajo. Se cruzó cada selector del nivel de
+arriba consigo mismo buscando declaraciones contradictorias, y cada clase contra
+todos los templates y el JS **como token entero**:
+
+- **25 selectores** con declaraciones contradictorias. Dos eran los hallazgos 2 y
+  3; quedan **21**, y son de dos clases inofensivas: diferencias de redondeo
+  (`0.66rem` vs `0.65625rem`) y **pisadas deliberadas por orden de archivo**.
+- **84 clases sin ningún uso**; se borraron las **10 que estas tandas dejaron sin
+  dueño** (85 líneas), todas de la vieja `MI CATALOGO`: `.catalogo__grupo*`,
+  `.catalogo__conteo*`, `.producto__img`, `.producto--sin-stock`,
+  `.producto__sello`, `.producto__cuerpo` y `.producto__desc`. Se confirmó contra
+  la versión commiteada de `products/index.html` que las usaba antes de que la
+  tanda del panel la reescribiera como `mios.html` con `.fila-prod*`. Quedan 74,
+  todas preexistentes y ajenas a estas tandas.
+
+**Lección de método, y casi una macana: un bloque duplicado NO es
+necesariamente borrable.** El análisis de choques sólo ve las propiedades que se
+contradicen; las que no chocan **cascadean y se suman**. Por eso la sección vieja
+de `MI CATALOGO` parecía muerta y no lo está:
+
+- `.producto` le sigue aportando a `templates/products/detalle.html` el borde, el
+  radio, el fondo y el `overflow: hidden`, que el bloque nuevo **no** redeclara;
+- `.catalogo__vacio` vive ahí dentro, es su **única** declaración y la usan cuatro
+  pantallas (`products/mios.html`, `panel/inicio.html`, `admin/usuarios.html` y
+  `admin/emprendimientos.html`), tres de ellas de las tandas nuevas.
+
+Lo mismo vale para la `.cartelera__cta` de agosto: **no es CSS muerto**. 7 de las
+14 clases de esa sección son la única declaración de clases vivas, o sea la tanda
+de eventos construyó **encima** de la de agosto y le pisa 6 selectores por orden
+de archivo. Se deja como está, documentado. Y vale también para renombrar, no sólo
+para borrar: fue justamente lo que pasó con el `align-items` del hallazgo 3.
+
+Tres guardas nuevas en `tests/test_css_compartido.py` para que los dos choques no
+vuelvan sin que nadie se entere: el HTML no cambia cuando se pisan las clases, así
+que la suite no los veía.
+
+### Lo que la auditoría NO encontró
+
+Sin hallazgos propios en catálogo, páginas (sobre/contacto/legales/errores),
+admin, panel del vendedor ni turnos, más allá de lo compartido de arriba.
+
+Archivos que tocó la auditoría: `views/eventos.py`, `templates/eventos/index.html`,
+`templates/products/mios.html`, `app/blog/templates/blog/detail.html`,
+`static/css/styles.css`, `tests/test_eventos.py` (2 tests nuevos),
+`tests/test_ficha.py` (3 recortes reapuntados a `.resenias-ficha`),
+`tests/test_css_compartido.py` (nuevo, 3 tests), `disenio-inicio/DISENIO.md`.
+
+## Plan de las tandas de rediseño — DECIDIDO 9/9, CUMPLIDO 10/9
+
+**Primero se implementan las ocho tandas; recién después vienen las auditorías y
+lo que falte agregar.** Ninguna se auditó ni se pusheó de a una: las ocho
+—navegación, ficha, catálogo, páginas, admin, panel del vendedor, turnos y
+eventos— se cerraron y se dejaron sin auditar a propósito hasta tenerlas todas.
+
+**AL 9/9 ESTÁN LAS OCHO y AL 10/9 LA AUDITORÍA DEL CONJUNTO ESTÁ HECHA Y
+APROBADA** (ver «Auditoría de cierre del rediseño», arriba): tres hallazgos
+reales, los tres arreglados en la misma vuelta. **El plan se cumplió entero.** Lo
+que sigue es abrir el PR dev_tomy → main, que se confirma con Tomy aparte.
+
+**El método se validó solo:** dos de los tres hallazgos fueron choques de nombres
+de clase ENTRE tandas (`.interruptor` y `.resenias`), que es exactamente lo que
+auditar de a una no habría encontrado — cada tanda por separado se veía bien, el
+daño aparecía recién con las dos puestas.
+
+**Por qué:** auditar de a una obliga a volver a cargar el contexto de cada tanda
+dos veces, y varias comparten piezas (la barra, las fichas de filtro, los
+parciales, el CSS) — un arreglo hecho en la auditoría de una se pisa con la
+siguiente. Con las ocho puestas, la auditoría se hace una vez sobre el conjunto y
+ahí también se decide qué falta implementar o agregar.
+
+**Cómo aplicarlo:** al cerrar cada tanda, dejar anotado en `DISENIO.md` y acá lo
+que quedó afuera y por qué, sin abrir la auditoría. La lista de pendientes chicos
+vive al final de `DISENIO.md`, sección "Dónde retomamos".
+
 ## Identidad visual — paleta índigo, VIGENTE
 
 #3E2F94 primario, más tokens de hover/dark/soft del handoff de Design. Nota de accesibilidad: `color-mix()` sobre el primario puede fallar contraste en un tema — usar token propio fijo (`--color-primary-deep: #2A2068`, 13.9:1 en los dos temas) para bloques de marca.
@@ -161,6 +959,10 @@ Estado: CERRADO. Auditado por Sesión 2 y pusheado el 8/9.
 - Fusión de navegación Productos/Servicios/Solicitudes en tabs — se optó por el fix mínimo de navegación, sigue en backlog como posible frente propio si se quiere fusionar de verdad.
 - CSV export de usuarios, "Exportar métricas", audit log de quién baneó a quién en el panel de administración — backlog.
 - MapLibre — upgrade a v6: requiere `type="module"` + `.mjs`. No urge, 5.24.0 es estable.
+- `flask db downgrade base` en MySQL corta en `8f3c1d02b7a4` con «Cannot drop index 'uq_review_post_user': needed in a foreign key constraint» — PREEXISTENTE y ajeno a las tandas de rediseño, encontrado por la auditoría del 10/9 al bajar la cadena entera contra MySQL 8 real. En SQLite la cadena baja y sube completa sin problema. No bloquea nada: nadie baja a `base` en producción, y `downgrade` de un paso funciona bien. Para arreglarlo hay que dropear la FK antes del índice en ese downgrade, como ya hacen `b8f5c2e41a97` y `a4c17b8e6d20`.
+- La sección vieja de `MI CATALOGO` en `styles.css` no se puede retirar aunque su pantalla ya no exista: `.producto` le aporta a `products/detalle.html` propiedades que el bloque nuevo no redeclara, y `.catalogo__vacio` es su única declaración y la usan cuatro pantallas. Si alguna vez se quiere limpiar de verdad, primero hay que mudar `.catalogo__vacio` a la sección de componentes compartidos y completar el bloque nuevo de `.producto`. Mismo caso, más entrelazado, con la `.cartelera__cta` de agosto.
+- 21 selectores de `styles.css` siguen declarados dos veces con alguna propiedad contradictoria, todos inofensivos hoy (diferencias de redondeo, o pisadas deliberadas por orden de archivo). Son deuda de forma, no bugs: el riesgo es que mover una sección cambie quién gana.
+- 74 clases de `styles.css` no las usa ningún template ni el JS, todas preexistentes a las ocho tandas (`.hero__*`, `.search__*`, `.filtros__*`, `.post-rating*`…). Barrido pendiente, sin apuro.
 - Resto de mejoras opcionales menores (redacción de commits, docstrings, casos edge cosméticos) — no bloquean nada, se toman si hay tiempo en una tanda relacionada.
 
 ## Gotchas
@@ -183,6 +985,9 @@ Estado: CERRADO. Auditado por Sesión 2 y pusheado el 8/9.
 - Bajo MySQL/InnoDB REPEATABLE READ, un lock adquirido después de una lectura ordinaria no garantiza datos frescos.
 - Enfoque UI-first: `<fieldset disabled>`/disabled real (no solo gris) para controles sin backend. Cuando el dato no existe ni parcialmente en el modelo, se omite del todo — aplica también a features enteras y retroactivamente a lo ya publicado.
 - Un chip de filtro que se muestra aplicado tiene que corresponder a un filtro que realmente se aplicó — mismo espíritu que la honestidad de datos, aplicado a la UI de estado del filtro.
+- Un nombre de clase de CSS es un recurso COMPARTIDO entre tandas: reusarlo no da error ni rompe ningún test (el HTML no cambia), le cambia el dibujo a una pantalla que nadie volvió a mirar. Buscar el nombre en `styles.css` antes de bautizar un componente, y si hay choque renombrar lo NUEVO, no lo pusheado.
+- Un bloque de CSS duplicado NO es necesariamente borrable ni renombrable sin consecuencias: un análisis de choques sólo ve las propiedades que se contradicen, y las que no chocan cascadean y se suman. Antes de borrar o renombrar, cruzar cada clase contra todos los templates y el JS como token entero, y mirar qué propiedades NO redeclara el bloque que se queda.
+- Un estado vacío puede mentir de más de una forma: «no hay nada» y «no hay nada que matchee tu filtro» son dos, y «hubo y ya pasó» es una tercera que se disfraza de la primera cuando la consulta filtra por fecha. Contar los vacíos por cada motivo distinto, no por cada pantalla.
 - `grid-template-columns: repeat(auto-fit, minmax(Npx, 1fr))` con un mínimo fijo causa scroll horizontal cuando el contenedor es más angosto que N — usar `minmax(min(Npx, 100%), 1fr)`.
 - `db.paginate()` de Flask-SQLAlchemy 3.1 devuelve escalares, no filas — si la query original seleccionaba una tupla, paginar rompe el desempaquetado.
 - Un CDN sin versión pineada puede empezar a resolver a una major nueva que dejó de publicar el formato que el `<script>` pedía — fix: pinear versión exacta en la URL del CDN.
