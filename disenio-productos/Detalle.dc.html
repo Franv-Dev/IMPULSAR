@@ -1,0 +1,215 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-nav--on { color: #3E2F94; font-weight: 600; border-bottom-color: #3E2F94; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-campo:hover { background: #EEF1F7; }
+    .u-btn:hover { background: #483BA1; }
+    .u-tarjeta { display: flex; flex-direction: column; min-width: 0; border: 1px solid #E2E6EE;
+                 border-radius: 16px; background: #FFFFFF; overflow: hidden;
+                 transition: border-color .18s ease, box-shadow .18s ease; }
+    .u-tarjeta:hover { border-color: #C9D0E0; box-shadow: 0 16px 36px rgba(23,20,71,.10); }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav u-nav--on">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+          <span style="position: absolute; top: 3px; right: 3px; min-width: 18px; height: 18px; padding: 0 4px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; border: 2px solid #FFFFFF">3</span>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: #4A5666">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">L</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div style="border-top: 1px solid #EEF1F7">
+      <div style="max-width: 1160px; margin: 0 auto; padding: 14px 24px; display: flex; justify-content: center">
+        <div style="width: 100%; max-width: 720px; height: 52px; display: flex; align-items: center; padding: 0 6px 0 0; background: #F5F7FA; border: 1px solid #E2E6EE; border-radius: 999px">
+          <div class="u-campo" style="flex: 1.8; min-width: 0; height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-radius: 999px 0 0 999px">
+            <span style="color: #5F6B7C; flex-shrink: 0; display: flex">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 15px; color: #5F6B7C">Pan de masa madre, plomero, cerámica…</span>
+          </div>
+          <span style="width: 1px; height: 26px; background: #E2E6EE; flex-shrink: 0"></span>
+          <div class="u-campo" style="flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 9px; padding: 0 14px">
+            <span style="color: #3E2F94; flex-shrink: 0; display: flex">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 15px; font-weight: 500; color: #1B2430">Mendoza Capital</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m6 9.5 6 6 6-6"/></svg>
+          </div>
+          <button type="button" class="u-btn" style="flex-shrink: 0; height: 40px; padding: 0 24px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14.5px">Buscar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 20px 24px 56px; display: flex; flex-direction: column; gap: 24px">
+
+    <nav style="display: flex; align-items: center; gap: 9px; font-size: 13px; color: #5F6B7C">
+      <a href="#" style="color: #5F6B7C">Productos</a>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg>
+      <a href="#" style="color: #5F6B7C">Alimentos</a>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg>
+      <a href="#" style="color: #5F6B7C">Conservas del Challao</a>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg>
+      <span style="color: #1B2430">Dulce de leche repostero, 1 kg</span>
+    </nav>
+
+    <div style="display: grid; grid-template-columns: 1fr 400px; gap: 28px; align-items: start">
+
+      <!-- UNA SOLA FOTO. Product.foto es una columna, no una galería: no hay
+           miniaturas que dibujar y fingirlas sería mentir sobre el modelo. -->
+      <div style="display: flex; flex-direction: column; gap: 20px">
+        <div style="position: relative; aspect-ratio: 4 / 3; border: 1px solid #E2E6EE; border-radius: 20px; background: linear-gradient(150deg, #EEE0D6, #C9AE99); overflow: hidden">
+          <button type="button" style="position: absolute; right: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: rgba(255,255,255,.94); color: #33267C; cursor: pointer; font-size: 13.5px; font-weight: 600; box-shadow: 0 4px 14px rgba(23,20,71,.18)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7.5 7.5M3 21l7.5-7.5"/></svg>
+            Ampliar
+          </button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <h2 style="font-size: 19px; letter-spacing: -.02em">Descripción</h2>
+          <p style="margin: 0; max-width: 66ch; font-size: 15px; line-height: 1.7; color: #4A5666">Dulce de leche repostero, cocido a leña en tacho de cobre. Sin conservantes ni espesantes: sale más oscuro y más firme que el de góndola, y aguanta el calor del horno sin volverse líquido. Frasco de vidrio de 1 kg, con tapa a rosca.</p>
+        </div>
+      </div>
+
+      <!-- COLUMNA DE DECISIÓN -->
+      <aside style="position: sticky; top: 20px; display: flex; flex-direction: column; gap: 16px">
+
+        <div style="display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(23,20,71,.08)">
+          <div style="display: flex; flex-direction: column; gap: 9px">
+            <span style="display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 11.5px; font-weight: 700">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+              Disponible
+            </span>
+            <h1 style="font-size: 24px; line-height: 1.2; letter-spacing: -.02em">Dulce de leche repostero, 1 kg</h1>
+            <span style="font-family: 'Poppins', sans-serif; font-size: 38px; font-weight: 700; letter-spacing: -.03em; line-height: 1">$ 8.400</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <button type="button" class="u-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 52px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 15.5px; font-weight: 600; cursor: pointer">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+              Consultar por este producto
+            </button>
+            <button type="button" style="display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 52px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-size: 15.5px; font-weight: 600; cursor: pointer">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.2-4.5-7.2-9.4A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.9C19.2 15.5 12 20 12 20Z"/></svg>
+              Guardar
+            </button>
+          </div>
+
+          <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #5F6B7C">El mensaje arranca con el nombre del producto ya escrito. IMPULSAR no cobra comisión ni procesa pagos: el precio, la entrega y la forma de pago se acuerdan entre ustedes.</p>
+        </div>
+
+        <!-- QUIÉN LO VENDE: la mitad de la decisión. -->
+        <div style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span style="flex-shrink: 0; width: 54px; height: 54px; border-radius: 16px; background: linear-gradient(150deg, #DCE9E1, #A9C6B6)"></span>
+            <span style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+              <a href="#" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: #1B2430">Conservas del Challao</a>
+              <span style="display: flex; align-items: center; gap: 8px">
+                <span style="display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; background: #FDECE5; color: #9A5230; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase">Alimentos</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: #1B2430">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+                  4,8
+                </span>
+                <span style="font-size: 12.5px; color: #5F6B7C">(12)</span>
+              </span>
+            </span>
+          </div>
+
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px">
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 12px; font-weight: 600">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #1C7B53"></span>Abierto · cierra 20:00
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12px; font-weight: 600">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+              El Challao · a 4,2 km
+            </span>
+          </div>
+
+          <a href="#" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border: 1px solid #E2E6EE; border-radius: 999px; font-size: 14px; font-weight: 600">
+            Ver el emprendimiento
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+          </a>
+        </div>
+      </aside>
+    </div>
+
+    <!-- MÁS DEL MISMO EMPRENDIMIENTO: una consulta que ya se puede hacer hoy
+         (Product.post_id) y la mejor forma de que una visita valga por varias. -->
+    <div style="display: flex; flex-direction: column; gap: 16px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+        <h2 style="font-size: 20px; letter-spacing: -.02em">Más de Conservas del Challao</h2>
+        <a href="#" style="font-size: 13.5px; font-weight: 600">Ver los 14 productos</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+        <sc-for list="{{ relacionados }}" as="p" hint-placeholder-count="4">
+          <article class="u-tarjeta">
+            <div style="aspect-ratio: 1 / 1; background: {{ p.foto }}"></div>
+            <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px 14px; min-width: 0">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -.02em">{{ p.precio }}</span>
+              <span style="font-size: 13px; line-height: 1.35; color: #4A5666">{{ p.nombre }}</span>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const relacionados = [
+      { nombre: "Mermelada de damasco, 420 g", precio: "$ 4.100", foto: "linear-gradient(150deg, #F3E4D6, #D9B79A)" },
+      { nombre: "Escabeche de berenjenas",     precio: "$ 5.600", foto: "linear-gradient(150deg, #E4EADD, #B3C3A2)" },
+      { nombre: "Tomate triturado, 1 l",       precio: "$ 3.200", foto: "linear-gradient(150deg, #F3DDDD, #D6A3A3)" },
+      { nombre: "Caja mixta de 6 frascos",     precio: "$ 24.000", foto: "linear-gradient(150deg, #E7E2F3, #B9AEDC)" }
+    ];
+    return { relacionados: relacionados };
+  }
+}
+</script>
+</body>
+</html>

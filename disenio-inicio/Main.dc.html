@@ -1,0 +1,727 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-card { transition: border-color .18s ease, box-shadow .18s ease; }
+    .u-card:hover { border-color: #C9D0E0; box-shadow: 0 18px 40px rgba(23,20,71,.12); }
+    .u-rubro:hover { border-color: #3E2F94; background: #FFFFFF; box-shadow: 0 10px 26px rgba(23,20,71,.09); }
+    .u-btn-primario:hover { background: #483BA1; color: #FFFFFF; }
+    .u-btn-claro:hover { background: #F2F0FC; color: #2A2068; }
+    .u-btn-suave:hover { background: #ECEAF7; border-color: #D6D1EF; }
+    .u-nav:hover { color: #1B2430; }
+    .u-chip:hover { border-color: #3E2F94; color: #3E2F94; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <!-- NAVBAR -->
+  <header style="position: relative; z-index: 3; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+
+      <label style="flex: 1; max-width: 296px; display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 15px; border: 1px solid #E2E6EE; border-radius: 999px; background: #F5F7FA; color: #5F6B7C; font-size: 13px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+        Buscar emprendimientos, rubros…
+      </label>
+
+      <nav style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px">
+        <a href="#" style="padding: 8px 14px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-weight: 600">Inicio</a>
+        <a href="#" class="u-nav" style="padding: 8px 14px; color: #4A5666">Emprendimientos</a>
+        <a href="#" class="u-nav" style="padding: 8px 14px; color: #4A5666">Eventos</a>
+        <a href="#" class="u-nav" style="padding: 8px 14px; color: #4A5666">Servicios</a>
+      </nav>
+
+      <div style="display: flex; align-items: center; gap: 10px">
+        <a href="#" class="u-nav" style="color: #5F6B7C; font-size: 14px; padding: 0 6px">Acceder</a>
+        <a href="#" class="u-btn-primario" style="display: inline-flex; align-items: center; height: 40px; padding: 0 20px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 500; box-shadow: 0 6px 16px rgba(62,47,148,.24)">Registrarse</a>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; border: 1px solid #E2E6EE; color: #5F6B7C">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"/></svg>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- PUBLICIDAD
+       Carrusel de los emprendimientos que pagaron su espacio. Va arriba de todo
+       porque es lo que se vende, y rota solo cada 6 s:
+       se ve quién más está promocionando sin tener que pasar uno por uno. -->
+  <sc-if value="{{ mostrarPub }}" hint-placeholder-val="{{ true }}">
+  <section style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE; padding: 32px 0 36px">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px">
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px">
+        <div style="display: flex; align-items: center; gap: 13px">
+          <span style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 7px; background: #FBEDE4; color: #8C4A22; font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase">
+            <span style="width: 5px; height: 5px; border-radius: 999px; background: #D97544"></span>
+            Publicidad
+          </span>
+          <h2 style="font-size: 19px; font-weight: 600; letter-spacing: -.015em">Promocionan esta semana</h2>
+        </div>
+        <a href="#" class="u-btn-suave" style="display: inline-flex; align-items: center; gap: 9px; height: 42px; padding: 0 18px; border-radius: 999px; border: 1px solid #E2E6EE; background: #FFFFFF; color: #3E2F94; font-size: 13.5px; font-weight: 600">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Anunciar mi emprendimiento
+        </a>
+      </div>
+
+      <!-- El anuncio: la columna de la izquierda es de IMPULSAR (siempre igual, siempre
+           legible); la galería de la derecha es lo que sube el anunciante. -->
+      <div style="display: grid; grid-template-columns: 1.02fr 1fr; min-height: 404px; border-radius: 22px; overflow: hidden; box-shadow: 0 22px 50px rgba(23,20,71,.16); background: {{ pub.fondo }}">
+
+        <div style="display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 40px 34px 40px 42px">
+          <div style="display: flex; align-items: center; gap: 13px">
+            <span style="flex-shrink: 0; width: 52px; height: 52px; display: inline-flex; align-items: center; justify-content: center; border-radius: 15px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.22); color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 700">{{ pub.iniciales }}</span>
+            <span style="display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: {{ pub.acentoSuave }}; color: {{ pub.acento }}; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase">{{ pub.rubro }}</span>
+          </div>
+
+          <h3 style="font-size: 38px; line-height: 1.08; letter-spacing: -.03em; color: #FFFFFF">{{ pub.titulo }}</h3>
+
+          <p style="margin: 0; max-width: 40ch; font-size: 15.5px; line-height: 1.6; color: rgba(255,255,255,.74)">{{ pub.claim }}</p>
+
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px">
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,.11); color: #FFFFFF; font-size: 12.5px; font-weight: 600">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+              {{ pub.rating }} <span style="font-weight: 400; color: rgba(255,255,255,.6)">({{ pub.resenias }})</span>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,.11); color: rgba(255,255,255,.86); font-size: 12.5px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+              {{ pub.distancia }}
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: rgba(126,226,168,.16); color: #A7EFC6; font-size: 12.5px; font-weight: 600">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #7EE2A8"></span>
+              {{ pub.estado }}
+            </span>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 11px; margin-top: 4px">
+            <a href="#" class="u-btn-claro" style="display: inline-flex; align-items: center; height: 48px; padding: 0 24px; border-radius: 999px; background: #FFFFFF; color: #2A2068; font-size: 14.5px; font-weight: 600; box-shadow: 0 10px 24px rgba(0,0,0,.18)">Ver el emprendimiento</a>
+            <a href="#" style="display: inline-flex; align-items: center; gap: 9px; height: 48px; padding: 0 22px; border-radius: 999px; border: 1px solid rgba(255,255,255,.28); color: #FFFFFF; font-size: 14.5px; font-weight: 500">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+              Enviar consulta
+            </a>
+          </div>
+        </div>
+
+        <!-- Galería del anunciante: una grande arriba y tres chicas abajo.
+             Es lo que sube el anunciante, no la plataforma. La grande es la que
+             se ve sí o sí; las tres de abajo son el resto del set y aguantan que
+             falten (un plan con una sola foto muestra la grande y nada más). -->
+        <div style="display: flex; flex-direction: column; gap: 10px; margin: 18px 18px 18px 0">
+          <div style="position: relative; flex: 1 1 auto; min-height: 260px; border-radius: 16px; overflow: hidden; background: {{ pub.plancha }}; border: 1px solid rgba(255,255,255,.14)">
+            <span style="position: absolute; top: -34px; right: 4px; font-family: 'Poppins', sans-serif; font-size: 172px; font-weight: 700; letter-spacing: -.05em; line-height: 1; color: rgba(255,255,255,.09)">{{ pub.iniciales }}</span>
+            <span style="position: absolute; top: 14px; right: 14px; padding: 6px 12px; border-radius: 999px; background: rgba(10,8,28,.5); color: rgba(255,255,255,.9); font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase">Anuncio destacado</span>
+            <span style="position: absolute; left: 16px; bottom: 14px; display: flex; align-items: center; gap: 9px; color: rgba(255,255,255,.55)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+              <span style="font-size: 11px; letter-spacing: .09em; text-transform: uppercase">Foto principal · 1200 × 680</span>
+            </span>
+          </div>
+
+          <div style="flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+            <sc-for list="{{ pub.secundarias }}" as="foto" hint-placeholder-count="3">
+              <div style="{{ foto.estilo }}">
+                <span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.4)">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+                </span>
+                <span style="position: absolute; left: 9px; bottom: 7px; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.42)">{{ foto.medida }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <p style="margin: 20px 0 0; font-size: 12.5px; color: #5F6B7C">Espacio pago: estos emprendimientos contrataron un plan. El orden lo define el plan, no las reseñas. <a href="#" style="font-weight: 600">Ver planes y precios</a></p>
+
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- BUSCADOR -->
+  <section style="position: relative; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; padding: 36px 0 34px; overflow: hidden">
+    <span style="position: absolute; top: -180px; right: -120px; width: 520px; height: 520px; border-radius: 999px; background: radial-gradient(closest-side, rgba(62,47,148,.09), transparent)"></span>
+    <div style="position: relative; max-width: 1160px; margin: 0 auto; padding: 0 24px">
+      <div style="display: flex; align-items: stretch; gap: 6px; padding: 7px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(23,20,71,.10)">
+        <label style="flex: 2 1 320px; display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 18px; border-radius: 13px; cursor: text">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#3E2F94" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+          <span style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5F6B7C">Qué buscás</span>
+            <span style="font-size: 15.5px; color: #5F6B7C">Pan de masa madre</span>
+          </span>
+        </label>
+        <span style="width: 1px; background: #E2E6EE; margin: 12px 0"></span>
+        <label style="flex: 1 1 180px; display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 64px; padding: 0 18px; border-radius: 13px; cursor: pointer">
+          <span style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5F6B7C">Rubro</span>
+            <span style="font-size: 15.5px; color: #1B2430">Todos</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </label>
+        <span style="width: 1px; background: #E2E6EE; margin: 12px 0"></span>
+        <label style="flex: 1.15 1 220px; display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 64px; padding: 0 18px; border-radius: 13px; cursor: text">
+          <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <span style="font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5F6B7C">Dónde</span>
+            <span style="font-size: 15.5px; color: #5F6B7C">Tu barrio o dirección</span>
+          </span>
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12.5px; font-weight: 600">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+            Cerca de mí
+          </span>
+        </label>
+        <button type="button" class="u-btn-primario" style="flex: 0 0 auto; display: inline-flex; align-items: center; gap: 9px; height: 64px; padding: 0 30px; border: none; border-radius: 14px; background: #5248AE; color: #FFFFFF; font-size: 15.5px; font-weight: 600; cursor: pointer; box-shadow: 0 10px 24px rgba(62,47,148,.28)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+          Buscar
+        </button>
+      </div>
+
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-top: 18px">
+        <span style="font-size: 13px; color: #5F6B7C">Buscado hoy:</span>
+        <a href="#" class="u-chip" style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666; font-size: 13px; transition: border-color .15s ease, color .15s ease">Pan artesanal</a>
+        <a href="#" class="u-chip" style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666; font-size: 13px; transition: border-color .15s ease, color .15s ease">Cerámica</a>
+        <a href="#" class="u-chip" style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666; font-size: 13px; transition: border-color .15s ease, color .15s ease">Bicicletas</a>
+        <a href="#" class="u-chip" style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666; font-size: 13px; transition: border-color .15s ease, color .15s ease">Ferias del fin de semana</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- RUBROS -->
+  <section style="padding: 52px 0 8px">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px">
+        <div>
+          <span style="display: block; margin-bottom: 7px; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #8C4A22">Rubros</span>
+          <h2 style="font-size: 26px; letter-spacing: -.025em">Explorá por lo que hacen</h2>
+          <p style="margin: 6px 0 0; font-size: 14.5px; color: #5F6B7C">Los siete rubros de la plataforma, con lo que hay publicado hoy en cada uno.</p>
+        </div>
+        <a href="#" style="display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600">Ver los 7 rubros
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></svg>
+        </a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px">
+        <a href="#" class="u-rubro" style="display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; color: #1B2430; transition: border-color .18s ease, box-shadow .18s ease">
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 13px; background: #FDECE5; color: #9A5230">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 13.4c0-3.3 3.7-6 8.2-6s8.2 2.7 8.2 6-3.7 5.8-8.2 5.8-8.2-2.5-8.2-5.8Z"/><path d="M9.1 9.7 7.6 15.9"/><path d="M12.6 9.4 11.1 15.9"/><path d="M16 10.2 14.6 15.6"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 500">Alimentos</span>
+            <span style="font-size: 12.5px; color: #5F6B7C">62 activos</span>
+          </span>
+        </a>
+
+        <a href="#" class="u-rubro" style="display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; color: #1B2430; transition: border-color .18s ease, box-shadow .18s ease">
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 13px; background: #FBEBF2; color: #954D71">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.4a2.2 2.2 0 1 1 2.2-2.2"/><path d="m12 7.4 8.2 5.5a1.2 1.2 0 0 1-.7 2.2H4.5a1.2 1.2 0 0 1-.7-2.2L12 7.4Z"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 500">Indumentaria</span>
+            <span style="font-size: 12.5px; color: #5F6B7C">41 activos</span>
+          </span>
+        </a>
+
+        <a href="#" class="u-rubro" style="display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; color: #1B2430; transition: border-color .18s ease, box-shadow .18s ease">
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 13px; background: #F4F0E1; color: #7C6700">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15.4 3.4a5.2 5.2 0 0 0-4.8 7.2l-6.5 6.5a2 2 0 1 0 2.8 2.8l6.5-6.5a5.2 5.2 0 0 0 6.6-6.6l-3 3-2.4-2.4 2.9-3a5.2 5.2 0 0 0-2.1-1Z"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 500">Servicios</span>
+            <span style="font-size: 12.5px; color: #5F6B7C">44 activos</span>
+          </span>
+        </a>
+
+        <a href="#" class="u-rubro" style="display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; color: #1B2430; transition: border-color .18s ease, box-shadow .18s ease">
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 13px; background: #EEEFFE; color: #635EA3">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.4 3.2h7.2l-1.4 3.1a1 1 0 0 0 .25 1.14A6.2 6.2 0 1 1 9.55 7.44a1 1 0 0 0 .25-1.14L8.4 3.2Z"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 500">Artesanías</span>
+            <span style="font-size: 12.5px; color: #5F6B7C">37 activos</span>
+          </span>
+        </a>
+
+        <a href="#" class="u-rubro" style="display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; color: #1B2430; transition: border-color .18s ease, box-shadow .18s ease">
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 13px; background: #E5F2FD; color: #1D6FA0">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7.2" y="7.2" width="9.6" height="9.6" rx="2.2"/><path d="M10.2 3.4v2.4M13.8 3.4v2.4M10.2 18.2v2.4M13.8 18.2v2.4M3.4 10.2h2.4M3.4 13.8h2.4M18.2 10.2h2.4M18.2 13.8h2.4"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 500">Tecnología</span>
+            <span style="font-size: 12.5px; color: #5F6B7C">19 activos</span>
+          </span>
+        </a>
+
+        <a href="#" class="u-rubro" style="display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; color: #1B2430; transition: border-color .18s ease, box-shadow .18s ease">
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 13px; background: #E5F5EC; color: #1C7B53">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3.6 11.4 8.4-7.2 8.4 7.2"/><path d="M6.2 10.2v9.6h11.6v-9.6"/><path d="M10.2 19.8v-5h3.6v5"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 500">Hogar</span>
+            <span style="font-size: 12.5px; color: #5F6B7C">28 activos</span>
+          </span>
+        </a>
+
+        <a href="#" class="u-rubro" style="display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; color: #1B2430; transition: border-color .18s ease, box-shadow .18s ease">
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 13px; background: #EEF1F7; color: #5F6B7C">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="m15.2 8.8-1.9 4.5-4.5 1.9 1.9-4.5 4.5-1.9Z"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 500">Otros</span>
+            <span style="font-size: 12.5px; color: #5F6B7C">17 activos</span>
+          </span>
+        </a>
+
+        <a href="#" style="display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 0 18px; border-radius: 16px; background: linear-gradient(135deg, #3E2F94 0%, #2A2068 100%); color: #FFFFFF; box-shadow: 0 12px 28px rgba(42,32,104,.26)">
+          <span style="flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 13px; background: rgba(255,255,255,.16); color: #FFFFFF">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.2h15M4.5 12h15M4.5 17.8h15"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 600">Ver todo</span>
+            <span style="font-size: 12.5px; color: rgba(255,255,255,.72)">248 publicados</span>
+          </span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ÚLTIMOS EMPRENDIMIENTOS -->
+  <section style="padding: 52px 0 8px">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px">
+        <div>
+          <span style="display: block; margin-bottom: 7px; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #8C4A22">Recién publicados</span>
+          <h2 style="font-size: 26px; letter-spacing: -.025em">Últimos emprendimientos</h2>
+          <p style="margin: 6px 0 0; font-size: 14.5px; color: #5F6B7C">Los que se sumaron más recientemente a la plataforma.</p>
+        </div>
+        <a href="#" style="display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600">Ver todos
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></svg>
+        </a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px">
+
+        <article class="u-card" style="display: flex; flex-direction: column; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; overflow: hidden; box-shadow: 0 10px 26px rgba(23,20,71,.06)">
+          <div style="position: relative; height: 188px; background: linear-gradient(150deg, #F3E8DF 0%, #EEF1F7 100%)">
+            <span style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #A98E7B">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+              <span style="font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase">Foto del emprendimiento</span>
+            </span>
+            <span style="position: absolute; top: 14px; left: 14px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; background: rgba(255,255,255,.94); color: #1B2430; font-size: 11.5px; font-weight: 600; box-shadow: 0 4px 12px rgba(23,20,71,.10)">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #D97544"></span>Alimentos
+            </span>
+            <button type="button" aria-label="Guardar en favoritos" style="position: absolute; top: 12px; right: 12px; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 999px; background: rgba(255,255,255,.94); color: #5F6B7C; cursor: pointer; padding: 0; box-shadow: 0 4px 12px rgba(23,20,71,.10)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2s-7.2-4.5-7.2-9.5A3.95 3.95 0 0 1 12 8.1a3.95 3.95 0 0 1 7.2 2.6c0 5-7.2 9.5-7.2 9.5Z"/></svg>
+            </button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 9px; padding: 18px 20px 20px">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 7px; background: #E6F4EC; color: #1F7A4D; font-size: 11.5px; font-weight: 600">
+                <span style="width: 6px; height: 6px; border-radius: 999px; background: #1C7B53"></span>Abierto ahora
+              </span>
+              <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 7px; background: #FCF6EA; font-size: 12.5px; font-weight: 600; color: #1B2430">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+                4,8 <span style="font-weight: 400; color: #5F6B7C">(31)</span>
+              </span>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 600; letter-spacing: -.02em">Panadería La Masa Madre</h3>
+            <p style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5F6B7C">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+              Barrio Güemes · a 1,2 km
+            </p>
+            <p style="margin: 2px 0 0; font-size: 13.5px; line-height: 1.6; color: #4A5666">Pan de fermentación lenta, facturas y masas congeladas. Horneamos de martes a domingo.</p>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 14px; border-top: 1px solid #E2E6EE">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12px; font-weight: 700">MC</span>
+              <span style="font-size: 13px; color: #4A5666">Marina Cabral</span>
+              <a href="#" class="u-btn-suave" style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 999px; font-size: 13px; font-weight: 600">Ver
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></svg>
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <article class="u-card" style="display: flex; flex-direction: column; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; overflow: hidden; box-shadow: 0 10px 26px rgba(23,20,71,.06)">
+          <div style="position: relative; height: 188px; background: linear-gradient(150deg, #E4EFE9 0%, #EEF1F7 100%)">
+            <span style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #8FA79A">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+              <span style="font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase">Foto del emprendimiento</span>
+            </span>
+            <span style="position: absolute; top: 14px; left: 14px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; background: rgba(255,255,255,.94); color: #1B2430; font-size: 11.5px; font-weight: 600; box-shadow: 0 4px 12px rgba(23,20,71,.10)">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #635EA3"></span>Artesanías
+            </span>
+            <button type="button" aria-label="Guardar en favoritos" style="position: absolute; top: 12px; right: 12px; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 999px; background: rgba(255,255,255,.94); color: #5F6B7C; cursor: pointer; padding: 0; box-shadow: 0 4px 12px rgba(23,20,71,.10)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2s-7.2-4.5-7.2-9.5A3.95 3.95 0 0 1 12 8.1a3.95 3.95 0 0 1 7.2 2.6c0 5-7.2 9.5-7.2 9.5Z"/></svg>
+            </button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 9px; padding: 18px 20px 20px">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 7px; background: #FBEDE4; color: #8C4A22; font-size: 11.5px; font-weight: 600">
+                <span style="width: 6px; height: 6px; border-radius: 999px; background: #D97544"></span>Abre a las 15:00
+              </span>
+              <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 7px; background: #FCF6EA; font-size: 12.5px; font-weight: 600; color: #1B2430">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+                4,6 <span style="font-weight: 400; color: #5F6B7C">(12)</span>
+              </span>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 600; letter-spacing: -.02em">Estudio Verde Cerámica</h3>
+            <p style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5F6B7C">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+              Alberdi · a 2,4 km
+            </p>
+            <p style="margin: 2px 0 0; font-size: 13.5px; line-height: 1.6; color: #4A5666">Vajilla de gres hecha a torno y clases abiertas los sábados por la mañana.</p>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 14px; border-top: 1px solid #E2E6EE">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12px; font-weight: 700">JR</span>
+              <span style="font-size: 13px; color: #4A5666">Julián Rey</span>
+              <a href="#" class="u-btn-suave" style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 999px; font-size: 13px; font-weight: 600">Ver
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></svg>
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <article class="u-card" style="display: flex; flex-direction: column; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; overflow: hidden; box-shadow: 0 10px 26px rgba(23,20,71,.06)">
+          <div style="position: relative; height: 188px; background: linear-gradient(150deg, #E7E9F5 0%, #EEF1F7 100%)">
+            <span style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #9096B4">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+              <span style="font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase">Foto del emprendimiento</span>
+            </span>
+            <span style="position: absolute; top: 14px; left: 14px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; background: rgba(255,255,255,.94); color: #1B2430; font-size: 11.5px; font-weight: 600; box-shadow: 0 4px 12px rgba(23,20,71,.10)">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #7C6700"></span>Servicios
+            </span>
+            <button type="button" aria-label="Quitar de favoritos" style="position: absolute; top: 12px; right: 12px; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 999px; background: rgba(255,255,255,.94); color: #DC2626; cursor: pointer; padding: 0; box-shadow: 0 4px 12px rgba(23,20,71,.10)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20.2s-7.2-4.5-7.2-9.5A3.95 3.95 0 0 1 12 8.1a3.95 3.95 0 0 1 7.2 2.6c0 5-7.2 9.5-7.2 9.5Z"/></svg>
+            </button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 9px; padding: 18px 20px 20px">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 7px; background: #E6F4EC; color: #1F7A4D; font-size: 11.5px; font-weight: 600">
+                <span style="width: 6px; height: 6px; border-radius: 999px; background: #1C7B53"></span>Abierto ahora
+              </span>
+              <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 7px; background: #FCF6EA; font-size: 12.5px; font-weight: 600; color: #1B2430">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+                4,9 <span style="font-weight: 400; color: #5F6B7C">(58)</span>
+              </span>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 600; letter-spacing: -.02em">Bici Taller Norte</h3>
+            <p style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5F6B7C">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+              General Paz · a 3,1 km
+            </p>
+            <p style="margin: 2px 0 0; font-size: 13.5px; line-height: 1.6; color: #4A5666">Service completo, armado de ruedas y retiro a domicilio dentro del anillo.</p>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 14px; border-top: 1px solid #E2E6EE">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12px; font-weight: 700">DP</span>
+              <span style="font-size: 13px; color: #4A5666">Diego Paz</span>
+              <a href="#" class="u-btn-suave" style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 999px; font-size: 13px; font-weight: 600">Ver
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></svg>
+              </a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FERIAS Y EVENTOS -->
+  <section style="padding: 52px 0 8px">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px">
+        <div>
+          <span style="display: block; margin-bottom: 7px; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #8C4A22">Agenda</span>
+          <h2 style="font-size: 26px; letter-spacing: -.025em">Ferias y eventos</h2>
+          <p style="margin: 6px 0 0; font-size: 14.5px; color: #5F6B7C">Lo que publican los emprendimientos, mes a mes. Elegí un día marcado para filtrar la lista.</p>
+        </div>
+        <a href="#" style="display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600">Ver la cartelera
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></svg>
+        </a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 352px minmax(0, 1fr); gap: 24px; align-items: start">
+
+        <div style="padding: 20px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; box-shadow: 0 10px 26px rgba(23,20,71,.06)">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px">
+            <button type="button" aria-label="Mes anterior" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 10px; background: #FFFFFF; color: #4A5666; cursor: pointer; padding: 0">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5-7 7 7 7"/></svg>
+            </button>
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 600; letter-spacing: -.01em">Septiembre 2026</span>
+            <button type="button" aria-label="Mes siguiente" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 10px; background: #FFFFFF; color: #4A5666; cursor: pointer; padding: 0">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-bottom: 6px">
+            <span style="text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: #5F6B7C">L</span>
+            <span style="text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: #5F6B7C">M</span>
+            <span style="text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: #5F6B7C">M</span>
+            <span style="text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: #5F6B7C">J</span>
+            <span style="text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: #5F6B7C">V</span>
+            <span style="text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: #5F6B7C">S</span>
+            <span style="text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: #5F6B7C">D</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px">
+            <sc-for list="{{ dias }}" as="dia" hint-placeholder-count="35">
+              <span style="{{ dia.estilo }}">{{ dia.n }}<span style="{{ dia.punto }}"></span></span>
+            </sc-for>
+          </div>
+
+          <p style="display: flex; align-items: center; gap: 16px; margin: 16px 0 0; padding-top: 14px; border-top: 1px solid #E2E6EE; font-size: 12px; color: #5F6B7C">
+            <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 7px; height: 7px; border-radius: 999px; background: #954D71"></span>Con eventos</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 7px; height: 7px; border-radius: 999px; background: #D97544"></span>Hoy</span>
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <div class="u-card" style="display: flex; align-items: center; gap: 18px; padding: 18px 20px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; box-shadow: 0 10px 26px rgba(23,20,71,.05)">
+            <span style="flex-shrink: 0; width: 62px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 11px 0; border-radius: 14px; background: linear-gradient(150deg, #3E2F94 0%, #2A2068 100%); color: #FFFFFF; box-shadow: 0 8px 18px rgba(42,32,104,.22)">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 21px; font-weight: 700; line-height: 1">12</span>
+              <span style="font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.78)">Sep</span>
+            </span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px">
+              <h3 style="font-size: 16px; font-weight: 600; letter-spacing: -.015em">Feria de diseño en el Paseo de las Artes</h3>
+              <p style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 13px; color: #5F6B7C">
+                <span style="display: inline-flex; align-items: center; gap: 5px">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l2.8 1.7"/></svg>
+                  Sábado, 10:00 a 20:00
+                </span>
+                <span>24 emprendimientos</span>
+              </p>
+            </div>
+            <a href="#" class="u-btn-suave" style="flex-shrink: 0; display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 999px; font-size: 13px; font-weight: 600">Ver</a>
+          </div>
+
+          <div class="u-card" style="display: flex; align-items: center; gap: 18px; padding: 18px 20px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; box-shadow: 0 10px 26px rgba(23,20,71,.05)">
+            <span style="flex-shrink: 0; width: 62px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 11px 0; border-radius: 14px; background: #ECEAF7; color: #3E2F94">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 21px; font-weight: 700; line-height: 1">18</span>
+              <span style="font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase">Sep</span>
+            </span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px">
+              <h3 style="font-size: 16px; font-weight: 600; letter-spacing: -.015em">Taller abierto de cerámica</h3>
+              <p style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 13px; color: #5F6B7C">
+                <span style="display: inline-flex; align-items: center; gap: 5px">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l2.8 1.7"/></svg>
+                  Viernes, 18:00
+                </span>
+                <span>Estudio Verde Cerámica</span>
+              </p>
+            </div>
+            <a href="#" class="u-btn-suave" style="flex-shrink: 0; display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 999px; font-size: 13px; font-weight: 600">Ver</a>
+          </div>
+
+          <div class="u-card" style="display: flex; align-items: center; gap: 18px; padding: 18px 20px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; box-shadow: 0 10px 26px rgba(23,20,71,.05)">
+            <span style="flex-shrink: 0; width: 62px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 11px 0; border-radius: 14px; background: #ECEAF7; color: #3E2F94">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 21px; font-weight: 700; line-height: 1">26</span>
+              <span style="font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase">Sep</span>
+            </span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px">
+              <h3 style="font-size: 16px; font-weight: 600; letter-spacing: -.015em">Ronda de compras mayoristas</h3>
+              <p style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 13px; color: #5F6B7C">
+                <span style="display: inline-flex; align-items: center; gap: 5px">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l2.8 1.7"/></svg>
+                  Sábado, 9:00 a 13:00
+                </span>
+                <span>Centro Vecinal Alberdi</span>
+              </p>
+            </div>
+            <a href="#" class="u-btn-suave" style="flex-shrink: 0; display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 999px; font-size: 13px; font-weight: 600">Ver</a>
+          </div>
+
+          <p style="margin: 4px 0 0; font-size: 13px; color: #5F6B7C">Mostrando los 3 eventos de septiembre. <a href="#" style="font-weight: 600">Ver la cartelera completa</a></p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA EMPRENDEDOR -->
+  <section style="padding: 52px 0 56px">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px">
+      <div style="position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 28px; padding: 44px 44px; border-radius: 26px; overflow: hidden; background: radial-gradient(760px 400px at 88% 120%, rgba(217,117,68,.30), transparent 70%), linear-gradient(135deg, #4A3B8E 0%, #3E2F94 55%, #33267C 100%); box-shadow: 0 26px 56px rgba(23,20,71,.26)">
+        <span style="position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px); background-size: 44px 44px"></span>
+        <div style="position: relative; flex: 1 1 500px; display: flex; flex-direction: column; gap: 12px">
+          <span style="display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.12); color: #E7C6AF; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase">
+            <span style="width: 5px; height: 5px; border-radius: 999px; background: #D97544"></span>Para emprendedores
+          </span>
+          <h2 style="font-size: 34px; line-height: 1.12; letter-spacing: -.03em; color: #FFFFFF">¿Tenés un emprendimiento?<br>Publicalo gratis</h2>
+          <p style="margin: 0; max-width: 54ch; font-size: 15.5px; line-height: 1.6; color: rgba(255,255,255,.72)">Cargá fotos, horarios y ubicación una sola vez. Recibí consultas por la mensajería interna y mostrá tus reseñas.</p>
+        </div>
+        <div style="position: relative; display: flex; flex-direction: column; gap: 12px">
+          <a href="#" class="u-btn-claro" style="display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 28px; border-radius: 999px; background: #FFFFFF; color: #33267C; font-size: 15.5px; font-weight: 600; box-shadow: 0 12px 28px rgba(0,0,0,.22)">Publicar mi emprendimiento</a>
+          <a href="#" style="display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 28px; border-radius: 999px; border: 1px solid rgba(255,255,255,.3); color: #FFFFFF; font-size: 15.5px; font-weight: 500">Cómo funciona</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="border-top: 1px solid #E2E6EE; background: #FFFFFF">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 44px 24px 0; display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 32px">
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 38px; width: auto; display: block; margin-bottom: 4px">
+        <p style="margin: 0; max-width: 32ch; font-size: 13px; line-height: 1.65; color: #5F6B7C">La plataforma donde los emprendimientos de tu ciudad se muestran y se encuentran.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <h3 style="font-size: 12.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #1B2430">Explorar</h3>
+        <a href="#" style="font-size: 13.5px; color: #5F6B7C">Emprendimientos</a>
+        <a href="#" style="font-size: 13.5px; color: #5F6B7C">Eventos y ferias</a>
+        <a href="#" style="font-size: 13.5px; color: #5F6B7C">Servicios</a>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <h3 style="font-size: 12.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #1B2430">Emprendedores</h3>
+        <a href="#" style="font-size: 13.5px; color: #5F6B7C">Publicar</a>
+        <a href="#" style="font-size: 13.5px; color: #5F6B7C">Crear una cuenta</a>
+        <a href="#" style="font-size: 13.5px; color: #5F6B7C">Planes de publicidad</a>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <h3 style="font-size: 12.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #1B2430">IMPULSAR</h3>
+        <a href="#" style="font-size: 13.5px; color: #5F6B7C">Sobre el proyecto</a>
+        <a href="#" style="font-size: 13.5px; color: #5F6B7C">Contacto</a>
+        <a href="#" style="font-size: 13.5px; color: #5F6B7C">Términos</a>
+        <a href="#" style="font-size: 13.5px; color: #5F6B7C">Privacidad</a>
+      </div>
+    </div>
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px 34px">
+      <p style="margin: 30px 0 0; padding-top: 20px; border-top: 1px solid #E2E6EE; font-size: 12.5px; color: #5F6B7C">© 2026 IMPULSAR – Plataforma para emprendedores locales</p>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"mostrarPublicidad":{"editor":"boolean","default":true,"section":"Publicidad"},"$preview":{"width":1440,"height":3260}}'>
+class Component extends DCLogic {
+  // El anuncio rota solo: ya no hay flechas ni fila de anunciantes para elegir.
+  // El intervalo se limpia al desmontar para no dejarlo corriendo cuando el
+  // artboard se saca del canvas.
+  componentDidMount() {
+    this._rot = setInterval(() => {
+      const n = (this.state && typeof this.state.i === "number") ? this.state.i : 0;
+      this.setState({ i: (n + 1) % 3 });
+    }, 6000);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this._rot);
+  }
+
+  renderVals() {
+    // Cada anunciante trae su propio acento: el panel es siempre el indigo de la
+    // marca, y el acento solo pinta el chip del rubro y el resplandor de fondo.
+    // Asi dos anuncios seguidos no se confunden, pero IMPULSAR sigue siendo IMPULSAR.
+    const anuncios = [
+      {
+        iniciales: "LM",
+        rubro: "Alimentos",
+        plan: "Plan Destacado",
+        titulo: "Pan de masa madre, todos los días",
+        nombre: "Panadería La Masa Madre",
+        claim: "Fermentación de 24 horas, harinas de molino local. Los pedidos del fin de semana se toman hasta el jueves.",
+        rating: "4,8",
+        resenias: "31 reseñas",
+        distancia: "Güemes · a 1,2 km",
+        estado: "Abierto ahora",
+        acento: "#F0B48A",
+        acentoSuave: "rgba(217,117,68,.22)",
+        glow: "rgba(217,117,68,.34)",
+        plancha: "linear-gradient(150deg, #4A3AA8 0%, #2A2068 60%, #B25E31 160%)"
+      },
+      {
+        iniciales: "EV",
+        rubro: "Artesanías",
+        plan: "Plan Plus",
+        titulo: "Cerámica de gres, hecha a torno",
+        nombre: "Estudio Verde Cerámica",
+        claim: "Vajilla para restaurantes y casas, más el taller de septiembre: seis clases con torno y esmaltado incluidos.",
+        rating: "4,6",
+        resenias: "12 reseñas",
+        distancia: "Alberdi · a 2,4 km",
+        estado: "Abre a las 15:00",
+        acento: "#9FE7C1",
+        acentoSuave: "rgba(31,122,77,.28)",
+        glow: "rgba(31,122,77,.36)",
+        plancha: "linear-gradient(150deg, #3A2F8E 0%, #241C63 55%, #1F7A4D 160%)"
+      },
+      {
+        iniciales: "BN",
+        rubro: "Servicios",
+        plan: "Plan Destacado",
+        titulo: "Tu bici lista para la temporada",
+        nombre: "Bici Taller Norte",
+        claim: "Service completo, armado de ruedas y ajuste de cambios, con retiro a domicilio sin cargo dentro del anillo.",
+        rating: "4,9",
+        resenias: "58 reseñas",
+        distancia: "General Paz · a 3,1 km",
+        estado: "Abierto ahora",
+        acento: "#F5D08A",
+        acentoSuave: "rgba(232,163,61,.24)",
+        glow: "rgba(232,163,61,.30)",
+        plancha: "linear-gradient(150deg, #3F3196 0%, #241C63 55%, #8A6416 160%)"
+      }
+    ];
+
+    const i = (this.state && typeof this.state.i === "number") ? this.state.i : 0;
+    const activo = anuncios[i];
+
+
+    // Las tres fotos chicas comparten el degradado del anunciante pero cada una
+    // arranca en un punto distinto, para que la fila no lea como un solo bloque
+    // plano. La medida es la que el anunciante tiene que entregar.
+    const secundarias = [
+      { medida: "800 × 800", pos: "0% 0%" },
+      { medida: "800 × 800", pos: "50% 50%" },
+      { medida: "800 × 800", pos: "100% 100%" }
+    ].map((foto) => Object.assign({}, foto, {
+      estilo: "position: relative; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden; "
+        + "border: 1px solid rgba(255,255,255,.14); background-size: 240% 240%; "
+        + "background-position: " + foto.pos + "; background-image: " + activo.plancha
+    }));
+
+    const pub = Object.assign({}, activo, {
+      fondo: "radial-gradient(820px 420px at 8% -10%, rgba(255,255,255,.10), transparent 62%), "
+        + "radial-gradient(680px 420px at 96% 118%, " + activo.glow + ", transparent 68%), "
+        + "linear-gradient(128deg, #4A3B8E 0%, #3E2F94 52%, #33267C 100%)",
+      secundarias: secundarias
+    });
+
+
+    // Septiembre 2026 arranca un martes, asi que la grilla lleva una celda vacia adelante.
+    const conEventos = [12, 18, 26];
+    const hoy = 3;
+    const base = "position: relative; display: flex; align-items: center; justify-content: center; height: 40px; border-radius: 11px; font-size: 13px; ";
+    const dias = [];
+    for (let c = 0; c < 35; c++) {
+      const n = c - 1;
+      if (n < 1 || n > 30) {
+        dias.push({ n: "", estilo: base, punto: "display: none" });
+        continue;
+      }
+      const marcado = conEventos.indexOf(n) !== -1;
+      const esHoy = n === hoy;
+      dias.push({
+        n: String(n),
+        estilo: base + (marcado
+          ? "background: #ECEAF7; color: #3E2F94; font-weight: 600; cursor: pointer"
+          : (esHoy ? "color: #1B2430; font-weight: 600" : "color: #5F6B7C")),
+        punto: (marcado || esHoy)
+          ? "position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 999px; background: " + (esHoy ? "#D97544" : "#3E2F94")
+          : "display: none"
+      });
+    }
+
+    return {
+      mostrarPub: this.props.mostrarPublicidad ?? true,
+      pub: pub,
+      dias: dias
+    };
+  }
+}
+</script>
+</body>
+</html>

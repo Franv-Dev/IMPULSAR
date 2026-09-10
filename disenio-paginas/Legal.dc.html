@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-indice { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px;
+                border-radius: 10px; color: #4A5666; font-size: 13.8px; }
+    .u-indice:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-indice--on { background: #ECEAF7; color: #33267C; font-weight: 600; }
+    .u-indice--on:hover { background: #ECEAF7; color: #33267C; }
+    /* El cuerpo legal es lo único de la app con medida de lectura larga: 66ch,
+       1.75 de interlínea y párrafos separados por espacio, no por sangría. */
+    .u-cuerpo { font-size: 15.5px; line-height: 1.75; color: #333F4F; max-width: 66ch; }
+    .u-cuerpo p { margin: 0 0 16px; }
+    .u-cuerpo ul { margin: 0 0 16px; padding: 0 0 0 4px; list-style: none;
+                   display: flex; flex-direction: column; gap: 10px; }
+    .u-cuerpo li { display: flex; gap: 12px; }
+    .u-cuerpo strong { font-weight: 600; color: #1B2430; }
+    .u-punto { flex-shrink: 0; width: 6px; height: 6px; margin-top: 11px;
+               border-radius: 999px; background: #5248AE; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" style="display: inline-flex; align-items: center; height: 40px; padding: 0 14px; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 500; color: #4A5666">Acceder</a>
+        <a href="#" style="display: inline-flex; align-items: center; height: 42px; padding: 0 20px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; box-shadow: 0 8px 20px rgba(62,47,148,.22)">Crear cuenta</a>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 40px 24px 56px">
+
+    <!-- LAS DOS LEGALES SON LA MISMA CÁSCARA: este artboard es Privacidad, y
+         Términos y Condiciones es idéntica con otro índice y otro texto. Lo que
+         cambia respecto de hoy no es sólo la paleta: las listas estaban hechas
+         con <br>• adentro de un <p>, que no es una lista para nadie que use
+         lector de pantalla. Acá son <ul> de verdad. -->
+    <div style="display: grid; grid-template-columns: 272px minmax(0, 1fr); gap: 40px; align-items: start">
+
+      <aside style="position: sticky; top: 24px; padding: 18px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+        <p style="margin: 0 0 12px; padding: 0 12px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5F6B7C">En esta página</p>
+        <nav style="display: flex; flex-direction: column; gap: 2px">
+          <a href="#" class="u-indice u-indice--on">Qué datos recopilamos</a>
+          <a href="#" class="u-indice">Para qué los usamos</a>
+          <a href="#" class="u-indice">Con quién los compartimos</a>
+          <a href="#" class="u-indice">Tus derechos</a>
+        </nav>
+        <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #EEF1F7">
+          <a href="#" class="u-indice" style="color: #3E2F94; font-weight: 500">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M6 3h8l4.5 4.5V21H6Z"/><path d="M14 3v5h4.5"/></svg>
+            Términos y Condiciones
+          </a>
+        </div>
+      </aside>
+
+      <div style="min-width: 0">
+        <h1 style="font-size: 34px; letter-spacing: -.025em">Política de Privacidad</h1>
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 14px">
+          <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4A5666">
+            Cómo manejamos tus datos dentro de la plataforma.
+          </p>
+          <span style="width: 4px; height: 4px; border-radius: 999px; background: #C9D0E0"></span>
+          <!-- Una legal sin fecha no sirve: no se puede saber qué versión aceptó
+               cada usuario. Hoy ninguna de las dos la tiene, y no es un dato que
+               se pueda inventar. -->
+          <span style="display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 12px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-size: 12.8px; font-weight: 500">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+            Última actualización: [COMPLETAR]
+          </span>
+        </div>
+
+        <div class="u-cuerpo" style="margin-top: 30px">
+          <p>
+            En <strong>IMPULSAR</strong> nos tomamos en serio la protección de tus datos.
+            Esta Política de Privacidad explica qué información recopilamos y cómo la
+            utilizamos.
+          </p>
+
+          <h2 style="margin: 34px 0 14px; font-size: 20px; letter-spacing: -.015em">Qué datos recopilamos</h2>
+          <p>
+            Podemos recopilar información que vos proporcionás al registrarte en la
+            plataforma, como nombre de usuario, correo electrónico y datos básicos del
+            emprendimiento. También podemos almacenar información técnica básica (como
+            fecha de registro y uso general de la plataforma).
+          </p>
+
+          <h2 style="margin: 34px 0 14px; font-size: 20px; letter-spacing: -.015em">Para qué los usamos</h2>
+          <p>Utilizamos tus datos para:</p>
+          <ul>
+            <li><span class="u-punto"></span><span>Crear y gestionar tu cuenta de usuario.</span></li>
+            <li><span class="u-punto"></span><span>Mostrar tu emprendimiento en la plataforma.</span></li>
+            <li><span class="u-punto"></span><span>Mejorar el funcionamiento y la experiencia de IMPULSAR.</span></li>
+          </ul>
+
+          <h2 style="margin: 34px 0 14px; font-size: 20px; letter-spacing: -.015em">Con quién los compartimos</h2>
+          <p>
+            No vendemos ni compartimos tus datos personales con terceros con fines
+            comerciales. Solo podríamos compartir información si fuera requerido por ley o
+            por una autoridad competente.
+          </p>
+
+          <h2 style="margin: 34px 0 14px; font-size: 20px; letter-spacing: -.015em">Tus derechos</h2>
+          <p>
+            Podés solicitar la actualización o eliminación de tus datos de usuario
+            escribiéndonos al correo oficial de la plataforma.
+          </p>
+
+          <div style="display: flex; align-items: center; gap: 14px; margin: 22px 0 0; padding: 16px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; max-width: 560px">
+            <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 11px; background: #ECEAF7; color: #33267C">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+            </span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 13px; color: #5F6B7C">Correo oficial</span>
+              <a href="#" style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600">impulsARmdz@gmail.com</a>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

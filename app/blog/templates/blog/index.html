@@ -2,33 +2,115 @@
 
 {% block title %}Emprendimientos – IMPULSAR{% endblock %}
 
-{% block content %}
-<section class="section">
-    <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Emprendimientos</h2>
-                <p class="section__subtitle">
-                    Explorá todos los emprendimientos registrados en IMPULSAR.
-                </p>
-            </div>
-            <a href="{{ url_for('index') }}" class="section__link">Volver al inicio</a>
-        </div>
+{#  La pantalla "Explorar" del rediseño: columna de filtros con nombre a la
+    izquierda y los resultados a la derecha, con el conteo arriba y los chips de
+    lo que esta aplicado.
 
-        <form method="get" class="search__form" style="margin-bottom:1.5rem;">
-            <div class="search__group search__group--full">
-                <span class="search__icon">🔍</span>
-                <input
-                    type="text"
-                    name="q"
-                    class="search__input"
-                    placeholder="Buscar por nombre o descripción..."
-                    value="{{ busqueda_actual }}"
-                >
+    Del diseño queda afuera un solo control que no tiene con que funcionar
+    todavia: "Solo verificados" (Post no tiene esa marca; la verificacion hoy es
+    de Service). Un filtro que no filtra es peor que no tenerlo.
+
+    El filtro por rubro es de a uno y no con checkboxes como el mockup, porque
+    la consulta acepta una sola categoria: se dibujan como radios para que se
+    vea que eligen uno. #}
+
+{# La misma URL de ahora menos un filtro, para la × de cada chip. Se arma desde
+   request.args y no desde las variables del contexto para no perder ningun
+   parametro que no conozca este template.
+   Se cae siempre a la pagina 1: sacar un filtro trae mas resultados, y quedarse
+   en la pagina 7 de la busqueda anterior es caer en una pagina que puede no
+   existir. Quitar "near" se lleva tambien lat/lon, que son la misma decision
+   ya resuelta en coordenadas. #}
+{% macro url_sin(param) -%}
+    {%- set args = request.args.to_dict() -%}
+    {%- set _ = args.pop(param, None) -%}
+    {%- set _ = args.pop('page', None) -%}
+    {%- if param == 'near' -%}
+        {%- set _ = args.pop('lat', None) -%}
+        {%- set _ = args.pop('lon', None) -%}
+    {%- endif -%}
+    {{- url_for('blog.index', **args) -}}
+{%- endmacro %}
+
+{# La misma URL de ahora con un filtro de si/no dado vuelta. Es lo que hace que
+   las fichas de "Abierto ahora" y "Con reseñas" se prendan y apaguen de un
+   toque: si esta puesto lo saca, si no esta lo pone. Vuelve siempre a la
+   pagina 1 por lo mismo que url_sin. #}
+{% macro url_alternando(param) -%}
+    {%- set args = request.args.to_dict() -%}
+    {%- set _ = args.pop('page', None) -%}
+    {%- if args.pop(param, None) is none -%}
+        {%- set _ = args.update({param: '1'}) -%}
+    {%- endif -%}
+    {{- url_for('blog.index', **args) -}}
+{%- endmacro %}
+
+{% block content %}
+{# La cercania cuenta solo cuando la direccion se pudo geocodificar. El texto
+   que escribio el usuario viaja igual (y se le devuelve al input para no
+   perderselo), pero si MapTiler no la resolvio la consulta no ordeno por
+   distancia y no se acoto nada: contarla dejaria la fila de chips dibujada
+   con un chip que anuncia un filtro que no se aplico. #}
+{% set cercania_aplicada = cerca_de_actual and ordenado_por_distancia %}
+{# Si hay algo aplicado, para el "Limpiar" y la fila de chips. Se dice una sola
+   vez y no en cada if. #}
+{# El radio cuenta solo cuando hay coordenadas: sin ellas no acota nada, y
+   listarlo dejaria la fila de chips dibujada y vacia. #}
+{% set hay_filtros = busqueda_actual or categoria_actual or cercania_aplicada
+                     or (radio_actual and ordenado_por_distancia)
+                     or con_resenias_actual or abierto_ahora_actual %}
+{# BARRA DE FILTROS
+   El rediseño saca los filtros de la columna de la izquierda y los sube a una
+   barra arriba de todo. El motivo no es estetico: "abierto ahora" y el radio en
+   kilometros son lo unico que Mercado Libre y Marketplace no pueden hacer, y
+   escondidos en un panel lateral no los usa nadie.
+
+   Es el MISMO <form method="get"> de antes, con los mismos name, asi que la
+   vista no cambia. Lo que cambia es que los dos filtros de si/no salen del form
+   y pasan a ser enlaces que alternan el parametro: un toque en vez de marcar un
+   checkbox y apretar "Aplicar". Siguen viajando en la URL igual.
+
+   "Solo verificados" no esta: necesita una marca que Post no tiene. Un filtro
+   que no filtra es peor que no tenerlo. #}
+<section class="barra-filtros">
+    <div class="container barra-filtros__caja">
+        <form method="get" class="barra-filtros__form">
+            {# En telefono los tres campos apilados ocupaban 310 px y el primer
+               resultado quedaba abajo del doblez. Van adentro de un <details>
+               que main.js cierra en pantallas chicas; el `open` esta puesto en
+               el HTML a proposito, asi que sin JS queda desplegado como ahora,
+               que es peor pero nunca roto.
+               En escritorio el <details> es transparente: display: contents y
+               el <summary> escondido. #}
+            <details class="barra-filtros__desplegable" open>
+                <summary class="barra-filtros__resumen">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
+                    </svg>
+                    <span class="barra-filtros__resumen-texto">
+                        <span class="barra-filtros__resumen-que">{{ busqueda_actual or 'Buscar emprendimientos' }}</span>
+                        <span class="barra-filtros__resumen-detalle">
+                            {%- set partes = [] -%}
+                            {%- if categoria_actual %}{% set _ = partes.append(categorias.get(categoria_actual, categoria_actual)) %}{% endif -%}
+                            {%- if cercania_aplicada %}{% set _ = partes.append('cerca de ' ~ cerca_de_actual) %}{% endif -%}
+                            {{ partes | join(' · ') if partes else 'Todos los rubros' }}
+                        </span>
+                    </span>
+                </summary>
+
+            <div class="barra-filtros__campo barra-filtros__campo--ancho">
+                <label class="barra-filtros__label" for="filtro-q">Qué buscás</label>
+                <input type="text" name="q" id="filtro-q"
+                       class="barra-filtros__input"
+                       placeholder="Pan de masa madre"
+                       value="{{ busqueda_actual or '' }}">
             </div>
-            <div class="search__group">
-                <select name="category" class="search__input">
-                    <option value="">Todas las categorías</option>
+
+            <div class="barra-filtros__campo">
+                <label class="barra-filtros__label" for="filtro-rubro">Rubro</label>
+                <select name="category" id="filtro-rubro" class="barra-filtros__select">
+                    <option value="">Todos</option>
                     {% for valor, etiqueta in categorias.items() %}
                         <option value="{{ valor }}" {% if valor == categoria_actual %}selected{% endif %}>
                             {{ etiqueta }}
@@ -36,137 +118,281 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="search__group">
-                <span class="search__icon">📍</span>
-                <input
-                    type="text"
-                    name="near"
-                    id="near-input"
-                    class="search__input"
-                    placeholder="Cerca de (dirección)..."
-                    value="{{ cerca_de_actual }}"
-                >
+
+            <div class="barra-filtros__campo">
+                <label class="barra-filtros__label" for="near-input">Cerca de</label>
+                <input type="text" name="near" id="near-input"
+                       class="barra-filtros__input"
+                       placeholder="Tu barrio o dirección"
+                       value="{{ cerca_de_actual or '' }}">
+                <input type="hidden" name="lat" id="near-lat" value="{{ request.args.get('lat', '') }}">
+                <input type="hidden" name="lon" id="near-lon" value="{{ request.args.get('lon', '') }}">
             </div>
-            <button type="button" id="use-my-location" class="btn btn--secondary" title="Usar mi ubicación actual">
-                📍 Mi ubicación
-            </button>
-            <input type="hidden" name="lat" id="near-lat" value="{{ request.args.get('lat', '') }}">
-            <input type="hidden" name="lon" id="near-lon" value="{{ request.args.get('lon', '') }}">
-            <button type="submit" class="btn btn--primary search__button">Filtrar</button>
+
+            {# Los de si/no que estan puestos tienen que viajar tambien cuando se
+               manda el form, o apretar "Buscar" los perderia. #}
+            {% if con_resenias_actual %}<input type="hidden" name="con_resenias" value="1">{% endif %}
+            {% if abierto_ahora_actual %}<input type="hidden" name="abierto_ahora" value="1">{% endif %}
+            {% if radio_actual %}<input type="hidden" name="radio" value="{{ radio_actual }}">{% endif %}
+
+            <button type="submit" class="btn btn--primary barra-filtros__buscar">Buscar</button>
+            </details>
         </form>
-        {% if ordenado_por_distancia %}
-            <p class="search__hint">Ordenado por cercanía.</p>
-        {% endif %}
 
-        {% if posts %}
-            <div class="cards-grid">
-                {% for item in posts %}
-                    {% set post = item.post %}
-                    {% set is_favorite = item.is_favorite %}
-                    <article class="card">
-                        {% if post.image %}
-                            <a href="{{ url_for('blog.detail', id=post.id) }}" class="card__image-link">
-                                <div class="card__image-wrapper">
-                                    <img
-                                        src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
-                                        alt="Imagen de {{ post.title }}"
-                                        class="card__image"
-                                    >
-                                </div>
-                            </a>
+        {# Las fichas. Las dos primeras alternan; el radio es un select que se
+           manda solo al cambiarlo. #}
+        <div class="fichas-filtro">
+            <a href="{{ url_alternando('abierto_ahora') }}"
+               class="ficha-filtro {{ 'ficha-filtro--activa' if abierto_ahora_actual }}"
+               aria-pressed="{{ 'true' if abierto_ahora_actual else 'false' }}">
+                <span class="ficha-filtro__punto" aria-hidden="true"></span>
+                Abierto ahora
+            </a>
+
+            <a href="{{ url_alternando('con_resenias') }}"
+               class="ficha-filtro {{ 'ficha-filtro--activa' if con_resenias_actual }}"
+               aria-pressed="{{ 'true' if con_resenias_actual else 'false' }}">
+                Con reseñas
+            </a>
+
+            {% if g.user %}
+                <a href="{{ url_for('blog.my_favorites') }}" class="ficha-filtro">Mis favoritos</a>
+            {% endif %}
+
+            {# La puerta al catálogo de productos, que no tiene ítem propio en
+               la barra global (ver el comentario de la nav en base.html). Se
+               lleva el texto buscado: quien escribió «dulce de leche» y no
+               encontró el negocio va a encontrar la cosa. #}
+            <a href="{% if busqueda_actual %}{{ url_for('products.catalogo', q=busqueda_actual) }}{% else %}{{ url_for('products.catalogo') }}{% endif %}"
+               class="ficha-filtro">
+                Buscar en productos
+            </a>
+
+            {# El radio de distancia. Solo tiene sentido con una direccion
+               resuelta: sin coordenadas la consulta lo ignora, asi que dibujarlo
+               siempre seria ofrecer un filtro que no hace nada. #}
+            {% if ordenado_por_distancia %}
+                <form method="get" class="fichas-filtro__radio">
+                    {% for clave, valor in request.args.items() %}
+                        {% if clave not in ('radio', 'page') %}
+                            <input type="hidden" name="{{ clave }}" value="{{ valor }}">
                         {% endif %}
-                        <div class="card__body">
-                            <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-                                    <span class="badge badge--category">{{ post.category_label }}</span>
-                                    {% if post.author_user %}
-                                        <span class="badge badge--author">
-                                            {{ post.author_user.username }}
-                                        </span>
-                                    {% endif %}
-                                </div>
-                                <div style="display:flex; gap:0.35rem; align-items:center;">
-                                    {% include "partials/_compartir_boton.html" %}
-                                    {% if g.user %}
-                                        {% include "partials/_favorito_boton.html" %}
-                                    {% endif %}
-                                </div>
-                            </div>
+                    {% endfor %}
+                    <label class="sr-only" for="filtro-radio">Radio de distancia</label>
+                    <select name="radio" id="filtro-radio"
+                            class="ficha-filtro ficha-filtro--select {{ 'ficha-filtro--activa' if radio_actual }}"
+                            onchange="this.form.submit()">
+                        <option value="" {% if not radio_actual %}selected{% endif %}>Sin límite de distancia</option>
+                        {% for km in radios_km %}
+                            <option value="{{ km }}" {% if km == radio_actual %}selected{% endif %}>
+                                A menos de {{ km }} km
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            {% endif %}
 
-                            <h3 class="card__title">
-                                <a href="{{ url_for('blog.detail', id=post.id) }}"
-                                    style="text-decoration:none; color:inherit;">
-                                    {{ post.title }}
-                                </a>
-                            </h3>
+            <span class="fichas-filtro__relleno"></span>
 
-                            {% if item.distance_km is not none %}
-                                <p class="card__location">📍 A {{ item.distance_km }} km</p>
-                            {% endif %}
+            <button type="button" id="use-my-location" class="ficha-filtro ficha-filtro--ubicacion">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>
+                </svg>
+                Cerca de mí
+            </button>
 
-                            {% if item.avg_rating %}
-                                <p class="card__rating" aria-label="Calificación promedio: {{ item.avg_rating }} de 5">
-                                    ⭐ {{ item.avg_rating }} <span class="text-muted">({{ item.review_count }} reseña{{ "s" if item.review_count != 1 else "" }})</span>
-                                </p>
+            {% if hay_filtros %}
+                <a href="{{ url_for('blog.index') }}" class="ficha-filtro ficha-filtro--limpiar">Limpiar todo</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="explorar explorar--sin-panel">
+            <div class="resultados">
+                <div class="resultados__head">
+                    <div>
+                        <h1 class="resultados__titulo">
+                            {{ paginacion.total }} emprendimiento{{ '' if paginacion.total == 1 else 's' }}
+                        </h1>
+                        <p class="resultados__bajada">
+                            {% if ordenado_por_distancia %}
+                                Ordenados por cercanía.
                             {% else %}
-                                <p class="card__rating text-muted">Sin reseñas todavía</p>
+                                De los más nuevos a los más viejos.
                             {% endif %}
+                        </p>
+                    </div>
 
-                            <p class="card__description">
-                                {{ post.body[:160] }}{% if post.body|length > 160 %}...{% endif %}
-                            </p>
-
-                            <div style="margin-top:0.75rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
-                                {% if g.user and g.user.id == post.author %}
-                                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                        <a href="{{ url_for('blog.update', id=post.id) }}"
-                                            class="btn btn--secondary"
-                                            style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                            Editar
-                                        </a>
-                                        <form method="post"
-                                            action="{{ url_for('blog.delete', id=post.id) }}"
-                                            class="form-inline"
-                                            onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit"
-                                                class="btn btn--ghost"
-                                                style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                                Eliminar
-                                            </button>
-                                        </form>
-                                    </div>
-                                {% else %}
-                                    <span class="text-muted" style="font-size:0.8rem;">
-                                        Hacé clic en el título o en el botón para ver más.
-                                    </span>
-                                {% endif %}
-
-                                <a href="{{ url_for('blog.detail', id=post.id) }}"
-                                    class="btn btn--secondary"
-                                    style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                    Ver detalle / Reseñas
-                                </a>
-                            </div>
+                    {# "Ordenar por" del rediseño. El orden real hoy lo decide
+                       la consulta (cercania si hay coordenadas, y si no los
+                       mas nuevos), asi que el control esta dibujado y apagado:
+                       marca cual de los tres esta activo pero no deja
+                       cambiarlo todavia. #}
+                    <div class="orden">
+                        <span class="orden__label">Ordenar por</span>
+                        <div class="orden__grupo" role="group" aria-label="Ordenar por (todavía no se puede cambiar)">
+                            {% set orden_activo = 'Cercanía' if ordenado_por_distancia else 'Nuevos' %}
+                            {% for etiqueta in ['Cercanía', 'Mejor puntuados', 'Nuevos'] %}
+                                <button type="button" disabled
+                                        class="orden__opcion {{ 'orden__opcion--activa' if etiqueta == orden_activo }}">
+                                    {{ etiqueta }}
+                                </button>
+                            {% endfor %}
                         </div>
-                    </article>
-                {% endfor %}
-            </div>
+                    </div>
+                </div>
 
-            {% include "partials/_paginacion.html" %}
-        {% else %}
-            <div class="emprendimientos__empty" style="margin-top:1rem;">
-                <p>
-                    {% if ordenado_por_distancia %}
-                        No encontramos emprendimientos con ubicación cargada cerca de ahí.
-                    {% elif busqueda_actual or categoria_actual or cerca_de_actual %}
-                        No encontramos emprendimientos con esos filtros.
-                    {% else %}
-                        No hay emprendimientos registrados todavía.
-                    {% endif %}
-                </p>
+                {% if busqueda_actual or categoria_actual or cercania_aplicada %}
+                    <div class="chips">
+                        {% if busqueda_actual %}
+                            <span class="chip">
+                                {{ busqueda_actual }}
+                                <a href="{{ url_sin('q') }}" class="chip__quitar" aria-label="Quitar el filtro de texto">×</a>
+                            </span>
+                        {% endif %}
+                        {% if categoria_actual %}
+                            <span class="chip">
+                                {{ categorias.get(categoria_actual, categoria_actual) }}
+                                <a href="{{ url_sin('category') }}" class="chip__quitar" aria-label="Quitar el filtro de rubro">×</a>
+                            </span>
+                        {% endif %}
+                        {# Mismo criterio que el radio: solo si de verdad acoto
+                           algo. Una direccion que MapTiler no resolvio deja el
+                           listado entero, asi que el chip diria otra cosa. #}
+                        {% if cercania_aplicada %}
+                            <span class="chip">
+                                Cerca de {{ cerca_de_actual }}
+                                <a href="{{ url_sin('near') }}" class="chip__quitar" aria-label="Quitar el filtro de cercanía">×</a>
+                            </span>
+                        {% endif %}
+                        {# Solo si de verdad acoto algo. El radio viaja aunque no
+                           haya coordenadas y ahi la consulta lo ignora (no hay
+                           desde donde medir), asi que pintar el chip igual seria
+                           anunciar un filtro que no se aplico.
+                           Se mira ordenado_por_distancia y no request.args.lat:
+                           cuando el usuario escribe una direccion, las
+                           coordenadas las resuelve la vista y nunca estan en la
+                           URL. #}
+                    </div>
+                {% endif %}
+
+                {% if posts %}
+                    <div class="resultados__lista">
+                        {% for item in posts %}
+                            {% set post = item.post %}
+                            {% set is_favorite = item.is_favorite %}
+                            <article class="tarjeta">
+                                <a href="{{ url_for('blog.detail', id=post.id) }}"
+                                   class="tarjeta__foto" tabindex="-1" aria-hidden="true">
+                                    {% if post.image %}
+                                        <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                             alt="" class="tarjeta__img" loading="lazy">
+                                    {% endif %}
+                                </a>
+
+                                <div class="tarjeta__cuerpo">
+                                    <div class="tarjeta__encabezado">
+                                        <span class="rubro-pastilla rubro-pastilla--{{ post.category }}">
+                                            {{ post.category_label }}
+                                        </span>
+                                        <div class="tarjeta__acciones">
+                                            {% include "partials/_compartir_boton.html" %}
+                                            {% if g.user %}
+                                                {% include "partials/_favorito_boton.html" %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <h2 class="tarjeta__titulo">
+                                        <a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a>
+                                    </h2>
+
+                                    <p class="tarjeta__desc">
+                                        {{ post.body[:170] }}{% if post.body|length > 170 %}…{% endif %}
+                                    </p>
+
+                                    {# La fila de datos duros. La distancia va
+                                       primera y en el color de marca: es el
+                                       argumento de toda la pantalla. #}
+                                    <div class="tarjeta__datos">
+                                        {% if item.distance_km is not none %}
+                                            <span class="dato dato--distancia">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                                     stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                                                     stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/>
+                                                    <circle cx="12" cy="10" r="2.5"/>
+                                                </svg>
+                                                a {{ item.distance_km }} km
+                                            </span>
+                                        {% endif %}
+
+                                        {% if item.avg_rating %}
+                                            <span class="dato dato--rating"
+                                                  aria-label="Calificación promedio: {{ item.avg_rating }} de 5">
+                                                <span class="dato__estrella" aria-hidden="true">★</span>
+                                                {{ item.avg_rating }} · {{ item.review_count }}
+                                                reseña{{ '' if item.review_count == 1 else 's' }}
+                                            </span>
+                                        {% else %}
+                                            <span class="dato">Sin reseñas todavía</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="tarjeta__pie">
+                                        {% if post.author_user %}
+                                            <span class="tarjeta__persona">
+                                                <span class="tarjeta__avatar" aria-hidden="true">
+                                                    {{ post.author_user.username[:2] | upper }}
+                                                </span>
+                                                {{ post.author_user.username }}
+                                            </span>
+                                        {% endif %}
+
+                                        {% if g.user and g.user.id == post.author %}
+                                            <span class="tarjeta__dueno">
+                                                <a href="{{ url_for('blog.update', id=post.id) }}"
+                                                   class="btn btn--secondary btn--chico">Editar</a>
+                                                <form method="post"
+                                                      action="{{ url_for('blog.delete', id=post.id) }}"
+                                                      class="form-inline"
+                                                      data-confirm="¿Seguro que querés eliminar este emprendimiento?">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn--ghost btn--chico">Eliminar</button>
+                                                </form>
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+
+                    {% include "partials/_paginacion.html" %}
+                {% else %}
+                    <div class="emprendimientos__empty">
+                        <p>
+                            {% if ordenado_por_distancia %}
+                                No encontramos emprendimientos con ubicación cargada cerca de ahí.
+                            {% elif abierto_ahora_actual and not (busqueda_actual or categoria_actual) %}
+                                {# Se mira aparte porque tiene arreglo propio y
+                                   concreto: no es que no haya, es que en este
+                                   momento estan todos cerrados. #}
+                                Ninguno está abierto en este momento. Probá sacando «Abierto ahora».
+                            {% elif hay_filtros %}
+                                No encontramos emprendimientos con esos filtros.
+                            {% else %}
+                                No hay emprendimientos registrados todavía.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
+        </div>
     </div>
 </section>
 {% endblock %}

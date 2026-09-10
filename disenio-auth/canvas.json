@@ -1,0 +1,114 @@
+{
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Con foto"
+    },
+    {
+      "id": "page-2",
+      "name": "Respaldo sin foto"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "Crear cuenta · sobre foto",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1070,
+      "page": "page-1"
+    },
+    {
+      "file": "Entrar.dc.html",
+      "title": "Entrar · sobre foto",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 830,
+      "page": "page-1"
+    },
+    {
+      "file": "MainMovil.dc.html",
+      "title": "Crear cuenta · teléfono",
+      "x": 3120,
+      "y": 0,
+      "w": 390,
+      "h": 970,
+      "page": "page-1"
+    },
+    {
+      "file": "Impulso.dc.html",
+      "title": "Respaldo A · Impulso",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1065,
+      "page": "page-2"
+    },
+    {
+      "file": "Mendoza.dc.html",
+      "title": "Respaldo B · Mendoza",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 1065,
+      "page": "page-2"
+    },
+    {
+      "file": "Cerca.dc.html",
+      "title": "Respaldo C · Cerca tuyo",
+      "x": 3120,
+      "y": 0,
+      "w": 1440,
+      "h": 1065,
+      "page": "page-2"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "nota-foto",
+      "x": 0,
+      "y": -420,
+      "w": 800,
+      "page": "page-1",
+      "text": "FALTA LA FOTO, Y NO LA PUEDO GENERAR: no tengo ninguna herramienta de generación de imágenes acá, y en el repo no hay ninguna foto de personas (static/icons/portada.jpg es un fondo violeta abstracto).\n\nLo que sí está resuelto es TODO el tratamiento: el velo semioscuro teñido de índigo, el degradado que oscurece arriba y abajo para que el logo y la línea del pie se lean contra cualquier imagen, la viñeta, el logotipo invertido a blanco y la tarjeta con más sombra para despegar.\n\nEl hueco es un hueco marcado a propósito, no una ilustración con cara de foto: se aprueba una cosa y llega otra. Igual reproduce los valores de la foto final —oscuro, con una luz cálida arriba a la izquierda— para que el tratamiento se pueda juzgar.\n\nEl botón de la contraseña es el ojo solo, sin la palabra \"Mostrar\": el ícono ya lo dice, y la palabra queda en el aria-label, que es donde hace falta.\n\nPasame la imagen y la meto: es una línea en generar.py."
+    },
+    {
+      "id": "nota-que-foto",
+      "x": 0,
+      "y": -150,
+      "w": 800,
+      "page": "page-1",
+      "text": "QUÉ FOTO PEDIR: horizontal, 2400 × 1600 o más, alguien trabajando en lo suyo — amasando, en el torno, cosiendo, atendiendo el mostrador. El sujeto va a un costado, nunca al centro: el centro lo tapa la tarjeta. Luz cálida y lateral, no flash frontal.\n\nY una idea: para esta marca, la foto de un emprendedor REAL de la plataforma vale más que cualquier banco de imágenes. Es exactamente lo que IMPULSAR dice ser."
+    },
+    {
+      "id": "nota-entrar-foto",
+      "x": 1560,
+      "y": -150,
+      "w": 620,
+      "page": "page-1",
+      "text": "Entrar, sobre la misma foto. Las dos son solapas de la misma pantalla, así que comparten fondo.\n\nCon el error puesto: es el mensaje real de views/auth.py, adentro de la tarjeta y no como un flash suelto arriba de todo."
+    },
+    {
+      "id": "nota-movil-foto",
+      "x": 3120,
+      "y": -150,
+      "w": 400,
+      "page": "page-1",
+      "text": "Teléfono. La foto es la misma, recortada con object-fit: cover — no hay una segunda imagen que mantener, pero por eso el sujeto tiene que estar a un costado y no pegado al borde.\n\nAcá el cartel del hueco no se dibuja: en 390 px se parte en tres renglones y se le encima al logotipo.\n\nLa tarjeta lleva 20 px de margen a cada lado, así se ve el fondo alrededor; los textos de las fichas y las ayudas de la contraseña van acortados para que entren en una línea. Todo lo tocable, 44 px."
+    },
+    {
+      "id": "nota-respaldo",
+      "x": 0,
+      "y": -230,
+      "w": 800,
+      "page": "page-2",
+      "text": "Los tres fondos dibujados de la vuelta anterior, guardados por si la foto no aparece o no termina de convencer. No hace falta mirarlos ahora.\n\nA · Impulso: la barra del logo puesta en ritmo.\nB · Mendoza: las curvas de nivel de la montaña.\nC · Cerca tuyo: el plano con los anillos de radio en km.\n\nCambiar de fondo es una línea en generar.py: el formulario es el mismo en los seis artboards."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-1"
+  }
+}

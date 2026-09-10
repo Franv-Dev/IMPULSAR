@@ -11,11 +11,11 @@ from sqlalchemy.orm import joinedload
 
 from db import db, utcnow
 from models.message import Message
+from models.product import Product
 from app.blog.modelo_post import Post
-from app.blog.modelo_resenia import Review
-from app.servicios.modelo import Service
-from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
+from app.panel import consultas as consultas_panel
 from models.user import User
+from services.notificaciones_email import notificar_mensaje_nuevo
 from views.auth import login_required
 
 messages = Blueprint("messages", __name__, url_prefix="/mensajes")
@@ -68,10 +68,17 @@ def conversation(post_id, client_id):
         if not body:
             flash("Escribí un mensaje antes de enviarlo.")
         else:
-            db.session.add(Message(
+            mensaje = Message(
                 post_id=post_id, client_id=client_id, sender_id=g.user.id, body=body,
-            ))
+            )
+            db.session.add(mensaje)
             db.session.commit()
+            # Despues del commit y no antes: si el mail se manda primero y el
+            # INSERT despues falla, el otro queda con un aviso de un mensaje
+            # que no existe. Al reves no pasa nada malo -- el mensaje ya esta
+            # guardado y visible, el mail es el extra. La funcion no lanza
+            # aunque el SMTP este caido (ver services/notificaciones_email.py).
+            notificar_mensaje_nuevo(mensaje)
         return redirect(url_for("messages.conversation", post_id=post_id, client_id=client_id))
 
     historial = (
@@ -105,7 +112,37 @@ def conversation(post_id, client_id):
         historial=historial,
         historial_json=[m.serialize() for m in historial],
         otra_parte=otra_parte,
+        borrador=_borrador_por_producto(post),
     )
+
+
+def _borrador_por_producto(post):
+    """El texto con el que arranca el campo cuando se entra desde un producto.
+
+    "Consultar por este producto" (el boton del detalle del catalogo) manda
+    aca con ?producto=<id>, y el campo aparece con el nombre del producto ya
+    escrito. Es la diferencia entre un chat en blanco -- donde el que pregunta
+    tiene que volver a explicar por cual de los catorce frascos escribe -- y
+    uno donde el dueño ya sabe de que se trata.
+
+    ES SOLO UN VALOR INICIAL: el usuario lo puede borrar y escribir otra cosa,
+    y no viaja ningun dato de mas al POST. Por eso tampoco hace falta validar
+    nada mas que la pertenencia.
+
+    SE EXIGE QUE EL PRODUCTO SEA DE ESTE EMPRENDIMIENTO. Sin eso, un id
+    cualquiera en la URL escribiria en el campo el nombre de un producto de
+    otro, que es una forma barata de poner palabras en la boca del que
+    pregunta. Si no coincide (o el id no existe) no se precarga nada, que es
+    exactamente lo mismo que entrar por el boton de "Enviar un mensaje".
+    """
+    producto_id = request.args.get("producto", type=int)
+    if producto_id is None:
+        return ""
+
+    producto = Product.query.filter_by(id=producto_id, post_id=post.id).first()
+    if producto is None:
+        return ""
+    return f"Hola, quería consultar por «{producto.nombre}»."
 
 
 @messages.route("/<int:post_id>/<int:client_id>/nuevos")
@@ -141,38 +178,14 @@ def notifications():
     solo contador. El endpoint queda en el blueprint de mensajes aunque ahora
     cuente cosas de otros dos: moverlo cambiaria la URL que ya consulta el JS
     de todas las paginas, y el nombre del blueprint no vale ese cambio.
+
+    Los tres conteos viven en app/panel/consultas.py desde la tanda del panel:
+    la portada del panel muestra exactamente lo mismo, y escritos a mano en dos
+    lados el criterio de "esto espera respuesta" se despegaba al primer cambio.
     """
-    mensajes_sin_leer = (
-        db.session.query(func.count(Message.id))
-        .join(Post, Post.id == Message.post_id)
-        .filter(
-            Message.read_at.is_(None),
-            Message.sender_id != g.user.id,
-            or_(Message.client_id == g.user.id, Post.author == g.user.id),
-        )
-        .scalar()
-    ) or 0
-
-    resenias_sin_responder = (
-        db.session.query(func.count(Review.id))
-        .join(Post, Post.id == Review.post_id)
-        .filter(Review.reply.is_(None), Post.author == g.user.id)
-        .scalar()
-    ) or 0
-
-    # Las solicitudes que le pidieron al usuario y todavia no contesto. Se
-    # cuentan las pendientes y no las respondidas: una vez que contesto, la
-    # pelota esta del otro lado.
-    solicitudes_pendientes = (
-        db.session.query(func.count(ServiceRequest.id))
-        .join(Service, Service.id == ServiceRequest.service_id)
-        .join(Post, Post.id == Service.post_id)
-        .filter(
-            ServiceRequest.estado == EstadosSolicitud.PENDIENTE,
-            Post.author == g.user.id,
-        )
-        .scalar()
-    ) or 0
+    mensajes_sin_leer = consultas_panel.mensajes_sin_leer(g.user.id)
+    resenias_sin_responder = consultas_panel.resenias_sin_responder(g.user.id)
+    solicitudes_pendientes = consultas_panel.solicitudes_pendientes(g.user.id)
 
     return jsonify({
         "unread_messages": mensajes_sin_leer,

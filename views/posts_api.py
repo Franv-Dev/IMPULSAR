@@ -1,6 +1,8 @@
 from flask import Blueprint, current_app, g, jsonify, request
 
+from app.blog import consultas
 from app.blog.modelo_post import Categorias, Post
+from services.ratings import query_posts_con_rating
 
 posts_api = Blueprint("posts_api", __name__, url_prefix="/api/posts")
 
@@ -24,7 +26,12 @@ def list_posts():
     )
     per_page = max(1, min(per_page, MAX_POR_PAGINA))
 
-    query = Post.query
+    # El promedio de reseñas viaja en cada fila porque la tarjeta del inicio lo
+    # muestra, igual que la del listado. Sale del mismo helper que usa /blog/
+    # (una subquery agrupada con outerjoin), no de un promedio por tarjeta:
+    # pedirlo post por post seria una consulta por fila. Cada fila pasa a ser
+    # la tupla (Post, avg_rating, review_count).
+    query = query_posts_con_rating()
     busqueda = (request.args.get("q") or "").strip()
     if busqueda:
         # La busqueda pasa a resolverse en la base de datos. Antes se traian
@@ -41,10 +48,16 @@ def list_posts():
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
+    # Que esta en favoritos lo dice esta API porque la home pinta sus tarjetas
+    # con JavaScript y no tiene otro lado de donde sacarlo. Es UNA consulta
+    # para toda la pagina (ids_favoritos ya devuelve el set entero), no una por
+    # tarjeta, y sale solo si hay sesion: para quien mira sin loguearse la
+    # respuesta es la de siempre.
+    favoritos = consultas.ids_favoritos(g.user.id) if g.user else frozenset()
+
     return jsonify({
         "items": [
-            p.to_dict(include_views=bool(g.user and g.user.id == p.author))
-            for p in paginacion.items
+            _serializar(fila, favoritos) for fila in paginacion.items
         ],
         "page": paginacion.page,
         "per_page": paginacion.per_page,
@@ -53,6 +66,39 @@ def list_posts():
         "has_next": paginacion.has_next,
         "has_prev": paginacion.has_prev,
     }), 200
+
+
+def _serializar(fila, favoritos):
+    """Una fila (Post, avg_rating, review_count) lista para la tarjeta del inicio.
+
+    Sobre el post serializado se agregan tres cosas que el JSON base no trae
+    porque no son columnas de Post:
+
+    - `favorito`, que NO viaja cuando nadie esta logueado en vez de viajar en
+      False: "no lo tenes en favoritos" y "no sabemos quien sos" no son lo
+      mismo, y el que consume tiene que poder distinguirlos para decidir si
+      dibuja el corazon.
+    - `avg_rating` y `review_count`, redondeados igual que en el listado
+      (services/ratings.serializar_con_rating), asi la misma tarjeta muestra el
+      mismo numero en las dos pantallas. Sin reseñas el promedio va en None y
+      no en 0: un emprendimiento nuevo no esta calificado con un cero.
+    - `author_name`, para el pie de la tarjeta. La relacion author_user es
+      lazy="joined", asi que el autor ya viene con el post y esto no suma
+      consultas.
+    """
+    post, avg_rating, review_count = fila
+
+    datos = post.to_dict(include_views=bool(g.user and g.user.id == post.author))
+    if g.user:
+        datos["favorito"] = post.id in favoritos
+
+    # float() y no el round() pelado: en MySQL el AVG vuelve como Decimal, que
+    # jsonify serializa como cadena ("5.0"). El que consume esto es JavaScript
+    # y espera un numero.
+    datos["avg_rating"] = round(float(avg_rating), 1) if avg_rating else None
+    datos["review_count"] = review_count or 0
+    datos["author_name"] = post.author_user.username if post.author_user else None
+    return datos
 
 
 @posts_api.get("/<int:post_id>")

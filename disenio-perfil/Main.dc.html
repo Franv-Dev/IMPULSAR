@@ -1,0 +1,453 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-card { transition: border-color .18s ease, box-shadow .18s ease; }
+    .u-card:hover { border-color: #C9D0E0; box-shadow: 0 18px 40px rgba(23,20,71,.12); }
+    .u-btn-primario:hover { background: #483BA1; color: #FFFFFF; }
+    .u-btn-borde:hover { border-color: #C9D0E0; background: #F5F7FA; }
+    .u-canal:hover { border-color: #C9D0E0; color: #33267C; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <!-- NAVBAR con sesion iniciada: quien mira este perfil esta logueado, porque
+       seguir y mandar un mensaje piden cuenta. Estaba pendiente en DISENIO.md. -->
+  <header style="position: relative; z-index: 3; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #1B2430; font-weight: 600">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #4A5666">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <button type="button" aria-label="Mensajes" style="position: relative; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; cursor: pointer; padding: 0">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+        <span style="position: absolute; right: 7px; top: 7px; width: 8px; height: 8px; border-radius: 999px; background: #D97544; border: 2px solid #FFFFFF"></span>
+      </button>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 5px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; cursor: pointer">
+        <span style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">CS</span>
+        <span style="font-size: 13.5px; font-weight: 600; color: #1B2430">Camila</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 20px 24px 56px; display: flex; flex-direction: column; gap: 20px">
+
+    <!-- IDENTIDAD: portada, avatar, quien es, de donde, si atiende y como se lo
+         contacta. Lo que cambia respecto de la app es que las tres cosas que se
+         miran antes de decidir -donde queda, si esta abierto, como puntua-
+         quedan juntas y arriba, y el contacto no se va al final del scroll. -->
+    <section style="border: 1px solid #E2E6EE; border-radius: 24px; background: #FFFFFF; overflow: hidden">
+      <div style="position: relative; height: 232px; background: linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)">
+        <span style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,8,28,.18) 0%, transparent 45%, rgba(10,8,28,.28) 100%)"></span>
+        <button type="button" style="position: absolute; right: 16px; top: 16px; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 15px; border: 0; border-radius: 999px; background: rgba(10,8,28,.5); color: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17.5" cy="6" r="2.8"/><circle cx="6.5" cy="12" r="2.8"/><circle cx="17.5" cy="18" r="2.8"/><path d="m9 10.6 6-3.2M9 13.4l6 3.2"/></svg>
+          Compartir
+        </button>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 22px; padding: 0 26px 26px">
+        <div style="flex-shrink: 0; margin-top: -58px; width: 132px; height: 132px; border-radius: 999px; border: 5px solid #FFFFFF; background: linear-gradient(150deg, #6E5FC8 0%, #4A3AA8 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(23,20,71,.18)">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 40px; font-weight: 700; color: #FFFFFF; letter-spacing: -.02em">VR</span>
+        </div>
+
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 11px; padding-top: 18px">
+          <div style="display: flex; align-items: center; gap: 11px">
+            <h1 style="font-size: 32px; line-height: 1.1; letter-spacing: -.03em">Valentina Ruiz</h1>
+            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+              Emprendedora
+            </span>
+          </div>
+
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 9px">
+            <span style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 13px; font-weight: 500">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5248AE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+              Güemes 1480, Godoy Cruz
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 13px; font-weight: 600">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #1C7B53"></span>
+              Abierto ahora · cierra 19:00
+            </span>
+            <a href="#" style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-size: 13px; font-weight: 600">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+              4,6 · 23 reseñas
+            </a>
+            <span style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 13px; font-weight: 500">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3.5v3M16 3.5v3"/></svg>
+              En IMPULSAR desde marzo de 2024
+            </span>
+          </div>
+
+          <p style="margin: 3px 0 0; max-width: 64ch; font-size: 15px; line-height: 1.7; color: #4A5666">Ceramista. Trabajo el gres a torno en el taller de Güemes y salgo a la feria de Plaza Mitre casi todos los fines de semana. Si buscás algo puntual, escribime y lo vemos.</p>
+
+          <div style="display: flex; align-items: center; gap: 9px; margin-top: 5px">
+            <span style="font-size: 13px; color: #5F6B7C">También en</span>
+            <a href="#" class="u-canal" aria-label="WhatsApp" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/><path d="M8.8 9.4c0 3 2.4 5.2 5 5.4"/></svg>
+            </a>
+            <a href="#" class="u-canal" aria-label="Instagram" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+            </a>
+            <a href="#" class="u-canal" aria-label="Facebook" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 21v-8h2.7l.5-3.2h-3.2V7.7c0-.9.3-1.6 1.7-1.6h1.7V3.2A22 22 0 0 0 15.3 3c-2.5 0-4.2 1.5-4.2 4.3v2.5H8.3V13h2.8v8Z"/></svg>
+            </a>
+            <a href="#" class="u-canal" aria-label="Teléfono" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.5h3l1.5 4-2 1.4a11.5 11.5 0 0 0 5.4 5.4l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.2 5.7a2 2 0 0 1 2-2.2Z"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div style="flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; width: 226px; padding-top: 18px">
+          <button type="button" class="u-btn-primario" style="display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 48px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+            Enviar un mensaje
+          </button>
+          <button type="button" class="u-btn-borde" onClick="{{ alternarSeguir }}" style="{{ seguirEstilo }}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ seguirIcono }}"/></svg>
+            {{ seguirTexto }}
+          </button>
+          <p style="margin: 2px 0 0; font-size: 12px; line-height: 1.55; color: #5F6B7C; text-align: center">Hablás directo con Valentina. IMPULSAR no cobra comisión.</p>
+        </div>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: 1fr 372px; gap: 28px; align-items: start">
+
+      <div style="display: flex; flex-direction: column; gap: 20px">
+
+        <!-- PESTAÑAS: hoy el perfil apila emprendimientos, eventos y reseñas uno
+             abajo del otro y la página se hace larguísima. Se pueden tocar. -->
+        <div style="display: flex; align-items: center; gap: 6px; padding: 6px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF">
+          <sc-for list="{{ pestanias }}" as="t" hint-placeholder-count="3">
+            <button type="button" onClick="{{ t.elegir }}" style="{{ t.estilo }}">
+              {{ t.etiqueta }}
+              <span style="{{ t.contadorEstilo }}">{{ t.contador }}</span>
+            </button>
+          </sc-for>
+        </div>
+
+        <!-- EMPRENDIMIENTOS -->
+        <div style="{{ panelEmprendimientos }}">
+          <sc-for list="{{ emprendimientos }}" as="e" hint-placeholder-count="2">
+            <article class="u-card" style="display: flex; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; overflow: hidden">
+              <div style="flex-shrink: 0; width: 228px; background: {{ e.foto }}"></div>
+              <div style="display: flex; flex-direction: column; gap: 9px; padding: 20px 22px; min-width: 0; flex: 1">
+                <div style="display: flex; align-items: center; gap: 9px">
+                  <span style="{{ e.rubroChip }}">{{ e.rubro }}</span>
+                  <span style="{{ e.abiertoChip }}">
+                    <span style="{{ e.abiertoPunto }}"></span>{{ e.abierto }}
+                  </span>
+                </div>
+                <h3 style="font-size: 19px; letter-spacing: -.02em">{{ e.nombre }}</h3>
+                <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: #5F6B7C">{{ e.detalle }}</p>
+                <div style="display: flex; align-items: center; gap: 16px; margin-top: auto; padding-top: 8px; font-size: 13px; color: #4A5666">
+                  <span style="display: inline-flex; align-items: center; gap: 6px">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+                    <strong style="color: #1B2430">{{ e.puntaje }}</strong> · {{ e.resenias }}
+                  </span>
+                  <span style="display: inline-flex; align-items: center; gap: 6px">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+                    {{ e.fotos }}
+                  </span>
+                  <span style="flex: 1"></span>
+                  <a href="#" style="display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600">
+                    Ver la ficha
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+                  </a>
+                </div>
+              </div>
+            </article>
+          </sc-for>
+        </div>
+
+        <!-- RESEÑAS RECIBIDAS -->
+        <div style="{{ panelResenias }}">
+          <div style="display: flex; align-items: center; gap: 22px; padding: 22px 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding-right: 22px; border-right: 1px solid #E2E6EE">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 38px; font-weight: 700; line-height: 1; letter-spacing: -.03em">4,6</span>
+              <span style="display: flex; gap: 2px">
+                <sc-for list="{{ estrellasResumen }}" as="e" hint-placeholder-count="5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="{{ e.color }}"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+                </sc-for>
+              </span>
+              <span style="font-size: 12.5px; color: #5F6B7C">23 reseñas</span>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 5px">
+              <sc-for list="{{ barras }}" as="b" hint-placeholder-count="5">
+                <span style="display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #5F6B7C">
+                  <span style="width: 12px; text-align: right; color: #4A5666">{{ b.puntos }}</span>
+                  <span style="flex: 1; height: 7px; border-radius: 999px; background: #EEF1F7; overflow: hidden">
+                    <span style="{{ b.relleno }}"></span>
+                  </span>
+                  <span style="width: 22px">{{ b.cantidad }}</span>
+                </span>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 16px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+            <sc-for list="{{ resenias }}" as="r" hint-placeholder-count="2">
+              <div style="display: flex; gap: 14px; padding-bottom: 16px; border-bottom: 1px solid #E2E6EE">
+                <span style="flex-shrink: 0; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700">{{ r.iniciales }}</span>
+                <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1">
+                  <span style="display: flex; align-items: center; gap: 10px">
+                    <a href="#" style="font-size: 14px; font-weight: 600; color: #1B2430">{{ r.nombre }}</a>
+                    <span style="font-size: 12.5px; color: #5F6B7C">{{ r.cuando }} · sobre {{ r.sobre }}</span>
+                  </span>
+                  <span style="display: flex; gap: 2px">
+                    <sc-for list="{{ r.estrellas }}" as="e" hint-placeholder-count="5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="{{ e.color }}"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+                    </sc-for>
+                  </span>
+                  <span style="font-size: 14px; line-height: 1.6; color: #4A5666">{{ r.texto }}</span>
+                  <span style="{{ r.respuestaCaja }}">
+                    <span style="font-size: 12.5px; font-weight: 600; color: #33267C">Respondió Valentina</span>
+                    <span style="font-size: 13.5px; line-height: 1.6; color: #4A5666">{{ r.respuesta }}</span>
+                  </span>
+                </span>
+              </div>
+            </sc-for>
+            <a href="#" style="display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600">
+              Ver las 23 reseñas
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- FERIAS Y EVENTOS -->
+        <div style="{{ panelEventos }}">
+          <div style="display: flex; flex-direction: column; gap: 14px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+            <h2 style="font-size: 20px; letter-spacing: -.02em">Dónde encontrarla en persona</h2>
+            <sc-for list="{{ eventos }}" as="v" hint-placeholder-count="3">
+              <div class="u-card" style="display: flex; align-items: center; gap: 16px; padding: 16px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+                <span style="flex-shrink: 0; width: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 9px 0; border-radius: 13px; background: #ECEAF7">
+                  <span style="font-family: 'Poppins', sans-serif; font-size: 19px; font-weight: 700; line-height: 1; color: #33267C">{{ v.dia }}</span>
+                  <span style="font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #5F6B7C">{{ v.mes }}</span>
+                </span>
+                <span style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+                  <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 600; letter-spacing: -.01em">{{ v.titulo }}</span>
+                  <span style="font-size: 13px; line-height: 1.5; color: #5F6B7C">{{ v.cuando }}</span>
+                </span>
+                <span style="{{ v.chip }}">{{ v.estado }}</span>
+              </div>
+            </sc-for>
+            <details style="margin-top: 2px">
+              <summary style="font-size: 13.5px; font-weight: 600; color: #3E2F94; cursor: pointer">Ferias que ya pasaron</summary>
+              <p style="margin: 10px 0 0; font-size: 13.5px; line-height: 1.6; color: #5F6B7C">Feria de Plaza Mitre · 24 y 25 de agosto — Mercado de diseño en la Nave · 10 de agosto</p>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: lo que la competencia no tiene, siempre a la vista. -->
+      <aside style="position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px">
+
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+            <h3 style="font-size: 15.5px; letter-spacing: -.01em">Horarios de atención</h3>
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 11.5px; font-weight: 700">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #1C7B53"></span>Abierto
+            </span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <sc-for list="{{ horarios }}" as="h" hint-placeholder-count="7">
+              <span style="{{ h.fila }}">
+                <span>{{ h.dia }}</span>
+                <span style="{{ h.horaEstilo }}">{{ h.hora }}</span>
+              </span>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; overflow: hidden">
+          <div style="position: relative; height: 172px; background: linear-gradient(160deg, #EEF1F7 0%, #E2E6EE 100%)">
+            <span style="position: absolute; inset: 0; background-image: linear-gradient(rgba(94,106,122,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(94,106,122,.13) 1px, transparent 1px); background-size: 30px 30px"></span>
+            <span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 15px; height: 15px; border-radius: 999px; background: #5248AE; border: 3px solid #FFFFFF; box-shadow: 0 2px 8px rgba(23,20,71,.3)"></span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px; padding: 16px">
+            <span style="font-size: 13.5px; color: #4A5666">Güemes 1480, Godoy Cruz</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #5F6B7C">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5248AE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                A 400 m tuyo
+              </span>
+              <a href="#" style="font-size: 13px; font-weight: 600">Cómo llegar</a>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <h3 style="font-size: 15.5px; letter-spacing: -.01em">Lo que más le piden</h3>
+          <sc-for list="{{ destacados }}" as="d" hint-placeholder-count="3">
+            <span style="display: flex; align-items: center; gap: 12px">
+              <span style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; background: {{ d.foto }}"></span>
+              <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+                <span style="font-size: 13.5px; font-weight: 600">{{ d.nombre }}</span>
+                <span style="font-size: 12.5px; color: #5F6B7C">{{ d.precio }}</span>
+              </span>
+            </span>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 20px 22px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <span style="font-size: 13px; color: #5F6B7C">¿Algo no está bien en este perfil?</span>
+          <a href="#" style="display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; color: #4A5666">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4.5h9.5l.6 2H20v8h-5.5l-.6-2H5"/></svg>
+            Reportar el perfil
+          </a>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { pestania: "emprendimientos", sigo: false };
+  }
+
+  renderVals() {
+    const PLANCHA = "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)";
+    const activa = this.state.pestania;
+
+    const baseChip = "display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 20px; border: 0; border-radius: 999px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; ";
+    const pestanias = [
+      { id: "emprendimientos", etiqueta: "Emprendimientos", contador: "2" },
+      { id: "resenias", etiqueta: "Reseñas", contador: "23" },
+      { id: "eventos", etiqueta: "Ferias y eventos", contador: "3" }
+    ].map((t) => Object.assign({}, t, {
+      elegir: () => this.setState({ pestania: t.id }),
+      estilo: baseChip + (activa === t.id
+        ? "background: #ECEAF7; color: #33267C"
+        : "background: transparent; color: #4A5666"),
+      contadorEstilo: "display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; font-size: 12px; font-weight: 700; "
+        + (activa === t.id ? "background: #FFFFFF; color: #33267C" : "background: #EEF1F7; color: #5F6B7C")
+    }));
+
+    const panel = (id) => activa === id
+      ? "display: flex; flex-direction: column; gap: 16px"
+      : "display: none";
+
+    const rubroPar = { "Artesanías": ["#EEEFFE", "#635EA3"], "Hogar": ["#E5F5EC", "#1C7B53"] };
+    const emprendimientos = [
+      { nombre: "Estudio Verde Cerámica", rubro: "Artesanías", abierto: "Abierto ahora",
+        detalle: "Vajilla de gres a torno para casas y restaurantes. Encargos con muestra antes de la tanda.",
+        puntaje: "4,6", resenias: "23 reseñas", fotos: "8 fotos" },
+      { nombre: "Verde Deco", rubro: "Hogar", abierto: "Cierra 14:00",
+        detalle: "Macetas, apliques y piezas de pared del mismo taller. Se entrega en el día en Godoy Cruz.",
+        puntaje: "4,8", resenias: "9 reseñas", fotos: "5 fotos" }
+    ].map((e) => {
+      const par = rubroPar[e.rubro];
+      return Object.assign({}, e, {
+        foto: PLANCHA,
+        rubroChip: "display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: "
+          + par[0] + "; color: " + par[1],
+        abiertoChip: "display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 12px; font-weight: 600",
+        abiertoPunto: "width: 6px; height: 6px; border-radius: 999px; background: #1C7B53"
+      });
+    });
+
+    const estrellas = (n) => {
+      const salida = [];
+      for (let k = 0; k < 5; k++) salida.push({ color: k < n ? "#E8A33D" : "#E2E6EE" });
+      return salida;
+    };
+
+    const barras = [
+      { puntos: "5", cantidad: 16 }, { puntos: "4", cantidad: 5 },
+      { puntos: "3", cantidad: 1 }, { puntos: "2", cantidad: 1 }, { puntos: "1", cantidad: 0 }
+    ].map((b) => Object.assign({}, b, {
+      relleno: "display: block; height: 100%; border-radius: 999px; background: #E8A33D; width: "
+        + Math.round((b.cantidad / 16) * 100) + "%"
+    }));
+
+    const resenias = [
+      { nombre: "Camila Suárez", iniciales: "CS", cuando: "hace 2 semanas", sobre: "Estudio Verde Cerámica", puntos: 5,
+        texto: "Encargué una bajada de platos para el restaurante y salió mejor de lo que esperaba. Fue mandando fotos del proceso, así que no hubo sorpresas.",
+        respuesta: "Gracias Camila. Cuando quieras repetir la tanda avisá con tres semanas y lo hacemos." },
+      { nombre: "Julián Ortiz", iniciales: "JO", cuando: "hace 1 mes", sobre: "Verde Deco", puntos: 4,
+        texto: "Las macetas son hermosas y aguantan el sol. Tardó una semana más de lo hablado, pero avisó.", respuesta: "" }
+    ].map((r) => Object.assign({}, r, {
+      estrellas: estrellas(r.puntos),
+      respuestaCaja: r.respuesta
+        ? "display: flex; flex-direction: column; gap: 4px; margin-top: 4px; padding: 12px 14px; border-left: 2px solid #ECEAF7; border-radius: 0 12px 12px 0; background: #F5F7FA"
+        : "display: none"
+    }));
+
+    const eventos = [
+      { dia: "6", mes: "Sep", titulo: "Feria de Plaza Mitre", cuando: "Sábado y domingo, de 10 a 19. Puesto 14.", estado: "Este fin de semana", proximo: true },
+      { dia: "21", mes: "Sep", titulo: "Mercado de diseño en la Nave", cuando: "Domingo, de 11 a 20. Stand 7.", estado: "En 17 días", proximo: false },
+      { dia: "12", mes: "Oct", titulo: "Puertas abiertas del taller", cuando: "Sábado, de 15 a 19. Güemes 1480.", estado: "En 38 días", proximo: false }
+    ].map((v) => Object.assign({}, v, {
+      chip: "flex-shrink: 0; display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 600; "
+        + (v.proximo ? "background: #FBEDE4; color: #8C4A22" : "background: #EEF1F7; color: #4A5666")
+    }));
+
+    const HOY = 3;
+    const horarios = [
+      { dia: "Lunes", hora: "Cerrado", abre: false },
+      { dia: "Martes", hora: "10:00 – 19:00", abre: true },
+      { dia: "Miércoles", hora: "10:00 – 19:00", abre: true },
+      { dia: "Jueves", hora: "10:00 – 19:00", abre: true },
+      { dia: "Viernes", hora: "10:00 – 19:00", abre: true },
+      { dia: "Sábado", hora: "10:00 – 14:00", abre: true },
+      { dia: "Domingo", hora: "Cerrado", abre: false }
+    ].map((h, n) => Object.assign({}, h, {
+      fila: "display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 30px; padding: 0 10px; border-radius: 8px; font-size: 13.5px; "
+        + (n === HOY ? "background: #ECEAF7; color: #1B2430; font-weight: 600" : "color: #4A5666"),
+      horaEstilo: h.abre ? "color: inherit" : "color: #5F6B7C"
+    }));
+
+    const destacados = [
+      { nombre: "Juego de 4 tazas", precio: "$ 38.000" },
+      { nombre: "Bowl hondo", precio: "$ 21.500" },
+      { nombre: "Set de mate", precio: "$ 44.000" }
+    ].map((d) => Object.assign({}, d, { foto: PLANCHA }));
+
+    const sigo = this.state.sigo;
+    return {
+      pestanias: pestanias,
+      panelEmprendimientos: panel("emprendimientos"),
+      panelResenias: panel("resenias"),
+      panelEventos: panel("eventos"),
+      emprendimientos: emprendimientos,
+      estrellasResumen: estrellas(5),
+      barras: barras,
+      resenias: resenias,
+      eventos: eventos,
+      horarios: horarios,
+      destacados: destacados,
+      alternarSeguir: () => this.setState({ sigo: !this.state.sigo }),
+      seguirTexto: sigo ? "Siguiendo" : "Seguir",
+      seguirIcono: sigo ? "m5 12.5 4.5 4.5L19 7.5" : "M12 5.5v13M5.5 12h13",
+      seguirEstilo: "display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 48px; border-radius: 999px; font-size: 15px; font-weight: 600; cursor: pointer; "
+        + (sigo
+          ? "border: 1px solid #ECEAF7; background: #ECEAF7; color: #33267C"
+          : "border: 1px solid #E2E6EE; background: #FFFFFF; color: #33267C")
+    };
+  }
+}
+</script>
+</body>
+</html>

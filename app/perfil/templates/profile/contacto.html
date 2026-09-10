@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Contacto y redes – IMPULSAR{% endblock %}
+
+{#  Ajustes › Contacto y redes.
+
+    Los cinco campos vivían al medio del formulario de perfil, entre la
+    biografía y la dirección: se cargan una vez y no se vuelven a tocar, pero
+    había que pasarlos por encima cada vez que se editaba lo demás.
+
+    Lo que cambia además de la mudanza: el error del teléfono se dibuja EN el
+    campo. Antes volvía como un aviso suelto arriba de todo y había que
+    adivinar cuál de los diez campos lo había producido. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Ajustes" %}
+                {% include "partials/_menu_cuenta.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Ajustes de mi cuenta</h1>
+                        <p class="cuenta__bajada">Por dónde te escriben. Todo lo de acá se publica en tu perfil.</p>
+                    </div>
+                </div>
+
+                {% with activa = "Contacto y redes" %}
+                    {% include "partials/_ajustes_nav.html" with context %}
+                {% endwith %}
+
+                {# El error del teléfono NO se repite acá arriba: lo dice el
+                   campo. Los otros avisos (guardado correcto) sí. #}
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                {% if message != error %}
+                                    <div class="auth__alert">{{ message }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <form method="post" class="ajustes-grid" data-ajustes-form>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="ajustes-col">
+
+                        <section class="ajustes-caja">
+                            <div class="ajustes-caja__head">
+                                <h2 class="ajustes-caja__titulo">Teléfono</h2>
+                            </div>
+                            <p class="ajustes-ayuda">
+                                Los dos aparecen como botón en tu perfil. El de WhatsApp abre el chat directo.
+                            </p>
+
+                            <div class="ajustes-duo">
+                                {# `error` es el mensaje que devolvió el
+                                   formulario; empieza con "El teléfono" o con
+                                   "El WhatsApp" (ver services.validation), y eso
+                                   es lo que decide en cuál de los dos campos se
+                                   dibuja. #}
+                                {% set error_telefono = error if error and 'WhatsApp' not in error else None %}
+                                {% set error_whatsapp = error if error and 'WhatsApp' in error else None %}
+
+                                <div class="auth__field">
+                                    <label for="phone" class="auth__label">Teléfono</label>
+                                    <div class="auth__campo {{ 'auth__campo--error' if error_telefono }}">
+                                        <svg class="auth__campo-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="17" height="17" aria-hidden="true"><path d="M6.5 3h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3z"/></svg>
+                                        <input type="tel" id="phone" name="phone" class="auth__input"
+                                               placeholder="Ej: 261 555-1234" value="{{ campos.phone }}"
+                                               {% if error_telefono %}aria-invalid="true" aria-describedby="error-phone"{% endif %}>
+                                    </div>
+                                    {% if error_telefono %}
+                                        <p class="ajustes-estado ajustes-estado--error" id="error-phone">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V13M12 16.2v.3"/></svg>
+                                            {{ error_telefono }}
+                                        </p>
+                                    {% else %}
+                                        <small class="ajustes-ayuda">Con característica, como lo marcarías vos.</small>
+                                    {% endif %}
+                                </div>
+
+                                <div class="auth__field">
+                                    <label for="whatsapp" class="auth__label">WhatsApp</label>
+                                    <div class="auth__campo {{ 'auth__campo--error' if error_whatsapp }}">
+                                        <svg class="auth__campo-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="17" height="17" aria-hidden="true"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5z"/></svg>
+                                        <input type="tel" id="whatsapp" name="whatsapp" class="auth__input"
+                                               placeholder="Ej: 5492615551234" value="{{ campos.whatsapp }}"
+                                               {% if error_whatsapp %}aria-invalid="true" aria-describedby="error-whatsapp"{% endif %}>
+                                    </div>
+                                    {% if error_whatsapp %}
+                                        <p class="ajustes-estado ajustes-estado--error" id="error-whatsapp">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V13M12 16.2v.3"/></svg>
+                                            {{ error_whatsapp }}
+                                        </p>
+                                    {% else %}
+                                        <small class="ajustes-ayuda">Con código de país y sin espacios.</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="ajustes-caja">
+                            <div class="ajustes-caja__head">
+                                <h2 class="ajustes-caja__titulo">Redes</h2>
+                            </div>
+                            <p class="ajustes-ayuda">
+                                Va la dirección completa del perfil, tal como la copiás del navegador.
+                            </p>
+
+                            <div class="ajustes-redes">
+                                <div class="auth__field">
+                                    <label for="instagram_url" class="auth__label">Instagram</label>
+                                    <div class="auth__campo">
+                                        <span class="ajustes-red ajustes-red--ig" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="17" height="17"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1.2" fill="currentColor" stroke="none"/></svg>
+                                        </span>
+                                        <input type="url" id="instagram_url" name="instagram_url" class="auth__input"
+                                               placeholder="https://instagram.com/tu-usuario" value="{{ campos.instagram_url }}">
+                                    </div>
+                                </div>
+
+                                <div class="auth__field">
+                                    <label for="facebook_url" class="auth__label">Facebook</label>
+                                    <div class="auth__campo">
+                                        <span class="ajustes-red ajustes-red--fb" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M14 8.5h2.5V5H14a4 4 0 0 0-4 4v2H7.5v3.5H10V21h3.5v-6.5H16l.6-3.5H13.5V9.4c0-.6.3-.9.9-.9z"/></svg>
+                                        </span>
+                                        <input type="url" id="facebook_url" name="facebook_url" class="auth__input"
+                                               placeholder="https://facebook.com/tu-pagina" value="{{ campos.facebook_url }}">
+                                    </div>
+                                </div>
+
+                                <div class="auth__field">
+                                    <label for="twitter_url" class="auth__label">Twitter / X</label>
+                                    <div class="auth__campo">
+                                        <span class="ajustes-red" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="m4.5 4.5 15 15M19.5 4.5l-15 15"/></svg>
+                                        </span>
+                                        <input type="url" id="twitter_url" name="twitter_url" class="auth__input"
+                                               placeholder="https://x.com/tu-usuario" value="{{ campos.twitter_url }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <div class="ajustes-guardar" data-ajustes-barra>
+                            <span class="ajustes-guardar__estado">
+                                <strong class="ajustes-guardar__titulo" data-barra-titulo>Todo guardado</strong>
+                                <span class="ajustes-guardar__detalle" data-barra-detalle>
+                                    Los cambios se publican cuando tocás Guardar.
+                                </span>
+                            </span>
+                            <a href="{{ url_for('profile.view_profile', slug=user.slug) }}" class="btn btn--secondary">
+                                Volver a mi perfil
+                            </a>
+                            <button type="submit" class="btn btn--primary">Guardar cambios</button>
+                        </div>
+                    </div>
+
+                    {% include "partials/_ajustes_previa.html" with context %}
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

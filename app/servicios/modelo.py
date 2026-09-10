@@ -83,6 +83,28 @@ class Service(db.Model):
 
     __tablename__ = "services"
 
+    # Mismo criterio que ck_products_precio_no_negativo y que ck_review_rating:
+    # la validacion de verdad esta arriba (services/precios.py corta en <= 0
+    # con un mensaje), y esto es la red de abajo para lo que no entra por el
+    # formulario (el seed, un script, la consola de la base).
+    #
+    # Aca es > 0 y no >= 0, al reves que el producto: "sin cargo" en un
+    # servicio no se escribe con un cero sino dejando precio_estimado en NULL,
+    # que es "a presupuestar" y es justamente lo que distingue esta tabla de
+    # products. Un 0 guardado seria un precio cerrado de cero pesos, que no es
+    # lo que nadie quiso decir.
+    #
+    # El "IS NULL OR" es parte de la regla y no una excusa: la columna es
+    # nullable a proposito. Ojo que un CHECK con condicion en MySQL recien se
+    # valida desde 8.0.16; en las versiones anteriores se guarda y se ignora,
+    # asi que la garantia dura es en SQLite y en MySQL moderno.
+    __table_args__ = (
+        db.CheckConstraint(
+            "precio_estimado IS NULL OR precio_estimado > 0",
+            name="ck_services_precio_estimado_positivo",
+        ),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     # ondelete="CASCADE" y con nombre explicito, igual que products: sin el
     # CASCADE, MySQL usa RESTRICT y borrar un emprendimiento con servicios
@@ -124,6 +146,23 @@ class Service(db.Model):
     # Un electricista puede tener matricula de electricidad y no de gas, y un
     # solo flag en el usuario diria que las dos estan verificadas.
     verificado = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
+    # Si este servicio ademas se puede reservar por turno. Va por servicio y
+    # no por usuario a proposito: un peluquero puede tomar turnos para "corte"
+    # y seguir presupuestando "peinado para fiesta" por solicitud. Apagado por
+    # default, que es lo que corresponde para todas las filas que ya existen.
+    turnos_habilitados = db.Column(
+        db.Boolean, nullable=False, default=False, server_default="0")
+    # Cuanto dura cada turno de este servicio, en minutos. Lo define el
+    # vendedor y no el cliente ni una constante global: media hora para un
+    # corte de pelo y tres horas para un service de moto son los dos correctos,
+    # y solo el que presta el servicio sabe cual es.
+    #
+    # Nullable porque solo tiene sentido con turnos_habilitados=True; que sea
+    # obligatoria y positiva EN ESE CASO lo hace cumplir
+    # reglas.duracion_de_turno_valida (la base no puede: seria un CHECK con
+    # condicion, que MySQL recien valida desde 8.0.16 y que ademas obligaria a
+    # una migracion para cambiar el rango).
+    duracion_turno_minutos = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     def __repr__(self):
@@ -151,4 +190,6 @@ class Service(db.Model):
             ),
             "disponible": self.disponible,
             "verificado": self.verificado,
+            "turnos_habilitados": self.turnos_habilitados,
+            "duracion_turno_minutos": self.duracion_turno_minutos,
         }

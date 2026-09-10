@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-tab { flex: 1; display: flex; flex-direction: column; align-items: center;
+             justify-content: center; gap: 4px; height: 62px; color: #5F6B7C;
+             font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 10.5px; }
+    .u-tab--on { color: #3E2F94; font-weight: 600; }
+    .u-rubro { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px;
+               border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+               color: #4A5666; font-size: 13.5px; font-weight: 500; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; max-width: 100%; height: 844px; overflow: hidden; background: #F5F7FA">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="height: 56px; padding: 0 16px; display: flex; align-items: center">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 26px; width: auto; display: block">
+      </a>
+    </div>
+  </header>
+
+  <!-- EL 404 ES LA PANTALLA QUE MÁS SE VE EN CELULAR de esta tanda: se llega por
+       un link viejo que alguien pasó por WhatsApp. Por eso es la única de las
+       seis con versión de teléfono; las de texto son la misma columna angosta. -->
+  <div style="padding: 30px 16px 0">
+
+    <p style="margin: 0; display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px; border-radius: 999px; background: #EEF1F7; color: #5F6B7C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600; letter-spacing: .04em">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.4M12 7.8h.01"/></svg>
+      ERROR 404
+    </p>
+
+    <h1 style="margin-top: 16px; font-size: 27px; line-height: 1.22; letter-spacing: -.025em">
+      Esta página ya no está
+    </h1>
+    <p style="margin: 12px 0 0; font-size: 14.5px; line-height: 1.6; color: #4A5666">
+      Puede que el emprendimiento se haya dado de baja, o que el enlace esté mal escrito.
+      Si llegaste por un link que te pasaron, seguramente sea lo primero.
+    </p>
+
+    <div style="display: flex; align-items: center; gap: 10px; margin-top: 22px; height: 50px; padding: 0 16px; background: #FFFFFF; border: 1px solid #E2E6EE; border-radius: 999px">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" style="flex-shrink: 0"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+      <span style="flex: 1; min-width: 0; font-size: 14.5px; color: #9AA5B5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Buscá lo que venías a buscar</span>
+    </div>
+
+    <!-- Los dos botones a lo ancho y apilados: en 390 px, uno al lado del otro
+         quedan de 165 px y "Ver todos los emprendimientos" no entra sin cortarse. -->
+    <div style="display: flex; flex-direction: column; gap: 9px; margin-top: 14px">
+      <a href="#" style="display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 600">Volver al inicio</a>
+      <a href="#" style="display: flex; align-items: center; justify-content: center; height: 50px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 600">Ver todos los emprendimientos</a>
+    </div>
+
+    <div style="margin-top: 28px; padding-top: 22px; border-top: 1px solid #E2E6EE">
+      <p style="margin: 0 0 13px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #5F6B7C">O empezá por un rubro</p>
+      <!-- Grilla de dos columnas, nunca una tira que se desliza de costado. -->
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px">
+        <a href="#" class="u-rubro"><span style="flex-shrink: 0; width: 9px; height: 9px; border-radius: 999px; background: #9A5230"></span>Alimentos</a>
+        <a href="#" class="u-rubro"><span style="flex-shrink: 0; width: 9px; height: 9px; border-radius: 999px; background: #7C6700"></span>Servicios</a>
+        <a href="#" class="u-rubro"><span style="flex-shrink: 0; width: 9px; height: 9px; border-radius: 999px; background: #1C7B53"></span>Hogar</a>
+        <a href="#" class="u-rubro"><span style="flex-shrink: 0; width: 9px; height: 9px; border-radius: 999px; background: #1D6FA0"></span>Tecnología</a>
+        <a href="#" class="u-rubro"><span style="flex-shrink: 0; width: 9px; height: 9px; border-radius: 999px; background: #635EA3"></span>Artesanías</a>
+        <a href="#" class="u-rubro"><span style="flex-shrink: 0; width: 9px; height: 9px; border-radius: 999px; background: #954D71"></span>Indumentaria</a>
+      </div>
+    </div>
+  </div>
+
+  <nav style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-top: 1px solid #E2E6EE; box-shadow: 0 -2px 12px rgba(15,23,42,.05); padding-bottom: 18px">
+    <div style="display: flex; align-items: stretch">
+      <a href="#" class="u-tab u-tab--on">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.6 12 4.2l8 6.4V19a1.4 1.4 0 0 1-1.4 1.4h-3.3v-5.6H8.7v5.6H5.4A1.4 1.4 0 0 1 4 19Z"/></svg>
+        Inicio
+      </a>
+      <a href="#" class="u-tab">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="m15.3 8.7-1.9 4.6-4.6 1.9 1.9-4.6Z"/></svg>
+        Explorar
+      </a>
+      <a href="#" class="u-tab">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        Favoritos
+      </a>
+      <a href="#" class="u-tab">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        Mensajes
+      </a>
+      <a href="#" class="u-tab">
+        <span style="width: 23px; height: 23px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11px">L</span>
+        Perfil
+      </a>
+    </div>
+  </nav>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

@@ -2,22 +2,53 @@
 
 {% block title %}Iniciar sesión – IMPULSAR{% endblock %}
 
+{#  A pantalla completa sobre la foto: sin barra y sin pie.
+
+    La barra ofrecía "Acceder" y "Registrarse", que es exactamente lo que esta
+    pantalla ya está haciendo, y el pie manda a irse de una pantalla que tiene
+    una sola cosa para hacer. El logo va adentro, arriba de la tarjeta, y es el
+    enlace de vuelta al inicio. #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block tabbar %}{% endblock %}
+
 {% block content %}
 <section class="auth">
-    <div class="container auth__container">
+    {% include "auth/_fondo.html" %}
+
+    <div class="auth__centro">
+        <a href="{{ url_for('index') }}" class="auth__logo">
+            <img src="{{ url_for('static', filename='icons/logo_impulsar.png') }}"
+                 alt="IMPULSAR" width="240" height="87">
+        </a>
+
         <div class="auth__card">
-            <h1 class="auth__title">Iniciar sesión</h1>
+            <h1 class="auth__title">Entrá a tu cuenta</h1>
             <p class="auth__subtitle">
-                Accedé a tu cuenta de IMPULSAR para gestionar tus emprendimientos.
+                Para publicar, guardar favoritos y responder presupuestos.
             </p>
 
-            {# Mensajes flash (errores, avisos) #}
+            {# Las dos solapas son links de verdad entre las dos rutas. #}
+            <div class="auth__tabs">
+                <a href="{{ url_for('auth.login') }}" class="auth__tab auth__tab--activa">Entrar</a>
+                <a href="{{ url_for('auth.register') }}" class="auth__tab">Crear cuenta</a>
+            </div>
+
+            {#  Los mensajes de error van ACÁ ADENTRO, arriba de los campos, y no
+                sueltos arriba de todo: son la respuesta a lo que se acaba de
+                mandar, y se leen donde se estaba mirando. #}
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
-                    <div class="auth__messages">
+                    <div class="auth__messages" role="alert">
                         {% for message in messages %}
                             <div class="auth__alert">
-                                {{ message }}
+                                <svg class="auth__alert-icono" width="17" height="17" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="1.9"
+                                     stroke-linecap="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="8.6"/>
+                                    <path d="M12 8v4.6M12 15.8v.1"/>
+                                </svg>
+                                <span>{{ message }}</span>
                             </div>
                         {% endfor %}
                     </div>
@@ -26,40 +57,66 @@
 
             <form method="post" class="auth__form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
                 <div class="auth__field">
                     <label for="username" class="auth__label">Usuario</label>
-                    <input
-                        id="username"
-                        name="username"
-                        type="text"
-                        class="auth__input"
-                        placeholder="Tu nombre de usuario"
-                        required
-                    >
+                    <div class="auth__campo">
+                        <svg class="auth__campo-icono" width="17" height="17" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="1.7"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="8.4" r="3.8"/>
+                            <path d="M4.8 19.6a7.2 7.2 0 0 1 14.4 0"/>
+                        </svg>
+                        <input
+                            id="username"
+                            name="username"
+                            type="text"
+                            class="auth__input"
+                            placeholder="Tu nombre de usuario"
+                            autocomplete="username"
+                            required
+                        >
+                    </div>
                 </div>
 
                 <div class="auth__field">
                     <label for="password" class="auth__label">Contraseña</label>
-                    <input
-                        id="password"
-                        name="password"
-                        type="password"
-                        class="auth__input"
-                        placeholder="••••••••"
-                        required
-                    >
+                    <div class="auth__campo">
+                        <svg class="auth__campo-icono" width="17" height="17" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="1.7"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="4.8" y="10.4" width="14.4" height="9.4" rx="2.4"/>
+                            <path d="M8.4 10.4V7.8a3.6 3.6 0 0 1 7.2 0v2.6"/>
+                        </svg>
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            class="auth__input"
+                            placeholder="••••••••"
+                            autocomplete="current-password"
+                            required
+                        >
+                        {% include "auth/_ojo.html" %}
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn--primary auth__submit">
-                    Iniciar sesión
+                    Entrar
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M5 12h13M13 6.5 18.5 12 13 17.5"/>
+                    </svg>
                 </button>
             </form>
 
             <p class="auth__footer">
                 ¿Todavía no tenés cuenta?
-                <a href="{{ url_for('auth.register') }}">Registrate</a>
+                <a href="{{ url_for('auth.register') }}">Registrate gratis</a>
             </p>
         </div>
+
+        {% include "auth/_argumento.html" %}
     </div>
 </section>
 {% endblock %}

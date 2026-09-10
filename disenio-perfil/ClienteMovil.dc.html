@@ -1,0 +1,330 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-tira { scrollbar-width: none; -ms-overflow-style: none; }
+    .u-tira::-webkit-scrollbar { display: none; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; background: #F5F7FA">
+
+  <!-- Sin portada: un cliente no es un negocio y una portada de 168 px le da
+       aire de marca a una cuenta que no lo es. -->
+  <section style="display: flex; flex-direction: column; gap: 11px; padding: 16px 16px 18px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="display: flex; align-items: center; gap: 8px; margin: 0 -10px">
+      <button type="button" aria-label="Volver" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: transparent; color: #4A5666; cursor: pointer; padding: 0">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5-7 7 7 7"/></svg>
+      </button>
+      <span style="flex: 1"></span>
+      <button type="button" aria-label="Ajustes" style="{{ botonAjustes }}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 12c0 .6-.1 1.1-.2 1.6l2 1.4-2 3.4-2.3-1a7.6 7.6 0 0 1-2.7 1.6l-.3 2.5h-4l-.3-2.5a7.6 7.6 0 0 1-2.7-1.6l-2.3 1-2-3.4 2-1.4a7.7 7.7 0 0 1 0-3.2l-2-1.4 2-3.4 2.3 1a7.6 7.6 0 0 1 2.7-1.6L10 2.5h4l.3 2.5a7.6 7.6 0 0 1 2.7 1.6l2.3-1 2 3.4-2 1.4c.1.5.2 1 .2 1.6Z"/></svg>
+      </button>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 14px">
+      <span style="flex-shrink: 0; width: 76px; height: 76px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 25px; font-weight: 700">CS</span>
+      <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1">
+        <span style="display: flex; align-items: center; gap: 9px">
+          <h1 style="font-size: 22px; line-height: 1.12; letter-spacing: -.03em">Camila Suárez</h1>
+          <span style="display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase">Cliente</span>
+        </span>
+        <span style="font-size: 13px; color: #5F6B7C">Ciudad de Mendoza · desde julio de 2025</span>
+      </span>
+    </div>
+
+    <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4A5666">Cocino en un restaurante del centro y compro casi todo por acá. Si dejo una reseña es porque la probé.</p>
+
+    <span style="display: inline-flex; align-self: flex-start; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-size: 12.5px; font-weight: 600">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+      12 reseñas escritas · promedio 4,3
+    </span>
+
+    <div style="display: flex; align-items: center; gap: 11px; margin-top: 2px; padding: 11px 11px 11px 14px; border: 1px solid #D9D2F0; border-radius: 14px; background: #ECEAF7">
+      <span style="flex: 1; font-size: 12.5px; line-height: 1.4; color: #4A5666; min-width: 0">{{ avisoTexto }}</span>
+      <button type="button" onClick="{{ alternarVista }}" style="{{ botonVista }}">{{ botonVistaTexto }}</button>
+    </div>
+  </section>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 12px 0 96px">
+
+    <!-- EN CURSO: turnos y presupuestos en una sola lista de dos lineas, con el
+         resto en su pantalla. Son las dos cosas que se esperan de un dia para
+         el otro. -->
+    <div style="{{ panelAgenda }}">
+      <div style="display: flex; align-items: center; gap: 9px; padding: 0 16px">
+        <h2 style="font-size: 16px; letter-spacing: -.02em">En curso</h2>
+        <span style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-size: 10.5px; font-weight: 700">Privado</span>
+        <span style="flex: 1"></span>
+        <a href="#" style="font-size: 13px; font-weight: 600">Ver todo</a>
+      </div>
+      <div style="display: flex; flex-direction: column; margin: 0 16px; padding: 2px 16px 4px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+        <sc-for list="{{ enCurso }}" as="c" hint-placeholder-count="2">
+          <span style="display: flex; align-items: center; gap: 13px; padding: 13px 0">
+            <span style="{{ c.marca }}">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ c.icono }}"/></svg>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; letter-spacing: -.01em">{{ c.titulo }}</span>
+              <span style="font-size: 12.5px; color: #5F6B7C">{{ c.detalle }}</span>
+            </span>
+            <span style="{{ c.chip }}">{{ c.estado }}</span>
+          </span>
+        </sc-for>
+      </div>
+    </div>
+
+    <div class="u-tira" style="display: flex; gap: 8px; padding: 2px 16px; overflow-x: auto">
+      <sc-for list="{{ pestanias }}" as="t" hint-placeholder-count="3">
+        <button type="button" onClick="{{ t.elegir }}" style="{{ t.estilo }}">
+          {{ t.etiqueta }}
+          <span style="{{ t.contadorEstilo }}">{{ t.contador }}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <!-- RESEÑAS ESCRITAS: dos, y el resto en su pantalla. -->
+    <div style="{{ panelResenias }}">
+      <sc-for list="{{ resenias }}" as="r" hint-placeholder-count="2">
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 15px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <span style="display: flex; align-items: center; gap: 11px">
+            <span style="flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; background: {{ r.foto }}"></span>
+            <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1">
+              <a href="#" style="font-size: 14px; font-weight: 600; color: #1B2430">{{ r.negocio }}</a>
+              <span style="display: flex; align-items: center; gap: 7px">
+                <span style="{{ r.rubroChip }}">{{ r.rubro }}</span>
+                <span style="font-size: 12px; color: #5F6B7C">{{ r.cuando }}</span>
+              </span>
+            </span>
+            <span style="display: flex; gap: 2px">
+              <sc-for list="{{ r.estrellas }}" as="e" hint-placeholder-count="5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="{{ e.color }}"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+              </sc-for>
+            </span>
+          </span>
+          <span style="font-size: 13.5px; line-height: 1.6; color: #4A5666">{{ r.texto }}</span>
+          <span style="{{ r.respuestaCaja }}">
+            <span style="font-size: 12px; font-weight: 600; color: #33267C">Le respondieron</span>
+            <span style="font-size: 13px; line-height: 1.55; color: #4A5666">{{ r.respuesta }}</span>
+          </span>
+          <button type="button" style="{{ r.botonEditar }}">Editar mi reseña</button>
+        </div>
+      </sc-for>
+      <a href="#" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; font-size: 14px; font-weight: 600">
+        Ver las 12 reseñas
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+      </a>
+    </div>
+
+    <!-- GUARDADOS -->
+    <div style="{{ panelFavoritos }}">
+      <sc-for list="{{ favoritos }}" as="f" hint-placeholder-count="3">
+        <article style="display: flex; gap: 13px; padding: 13px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <span style="flex-shrink: 0; width: 84px; height: 84px; border-radius: 14px; background: {{ f.foto }}"></span>
+          <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1">
+            <span style="{{ f.rubroChip }}">{{ f.rubro }}</span>
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: -.01em">{{ f.nombre }}</span>
+            <span style="display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #5F6B7C">
+              <span style="{{ f.abiertoEstilo }}">{{ f.abierto }}</span> · {{ f.distancia }}
+            </span>
+          </span>
+          <button type="button" aria-label="Sacar de guardados" style="flex-shrink: 0; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: transparent; color: #5248AE; cursor: pointer; padding: 0">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20s-7.2-4.5-7.2-9.4A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.9C19.2 15.5 12 20 12 20Z"/></svg>
+          </button>
+        </article>
+      </sc-for>
+      <a href="#" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; font-size: 14px; font-weight: 600">
+        Ver los 12 guardados
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+      </a>
+    </div>
+
+    <!-- SIGUE A -->
+    <div style="{{ panelSigoA }}">
+      <sc-for list="{{ sigoA }}" as="s" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <span style="flex-shrink: 0; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 700">{{ s.iniciales }}</span>
+          <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+            <a href="#" style="font-size: 14px; font-weight: 600; color: #1B2430">{{ s.nombre }}</a>
+            <span style="font-size: 12.5px; color: #5F6B7C">{{ s.detalle }}</span>
+          </span>
+          <button type="button" style="flex-shrink: 0; display: inline-flex; align-items: center; height: 44px; padding: 0 16px; border: 1px solid #ECEAF7; border-radius: 999px; background: #ECEAF7; color: #33267C; font-size: 13px; font-weight: 600; cursor: pointer">Siguiendo</button>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- La invitación a vender, en el hueco que hoy queda vacío. -->
+    <div style="{{ panelVender }}">
+      <div style="display: flex; flex-direction: column; gap: 11px; margin: 4px 16px 0; padding: 20px; border-radius: 20px; background: linear-gradient(160deg, #4A3B8E 0%, #3E2F94 55%, #33267C 100%)">
+        <h3 style="font-size: 16.5px; letter-spacing: -.02em; color: #FFFFFF">¿Vos también hacés algo?</h3>
+        <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: rgba(255,255,255,.82)">Publicarlo es gratis y no cobramos comisión. Con la cuenta que ya tenés.</p>
+        <button type="button" style="margin-top: 2px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 48px; border: 0; border-radius: 999px; background: #FFFFFF; color: #33267C; font-size: 14.5px; font-weight: 600; cursor: pointer">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5v13M5.5 12h13"/></svg>
+          Publicar mi emprendimiento
+        </button>
+      </div>
+    </div>
+
+    <div style="{{ panelPublico }}">
+      <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: #4A5666">De un cliente sólo son públicas sus reseñas. Lo que guardó, a quién sigue y sus turnos no los ve nadie.</p>
+    </div>
+  </div>
+
+  <div style="position: sticky; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 12px 16px 16px; background: rgba(255,255,255,.96); border-top: 1px solid #E2E6EE">
+    <button type="button" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 50px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ barraIcono }}"/></svg>
+      {{ barraTexto }}
+    </button>
+    <button type="button" aria-label="Mensajes" style="{{ botonMensajes }}">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+    </button>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { pestania: "resenias", comoVisitante: false };
+  }
+
+  renderVals() {
+    const PLANCHA = "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)";
+    const visitante = this.state.comoVisitante;
+    const activa = visitante ? "resenias" : this.state.pestania;
+    const soloDueno = (estilo) => visitante ? "display: none" : estilo;
+
+    const rubroPar = {
+      "Alimentos": ["#FDECE5", "#9A5230"], "Servicios": ["#F4F0E1", "#7C6700"],
+      "Hogar": ["#E5F5EC", "#1C7B53"], "Artesanías": ["#EEEFFE", "#635EA3"]
+    };
+    const chipRubro = (rubro) => {
+      const par = rubroPar[rubro];
+      return "display: inline-flex; align-items: center; align-self: flex-start; padding: 4px 9px; border-radius: 999px; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: "
+        + par[0] + "; color: " + par[1];
+    };
+
+    const estrellas = (n) => {
+      const salida = [];
+      for (let k = 0; k < 5; k++) salida.push({ color: k < n ? "#E8A33D" : "#E2E6EE" });
+      return salida;
+    };
+
+    const baseChip = "flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; height: 44px; padding: 0 17px; border: 0; border-radius: 999px; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer; ";
+    const todas = [
+      { id: "resenias", etiqueta: "Reseñas escritas", contador: "12" },
+      { id: "favoritos", etiqueta: "Guardados", contador: "12" },
+      { id: "sigo", etiqueta: "Sigue a", contador: "8" }
+    ];
+    const pestanias = (visitante ? todas.slice(0, 1) : todas).map((t) => Object.assign({}, t, {
+      elegir: () => this.setState({ pestania: t.id }),
+      estilo: baseChip + (activa === t.id
+        ? "background: #ECEAF7; color: #33267C"
+        : "background: #FFFFFF; color: #4A5666"),
+      contadorEstilo: "display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; "
+        + (activa === t.id ? "background: #FFFFFF; color: #33267C" : "background: #EEF1F7; color: #5F6B7C")
+    }));
+
+    const panel = (id) => activa === id
+      ? "display: flex; flex-direction: column; gap: 10px; padding: 0 16px"
+      : "display: none";
+
+    const enCurso = [
+      { titulo: "Service de bici", detalle: "Bicis Mendoza · martes 9, 10:30", estado: "Confirmado", tono: "ok",
+        icono: "M6.5 18.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm11 0a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-11-3.5h5l3-8h3" },
+      { titulo: "Vajilla para el restaurante", detalle: "Estudio Verde Cerámica · presupuesto", estado: "Te respondieron", tono: "ok",
+        icono: "M6 3.5h9l4 4v13H6ZM9 11h6M9 15h4" }
+    ].map((c) => Object.assign({}, c, {
+      marca: "flex-shrink: 0; width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 13px; "
+        + (c.tono === "ok" ? "background: #E6F4EC; color: #1C7B53" : "background: #FBEDE4; color: #8C4A22"),
+      chip: "flex-shrink: 0; display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; "
+        + (c.tono === "ok" ? "background: #E6F4EC; color: #1C7B53" : "background: #FBEDE4; color: #8C4A22")
+    }));
+
+    const resenias = [
+      { negocio: "Estudio Verde Cerámica", rubro: "Artesanías", cuando: "hace 2 semanas", puntos: 5,
+        texto: "Encargué una bajada de platos para el restaurante y salió mejor de lo que esperaba. Fue mandando fotos del proceso.",
+        respuesta: "Gracias Camila. Cuando quieras repetir la tanda avisá con tres semanas." },
+      { negocio: "Pan de la Esquina", rubro: "Alimentos", cuando: "hace 1 mes", puntos: 4,
+        texto: "La masa madre es de las mejores de Godoy Cruz. Sábado a las 11 ya no queda, así que hay que ir temprano.", respuesta: "" }
+    ].map((r) => Object.assign({}, r, {
+      foto: PLANCHA,
+      rubroChip: chipRubro(r.rubro),
+      estrellas: estrellas(r.puntos),
+      respuestaCaja: r.respuesta
+        ? "display: flex; flex-direction: column; gap: 3px; padding: 11px 13px; border-left: 2px solid #ECEAF7; border-radius: 0 12px 12px 0; background: #F5F7FA"
+        : "display: none",
+      botonEditar: visitante
+        ? "display: none"
+        : "align-self: flex-start; display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 13px; font-weight: 600; cursor: pointer"
+    }));
+
+    const favoritos = [
+      { nombre: "Pan de la Esquina", rubro: "Alimentos", abierto: "Abierto ahora", abre: true, distancia: "a 600 m" },
+      { nombre: "Taller Nudo", rubro: "Artesanías", abierto: "Cerrado", abre: false, distancia: "a 2,1 km" },
+      { nombre: "Bicis Mendoza", rubro: "Servicios", abierto: "Abierto ahora", abre: true, distancia: "a 1,4 km" }
+    ].map((f) => Object.assign({}, f, {
+      foto: PLANCHA,
+      rubroChip: chipRubro(f.rubro),
+      abiertoEstilo: f.abre ? "color: #1C7B53; font-weight: 600" : "color: #5F6B7C"
+    }));
+
+    const sigoA = [
+      { nombre: "Valentina Ruiz", iniciales: "VR", detalle: "Artesanías · Godoy Cruz" },
+      { nombre: "Pan de la Esquina", iniciales: "PE", detalle: "Alimentos · Godoy Cruz" },
+      { nombre: "Bicis Mendoza", iniciales: "BM", detalle: "Servicios · Ciudad" }
+    ];
+
+    return {
+      pestanias: pestanias,
+      panelResenias: panel("resenias"),
+      panelFavoritos: panel("favoritos"),
+      panelSigoA: panel("sigo"),
+      enCurso: enCurso,
+      resenias: resenias,
+      favoritos: favoritos,
+      sigoA: sigoA,
+
+      alternarVista: () => this.setState({ comoVisitante: !this.state.comoVisitante }),
+      avisoTexto: visitante
+        ? "Así te ve quien lee una reseña tuya: sólo tus reseñas."
+        : "Estás viendo tu propio perfil. Lo privado está marcado.",
+      botonVista: "flex-shrink: 0; display: inline-flex; align-items: center; height: 40px; padding: 0 15px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; "
+        + (visitante
+          ? "border: 1px solid #33267C; background: #33267C; color: #FFFFFF"
+          : "border: 1px solid #FFFFFF; background: #FFFFFF; color: #33267C"),
+      botonVistaTexto: visitante ? "Volver" : "Ver como visitante",
+
+      panelAgenda: soloDueno("display: flex; flex-direction: column; gap: 10px"),
+      panelVender: soloDueno("display: block"),
+      botonAjustes: soloDueno("width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: transparent; color: #4A5666; cursor: pointer; padding: 0"),
+      panelPublico: visitante
+        ? "display: block; margin: 4px 16px 0; padding: 16px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF"
+        : "display: none",
+
+      barraTexto: visitante ? "Enviar un mensaje" : "Editar perfil",
+      barraIcono: visitante
+        ? "M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"
+        : "M4 20h4l10-10-4-4L4 16Zm10.5-13.5 3 3",
+      botonMensajes: visitante
+        ? "display: none"
+        : "flex-shrink: 0; width: 50px; height: 50px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #33267C; cursor: pointer; padding: 0"
+    };
+  }
+}
+</script>
+</body>
+</html>

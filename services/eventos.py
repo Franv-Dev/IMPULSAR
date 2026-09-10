@@ -10,9 +10,10 @@ que uno de los dos usara utcnow para que un evento aparezca vencido en una
 pantalla y vigente en la otra.
 """
 
-from datetime import datetime
+from calendar import monthrange
+from datetime import date, datetime
 
-from models.event import Event
+from models.event import Event, TiposEvento
 from app.blog.modelo_post import Post
 from services.horarios import ZONA_ARGENTINA
 
@@ -24,6 +25,10 @@ MESES = (
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
     "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 )
+
+
+# Lunes = 0, igual que datetime.weekday() y que services.horarios.DIAS.
+DIAS_SEMANA = ("lun", "mar", "mie", "jue", "vie", "sab", "dom")
 
 
 def hoy_en_argentina():
@@ -58,6 +63,46 @@ def mes_corto(fecha):
     return MESES[fecha.month - 1][:3] if fecha else ""
 
 
+def dia_semana_corto(fecha):
+    """"sab", para la linea de arriba del recuadro de fecha.
+
+    Escrito y no strftime("%a") por lo mismo que los meses: depende del locale
+    del sistema, que en el servidor puede dejar "Sat 13 sep" en pantalla.
+    """
+    return DIAS_SEMANA[fecha.weekday()] if fecha else ""
+
+
+def mes_y_anio(fecha):
+    """"agosto 2026", para los encabezados de la cartelera.
+
+    Escrito y no strftime("%B %Y") por lo mismo que MESES: eso depende del
+    locale del sistema operativo, que en el servidor puede dejar "August 2026".
+    """
+    return f"{MESES[fecha.month - 1]} {fecha.year}" if fecha else ""
+
+
+def agrupar_por_mes(eventos):
+    """Los eventos en grupos consecutivos de mes, conservando el orden.
+
+    Devuelve [{"nombre": "agosto 2026", "eventos": [...]}, ...]. Se apoya en
+    que la lista YA viene ordenada por fecha (proximos()): agrupa cortando
+    cuando cambia el mes, no juntando por clave, asi que dos tramos del mismo
+    mes separados en la lista serian dos grupos -- y con la lista ordenada eso
+    no puede pasar.
+    """
+    grupos = []
+    for evento in eventos:
+        clave = (evento.fecha.year, evento.fecha.month)
+        if not grupos or grupos[-1]["clave"] != clave:
+            grupos.append({
+                "clave": clave,
+                "nombre": mes_y_anio(evento.fecha),
+                "eventos": [],
+            })
+        grupos[-1]["eventos"].append(evento)
+    return grupos
+
+
 def proximos(query, hoy=None):
     """Eventos que todavia no pasaron, del mas cercano al mas lejano.
 
@@ -90,6 +135,103 @@ def pasados(query, hoy=None):
         query.filter(Event.fecha < hoy)
         .order_by(Event.fecha.desc(), Event.hora.desc(), Event.id.desc())
     )
+
+
+def parsear_mes(texto):
+    """Convierte "2026-08" en (anio, mes), o None si viene vacio o mal escrito.
+
+    Es el formato que manda el calendario del home en ?mes=. Se valida aca y no
+    en la vista por lo mismo que parsear_fecha: un mes que no existe tiene que
+    dar None y no una excepcion, para que quien llame decida que hacer.
+    """
+    texto = (texto or "").strip()
+    if not texto:
+        return None
+    try:
+        momento = datetime.strptime(texto, "%Y-%m")
+    except ValueError:
+        return None
+    return momento.year, momento.month
+
+
+def rango_del_mes(anio, mes):
+    """El primer y el ultimo dia de ese mes, como (date, date).
+
+    El ultimo dia sale de monthrange y no de una constante por mes: febrero
+    cambia de largo segun el anio, y restarle un dia al primero del mes
+    siguiente obliga a manejar el salto de diciembre a enero a mano.
+    """
+    return date(anio, mes, 1), date(anio, mes, monthrange(anio, mes)[1])
+
+
+def en_rango(query, desde, hasta):
+    """Eventos entre dos fechas, ambas incluidas, en orden de calendario.
+
+    No filtra por "todavia no paso", a diferencia de proximos(): el calendario
+    del home tiene navegacion de meses, y si escondiera lo ya vencido, moverse
+    a un mes anterior mostraria un mes vacio y la navegacion no serviria de
+    nada. Tampoco lo hace dentro del mes en curso: un calendario de agosto
+    parado un 20 tiene que seguir mostrando la feria del 14, porque lo que
+    responde es "que paso y que va a pasar este mes", no "a que llego a ir".
+
+    El orden y el desempate por id son los mismos que en proximos() y por la
+    misma razon (ver su docstring): la hora es opcional, asi que varios eventos
+    del mismo dia comparten la clave de orden entera.
+    """
+    return (
+        query.filter(Event.fecha >= desde, Event.fecha <= hasta)
+        .order_by(Event.fecha.asc(), Event.hora.asc(), Event.id.asc())
+    )
+
+
+
+# ------------------------------------------------- los filtros de la cartelera
+
+def tipo_valido(texto):
+    """El tipo de TiposEvento que nombra ese texto, o None.
+
+    Devuelve None tanto si viene vacio como si viene basura, y las dos cosas
+    significan lo mismo para quien filtra: "todos". Mismo criterio que
+    blog.reglas.categoria_valida -- un ?tipo= inventado a mano no revienta la
+    pantalla, se ignora.
+    """
+    texto = (texto or "").strip().lower()
+    return texto if texto in TiposEvento.TODOS else None
+
+
+def del_dia(query, dia):
+    """Los eventos de una fecha exacta.
+
+    Es el filtro que gana el calendario de la cartelera al dejar de ser una
+    ilustracion: hasta ahora pintaba los dias con eventos y ahi terminaba.
+
+    Sin corte de "ya paso", igual que en_rango() y por lo mismo: si escondiera
+    lo vencido, elegir un dia del pasado en el calendario mostraria un dia vacio
+    y el calendario no serviria para mirar para atras.
+    """
+    return query.filter(Event.fecha == dia).order_by(
+        Event.hora.asc(), Event.id.asc()
+    )
+
+
+def filtrar(query, tipo=None, solo_libres=False):
+    """Aplica los dos filtros de la barra de la cartelera, si vienen.
+
+    `tipo` ya tiene que venir validado (ver tipo_valido): esto no valida, filtra.
+
+    UN EVENTO SIN TIPO NO APARECE EN NINGUN FILTRO POR TIPO, y es lo correcto:
+    `tipo` es nullable porque los eventos cargados antes de la columna no lo
+    tienen (ver models/event.py), y NULL es "no lo dijo", no "es de todos los
+    tipos". Con "Todos" -- que es no pasar tipo -- siguen apareciendo.
+
+    Los dos filtros se combinan con AND y no se excluyen: "talleres con entrada
+    libre" es exactamente la pregunta que alguien hace parado en la cartelera.
+    """
+    if tipo:
+        query = query.filter(Event.tipo == tipo)
+    if solo_libres:
+        query = query.filter(Event.entrada_libre.is_(True))
+    return query
 
 
 def eventos_de_usuario(user_id):

@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input, textarea { font-family: inherit; }
+    input, textarea { outline: none; }
+    .u-campo { transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
+    .u-campo:focus-within { border-color: #3E2F94; background: #FFFFFF; box-shadow: 0 0 0 3px #ECEAF7; }
+  </style>
+</helmet>
+
+<div style="width: 390px; background: #F5F7FA">
+
+  <header style="display: flex; align-items: center; gap: 10px; padding: 0 12px; min-height: 58px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <a href="#" aria-label="Volver" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; color: #4A5666">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+    </a>
+    <span style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600">Pedir presupuesto</span>
+  </header>
+
+  <div style="padding: 14px 16px 22px; display: flex; flex-direction: column; gap: 14px">
+
+    <!-- LA FICHA DEL SERVICIO, resumida: en teléfono ocupa el renglón que se
+         necesita para saber a quién le estás escribiendo, y nada más. -->
+    <section style="display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+      <span style="width: 44px; height: 44px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: #ECEAF7; color: #3E2F94">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4.5 16.5V20H8l4.8-4.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.5-2.5 2.6-2.6Z"/></svg>
+      </span>
+      <div style="min-width: 0; flex: 1">
+        <h1 style="font-size: 15.5px; line-height: 1.3; letter-spacing: -.015em">Destapación de cañerías</h1>
+        <p style="margin: 4px 0 0; font-size: 12.6px; color: #5F6B7C">Plomería Sánchez · A presupuestar</p>
+      </div>
+      <span style="flex-shrink: 0; display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 11.6px; font-weight: 600">✓</span>
+    </section>
+
+    <div>
+      <h2 style="font-size: 15px">¿Qué necesitás?</h2>
+      <p style="margin: 5px 0 0; font-size: 12.8px; line-height: 1.5; color: #5F6B7C">Lo único obligatorio. Cuanto más concreto, menos idas y vueltas.</p>
+    </div>
+
+    <div class="u-campo" style="padding: 13px 14px; border: 1px solid #E2E6EE; border-radius: 12px; background: #FFFFFF">
+      <textarea rows="7" value="{{ descripcion }}" onInput="{{ escribirDescripcion }}" placeholder="Se tapó la pileta de la cocina hace dos días. Ya probé con sopapa y no destapa." style="width: 100%; border: 0; padding: 0; background: none; resize: none; font-size: 14.2px; line-height: 1.6; color: #1B2430"></textarea>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 7px">
+      <sc-for list="{{ pistas }}" as="p" hint-placeholder-count="3">
+        <span style="{{ p.estilo }}">{{ p.etiqueta }}</span>
+      </sc-for>
+    </div>
+
+    <div style="height: 1px; background: #E2E6EE"></div>
+
+    <div>
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+        <h2 style="font-size: 15px">¿Dónde?</h2>
+        <span style="font-size: 12.4px; color: #5F6B7C">Opcional</span>
+      </div>
+      <p style="margin: 6px 0 10px; font-size: 12.8px; line-height: 1.5; color: #5F6B7C">Atiende <strong style="color: #1B2430">Maipú y alrededores</strong>. Si es ahí, dejalo vacío.</p>
+      <div class="u-campo" style="display: flex; align-items: center; min-height: 46px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 12px; background: #FFFFFF">
+        <input type="text" maxlength="120" value="{{ zona }}" onInput="{{ escribirZona }}" placeholder="Otra zona" style="flex: 1; min-width: 0; border: 0; background: none; font-size: 14px; color: #1B2430">
+      </div>
+    </div>
+
+    <div style="height: 1px; background: #E2E6EE"></div>
+
+    <div>
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+        <h2 style="font-size: 15px">Una foto</h2>
+        <span style="font-size: 12.4px; color: #5F6B7C">Opcional</span>
+      </div>
+
+      <button type="button" onClick="{{ adjuntar }}" style="{{ sueltaEstilo }}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+        Sacar o elegir una foto
+      </button>
+
+      <div style="{{ fotoEstilo }}">
+        <div style="width: 68px; height: 60px; flex-shrink: 0; border-radius: 10px; background: linear-gradient(150deg, #C9CFDB 0%, #EEF1F7 100%)"></div>
+        <div style="flex: 1; min-width: 0">
+          <p style="margin: 0; font-size: 13.4px; font-weight: 600">pileta-cocina.jpg</p>
+          <p style="margin: 3px 0 0; font-size: 12px; color: #5F6B7C">1,8 MB</p>
+        </div>
+        <button type="button" onClick="{{ quitarFoto }}" style="flex-shrink: 0; min-height: 44px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 13px; font-weight: 600; cursor: pointer">Quitar</button>
+      </div>
+
+      <p style="margin: 10px 0 0; font-size: 12.2px; line-height: 1.5; color: #5F6B7C">
+        No se publica en ningún listado. Igual, el enlace a la imagen lo puede abrir cualquiera que lo tenga.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- BARRA DE ENVIO fija abajo, con los 44 px de alto tocable. -->
+  <div style="position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 12px 16px 16px; border-top: 1px solid #E2E6EE; background: #FFFFFF">
+    <div style="flex: 1; min-width: 0">
+      <p style="{{ estadoEstilo }}">{{ estadoTexto }}</p>
+      <p style="margin: 2px 0 0; font-size: 11.8px; color: #5F6B7C">{{ estadoDetalle }}</p>
+    </div>
+    <button type="button" style="{{ enviarEstilo }}">Enviar</button>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":1120}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { descripcion: "", zona: "", foto: false };
+  }
+
+  renderVals() {
+    const st = this.state;
+    const texto = st.descripcion.trim();
+    const listo = texto.length > 0;
+
+    const cumple = [
+      { etiqueta: "qué pasa", ok: texto.length >= 20 },
+      { etiqueta: "desde cuándo", ok: /(hace|ayer|hoy|semana|mes|día|dias|días)/i.test(texto) },
+      { etiqueta: "si ya probaste algo", ok: texto.length >= 80 },
+    ];
+
+    return {
+      descripcion: st.descripcion,
+      zona: st.zona,
+      escribirDescripcion: (e) => this.setState({ descripcion: e.target.value }),
+      escribirZona: (e) => this.setState({ zona: e.target.value }),
+      adjuntar: () => this.setState({ foto: true }),
+      quitarFoto: () => this.setState({ foto: false }),
+
+      pistas: cumple.map((p) => ({
+        etiqueta: p.ok ? "✓ " + p.etiqueta : p.etiqueta,
+        estilo: p.ok
+          ? "display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 12px; font-weight: 600"
+          : "display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; background: #EEF1F7; color: #5F6B7C; font-size: 12px",
+      })),
+
+      sueltaEstilo: st.foto
+        ? "display: none"
+        : "display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 52px; margin-top: 10px; border: 1px dashed #C9CFDB; border-radius: 12px; background: #FFFFFF; color: #3E2F94; font-size: 14px; font-weight: 600; cursor: pointer",
+      fotoEstilo: st.foto
+        ? "display: flex; align-items: center; gap: 12px; margin-top: 10px; padding: 12px; border: 1px solid #E2E6EE; border-radius: 12px; background: #FFFFFF"
+        : "display: none",
+
+      estadoTexto: listo ? "Listo para enviar" : "Falta contar qué necesitás",
+      estadoEstilo: "margin: 0; font-family: 'Poppins', sans-serif; font-size: 13.6px; font-weight: 600; color: " + (listo ? "#1B2430" : "#8C4A22"),
+      estadoDetalle: listo ? "Le llega por correo." : "Es el único campo obligatorio.",
+      enviarEstilo: listo
+        ? "flex-shrink: 0; min-height: 46px; padding: 0 24px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14.5px; font-weight: 600; cursor: pointer"
+        : "flex-shrink: 0; min-height: 46px; padding: 0 24px; border: 0; border-radius: 999px; background: #C9CFDB; color: #FFFFFF; font-size: 14.5px; font-weight: 600; cursor: not-allowed",
+    };
+  }
+}
+</script>
+</body>
+</html>

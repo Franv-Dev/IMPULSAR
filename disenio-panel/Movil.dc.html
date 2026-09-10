@@ -1,0 +1,176 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-tab { flex: 1; display: flex; flex-direction: column; align-items: center;
+             justify-content: center; gap: 4px; height: 62px; color: #5F6B7C;
+             font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 10.5px; }
+    .u-tab--on { color: #3E2F94; font-weight: 600; }
+    .u-rotulo { font-family: "Poppins", system-ui, sans-serif; font-weight: 600; font-size: 10.5px;
+                letter-spacing: .09em; text-transform: uppercase; color: #5F6B7C;
+                margin: 0 0 8px 4px; }
+    .u-fila { display: flex; align-items: center; gap: 11px; height: 54px; padding: 0 14px;
+              color: #1B2430; font-size: 14px; font-weight: 500; }
+    .u-fila:hover { background: #ECEAF7; }
+    .u-num { font-family: "Poppins", system-ui, sans-serif; font-weight: 700;
+             font-size: 24px; letter-spacing: -.03em; line-height: 1; color: #1B2430; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; max-width: 100%; height: 844px; overflow: hidden; background: #F5F7FA">
+
+  <header style="height: 56px; padding: 0 8px 0 16px; display: flex; align-items: center; gap: 8px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <h1 style="flex: 1; font-size: 18px; letter-spacing: -.02em">Mi emprendimiento</h1>
+    <a href="#" title="Ver mi ficha pública" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+    </a>
+    <a href="#" title="Agregar" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #5248AE; color: #FFFFFF">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </a>
+  </header>
+
+  <div style="padding: 14px 16px 0; display: flex; flex-direction: column; gap: 16px">
+
+    <section>
+      <p class="u-rotulo">Lo que te está esperando</p>
+      <div style="background: #FFFFFF; border: 1px solid #E2E6EE; border-radius: 16px; overflow: hidden">
+
+        <a href="#" class="u-fila">
+          <span style="flex-shrink: 0; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #FBEDE4; color: #8C4A22">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9.5 13h5M9.5 16.5h3"/></svg>
+          </span>
+          <span style="flex: 1; min-width: 0">Presupuestos sin responder</span>
+          <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 12px">2</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+        </a>
+        <div style="height: 1px; background: #EEF1F7; margin-left: 59px"></div>
+
+        <a href="#" class="u-fila">
+          <span style="flex-shrink: 0; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #ECEAF7; color: #33267C">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+          </span>
+          <span style="flex: 1; min-width: 0">Mensajes sin leer</span>
+          <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 12px">3</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+        </a>
+        <div style="height: 1px; background: #EEF1F7; margin-left: 59px"></div>
+
+        <a href="#" class="u-fila">
+          <span style="flex-shrink: 0; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #E6F4EC; color: #1F7A4D">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/></svg>
+          </span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+            <span>1 turno hoy</span>
+            <span style="font-size: 12px; font-weight: 400; color: #5F6B7C">Taller de torno, 16:00</span>
+          </span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+        </a>
+        <div style="height: 1px; background: #EEF1F7; margin-left: 59px"></div>
+
+        <a href="#" class="u-fila">
+          <span style="flex-shrink: 0; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #FBEDE4; color: #8C4A22">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.5 5.1 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8Z"/></svg>
+          </span>
+          <span style="flex: 1; min-width: 0">Reseñas sin responder</span>
+          <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 12px">1</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <p class="u-rotulo">Tus números</p>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+          <span class="u-num">1.204</span>
+          <span style="font-size: 12.5px; color: #5F6B7C">Visitas a tus fichas</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+          <span class="u-num">38</span>
+          <span style="font-size: 12.5px; color: #5F6B7C">Veces que te guardaron</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+          <span style="display: flex; align-items: center; gap: 7px">
+            <span class="u-num">4,6</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+          </span>
+          <span style="font-size: 12.5px; color: #5F6B7C">Promedio de 23 reseñas</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+          <span class="u-num">17</span>
+          <span style="font-size: 12.5px; color: #5F6B7C">Personas que te siguen</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="u-rotulo">Tus emprendimientos</p>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+
+        <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <span style="flex-shrink: 0; width: 52px; height: 52px; border-radius: 13px; background: linear-gradient(150deg, #E7E2F3, #B9AEDC)"></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Estudio Verde Cerámica</span>
+            <span style="font-size: 12.5px; color: #5F6B7C">14 productos · 3 servicios · 1 feria</span>
+          </span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+        </a>
+
+        <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+          <span style="flex-shrink: 0; width: 52px; height: 52px; border-radius: 13px; background: linear-gradient(150deg, #EEE0D6, #C9AE99)"></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Conservas del Challao</span>
+            <span style="display: inline-flex; align-self: flex-start; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-size: 11.5px; font-weight: 600">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.5v4.5M12 16.4v.1"/><circle cx="12" cy="12" r="9"/></svg>
+              Sin fotos ni horarios
+            </span>
+          </span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <nav style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-top: 1px solid #E2E6EE; box-shadow: 0 -2px 12px rgba(15,23,42,.05); padding-bottom: 18px">
+    <div style="display: flex; align-items: stretch">
+      <a href="#" class="u-tab">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.6 12 4.2l8 6.4V19a1.4 1.4 0 0 1-1.4 1.4h-3.3v-5.6H8.7v5.6H5.4A1.4 1.4 0 0 1 4 19Z"/></svg>
+        Inicio
+      </a>
+      <a href="#" class="u-tab">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="m15.3 8.7-1.9 4.6-4.6 1.9 1.9-4.6Z"/></svg>
+        Explorar
+      </a>
+      <a href="#" class="u-tab">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        Favoritos
+      </a>
+      <a href="#" class="u-tab" style="position: relative">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        <span style="position: absolute; top: 6px; left: 50%; margin-left: 4px; min-width: 18px; height: 18px; padding: 0 4px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; border: 2px solid #FFFFFF">3</span>
+        Mensajes
+      </a>
+      <a href="#" class="u-tab u-tab--on">
+        <span style="width: 23px; height: 23px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #3E2F94; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11px">V</span>
+        Perfil
+      </a>
+    </div>
+  </nav>
+
+</div>
+</x-dc>
+</body>
+</html>

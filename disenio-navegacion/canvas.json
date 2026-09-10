@@ -1,0 +1,47 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Barra de escritorio — con sesión", "x": 0, "y": 0, "w": 1440, "h": 340 },
+    { "file": "Visitante.dc.html", "title": "Barra de escritorio — sin sesión", "x": 1560, "y": 0, "w": 1440, "h": 340 },
+    { "file": "Menu.dc.html", "title": "Menú de la cuenta desplegado", "x": 0, "y": 480, "w": 1440, "h": 800 },
+    { "file": "Movil.dc.html", "title": "Teléfono — Explorar", "x": 1560, "y": 480, "w": 390, "h": 844 },
+    { "file": "MovilPerfil.dc.html", "title": "Teléfono — Perfil", "x": 2050, "y": 480, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    {
+      "id": "nota-barra",
+      "x": 0,
+      "y": -210,
+      "w": 620,
+      "text": "EL BUSCADOR SE MUDÓ A SU PROPIA BANDA.\nAntes competía con el logo y las acciones en la misma fila. Ahora la fila 1 es identidad + secciones + acciones, y el buscador tiene la fila 2 entera para él: centrado, 720 px, 52 px de alto.\n\nLas tres secciones quedan centradas en la fila 1, con la activa subrayada en índigo. \"Inicio\" se va: el logo ya es el inicio.\n\nFavoritos y Mensajes salen del menú y pasan a ser íconos visibles — hoy están a dos clicks y el aviso de mensajes nuevos vive escondido adentro del menú. \"Publicar\" gana un botón propio: hoy sólo existe en el pie."
+    },
+    {
+      "id": "nota-ubicacion",
+      "x": 680,
+      "y": -210,
+      "w": 540,
+      "text": "LA ZONA SE DICE UNA SOLA VEZ POR LUGAR.\nCon sesión: el campo \"dónde\" del buscador la trae puesta, y debajo del título va la pastilla que dice en qué zona estás parado y deja cambiarla sin subir. Nada más.\n\nSin sesión: sólo el campo del buscador, con \"Cerca de mí\" adentro (geolocalización real: Post.latitude/longitude + MapTiler). No hay pastilla debajo del título, porque todavía no hay zona que mostrar y repetir la invitación no agrega nada.\n\nFalta cablear que la zona elegida se recuerde entre pantallas."
+    },
+    {
+      "id": "nota-visitante",
+      "x": 1560,
+      "y": -210,
+      "w": 560,
+      "text": "SIN SESIÓN cambian sólo las acciones: \"Quiero vender\", Acceder y Crear cuenta.\nEl buscador, las secciones y la banda son idénticos — la barra no se reacomoda al entrar, sólo se completa.\n\nEl campo \"dónde\" dice \"Tu barrio o ciudad\" en gris y la pastilla del título dice \"Elegí dónde buscar\": sin sesión y sin permiso de ubicación no hay ciudad que mostrar, y no se inventa una."
+    },
+    {
+      "id": "nota-menu",
+      "x": -660,
+      "y": 480,
+      "w": 540,
+      "text": "EL BADGE DEJA DE MENTIR.\nHoy /mensajes/notificaciones devuelve un total que suma mensajes + reseñas + presupuestos, y ese número se pega al ítem \"Mensajes\".\n\nEl endpoint ya los devuelve separados: cada contador va en SU ítem. El del sobre de la barra es sólo unread_messages.\n\nTres grupos, no una lista de nueve: lo que me pasa a mí, lo que administro, y la cuenta. \"Mis turnos\" y \"Agenda de turnos\" entran acá: hoy /turnos/mios y /turnos/agenda existen y no están en ningún menú."
+    },
+    {
+      "id": "nota-movil",
+      "x": 1560,
+      "y": 1370,
+      "w": 880,
+      "text": "SE VA EL HAMBURGUESA. Cinco pestañas: Inicio · Explorar · Favoritos · Mensajes · Perfil.\n\nPor qué esas cinco: son las cinco cosas que se hacen sin pensar. Publicar NO entra en la barra — es una acción de dueño, no de todos los días, y vive arriba de la pestaña Perfil como botón principal (nada de botón flotante: taparía una tarjeta, que es el error que ya se corrigió con el mapa).\n\n\"Explorar\" agrupa en el teléfono lo que en escritorio son tres entradas (Emprendimientos, Servicios, Eventos). Es una asimetría a propósito: en 390 px no entran tres.\n\nLa barra de arriba es de dos filas finas: logo + ubicación, y el buscador. Al scrollear se va la primera y queda el buscador."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

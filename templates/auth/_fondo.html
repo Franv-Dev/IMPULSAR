@@ -1,0 +1,26 @@
+{#  El fondo de las pantallas de entrar y crear cuenta.
+
+    Va en un parcial porque las dos pantallas son la MISMA pantalla con dos
+    solapas: si el fondo se escribiera dos veces, al primer retoque quedarían
+    distintas.
+
+    LA FOTO TODAVÍA NO ESTÁ. Mientras tanto se dibuja un hueco: un degradado
+    oscuro con una luz cálida arriba a la izquierda, que reproduce los valores
+    que va a tener la foto para que el resto de la pantalla se pueda juzgar.
+
+    PARA PONER LA FOTO hay UN solo lugar: la regla `.auth__foto` en
+    static/css/styles.css. Se descomenta el background-image, se deja el
+    archivo en static/icons/ y listo; no hay que tocar esta plantilla ni el
+    HTML de las dos pantallas.
+
+    Encima de la foto van tres capas, y cada una tiene su motivo:
+      1. el velo de índigo, que la baja a semioscura y la tiñe con el color de
+         la marca en vez de dejarla en gris;
+      2. el degradado vertical, que oscurece arriba y abajo para que el logo y
+         la línea del pie se lean contra CUALQUIER foto que se ponga después;
+      3. la viñeta, que cierra la composición sobre la tarjeta.
+    Son <span> vacíos y decorativos: no llevan texto ni rol. #}
+<span class="auth__foto" aria-hidden="true"></span>
+<span class="auth__velo" aria-hidden="true"></span>
+<span class="auth__degradado" aria-hidden="true"></span>
+<span class="auth__vineta" aria-hidden="true"></span>

@@ -8,7 +8,11 @@ proyecto: Flask-WTF esta instalado pero solo se usa para el CSRF.
 
 from flask import request
 
-from services.horarios import DIAS, formatear as formatear_hora, parsear_hora
+from app.perfil.reglas import DURACION_MINIMA_MINUTOS
+from services.validation import validate_telefono
+from services.horarios import (
+    DIAS, duracion_minutos, formatear as formatear_hora, parsear_hora,
+)
 
 
 def leer_bio():
@@ -18,22 +22,81 @@ def leer_bio():
     return biografia, error
 
 
-def leer_perfil():
-    """Los campos del perfil completo, ya limpios.
+# Los ocho campos del perfil, repartidos en las dos pantallas de Ajustes que
+# los editan. Estaban los ocho en un formulario solo: diez controles en fila
+# (con las dos fotos) que se recorrian enteros para cambiar una linea de la
+# biografia. Se parten por lo que responde cada grupo: uno es "quién soy y
+# dónde estoy", el otro "por dónde me escribís".
+CAMPOS_PERFIL_PUBLICO = ("biography", "location", "address_street")
+CAMPOS_CONTACTO = (
+    "phone", "whatsapp", "instagram_url", "facebook_url", "twitter_url",
+)
+
+# Los ocho juntos, en el orden en que se pintan. Existe para que campos_guardados()
+# no vuelva a escribir a mano la lista que las dos pantallas ya declararon arriba:
+# repetida, agregar un campo pedia acordarse de tocar los dos lados, y olvidarse
+# de este no rompe nada ruidoso — el campo simplemente no llega al template y se
+# ve vacio al entrar a Ajustes, con lo guardado intacto en la base.
+CAMPOS_DEL_PERFIL = CAMPOS_PERFIL_PUBLICO + CAMPOS_CONTACTO
+
+
+def _leidos(nombres):
+    """Los campos pedidos, tal como vinieron y sin espacios de sobra."""
+    return {nombre: request.form.get(nombre, "").strip() for nombre in nombres}
+
+
+def leer_perfil_publico():
+    """Biografia y ubicacion, ya limpias: (datos, error).
 
     Ojo con dos que se parecen y no son lo mismo: `location` es texto libre que
     solo se muestra, y `address_street` es la direccion que se geocodifica.
+
+    Ninguno de los tres se valida: son textos libres y se guardan como vengan,
+    que es como venia funcionando. El error se devuelve igual (siempre None)
+    para que las dos pantallas de ajustes se lean iguales desde la vista.
     """
-    return {
-        "biography": request.form.get("biography", "").strip(),
-        "location": request.form.get("location", "").strip(),
-        "address_street": request.form.get("address_street", "").strip(),
-        "phone": request.form.get("phone", "").strip(),
-        "whatsapp": request.form.get("whatsapp", "").strip(),
-        "instagram_url": request.form.get("instagram_url", "").strip(),
-        "facebook_url": request.form.get("facebook_url", "").strip(),
-        "twitter_url": request.form.get("twitter_url", "").strip(),
-    }
+    return _leidos(CAMPOS_PERFIL_PUBLICO), None
+
+
+def leer_contacto():
+    """Telefonos y redes, ya limpios: (datos, error).
+
+    Los dos telefonos son los unicos campos del perfil que se validan, y no por
+    capricho: son datos de CONTACTO, o sea que existen para que alguien los
+    marque. Un telefono con letras o con cuatro digitos no falla en ningun
+    lado, se publica en el perfil y el cliente que lo intente no llega a nadie.
+    Los tres links se guardan como vengan.
+    """
+    datos = _leidos(CAMPOS_CONTACTO)
+
+    error = (
+        validate_telefono(datos["phone"])
+        or validate_telefono(datos["whatsapp"], etiqueta="WhatsApp")
+    )
+
+    return datos, error
+
+
+def campos_guardados(user):
+    """Los ocho campos del perfil tal como estan guardados hoy.
+
+    La contraparte de leer_perfil_publico() y leer_contacto(), y la razon de
+    que exista es la misma que la de filas_guardadas() en los horarios: el
+    template se pinta SIEMPRE desde un dict con estas ocho claves, venga de la
+    base (al entrar) o del POST (al volver por un error). Si el GET leyera
+    user.* y el error leyera el POST, serian dos formas de armar la misma
+    pantalla y una de las dos se iba a quedar atras.
+
+    Van las ocho aunque cada pantalla edite tres o cinco: la de perfil publico
+    igual necesita el telefono para decir que hay contacto cargado, y las dos
+    pintan la misma vista previa.
+
+    Los nombres salen de CAMPOS_DEL_PERFIL, la misma tupla que leen las dos
+    pantallas: lo unico propio de esta funcion es de donde saca el valor (la
+    base, no el POST) y el `or ""` que cambia el None de una columna vacia por
+    el texto vacio que espera el <input>.
+    """
+    return {nombre: getattr(user, nombre) or "" for nombre in CAMPOS_DEL_PERFIL}
 
 
 def fila_de_horario(dia, etiqueta, cerrado, abre, cierra):
@@ -63,25 +126,114 @@ def leer_horarios():
     `pendientes` son tuplas (dia, etiqueta, cerrado, abre, cierra) con lo que
     mando el usuario, y se devuelven aunque haya error: perder el formulario
     entero por un dia mal cargado obliga a rehacer los siete.
+
+    Se reporta el PRIMER error y no el ultimo: antes cada dia pisaba el mensaje
+    del anterior, asi que con dos dias mal cargados se veia el del ultimo y el
+    usuario corregia ese, mandaba, y le aparecia el otro.
     """
     error = None
     pendientes = []
     for dia, etiqueta in DIAS:
         cerrado = request.form.get(f"cerrado_{dia}") == "on"
-        abre = parsear_hora(request.form.get(f"abre_{dia}"))
-        cierra = parsear_hora(request.form.get(f"cierra_{dia}"))
+        texto_abre = request.form.get(f"abre_{dia}")
+        texto_cierra = request.form.get(f"cierra_{dia}")
+        abre = parsear_hora(texto_abre)
+        cierra = parsear_hora(texto_cierra)
 
-        if not cerrado and (abre is None) != (cierra is None):
-            error = (
-                f"{etiqueta}: cargá la hora de apertura y la de cierre, o marcá "
-                "el día como cerrado."
+        if error is None and not cerrado:
+            # Primero lo ilegible: parsear_hora devuelve None tanto para el
+            # campo vacio como para "25:00", y los dos casos se corrigen de
+            # maneras distintas (ver _error_de_hora_ilegible).
+            error = _error_de_hora_ilegible(
+                etiqueta, texto_abre, abre, texto_cierra, cierra
             )
-        elif not cerrado and abre and cierra and abre == cierra:
-            error = (
-                f"{etiqueta}: la hora de apertura y la de cierre no pueden ser "
-                "iguales."
-            )
+            if error is None and (abre is None) != (cierra is None):
+                error = (
+                    f"{etiqueta}: cargá la hora de apertura y la de cierre, o "
+                    "marcá el día como cerrado."
+                )
+            if error is None and abre and cierra:
+                error = _error_de_rango(etiqueta, abre, cierra)
 
         pendientes.append((dia, etiqueta, cerrado, abre, cierra))
 
     return pendientes, error
+
+
+def _error_de_hora_ilegible(etiqueta, texto_abre, abre, texto_cierra, cierra):
+    """El mensaje si lo que escribio no se entiende como hora, o None.
+
+    parsear_hora() devuelve None para dos cosas muy distintas: el campo vacio y
+    el campo con algo que no es una hora ("25:00", "mediodia"). Sin separarlas,
+    una hora imposible caia en el mensaje de mas abajo, que dice "cargá la hora
+    de apertura y la de cierre" cuando el usuario SI la cargo: le pide lo que
+    ya hizo y no le dice que es lo que esta mal.
+
+    Peor todavia cuando las dos horas del dia son imposibles: ahi las dos
+    quedaban en None, que es exactamente lo que se ve cuando el dia se dejo en
+    blanco, no habia error de ninguna clase y el dia se guardaba sin horario.
+    Lo que escribio desaparecia sin una palabra.
+
+    El texto se devuelve al usuario tal como lo mando para que sepa cual de los
+    dos campos mirar; Jinja lo escapa al pintarlo.
+
+    Nada de esto se ve con un navegador normal, porque el input es type="time"
+    y no deja mandar "25:00". Se ve con uno viejo (que lo degrada a un campo de
+    texto libre) o con un POST armado a mano, y esos dos merecen la misma
+    respuesta clara que el resto del formulario.
+    """
+    for texto, hora, cual in (
+        (texto_abre, abre, "apertura"),
+        (texto_cierra, cierra, "cierre"),
+    ):
+        texto = (texto or "").strip()
+        if texto and hora is None:
+            return (
+                f"{etiqueta}: «{texto}» no es una hora de {cual} válida. "
+                "Usá el formato de 24 horas, de 00:00 a 23:59."
+            )
+
+    return None
+
+
+def _error_de_rango(etiqueta, abre, cierra):
+    """El mensaje si ese rango de atencion no tiene sentido, o None.
+
+    El rango se lee como lo lee services/horarios: si `cierra` es menor que
+    `abre`, el cierre es del dia siguiente (un bar de 20:00 a 02:00). Por eso
+    NO se pide que la apertura sea anterior al cierre: eso rechazaria todos los
+    horarios nocturnos, que son validos y que el resto del proyecto ya
+    contempla (esta_abierto y el filtro "Abierto ahora" del listado).
+
+    Lo que si se puede pedir son las dos cosas que no dependen de si cruza
+    medianoche:
+
+    - que las dos horas no sean la misma, que es el caso ambiguo: nadie sabe si
+      "de 09:00 a 09:00" es cerrado siempre o abierto las 24 horas, y hoy los
+      dos lectores del horario lo toman como cerrado, sin avisar. El mensaje
+      dice como escribir el dia completo, que es lo que casi siempre se quiso.
+    - que el rango no sea absurdamente corto. Con el cruce de medianoche, un
+      "de 18:00 a 09:00" es un rango largo y valido, pero un "de 09:00 a 09:05"
+      son cinco minutos de atencion: es un error de tipeo en los minutos, y sin
+      esto se guardaba y dejaba el negocio cerrado casi todo el dia sin que
+      nadie se enterara.
+
+    Lo que queda afuera, y no por olvido: el caso inverso, alguien que quiso
+    poner "de 09:00 a 18:00" y escribio "de 18:00 a 09:00". Es indistinguible
+    de un horario nocturno legitimo, asi que rechazarlo seria romper el caso
+    real para atajar un typo.
+    """
+    if abre == cierra:
+        return (
+            f"{etiqueta}: la hora de apertura y la de cierre no pueden ser "
+            "iguales. Si atendés todo el día, cargá de 00:00 a 23:59."
+        )
+
+    duracion = duracion_minutos(abre, cierra)
+    if duracion < DURACION_MINIMA_MINUTOS:
+        return (
+            f"{etiqueta}: de {formatear_hora(abre)} a {formatear_hora(cierra)} "
+            f"son {duracion} minutos de atención. Revisá las horas."
+        )
+
+    return None

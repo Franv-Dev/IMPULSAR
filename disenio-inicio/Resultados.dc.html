@@ -1,0 +1,315 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-card { transition: border-color .18s ease, box-shadow .18s ease; }
+    .u-card:hover { border-color: #C9D0E0; box-shadow: 0 18px 40px rgba(23,20,71,.12); }
+    .u-chip:hover { border-color: #3E2F94; color: #3E2F94; }
+    .u-btn-primario:hover { background: #483BA1; color: #FFFFFF; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <!-- NAVBAR: la misma del inicio, sin cambios. -->
+  <header style="position: relative; z-index: 3; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #1B2430; font-weight: 600">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #4A5666">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <a href="#" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; font-size: 14px; color: #4A5666">Acceder</a>
+      <a href="#" class="u-btn-primario" style="display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 600">Registrarse</a>
+    </div>
+  </header>
+
+  <!-- BARRA DE FILTROS
+       Acá está la ventaja sobre Mercado Libre y Marketplace, así que va arriba de
+       todo y en grande, no escondida en un panel lateral: "abierto ahora" y el
+       radio en kilómetros son filtros de primera clase. Los cinco son los que el
+       listado ya resuelve en app/blog/vistas.py (búsqueda, categoría, cercanía
+       con radio, con reseñas, abierto ahora). -->
+  <section style="position: relative; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; padding: 22px 0 20px">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 14px">
+
+      <div style="display: flex; align-items: stretch; gap: 6px; padding: 7px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(23,20,71,.10)">
+        <label style="flex: 2 1 300px; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 18px; border-radius: 13px; cursor: text">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#3E2F94" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+          <span style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5F6B7C">Qué buscás</span>
+            <span style="font-size: 15.5px; color: #1B2430">Cerámica</span>
+          </span>
+        </label>
+        <span style="width: 1px; background: #E2E6EE; margin: 12px 0"></span>
+        <label style="flex: 1 1 170px; display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 60px; padding: 0 18px; border-radius: 13px; cursor: pointer">
+          <span style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5F6B7C">Rubro</span>
+            <span style="font-size: 15.5px; color: #1B2430">Artesanías</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </label>
+        <span style="width: 1px; background: #E2E6EE; margin: 12px 0"></span>
+        <label style="flex: 1.2 1 210px; display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 60px; padding: 0 18px; border-radius: 13px; cursor: text">
+          <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <span style="font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5F6B7C">Cerca de</span>
+            <span style="font-size: 15.5px; color: #1B2430; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Güemes 1200</span>
+          </span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5248AE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        </label>
+        <button type="button" class="u-btn-primario" style="flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 9px; width: 128px; border: 0; border-radius: 14px; background: #5248AE; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+          Buscar
+        </button>
+      </div>
+
+      <!-- Los filtros que no tiene la competencia. Activos van en índigo lleno;
+           inactivos, contorno. El del radio muestra el valor porque es el que
+           más se toca. -->
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 9px">
+        <sc-for list="{{ filtros }}" as="f" hint-placeholder-count="5">
+          <button type="button" onClick="{{ f.alternar }}" class="u-chip" style="{{ f.estilo }}">
+            <span style="{{ f.punto }}"></span>{{ f.etiqueta }}
+          </button>
+        </sc-for>
+        <span style="flex: 1"></span>
+        <span style="font-size: 13px; color: #5F6B7C">Ordenar por</span>
+        <button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #1B2430; font-size: 13.5px; font-weight: 600; cursor: pointer">
+          Más cerca primero
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTADOS -->
+  <section style="padding: 30px 0 56px">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: 1fr 344px; gap: 28px; align-items: start">
+
+      <div style="display: flex; flex-direction: column; gap: 18px">
+
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+          <h1 style="font-size: 21px; letter-spacing: -.02em">14 emprendimientos a menos de 3 km</h1>
+          <span style="font-size: 13.5px; color: #5F6B7C">Ordenados por cercanía a Güemes 1200</span>
+        </div>
+
+        <!-- Las tarjetas: cada una dice lo que Mercado Libre no puede decir --
+             a cuántas cuadras está, si está abierto y hasta qué hora, quién lo
+             hace y si esta semana va a estar en una feria. -->
+        <sc-for list="{{ resultados }}" as="r" hint-placeholder-count="4">
+          <article class="u-card" style="display: grid; grid-template-columns: 232px 1fr; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; overflow: hidden">
+
+            <div style="position: relative; min-height: 196px; background: {{ r.foto }}">
+              <span style="position: absolute; left: 10px; top: 10px; display: flex; align-items: center; gap: 7px">
+                <span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 700; box-shadow: 0 2px 8px rgba(23,20,71,.3)">{{ r.n }}</span>
+                <span style="{{ r.estadoChip }}"><span style="{{ r.estadoPunto }}"></span>{{ r.estado }}</span>
+              </span>
+              <span style="position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: rgba(10,8,28,.55); color: rgba(255,255,255,.9); font-size: 10.5px; font-weight: 600">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+                {{ r.fotos }}
+              </span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; padding: 18px 20px">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px">
+                <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+                  <span style="{{ r.rubroChip }}">{{ r.rubro }}</span>
+                  <h2 style="font-size: 19px; letter-spacing: -.02em">{{ r.nombre }}</h2>
+                </div>
+                <button type="button" aria-label="Guardar en favoritos" style="flex-shrink: 0; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; cursor: pointer; padding: 0">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="{{ r.corazonRelleno }}" stroke="{{ r.corazonBorde }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.2-4.5-7.2-9.4A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.9C19.2 15.5 12 20 12 20Z"/></svg>
+                </button>
+              </div>
+
+              <p style="margin: 0; font-size: 13.5px; line-height: 1.55; color: #4A5666">{{ r.resumen }}</p>
+
+              <!-- La fila de datos duros. Distancia primero: es el argumento. -->
+              <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px">
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-size: 12.5px; font-weight: 600">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                  {{ r.distancia }}
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: #FCF6EA; color: #8A6416; font-size: 12.5px; font-weight: 600">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+                  {{ r.rating }} · {{ r.resenias }}
+                </span>
+                <span style="{{ r.horarioChip }}">{{ r.horario }}</span>
+              </div>
+
+              <span style="height: 1px; background: #E2E6EE"></span>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px">
+                <span style="display: inline-flex; align-items: center; gap: 9px; min-width: 0">
+                  <span style="{{ r.avatar }}">{{ r.iniciales }}</span>
+                  <span style="display: flex; flex-direction: column; gap: 1px; min-width: 0">
+                    <span style="font-size: 13px; font-weight: 600; color: #1B2430; white-space: nowrap">{{ r.persona }}</span>
+                    <span style="font-size: 12px; color: #5F6B7C; white-space: nowrap">{{ r.desde }}</span>
+                  </span>
+                </span>
+                <span style="{{ r.feriaChip }}">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+                  {{ r.feria }}
+                </span>
+              </div>
+            </div>
+          </article>
+        </sc-for>
+
+        <div style="display: flex; justify-content: center; padding-top: 6px">
+          <button type="button" style="display: inline-flex; align-items: center; justify-content: center; height: 46px; padding: 0 26px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-size: 14.5px; font-weight: 600; cursor: pointer">Ver los 14</button>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: el mapa. Es lo que convierte una lista en un barrio. -->
+      <aside style="position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px">
+        <div style="border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; overflow: hidden">
+          <div style="position: relative; height: 288px; background: linear-gradient(160deg, #EEF1F7 0%, #E2E6EE 100%)">
+            <span style="position: absolute; inset: 0; background-image: linear-gradient(rgba(94,106,122,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(94,106,122,.13) 1px, transparent 1px); background-size: 34px 34px"></span>
+            <span style="position: absolute; left: 12%; top: 62%; width: 86px; height: 5px; border-radius: 999px; background: rgba(94,106,122,.22)"></span>
+            <span style="position: absolute; left: 44%; top: 18%; width: 5px; height: 130px; border-radius: 999px; background: rgba(94,106,122,.22)"></span>
+            <span style="position: absolute; left: 46.5%; top: 46%; transform: translate(-50%, -50%); width: 74px; height: 74px; border-radius: 999px; background: rgba(82,72,174,.14)"></span>
+            <span style="position: absolute; left: 46.5%; top: 46%; transform: translate(-50%, -50%); width: 15px; height: 15px; border-radius: 999px; background: #5248AE; border: 3px solid #FFFFFF; box-shadow: 0 2px 8px rgba(23,20,71,.3)"></span>
+            <sc-for list="{{ pines }}" as="p" hint-placeholder-count="4">
+              <span style="{{ p.estilo }}">{{ p.n }}</span>
+            </sc-for>
+            <span style="position: absolute; left: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E2E6EE; font-size: 11.5px; font-weight: 600; color: #4A5666">
+              <span style="width: 9px; height: 9px; border-radius: 999px; background: #5248AE"></span>Tu ubicación
+            </span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px">
+            <span style="font-size: 13px; color: #5F6B7C">Radio de 3 km</span>
+            <a href="#" style="font-size: 13px; font-weight: 600">Ver el mapa completo</a>
+          </div>
+        </div>
+
+        <!-- Un empujón honesto: si nadie está abierto, el filtro no deja la
+             pantalla vacía, ofrece la alternativa. -->
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <span style="display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 5px 11px; border-radius: 7px; background: #E6F4EC; color: #1C7B53; font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase">Cerca tuyo esta semana</span>
+          <h3 style="font-size: 16px; letter-spacing: -.015em">Feria de Plaza Mitre</h3>
+          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #4A5666">Sábado 6 y domingo 7, de 10 a 19. Van a estar 6 de los emprendimientos de esta búsqueda.</p>
+          <a href="#" style="display: inline-flex; align-items: center; gap: 7px; margin-top: 2px; font-size: 13.5px; font-weight: 600">
+            Ver quiénes van
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+          </a>
+        </div>
+      </aside>
+    </div>
+  </section>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"radio":{"editor":"enum","options":["1 km","3 km","10 km","Sin límite"],"default":"3 km","section":"Filtros"},"$preview":{"width":1440,"height":1580}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const radio = this.props.radio ?? "3 km";
+    const activos = (this.state && this.state.activos) || { abierto: true, cerca: true, resenias: false, favoritos: false };
+
+    const chip = (encendido) =>
+      "display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 15px; border-radius: 999px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: border-color .15s ease, background-color .15s ease; "
+      + (encendido
+        ? "border: 1px solid #5248AE; background: #5248AE; color: #FFFFFF"
+        : "border: 1px solid #E2E6EE; background: #FFFFFF; color: #4A5666");
+    const punto = (encendido, color) => encendido
+      ? "width: 7px; height: 7px; border-radius: 999px; background: " + color
+      : "display: none";
+
+    const alternar = (clave) => () => {
+      const copia = Object.assign({}, activos);
+      copia[clave] = !copia[clave];
+      this.setState({ activos: copia });
+    };
+
+    const filtros = [
+      { clave: "abierto", etiqueta: "Abierto ahora", color: "#7EE2A8" },
+      { clave: "cerca", etiqueta: "A menos de " + radio, color: "#FFFFFF" },
+      { clave: "resenias", etiqueta: "Con reseñas", color: "#FFFFFF" },
+      { clave: "favoritos", etiqueta: "Mis favoritos", color: "#FFFFFF" }
+    ].map((f) => ({
+      etiqueta: f.etiqueta,
+      estilo: chip(activos[f.clave]),
+      punto: punto(activos[f.clave], f.color),
+      alternar: alternar(f.clave)
+    }));
+
+
+    const RUBROS = {
+      "Artesanías":   ["#EEEFFE", "#635EA3"],
+      "Alimentos":    ["#FDECE5", "#9A5230"],
+      "Hogar":        ["#E5F5EC", "#1C7B53"],
+      "Indumentaria": ["#FBEBF2", "#954D71"]
+    };
+
+    const datos = [
+      { nombre: "Estudio Verde Cerámica", rubro: "Artesanías", persona: "Valentina Ruiz", desde: "Publica desde 2024",
+        resumen: "Vajilla de gres hecha a torno para casas y restaurantes, más talleres de esmaltado una vez por mes.",
+        distancia: "a 400 m", rating: "4,6", resenias: "23 reseñas", fotos: "8 fotos",
+        abierto: true, horario: "Cierra 19:00", feria: "Feria de Plaza Mitre", favorito: true,
+        foto: "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)" },
+      { nombre: "Panadería La Masa Madre", rubro: "Alimentos", persona: "Marina Cabral", desde: "Publica desde 2023",
+        resumen: "Fermentación de 24 horas y harinas de molino local. Los pedidos del fin de semana se toman hasta el jueves.",
+        distancia: "a 1,2 km", rating: "4,8", resenias: "31 reseñas", fotos: "12 fotos",
+        abierto: true, horario: "Cierra 13:00", feria: "", favorito: false,
+        foto: "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #9A5230 150%)" },
+      { nombre: "Taller Raíz — Muebles", rubro: "Hogar", persona: "Diego Ferrer", desde: "Publica desde 2025",
+        resumen: "Restauración y muebles a medida en madera maciza. Presupuesto por foto en el día.",
+        distancia: "a 2,1 km", rating: "4,9", resenias: "12 reseñas", fotos: "6 fotos",
+        abierto: false, horario: "Abre mañana 9:00", feria: "Feria de Plaza Mitre", favorito: false,
+        foto: "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #1C7B53 150%)" },
+      { nombre: "Hilo Norte", rubro: "Indumentaria", persona: "Sofía Miranda", desde: "Publica desde 2024",
+        resumen: "Prendas tejidas en lana de la zona, por encargo y con prueba antes de terminar.",
+        distancia: "a 2,8 km", rating: "4,7", resenias: "18 reseñas", fotos: "9 fotos",
+        abierto: true, horario: "Cierra 20:00", feria: "", favorito: false,
+        foto: "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #954D71 150%)" }
+    ];
+
+    const resultados = datos.map((d, n) => {
+      const par = RUBROS[d.rubro] || ["#EEF1F7", "#5F6B7C"];
+      return Object.assign({}, d, {
+        n: String(n + 1),
+        iniciales: d.persona.split(" ").map((t) => t[0]).join(""),
+        rubroChip: "align-self: flex-start; display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: "
+          + par[0] + "; color: " + par[1] + "; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase",
+        avatar: "flex-shrink: 0; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 700",
+        estadoChip: "display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; "
+          + (d.abierto ? "background: rgba(10,8,28,.55); color: #A7EFC6" : "background: rgba(10,8,28,.55); color: rgba(255,255,255,.78)"),
+        estadoPunto: "width: 6px; height: 6px; border-radius: 999px; background: " + (d.abierto ? "#7EE2A8" : "#9AA3B2"),
+        estado: d.abierto ? "Abierto ahora" : "Cerrado",
+        horarioChip: "display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.5px; font-weight: 600",
+        corazonRelleno: d.favorito ? "#DC2626" : "none",
+        corazonBorde: d.favorito ? "#DC2626" : "#5F6B7C",
+        feriaChip: d.feria
+          ? "flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 12px; font-weight: 600"
+          : "display: none",
+        feria: d.feria || ""
+      });
+    });
+
+    const posiciones = [["30%", "34%"], ["62%", "28%"], ["38%", "68%"], ["71%", "60%"]];
+    const pines = posiciones.map((p, n) => ({
+      n: String(n + 1),
+      estilo: "position: absolute; left: " + p[0] + "; top: " + p[1]
+        + "; transform: translate(-50%, -50%); width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; border: 2px solid #5248AE; color: #33267C; font-size: 11.5px; font-weight: 700; box-shadow: 0 3px 10px rgba(23,20,71,.22)"
+    }));
+
+    return { filtros: filtros, resultados: resultados, pines: pines };
+  }
+}
+</script>
+</body>
+</html>

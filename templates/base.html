@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title>{% block title %}IMPULSAR – Impulsá tu emprendimiento local{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# El token, para los formularios que arma el JavaScript (hoy: el corazon
+       de favorito de las tarjetas de la home, que se pintan con JS y no tienen
+       un csrf_token() de Jinja a mano). Es el mismo token de la sesion que ya
+       viaja en cada formulario del servidor, no uno nuevo. #}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{% block meta_description %}Centralizá la información de tu emprendimiento local, mostrate a nuevos clientes y conectate con el ecosistema emprendedor de tu ciudad.{% endblock %}">
 
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/logo_impulsar.png') }}">
@@ -51,120 +56,242 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+    {# Pineada a la misma version que el <script> de los mapas (ver el
+       comentario alla): el CSS y el JS de maplibre tienen que ir juntos. #}
+<link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet" />
 </head>
 <body>
+    {# La barra y el pie van en bloques para que una pantalla pueda no
+       tenerlos. Hoy lo usan entrar y crear cuenta, que son a pantalla completa
+       sobre una foto y llevan el logo adentro: la barra ahi ofrecia "Acceder" y
+       "Registrarse", que es justo lo que la pantalla ya esta haciendo. #}
+{% block navbar %}
+    {# La barra del rediseno (disenio-navegacion/). Dos bandas, no una fila:
+       arriba identidad + secciones + acciones, abajo el buscador solo.
+
+       Antes el buscador competia con el logo y las acciones en la misma fila y
+       por eso aparecia recien en 1200px. Ahora tiene su banda entera: centrado,
+       720px de ancho maximo, 52px de alto, y esta en todas las pantallas menos
+       el home, que ya tiene su propia banda de busqueda (.buscador).
+
+       "Inicio" se fue de las secciones: el logo ya es el inicio. Quedan las
+       tres de todos los dias, centradas, con la activa subrayada en indigo.
+
+       "Publicar" tambien se fue de aca: era el unico boton lleno de la barra y
+       se repetia en cada pantalla, aunque cada seccion ya tiene su propio
+       llamado. Vive en el menu de la cuenta y, en telefono, arriba de la
+       pantalla Mi cuenta. #}
     <header class="navbar">
-        <div class="container navbar__content">
-            <div class="navbar__logo">
-                <a href="{{ url_for('index') }}">
-                    <img src="{{ url_for('static', filename='icons/logo_impulsar.png') }}" alt="IMPULSAR" class="navbar__logo-image">
+        <div class="container navbar__fila">
+            <a href="{{ url_for('index') }}" class="navbar__logo">
+                <img src="{{ url_for('static', filename='icons/logo_impulsar.png') }}" alt="IMPULSAR" class="navbar__logo-image">
+            </a>
+
+            {# En telefono estas tres no entran en la barra: se apagan aca y
+               reaparecen como solapas arriba del contenido (mas abajo). #}
+            <nav class="navbar__secciones" aria-label="Secciones">
+                {# El catálogo de productos NO tiene ítem propio en la barra: con
+                   cuatro secciones la nav, que va centrada al 50 % exacto, se
+                   montaba encima del bloque de acciones (ver DISENIO.md,
+                   «Productos NO entra en la barra global»). Se entra desde
+                   Emprendimientos y desde el buscador, y acá queda marcado
+                   «Emprendimientos», que es de donde se viene. #}
+                {% set en_emprendimientos = request.endpoint and (
+                    request.endpoint.startswith('blog.')
+                    or request.endpoint in ('products.catalogo', 'products.detalle')
+                ) %}
+                <a href="{{ url_for('blog.index') }}"
+                   class="navbar__seccion {% if en_emprendimientos %}navbar__seccion--activa{% endif %}"
+                   {% if en_emprendimientos %}aria-current="page"{% endif %}>
+                    Emprendimientos
                 </a>
-            </div>
-<nav class="navbar__links" id="navbar-links">
+                {# Solo la busqueda publica se marca activa, y no todo el
+                   blueprint: el resto de /servicios es privado (el panel del
+                   dueno y sus solicitudes) y se entra desde el menu de la
+                   cuenta, no desde aca. #}
+                <a href="{{ url_for('servicios.buscar') }}"
+                   class="navbar__seccion {% if request.endpoint == 'servicios.buscar' %}navbar__seccion--activa{% endif %}"
+                   {% if request.endpoint == 'servicios.buscar' %}aria-current="page"{% endif %}>
+                    Servicios
+                </a>
+                <a href="{{ url_for('eventos.index') }}"
+                   class="navbar__seccion {% if request.endpoint and request.endpoint.startswith('eventos.') %}navbar__seccion--activa{% endif %}"
+                   {% if request.endpoint and request.endpoint.startswith('eventos.') %}aria-current="page"{% endif %}>
+                    Eventos y ferias
+                </a>
+            </nav>
 
-    <a href="{{ url_for('index') }}" class="navbar__link {% if request.endpoint == 'index' %}navbar__link--active{% endif %}">
-        Inicio
-    </a>
-
-    <a href="{{ url_for('blog.index') }}" class="navbar__link {% if request.endpoint and request.endpoint.startswith('blog.') %}navbar__link--active{% endif %}">
-        Emprendimientos
-    </a>
-
-    <a href="{{ url_for('eventos.index') }}" class="navbar__link {% if request.endpoint and request.endpoint.startswith('eventos.') %}navbar__link--active{% endif %}">
-        Eventos
-    </a>
-
-    {# Solo la busqueda publica se marca activa, y no todo el blueprint: el
-       resto de /servicios es privado (el panel del dueño y sus solicitudes) y
-       se entra desde el menu de usuario, no desde aca. #}
-    <a href="{{ url_for('servicios.buscar') }}" class="navbar__link {% if request.endpoint == 'servicios.buscar' %}navbar__link--active{% endif %}">
-        Servicios
-    </a>
-
-    {# "Sobre IMPULSAR" y "Contacto" viven en el footer: son paginas
-       institucionales, se leen una vez y no compiten con Inicio,
-       Emprendimientos y Eventos, que son la navegacion de todos los dias. #}
-
-</nav>
-
-            <div class="navbar__actions">
+            <div class="navbar__acciones">
                 {% if g.user %}
-                    <div class="navbar__user">
-                        <button type="button" class="navbar__user-toggle" aria-label="Menú de usuario" aria-haspopup="true" aria-expanded="false" aria-controls="user-menu">
-                            <div class="navbar__avatar">
-                                {{ g.user.username[0]|upper }}
-                            </div>
-                            <span class="navbar__user-name">
-                                {{ g.user.username }}
-                            </span>
-                            <span class="navbar__user-caret">▾</span>
+                    {# Favoritos y Mensajes salen del menu y pasan a ser iconos
+                       visibles: estaban a dos clicks y el aviso de mensajes
+                       nuevos vivia escondido adentro del menu. En telefono se
+                       apagan porque los tiene la barra de abajo. #}
+                    <a href="{{ url_for('blog.my_favorites') }}"
+                       class="navbar__icono {% if request.endpoint == 'blog.my_favorites' %}navbar__icono--activo{% endif %}"
+                       title="Favoritos" aria-label="Favoritos">
+                        {% with clave = 'favoritos', tamanio = 22 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    </a>
+
+                    <a href="{{ url_for('messages.inbox') }}"
+                       class="navbar__icono navbar__icono--con-badge {% if request.endpoint and request.endpoint.startswith('messages.') %}navbar__icono--activo{% endif %}"
+                       title="Mensajes" aria-label="Mensajes">
+                        {% with clave = 'mensajes', tamanio = 22 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        {# Solo los mensajes sin leer. El badge de antes sumaba
+                           mensajes + resenias + presupuestos en un numero
+                           pegado a "Mensajes", que es lo que lo hacia mentir:
+                           el endpoint ya los devuelve separados y ahora cada
+                           contador va en SU item. #}
+                        <span class="badge-notif badge-notif--flotante" data-notif="unread_messages" hidden aria-live="polite"></span>
+                    </a>
+                {% endif %}
+
+                <button type="button"
+                        class="theme-toggle navbar__icono"
+                        id="theme-toggle"
+                        aria-label="Cambiar entre modo claro y oscuro"
+                        title="Cambiar entre modo claro y oscuro"
+                        aria-pressed="false">
+                    {# Los dos iconos van siempre en el HTML y el CSS muestra el
+                       que corresponde segun data-theme. Si lo eligiera el JS,
+                       el icono parpadearia igual que parpadeaba la pagina. #}
+                    <span class="theme-toggle__icon theme-toggle__icon--light">
+                        {% with clave = 'tema-oscuro', tamanio = 21 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    </span>
+                    <span class="theme-toggle__icon theme-toggle__icon--dark">
+                        {% with clave = 'tema-claro', tamanio = 21 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    </span>
+                </button>
+
+                {% if g.user %}
+                    <span class="navbar__separador" aria-hidden="true"></span>
+
+                    <div class="navbar__usuario">
+                        <button type="button"
+                                class="navbar__avatar-boton"
+                                id="user-menu-toggle"
+                                aria-label="Menú de la cuenta"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                aria-controls="user-menu">
+                            <span class="navbar__avatar" aria-hidden="true">{{ g.user.username[0]|upper }}</span>
+                            {% with clave = 'chevron-abajo', tamanio = 16, trazo = 1.9 %}{% include "partials/_icono_nav.html" %}{% endwith %}
                         </button>
 
-                        <div class="user-menu" id="user-menu">
-                            <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}" class="user-menu__item">
-                                Ver perfil
-                            </a>
-                            <a href="{{ url_for('blog.my_favorites') }}" class="user-menu__item">
-                                Mis favoritos
-                            </a>
-                            <a href="{{ url_for('messages.inbox') }}" class="user-menu__item">
-                                Mensajes
-                                <span id="notif-badge" class="badge--notif" style="display:none;" aria-live="polite"></span>
-                            </a>
-                            <a href="{{ url_for('servicios.solicitudes') }}" class="user-menu__item">
-                                Solicitudes
-                            </a>
-                            {% if g.user.rol == 'admin' %}
-                                <a href="{{ url_for('admin.dashboard') }}" class="user-menu__item">
-                                    Panel de administración
-                                </a>
-                            {% endif %}
-                            <a href="{{ url_for('auth.logout') }}" class="user-menu__item user-menu__item--danger">
-                                Salir
-                            </a>
-                        </div>
+                        {% include "partials/_menu_cuenta_desplegable.html" with context %}
                     </div>
                 {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="btn btn--ghost">Acceder</a>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Registrarse</a>
+                    <a href="{{ url_for('auth.login') }}" class="navbar__acceder">Acceder</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn--primary navbar__crear">Crear cuenta</a>
                 {% endif %}
             </div>
-
-
-            {# Va fuera de .navbar__actions a proposito: en mobile ese contenedor
-               se colapsa dentro del menu hamburguesa, y el switch de tema tiene
-               que quedar visible en todas las páginas y tamaños. #}
-            <button type="button"
-                    class="theme-toggle"
-                    id="theme-toggle"
-                    aria-label="Cambiar entre modo claro y oscuro"
-                    title="Cambiar entre modo claro y oscuro"
-                    aria-pressed="false">
-                {# Los dos iconos van siempre en el HTML y el CSS muestra el que
-                   corresponde segun data-theme. Si lo eligiera el JS, el icono
-                   parpadearia igual que parpadeaba la pagina. #}
-                <span class="theme-toggle__icon theme-toggle__icon--light" aria-hidden="true">🌙</span>
-                <span class="theme-toggle__icon theme-toggle__icon--dark" aria-hidden="true">☀️</span>
-            </button>
-
-            <button type="button" class="navbar__toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navbar-links">
-                ☰
-            </button>
         </div>
+
+        {# La banda del buscador. No va en las dos pantallas que ya tienen la
+           suya propia y mas completa (las dos suman el rubro): el home
+           (.buscador) y el listado (.barra-filtros). Ahi dibujarla seria
+           apilar dos buscadores, uno arriba del otro, preguntando lo mismo.
+           Cual de los dos sobrevive en el listado se decide cuando toque el
+           rediseno de esa pantalla (disenio-inicio/Resultados).
+
+           El catalogo de productos entra en la misma lista por lo mismo: su
+           .barra-filtros ya tiene el "que buscas" y el "cerca de", y encima
+           buscarian en tablas distintas -- el de arriba emprendimientos, el de
+           adentro productos -- o sea dos cajas iguales que hacen cosas
+           distintas, una arriba de la otra. #}
+        {% if request.endpoint not in ('index', 'blog.index', 'products.catalogo') %}
+            <div class="navbar__banda">
+                <form class="buscador-nav" action="{{ url_for('blog.index') }}" method="get" role="search">
+                    <div class="buscador-nav__campo buscador-nav__campo--que">
+                        <span class="buscador-nav__icono" aria-hidden="true">
+                            {% with clave = 'buscar', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </span>
+                        <label class="sr-only" for="nav-q">Qué buscás</label>
+                        <input type="search"
+                               id="nav-q"
+                               name="q"
+                               class="buscador-nav__input"
+                               placeholder="Pan de masa madre, plomero, cerámica…"
+                               value="{{ request.args.get('q', '') if request.endpoint == 'blog.index' else '' }}">
+                    </div>
+
+                    <span class="buscador-nav__separador" aria-hidden="true"></span>
+
+                    <div class="buscador-nav__campo buscador-nav__campo--donde">
+                        <span class="buscador-nav__icono buscador-nav__icono--pin" aria-hidden="true">
+                            {% with clave = 'ubicacion', tamanio = 18, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </span>
+                        <label class="sr-only" for="nav-near">Dónde</label>
+                        <input type="text"
+                               id="nav-near"
+                               name="near"
+                               class="buscador-nav__input"
+                               placeholder="Tu barrio o ciudad"
+                               value="{{ request.args.get('near', '') if request.endpoint == 'blog.index' else '' }}">
+                    </div>
+
+                    <button type="submit" class="buscador-nav__boton">Buscar</button>
+                </form>
+            </div>
+        {% endif %}
     </header>
+
+    {# Las tres secciones, otra vez, para el telefono: en 390px no entran en la
+       barra. Solo en las tres pantallas que agrupa "Explorar", que es la
+       pestana desde donde se llega. El CSS las apaga en escritorio, donde ya
+       estan arriba. #}
+    {% if request.endpoint in ('blog.index', 'servicios.buscar', 'eventos.index') %}
+        <nav class="solapas-seccion" aria-label="Secciones">
+            <a href="{{ url_for('blog.index') }}"
+               class="solapas-seccion__tab {% if request.endpoint == 'blog.index' %}solapas-seccion__tab--activa{% endif %}"
+               {% if request.endpoint == 'blog.index' %}aria-current="page"{% endif %}>Emprendimientos</a>
+            <a href="{{ url_for('servicios.buscar') }}"
+               class="solapas-seccion__tab {% if request.endpoint == 'servicios.buscar' %}solapas-seccion__tab--activa{% endif %}"
+               {% if request.endpoint == 'servicios.buscar' %}aria-current="page"{% endif %}>Servicios</a>
+            <a href="{{ url_for('eventos.index') }}"
+               class="solapas-seccion__tab {% if request.endpoint == 'eventos.index' %}solapas-seccion__tab--activa{% endif %}"
+               {% if request.endpoint == 'eventos.index' %}aria-current="page"{% endif %}>Eventos</a>
+        </nav>
+    {% endif %}
+{% endblock %}
 
     <main>
         {% block content %}{% endblock %}
     </main>
 
+{% block footer %}
     <footer class="footer">
-        <div class="container footer__content">
-            <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
-            <nav class="footer__links" aria-label="Enlaces del pie">
+        {# En columnas, como quedo en el rediseño: la fila unica de cuatro links
+           mezclaba lo institucional con la navegacion. Ahora cada grupo dice
+           que es, y los links son los mismos que ya existian. #}
+        <div class="container footer__grid">
+            <div class="footer__col">
+                <h2 class="footer__titulo">Explorar</h2>
+                <a href="{{ url_for('blog.index') }}" class="footer__link">Emprendimientos</a>
+                {# El catalogo no esta en la barra de arriba (ver el comentario
+                   de la nav), asi que el pie es una de sus dos puertas fijas.
+                   La otra es el enlace del listado. #}
+                <a href="{{ url_for('products.catalogo') }}" class="footer__link">Productos</a>
+                <a href="{{ url_for('eventos.index') }}" class="footer__link">Eventos y ferias</a>
+                <a href="{{ url_for('servicios.buscar') }}" class="footer__link">Servicios</a>
+            </div>
+
+            <div class="footer__col">
+                <h2 class="footer__titulo">Emprendedores</h2>
+                {% if g.user %}
+                    <a href="{{ url_for('blog.my_posts') }}" class="footer__link">Publicar</a>
+                    <a href="{{ url_for('servicios.solicitudes') }}" class="footer__link">Solicitudes</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="footer__link">Publicar</a>
+                    <a href="{{ url_for('auth.register') }}" class="footer__link">Crear una cuenta</a>
+                {% endif %}
+            </div>
+
+            <div class="footer__col">
+                <h2 class="footer__titulo">IMPULSAR</h2>
                 <a href="{{ url_for('pages.about') }}"
                    class="footer__link {% if request.endpoint == 'pages.about' %}footer__link--active{% endif %}">
-                    Sobre IMPULSAR
+                    Sobre el proyecto
                 </a>
                 <a href="{{ url_for('pages.contact') }}"
                    class="footer__link {% if request.endpoint == 'pages.contact' %}footer__link--active{% endif %}">
@@ -172,10 +299,18 @@
                 </a>
                 <a href="{{ url_for('pages.terms') }}" class="footer__link">Términos</a>
                 <a href="{{ url_for('pages.privacy') }}" class="footer__link">Privacidad</a>
-            </nav>
+            </div>
+        </div>
+
+        <div class="container footer__legal">
+            <span>© {{ 2025 }} IMPULSAR – Plataforma para emprendedores locales</span>
         </div>
     </footer>
+{% endblock %}
 
+{% block tabbar %}
+    {% include "partials/_tabbar.html" with context %}
+{% endblock %}
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/share.js') }}"></script>

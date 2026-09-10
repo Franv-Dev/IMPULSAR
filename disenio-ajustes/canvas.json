@@ -1,0 +1,74 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Ajustes · Perfil público", "x": 0, "y": 0, "w": 1440, "h": 1680, "is_interactive": true, "page": "page-1" },
+    { "file": "MainMovil.dc.html", "title": "Perfil público · teléfono", "x": 1560, "y": 0, "w": 390, "h": 1220, "is_interactive": true, "page": "page-1" },
+    { "file": "Horarios.dc.html", "title": "Ajustes · Horarios", "x": 2070, "y": 0, "w": 1440, "h": 1180, "is_interactive": true, "page": "page-1" },
+    { "file": "HorariosMovil.dc.html", "title": "Horarios · teléfono", "x": 3630, "y": 0, "w": 390, "h": 1000, "is_interactive": true, "page": "page-1" },
+    { "file": "Contacto.dc.html", "title": "Ajustes · Contacto y redes", "x": 0, "y": 0, "w": 1440, "h": 1080, "page": "page-2" },
+    { "file": "Cuenta.dc.html", "title": "Ajustes · Cuenta y contraseña", "x": 1560, "y": 0, "w": 1440, "h": 1220, "page": "page-2" },
+    { "file": "Notificaciones.dc.html", "title": "Ajustes · Notificaciones", "x": 3120, "y": 0, "w": 1440, "h": 980, "is_interactive": true, "page": "page-2" }
+  ],
+  "annotations": [
+    {
+      "id": "nota-perfil-publico",
+      "x": 0,
+      "y": -300,
+      "w": 640,
+      "page": "page-1",
+      "text": "Editar perfil, rediseñado.\n\nLo que hay hoy: diez campos apilados en una sola columna, los dos de foto como <input type=file> pelados, y el botón de guardar al final del scroll.\n\nCuatro cambios de fondo:\n\n1. Dos columnas: los campos a la izquierda, y a la derecha el perfil como lo va a ver la gente. Escribí en la biografía y mirá la previa.\n2. Las fotos muestran lo que hay cargado, con Cambiar y Quitar encima. Tocá \"Quitar\" en la portada.\n3. \"Ciudad y provincia\" y \"Dirección\" dejan de confundirse: una dice \"solo texto\", la otra \"mueve el mapa\", y abajo se confirma que la dirección se encontró. Hoy se geocodifica en silencio.\n4. Guardar es una barra fija con el estado (\"tenés cambios sin guardar\"), no un botón al que hay que llegar.\n\nTeléfono y redes se van a su propia solapa: son siete campos que nadie toca el mismo día que cambia la bio."
+    },
+    {
+      "id": "nota-perfil-movil",
+      "x": 1560,
+      "y": -220,
+      "w": 390,
+      "page": "page-1",
+      "text": "El mismo formulario en teléfono.\n\nLa previa no cabe al costado: es una tarjeta que se abre y se cierra desde la barra de arriba (tocá \"Ocultar\"). Las solapas viajan en una fila que se desliza, y guardar queda fijo abajo, con 44 px de alto."
+    },
+    {
+      "id": "nota-horarios",
+      "x": 2070,
+      "y": -260,
+      "w": 620,
+      "page": "page-1",
+      "text": "Horarios, la otra pantalla que ya existe.\n\nHoy son siete filas con dos <input type=time> y un checkbox \"Cerrado\" al final, y se cargan a ciegas: qué cartel encienden recién se ve entrando al perfil.\n\nAcá: el interruptor reemplaza al checkbox y apaga la fila entera (probalo), dos atajos hacen el trabajo repetido —\"Copiar el lunes a toda la semana\" copia el rango de verdad— y la columna de la derecha muestra el chip verde y la semana como se leen del otro lado.\n\nEl jueves hace de \"hoy\" para que el cartel diga algo verdadero sobre estas mismas filas."
+    },
+    {
+      "id": "nota-horarios-movil",
+      "x": 3630,
+      "y": -170,
+      "w": 390,
+      "page": "page-1",
+      "text": "Horarios en teléfono. Cada día es una tarjeta y no una fila de cinco controles: en 390 px, día + horas + \"cerrado\" en un renglón no entra sin achicar los controles abajo del piso tocable."
+    },
+    {
+      "id": "nota-contacto",
+      "x": 0,
+      "y": -250,
+      "w": 620,
+      "page": "page-2",
+      "text": "Las tres solapas que hoy están dibujadas y apagadas.\n\nContacto y redes. Los dos teléfonos son los únicos campos del perfil que la app valida, y el error vuelve como un aviso suelto arriba de todo: acá el error vive EN el campo y el botón de guardar queda apagado hasta corregirlo.\n\nLas redes piden el usuario, no la dirección entera: el prefijo va fijo adentro del campo."
+    },
+    {
+      "id": "nota-cuenta",
+      "x": 1560,
+      "y": -230,
+      "w": 620,
+      "page": "page-2",
+      "text": "Cuenta y contraseña. Nada de esto existe en el código todavía: no hay ruta para cambiar la contraseña ni el correo, ni para cerrar la cuenta.\n\nLo que sí es real es la advertencia del nombre de usuario: el slug del perfil sale de ahí (User.generar_slug_unico), así que cambiarlo rompe los links que ya compartiste. Hoy la app no lo dice en ningún lado.\n\nEl botón de borrar va con borde rojo y no relleno: uno rojo grande se toca por error."
+    },
+    {
+      "id": "nota-notificaciones",
+      "x": 3120,
+      "y": -210,
+      "w": 620,
+      "page": "page-2",
+      "text": "Notificaciones. Los tres avisos de la lista son exactamente los que la app manda hoy por mail (services/notificaciones_email.py): mensaje nuevo, presupuesto respondido y turno cancelado. Poder apagarlos es lo nuevo.\n\n\"Novedades de IMPULSAR\" es una propuesta, no algo que exista: va apagado por defecto.\n\nLos avisos en el navegador se dicen como lo que son —todavía no hay—, igual que en el resto de las pantallas."
+    }
+  ],
+  "pages": [
+    { "id": "page-1", "name": "Perfil y horarios" },
+    { "id": "page-2", "name": "Lo que falta" }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

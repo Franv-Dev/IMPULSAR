@@ -64,10 +64,23 @@ def _nombre_fk(tabla, columna):
 def _sin_foreign_keys_en_sqlite():
     """Apaga la verificacion de FK mientras dura el batch, solo en SQLite.
 
-    Misma necesidad que en b2b97d078fb2: el batch recrea reviews (copia a una
-    temporal, dropea la original y renombra), reviews esta referenciada por
-    reports.review_id y db.py deja PRAGMA foreign_keys=ON en toda conexion, asi
-    que el DROP TABLE moriria con "FOREIGN KEY constraint failed".
+    Misma necesidad que en b2b97d078fb2, pero NO el mismo sintoma. El batch
+    recrea reviews (copia a una temporal, dropea la original y renombra),
+    reviews esta referenciada por reports.review_id y db.py deja PRAGMA
+    foreign_keys=ON en toda conexion.
+
+    Lo que cambia es como se rompe. Este docstring decia que el DROP TABLE
+    "moriria con FOREIGN KEY constraint failed", y no: reports.review_id esta en
+    ON DELETE CASCADE. En SQLite un DROP TABLE corre un DELETE implicito, ese
+    DELETE dispara las acciones de las FK, y con una hija que cascadea el
+    resultado es que se vacia reports en silencio, sin ninguna excepcion. La
+    migracion termina "bien" y un PRAGMA foreign_key_check posterior da limpio,
+    porque no queda nada inconsistente: queda todo borrado. El unico rastro es
+    el conteo de filas.
+
+    En b2b97d078fb2 si se rompe ruidosamente, porque alla las hijas de users
+    todavia no cascadean. Cual de los dos sintomas toca depende de que hagan las
+    FK hijas en ese punto de la cadena, no del helper, que es el mismo.
 
     En MySQL no hace falta: ahi el batch es un ALTER TABLE comun, sin recrear.
     """

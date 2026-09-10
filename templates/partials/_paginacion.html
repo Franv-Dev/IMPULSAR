@@ -13,10 +13,15 @@
 {% set link_params = dict(request.view_args, **query_params) %}
 
 {% if paginacion and paginacion.pages > 1 %}
+{# Las vistas paginan con error_out=False, asi que pedir una pagina que no
+   existe no da 404: devuelve una pagina vacia con .page tal cual lo pidieron.
+   En ese caso "Anterior" tiene que llevar a la ultima pagina real y no a
+   page - 1, que con ?page=999 seria la 998 y estaria igual de vacia. #}
+{% set pagina_previa = paginacion.pages if paginacion.page > paginacion.pages else paginacion.prev_num %}
 <nav class="pagination" aria-label="Paginación de emprendimientos">
     {% if paginacion.has_prev %}
         <a class="pagination__link"
-           href="{{ url_for(request.endpoint, page=paginacion.prev_num, **link_params) }}"
+           href="{{ url_for(request.endpoint, page=pagina_previa, **link_params) }}"
            rel="prev">← Anterior</a>
     {% else %}
         <span class="pagination__link pagination__link--disabled">← Anterior</span>

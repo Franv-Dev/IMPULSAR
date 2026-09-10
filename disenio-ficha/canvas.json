@@ -1,0 +1,45 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Ficha del emprendimiento — escritorio", "x": 0, "y": 0, "w": 1440, "h": 2360 },
+    { "file": "Nueva.dc.html", "title": "Ficha recién publicada — vista de la dueña", "x": 1560, "y": 0, "w": 1440, "h": 1500 },
+    { "file": "Movil.dc.html", "title": "Ficha — teléfono", "x": 3120, "y": 0, "w": 390, "h": 2140 }
+  ],
+  "annotations": [
+    {
+      "id": "nota-anclas",
+      "x": 0,
+      "y": -260,
+      "w": 640,
+      "text": "ANCLAS, NO PESTAÑAS.\nEl pedido pedía evaluar «Inicio | Productos | Servicios | Reseñas | Información». No van pestañas: la mayoría de los emprendimientos de IMPULSAR tienen dos o tres productos y ninguna reseña todavía, así que tres de las cuatro solapas abrirían vacías y la ficha parecería abandonada.\n\nEn su lugar, una barra de anclas que se pega arriba al scrollear y marca en qué bloque estás. Nada se esconde detrás de un click, y la página sigue siendo una sola para buscadores y para compartir.\n\nLas visitas (views_count) viven ahí, no al lado del nombre: son un dato del dueño, no algo que ayude a decidir."
+    },
+    {
+      "id": "nota-orden",
+      "x": 700,
+      "y": -260,
+      "w": 620,
+      "text": "EL ORDEN RESPONDE LAS CUATRO PREGUNTAS.\n1) Galería — qué es esto.\n2) Identidad — rubro, abierto ahora con hora de cierre, puntaje, distancia real y la descripción.\n3) Lo que vende / lo que hace por encargo / reseñas.\n4) Columna derecha fija: con quién estoy hablando, contactar, horarios de la semana, ferias y mapa.\n\nTodo sale de tablas que existen: productos (models/product.py), servicios con zona y turnos (app/servicios/modelo.py), horarios (app/perfil/modelo_horario.py), ferias (Post.eventos) y lat/lon.\n\nSe fue «responde en el día»: no hay ninguna métrica de tiempo de respuesta en el modelo."
+    },
+    {
+      "id": "nota-hoy",
+      "x": 0,
+      "y": 2420,
+      "w": 900,
+      "text": "LO QUE HOY ESTÁ MAL EN detail.html (466 líneas), y esta ficha corrige:\n\n· Las reseñas dicen «Usuario #7». El nombre de quien escribió no se muestra en ningún lado.\n· Las estrellas son los glifos ★ y ☆ escritos como texto, y hay un 📍 emoji en cada servicio — las dos cosas van contra la regla de iconografía de la guía.\n· Las ferias no aparecen. Post.eventos existe y es el dato que ninguna otra plataforma tiene.\n· «Abierto ahora» no dice a qué hora cierra, que es lo que uno necesita saber.\n· La distancia no se muestra aunque hay latitude y longitude.\n· Las miniaturas de la galería abren el archivo suelto en /static/uploads/, no un visor.\n· No hay ningún estado vacío pensado: una ficha recién creada es una sucesión de bloques en blanco."
+    },
+    {
+      "id": "nota-nueva",
+      "x": 1560,
+      "y": -260,
+      "w": 620,
+      "text": "LA FICHA RECIÉN PUBLICADA, VISTA POR SU DUEÑA.\nEs el estado en el que va a estar TODA ficha nueva, y hoy la app no lo diseña: se ven bloques vacíos y ya.\n\nTres decisiones:\n· La barra de arriba dice que estás parada en tu propia ficha. Hoy la app no lo dice en ningún lado.\n· Cada hueco explica POR QUÉ conviene llenarlo, no sólo que está vacío.\n· «Completá tu ficha» son cinco tareas reales, todas contra campos que existen. El aviso de abajo es cierto: sin horarios no entrás en el filtro «abierto ahora».\n\nEl vacío de reseñas aclara que no se piden ni se cargan a mano. Es la duda que trae cualquiera que viene de otra plataforma.\n\nPRODUCTOS Y SERVICIOS SON DOS BLOQUES DISTINTOS. A la dueña se le muestran los dos siempre, aunque estén vacíos: si no, nunca se entera de que puede cargar servicios. A un visitante se le dibuja sólo el que tiene algo adentro, así un emprendimiento que es puro servicio no muestra un «Lo que vende» en blanco."
+    },
+    {
+      "id": "nota-movil",
+      "x": 3120,
+      "y": 2200,
+      "w": 620,
+      "text": "EN TELÉFONO la foto va a sangre y los controles flotan encima: volver, compartir y guardar. Nada de barra de estado ni de teclado dibujados.\n\nEl contacto es una barra fija abajo, con «sin comisión» al lado — es LA acción de la pantalla y no puede vivir al final de 2.000 px de scroll.\n\nEsa barra ocupa el lugar de la barra de pestañas: la ficha es una pantalla abierta ENCIMA de Explorar, y al volver reaparecen las cinco pestañas."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

@@ -3,11 +3,16 @@
 import re
 
 import pytest
+from sqlalchemy import event
 
+from app.blog import consultas, reglas
+from app.blog.reglas import MAX_TITULO
 from app.blog.modelo_post import Categorias, Post
 from app.blog.modelo_resenia import Review
 from models.user import User
 from app.blog.vistas import get_post
+from app.servicios.modelo import Service
+from models.product import Product
 
 
 # ------------------------------------------------------------------ unitarios
@@ -59,11 +64,13 @@ def test_el_listado_muestra_el_autor_real_y_no_al_usuario_logueado(
     login(visitante.id)
     html = client.get("/blog/").get_data(as_text=True)
 
-    # Se mira solo el badge de autor: el nombre del usuario logueado aparece
-    # legitimamente en la barra de navegacion, asi que no sirve buscarlo en
-    # todo el HTML.
+    # Se mira solo el pie de la tarjeta: el nombre del usuario logueado
+    # aparece legitimamente en la barra de navegacion, asi que no sirve
+    # buscarlo en todo el HTML. En el rediseno el badge--author paso a ser
+    # .tarjeta__persona, que lleva el avatar de iniciales adelante y el
+    # nombre despues.
     autores_mostrados = re.findall(
-        r'badge--author"[^>]*>\s*([^<\s]+)\s*<', html
+        r'tarjeta__persona">.*?</span>\s*([^<\s]+)\s*</span>', html, re.S
     )
 
     assert autores_mostrados == ["autorreal"]
@@ -199,6 +206,38 @@ def test_crear_sin_titulo_no_guarda_nada(client, crear_usuario, login):
     assert Post.query.count() == 0
 
 
+def test_crear_con_un_titulo_mas_largo_que_la_columna_no_guarda_nada(
+    client, crear_usuario, login
+):
+    """Se corta antes del INSERT y no se confia en que la base avise: MySQL
+    trunca o falla segun el sql_mode con el que este levantado, asi que el
+    nombre se guardaria cortado a la mitad sin aviso, o el usuario veria un 500
+    en vez de un error del formulario."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    respuesta = client.post("/blog/create", data={
+        "title": "a" * (MAX_TITULO + 1), "body": "Una descripción",
+    })
+
+    assert Post.query.count() == 0
+    assert str(MAX_TITULO) in respuesta.get_data(as_text=True)
+
+
+def test_crear_con_un_titulo_del_largo_exacto_de_la_columna_guarda(
+    client, crear_usuario, login
+):
+    """El borde del anterior: el maximo entra, no se rechaza por empatar."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    client.post("/blog/create", data={
+        "title": "a" * MAX_TITULO, "body": "Una descripción",
+    })
+
+    assert Post.query.count() == 1
+
+
 # --------------------------------------------------------------------- resenas
 
 def test_dejar_una_resenia(client, crear_usuario, crear_post, login):
@@ -325,13 +364,17 @@ def test_el_detalle_muestra_editado_cuando_corresponde(client, crear_usuario, cr
     login(cliente.id)
     client.post(f"/blog/{post.id}/review", data={"rating": "3", "comment": "Regular"})
 
+    # El rediseño de la ficha cambio el texto: la fecha de la resenia ahora es
+    # relativa ("hace 2 semanas") y el aviso va pegado atras, "· editada", en
+    # vez del "(editado)" suelto de antes. Lo que se fija sigue siendo lo
+    # mismo: que se avise, y solo cuando corresponde.
     sin_editar = client.get(f"/blog/{post.id}").get_data(as_text=True)
-    assert "(editado)" not in sin_editar
+    assert "editada" not in sin_editar
 
     client.post(f"/blog/{post.id}/review", data={"rating": "5", "comment": "Mejoró"})
 
     editado = client.get(f"/blog/{post.id}").get_data(as_text=True)
-    assert "(editado)" in editado
+    assert "editada" in editado
 
 
 def test_el_autor_de_la_resenia_puede_eliminarla(client, crear_usuario, crear_post, login):
@@ -408,8 +451,11 @@ def test_el_listado_se_pagina(client, app, crear_usuario, crear_post):
     primera = client.get("/blog/").get_data(as_text=True)
     segunda = client.get("/blog/?page=2").get_data(as_text=True)
 
-    assert primera.count('class="card"') == por_pagina
-    assert segunda.count('class="card"') == 3
+    # .tarjeta es la del listado (la horizontal de la pantalla "Explorar",
+    # que en el rediseño paso a ocupar el ancho entero). No es .card, que es la
+    # vertical del home y del detalle.
+    assert primera.count('class="tarjeta"') == por_pagina
+    assert segunda.count('class="tarjeta"') == 3
     assert "Página 2 de 2" in segunda
 
 
@@ -643,6 +689,101 @@ def test_la_direccion_de_texto_sin_maptiler_key_no_rompe_el_listado(
     assert "Panadería del barrio" in resp.get_data(as_text=True)
 
 
+def test_una_direccion_que_no_geocodifica_no_pinta_su_chip(client):
+    """Un chip que anuncia un filtro que no se aplico es peor que no tenerlo.
+
+    Mismo criterio que el radio (ver test_sin_coordenadas_el_radio_no_pinta_su_chip).
+    En testing no hay MAPTILER_KEY, asi que ninguna direccion se resuelve: la
+    vista deja lat en None y la consulta devuelve el listado entero, sin ordenar
+    por cercania. El chip "Cerca de ..." se pintaba igual, con su x al lado, o
+    sea que ofrecia sacar un filtro que nunca estuvo puesto.
+    """
+    html = client.get("/blog/?near=Av+San+Martin+123").get_data(as_text=True)
+
+    assert 'aria-label="Quitar el filtro de cercanía"' not in html
+    # La direccion tampoco aparece adentro de un chip por otra via.
+    assert not re.search(r'<span class="chip">\s*Cerca de', html)
+    # Y siendo "near" lo unico que viaja en la URL, no queda la fila de chips
+    # dibujada y vacia ni el "Limpiar todo" al lado. La clase es la del
+    # rediseño (ficha-filtro--limpiar): en este template ya no existe
+    # filtros__limpiar.
+    assert '<div class="chips">' not in html
+    assert "ficha-filtro--limpiar" not in html
+
+
+def test_una_direccion_que_no_geocodifica_conserva_lo_que_se_tipeo(client):
+    """Lo que NO se saca: el input mantiene el texto para poder corregirlo.
+
+    El input no es un chip que miente (no afirma que se filtro nada), y
+    vaciarlo obligaria a reescribir la direccion entera despues del aviso de
+    que no se pudo ubicar.
+    """
+    html = client.get("/blog/?near=Av+San+Martin+123").get_data(as_text=True)
+
+    assert 'value="Av San Martin 123"' in html
+
+
+def test_con_la_direccion_geocodificada_el_chip_de_cercania_si_aparece(
+    client, monkeypatch
+):
+    """La contracara: cuando si acota, el chip corresponde y tiene que estar."""
+    monkeypatch.setattr(
+        "app.blog.vistas.get_coordinates_from_address",
+        lambda direccion, clave: (-32.89, -68.84),
+    )
+
+    html = client.get("/blog/?near=Obelisco").get_data(as_text=True)
+
+    assert 'aria-label="Quitar el filtro de cercanía"' in html
+    assert re.search(r'<span class="chip">\s*Cerca de Obelisco', html)
+
+
+def _resumen_de_filtros(html):
+    """El texto del <summary> que resume la barra de filtros plegada.
+
+    Hay que mirarlo aparte de la fila de chips: los dos dicen "cerca de" y un
+    `in html` pelado daria verde por el chip aunque el resumen mintiera.
+    """
+    m = re.search(
+        r'<span class="barra-filtros__resumen-detalle">(.*?)</span>',
+        html,
+        re.S,
+    )
+    assert m, "no se encontro el resumen de la barra de filtros"
+    return m.group(1)
+
+
+def test_una_direccion_que_no_geocodifica_no_entra_en_el_resumen(client):
+    """La misma mentira del chip, pero en el <summary> de la barra plegada.
+
+    En telefono los filtros van adentro de un <details> cerrado, asi que ese
+    resumen es lo unico que se ve: si dice "cerca de Av San Martin 123" cuando
+    MapTiler no resolvio la direccion, anuncia un filtro que no se aplico
+    (mismo criterio que test_una_direccion_que_no_geocodifica_no_pinta_su_chip).
+    """
+    html = client.get("/blog/?near=Av+San+Martin+123").get_data(as_text=True)
+
+    resumen = _resumen_de_filtros(html)
+    assert "cerca de" not in resumen
+    assert "Av San Martin 123" not in resumen
+    # Sin nada mas filtrado, el resumen cae al texto por defecto.
+    assert "Todos los rubros" in resumen
+
+
+def test_con_la_direccion_geocodificada_el_resumen_si_la_nombra(
+    client, monkeypatch
+):
+    """La contracara: cuando si acota, el resumen tiene que decirlo."""
+    monkeypatch.setattr(
+        "app.blog.vistas.get_coordinates_from_address",
+        lambda direccion, clave: (-32.89, -68.84),
+    )
+
+    html = client.get("/blog/?near=Obelisco").get_data(as_text=True)
+
+    assert "cerca de Obelisco" in _resumen_de_filtros(html)
+
+
 def test_sin_filtro_de_cercania_el_orden_por_defecto_no_cambia(
     client, crear_usuario, crear_post
 ):
@@ -654,6 +795,368 @@ def test_sin_filtro_de_cercania_el_orden_por_defecto_no_cambia(
 
     # Orden por fecha de creacion (mas nuevo primero), no por distancia.
     assert html.index("Segundo") < html.index("Primero")
+
+
+# ------------------------------------------------- filtro "con reseñas"
+
+def _con_resenia(db, post, usuario, puntaje=4):
+    db.session.add(Review(post_id=post.id, user_id=usuario.id, rating=puntaje))
+    db.session.commit()
+
+
+def test_con_resenias_deja_solo_los_que_tienen_alguna(
+    app, db, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    resenado = crear_post(autor.id, title="Con reseñas")
+    crear_post(autor.id, title="Sin reseñas")
+    _con_resenia(db, resenado, cliente)
+
+    paginacion, _ = consultas.buscar_posts(
+        busqueda=None, categoria=None, lat=None, lon=None,
+        pagina=1, por_pagina=20, con_resenias=True,
+    )
+
+    titulos = [fila[0].title for fila in paginacion.items]
+    assert titulos == ["Con reseñas"]
+
+
+def test_sin_el_filtro_vuelven_tambien_los_que_no_tienen_resenias(
+    app, db, crear_usuario, crear_post
+):
+    """El default no cambia lo que ya hacia el listado."""
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    resenado = crear_post(autor.id, title="Con reseñas")
+    crear_post(autor.id, title="Sin reseñas")
+    _con_resenia(db, resenado, cliente)
+
+    paginacion, _ = consultas.buscar_posts(
+        busqueda=None, categoria=None, lat=None, lon=None,
+        pagina=1, por_pagina=20,
+    )
+
+    titulos = sorted(fila[0].title for fila in paginacion.items)
+    assert titulos == ["Con reseñas", "Sin reseñas"]
+
+
+def test_con_resenias_no_duplica_filas_cuando_hay_varias(
+    app, db, crear_usuario, crear_post
+):
+    """El filtro va sobre la subquery agrupada, asi que el post viene una vez.
+
+    Si en vez de eso se joineara reviews directo, un post con tres reseñas
+    apareceria tres veces en el listado.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Muy reseñado")
+    for numero in range(3):
+        cliente = crear_usuario(username=f"cliente{numero}")
+        _con_resenia(db, post, cliente)
+
+    paginacion, _ = consultas.buscar_posts(
+        busqueda=None, categoria=None, lat=None, lon=None,
+        pagina=1, por_pagina=20, con_resenias=True,
+    )
+
+    assert [fila[0].title for fila in paginacion.items] == ["Muy reseñado"]
+
+
+# ------------------------------------------------------ radio de distancia
+
+# Referencia de todos estos: Ciudad de Mendoza. "Cerca" queda a metros y
+# "Lejos" a unos 90 km, los mismos puntos que usan los tests de orden.
+CERCA = {"latitude": -32.891, "longitude": -68.841}
+LEJOS = {"latitude": -33.5, "longitude": -69.5}
+DESDE = "lat=-32.89&lon=-68.84"
+
+
+def test_el_radio_deja_afuera_lo_que_esta_mas_lejos(client, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Acá nomás", **CERCA)
+    crear_post(autor.id, title="A noventa km", **LEJOS)
+
+    html = client.get(f"/blog/?{DESDE}&radio=5").get_data(as_text=True)
+
+    assert "Acá nomás" in html
+    assert "A noventa km" not in html
+
+
+def test_el_radio_mas_grande_alcanza_para_los_dos(client, crear_usuario, crear_post):
+    """Que el de 5 km lo excluya tiene que ser por la distancia, no porque si."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Acá nomás", **CERCA)
+    crear_post(autor.id, title="A ocho km", latitude=-32.96, longitude=-68.841)
+
+    html = client.get(f"/blog/?{DESDE}&radio=10").get_data(as_text=True)
+
+    assert "Acá nomás" in html
+    assert "A ocho km" in html
+
+
+def test_sin_radio_no_se_descarta_nada_por_lejos(client, crear_usuario, crear_post):
+    """El comportamiento de hoy: ordena por cercania pero los trae a todos."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Acá nomás", **CERCA)
+    crear_post(autor.id, title="A noventa km", **LEJOS)
+
+    html = client.get(f"/blog/?{DESDE}").get_data(as_text=True)
+
+    assert "Acá nomás" in html
+    assert "A noventa km" in html
+    assert html.index("Acá nomás") < html.index("A noventa km")
+
+
+def test_el_radio_sin_coordenadas_no_hace_nada(client, crear_usuario, crear_post):
+    """Sin lat/lon no hay desde donde medir: se ignora en vez de vaciar todo."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Acá nomás", **CERCA)
+    crear_post(autor.id, title="A noventa km", **LEJOS)
+
+    html = client.get("/blog/?radio=1").get_data(as_text=True)
+
+    assert "Acá nomás" in html
+    assert "A noventa km" in html
+
+
+@pytest.mark.parametrize("radio", ["7", "0", "-5", "99999", "abc", ""])
+def test_un_radio_que_no_esta_en_la_lista_se_ignora(
+    client, crear_usuario, crear_post, radio
+):
+    """Vale lo mismo que no mandar radio, no filtrar con un numero cualquiera."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Acá nomás", **CERCA)
+    crear_post(autor.id, title="A noventa km", **LEJOS)
+
+    html = client.get(f"/blog/?{DESDE}&radio={radio}").get_data(as_text=True)
+
+    assert "Acá nomás" in html
+    assert "A noventa km" in html
+
+
+def test_el_radio_se_combina_con_el_filtro_de_resenias(
+    app, db, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    cerca_con = crear_post(autor.id, title="Cerca y reseñado", **CERCA)
+    crear_post(autor.id, title="Cerca sin reseñas", **CERCA)
+    lejos_con = crear_post(autor.id, title="Lejos y reseñado", **LEJOS)
+    _con_resenia(db, cerca_con, cliente)
+    _con_resenia(db, lejos_con, cliente)
+
+    paginacion, ordenado = consultas.buscar_posts(
+        busqueda=None, categoria=None, lat=-32.89, lon=-68.84,
+        pagina=1, por_pagina=20, con_resenias=True, radio_km=5,
+    )
+
+    assert ordenado is True
+    assert [fila[0].title for fila in paginacion.items] == ["Cerca y reseñado"]
+
+
+# --------------------------------------- el panel de filtros contra la query
+
+# Los dos controles que la pantalla dibujaba apagados y ahora mandan. Lo que se
+# prueba aca no es el filtro (eso esta mas arriba, contra buscar_posts) sino el
+# cableado: que el formulario mande lo que la consulta espera y que la pantalla
+# se repinte con lo que quedo aplicado.
+
+
+def _marcado(html, name):
+    """El value del input `name` que viene checked, o None si no hay ninguno."""
+    for etiqueta in re.findall(r'<input[^>]*\bname="{}"[^>]*>'.format(name), html):
+        if "checked" in etiqueta:
+            return re.search(r'value="([^"]*)"', etiqueta).group(1)
+    return None
+
+
+def _elegido(html, name):
+    """El value de la <option> seleccionada del select `name`, o None.
+
+    El rediseño paso el radio de un grupo de <input type="radio"> a un <select>
+    que se manda solo al cambiarlo, asi que lo marcado ya no se lee con
+    _marcado(), que mira inputs.
+    """
+    select = re.search(
+        r'<select[^>]*\bname="{}"[^>]*>(.*?)</select>'.format(name), html, re.S
+    )
+    if select is None:
+        return None
+    for opcion in re.findall(r"<option[^>]*>", select.group(1)):
+        if "selected" in opcion:
+            return re.search(r'value="([^"]*)"', opcion).group(1)
+    return None
+
+
+def test_el_radio_viaja_en_km_enteros_y_no_como_etiqueta(client):
+    """El backend espera reglas.RADIOS_KM. Un value de "5 km" no filtra nada.
+
+    Y no falla en ningun lado: leer_cercania lo lee con type=int, "5 km" vuelve
+    None y el listado sale sin acotar, como si el usuario no hubiera elegido.
+    """
+    html = client.get("/blog/?{}".format(DESDE)).get_data(as_text=True)
+
+    for km in reglas.RADIOS_KM:
+        assert '<option value="{}"'.format(km) in html
+    assert 'value="1 km"' not in html
+
+
+def test_sin_coordenadas_no_se_ofrece_el_radio(client):
+    """Sin lat/lon la consulta ignora el radio: no hay desde donde medir.
+
+    Antes el grupo de radios se dibujaba igual y dejaba elegir "5 km" para que
+    despues no pasara nada. Un control que no hace nada es peor que no tenerlo,
+    que es la misma regla por la que se fue "Solo verificados".
+    """
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert _elegido(html, "radio") is None
+    assert 'name="radio"' not in html
+
+
+def test_con_resenias_no_esta_apagado(client):
+    """Es una ficha que se prende y se apaga, no un checkbox deshabilitado."""
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert "Con reseñas" in html
+    assert re.search(r'name="con_resenias"[^>]*disabled', html) is None
+
+
+def test_solo_verificados_ya_no_se_ofrece(client):
+    """Post no tiene marca de verificacion, asi que ese filtro no puede viajar.
+
+    Antes estaba dibujado y `disabled`, con un aviso al lado que explicaba que
+    todavia no filtraba. En el rediseño se fue del todo: la barra de filtros no
+    tiene lugar para un control apagado, y no ofrecerlo es mas honesto que
+    ofrecerlo roto.
+
+    "Abierto ahora" si viaja: se cableo contra los horarios del autor (ver los
+    tests de mas abajo).
+    """
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert 'name="solo_verificados"' not in html
+    assert re.search(r'name="abierto_ahora"[^>]*disabled', html) is None
+    # La misma regla de test_el_listado_no_dice_que_un_emprendimiento_esta_
+    # verificado: la palabra no puede aparecer, porque un Post no tiene
+    # verificacion que afirmar.
+    assert "Verificado" not in html
+
+
+def test_el_radio_de_la_url_queda_elegido(client):
+    html = client.get("/blog/?{}&radio=5".format(DESDE)).get_data(as_text=True)
+
+    assert _elegido(html, "radio") == "5"
+
+
+def test_un_radio_invalido_vuelve_a_sin_limite(client):
+    """Se ignora para filtrar (mas arriba) y tampoco se le repinta al usuario."""
+    html = client.get("/blog/?{}&radio=7".format(DESDE)).get_data(as_text=True)
+
+    assert _elegido(html, "radio") == ""
+
+
+def test_el_checkbox_de_resenias_llega_hasta_la_consulta(
+    app, db, client, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    resenado = crear_post(autor.id, title="Panadería reseñada")
+    crear_post(autor.id, title="Panadería recién abierta")
+    _con_resenia(db, resenado, cliente)
+
+    html = client.get("/blog/?con_resenias=1").get_data(as_text=True)
+
+    assert "Panadería reseñada" in html
+    assert "Panadería recién abierta" not in html
+
+
+def test_sin_el_checkbox_el_listado_los_trae_a_los_dos(
+    app, db, client, crear_usuario, crear_post
+):
+    autor = crear_usuario(username="autor")
+    cliente = crear_usuario(username="cliente")
+    resenado = crear_post(autor.id, title="Panadería reseñada")
+    crear_post(autor.id, title="Panadería recién abierta")
+    _con_resenia(db, resenado, cliente)
+
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert "Panadería reseñada" in html
+    assert "Panadería recién abierta" in html
+
+
+def test_resenias_puesto_deja_su_ficha_prendida(client):
+    """La ficha muestra que esta aplicado, y el hidden lo hace viajar.
+
+    El hidden importa: si no estuviera, apretar "Buscar" con el filtro puesto
+    lo perderia sin que el usuario lo pida.
+    """
+    html = client.get("/blog/?con_resenias=1").get_data(as_text=True)
+
+    assert 'name="con_resenias" value="1"' in html
+    assert re.search(r'class="ficha-filtro ficha-filtro--activa"[^>]*>\s*Con reseñas', html)
+
+
+def test_los_dos_filtros_nuevos_se_pueden_sacar_de_a_uno(client):
+    """Se sacan con la misma ficha que los pone: el enlace alterna.
+
+    Antes salian como chip abajo del titulo, con una × al lado. Ahora la ficha
+    de arriba hace las dos cosas, asi que el chip repetido se fue: la ficha
+    prendida enlaza a la misma URL sin ese parametro.
+    """
+    html = client.get(
+        "/blog/?{}&radio=5&con_resenias=1".format(DESDE)
+    ).get_data(as_text=True)
+
+    # El enlace de la ficha prendida es el que la apaga: no lleva el parametro.
+    apagar = re.search(r'href="([^"]*)"[^>]*class="ficha-filtro ficha-filtro--activa"', html)
+    assert apagar is not None
+    assert "con_resenias" not in apagar.group(1)
+
+    # El radio se saca eligiendo "Sin límite de distancia", que viaja vacio.
+    # El value se mira con un regex y no como texto exacto porque la opcion
+    # lleva ademas el `selected` cuando no hay radio puesto.
+    assert re.search(r'<option value=""[^>]*>Sin límite de distancia</option>', html)
+    assert _elegido(html, "radio") == "5"
+
+
+def test_sin_coordenadas_el_radio_no_pinta_su_chip(client):
+    """Un chip que anuncia un filtro que no se aplico es peor que no tenerlo.
+
+    /blog/?radio=1 sin lat ni lon mostraba "Hasta 1 km" pero la consulta
+    ignoraba el radio (sin coordenadas no hay desde donde medir), asi que el
+    listado venia entero y el chip decia otra cosa.
+    """
+    html = client.get("/blog/?radio=1").get_data(as_text=True)
+
+    assert "Hasta 1 km" not in html
+    assert 'aria-label="Quitar el filtro de radio"' not in html
+    # Y sin ningun otro filtro puesto, tampoco queda la fila de chips vacia
+    # con su "Limpiar" al lado. La clase es la del rediseño
+    # (ficha-filtro--limpiar): filtros__limpiar es la vieja, en este template
+    # ya no existe, asi que mirarla no verificaba nada.
+    assert "ficha-filtro--limpiar" not in html
+
+
+def test_con_una_direccion_geocodificada_si_se_ofrece_el_radio(
+    client, monkeypatch
+):
+    """Las coordenadas de una direccion las resuelve la vista y no estan en la URL.
+
+    Por eso la condicion mira si la consulta ordeno por distancia y no
+    request.args: con "near" cargado el radio SI acota, asi que el select
+    corresponde y queda con su valor puesto.
+    """
+    monkeypatch.setattr(
+        "app.blog.vistas.get_coordinates_from_address",
+        lambda direccion, clave: (-34.6, -58.4),
+    )
+
+    html = client.get("/blog/?near=Obelisco&radio=5").get_data(as_text=True)
+
+    assert _elegido(html, "radio") == "5"
 
 
 # ------------------------------------------------------------------ compartir
@@ -735,7 +1238,80 @@ def test_las_vistas_se_muestran_en_mis_emprendimientos(client, crear_usuario, cr
     login(autor.id)
     html = client.get("/blog/mis-emprendimientos").get_data(as_text=True)
 
-    assert "1 vista" in html
+    # El numero y la palabra son dos elementos distintos desde el rediseño (la
+    # metrica es un valor grande con su etiqueta chica abajo), asi que se
+    # buscan por separado en vez de como "1 vista".
+    assert '<span class="metrica__valor">1</span>' in html
+    assert '<span class="metrica__label">vista</span>' in html
+
+
+def test_mis_emprendimientos_no_consulta_de_mas_por_cada_fila(
+    app, client, crear_usuario, crear_post, login, db
+):
+    """El listado cuesta lo mismo con 3 emprendimientos que con 6.
+
+    Las metricas de cada fila (reseñas, promedio, tamaño del catalogo) salian
+    de una consulta por post: la pagina crecia cuatro consultas por fila. Lo
+    que se fija aca no es un numero de consultas, sino que ese numero NO
+    dependa de cuantos emprendimientos tenga el vendedor.
+    """
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    def consultas_del_listado():
+        sentencias = []
+
+        def espia(conn, cursor, statement, params, context, executemany):
+            sentencias.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", espia)
+        try:
+            assert client.get("/blog/mis-emprendimientos").status_code == 200
+        finally:
+            event.remove(db.engine, "before_cursor_execute", espia)
+        return len(sentencias)
+
+    for i in range(3):
+        crear_post(autor.id, title=f"Emprendimiento {i}")
+    con_tres = consultas_del_listado()
+
+    for i in range(3, 6):
+        crear_post(autor.id, title=f"Emprendimiento {i}")
+    con_seis = consultas_del_listado()
+
+    # Los 6 entran en una sola pagina (POSTS_POR_PAGINA es 9), asi que la
+    # comparacion es entre listados completos y no contra una pagina cortada.
+    assert app.config["POSTS_POR_PAGINA"] >= 6
+    assert con_seis == con_tres
+
+
+def test_las_metricas_de_mis_emprendimientos_no_se_inflan_entre_si(
+    client, crear_usuario, crear_post, login, db
+):
+    """Reseñas, productos y servicios se cuentan por separado.
+
+    Las tres salen de la misma consulta: si los joins se cruzaran, cada COUNT
+    quedaria multiplicado por las filas de las otras dos tablas.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    for nombre, puntaje in (("ana", 4), ("beto", 5)):
+        usuario = crear_usuario(username=nombre)
+        db.session.add(Review(post_id=post.id, user_id=usuario.id, rating=puntaje))
+    db.session.add(Product(post_id=post.id, nombre="Pan", precio=100))
+    db.session.add(Service(post_id=post.id, titulo="Delivery"))
+    db.session.commit()
+
+    login(autor.id)
+    html = client.get("/blog/mis-emprendimientos").get_data(as_text=True)
+
+    assert "2 reseñas" in html
+    assert '<span class="metrica__valor">4.5</span>' in html
+    # Un producto y un servicio: el catalogo los suma.
+    assert re.search(
+        r'metrica__valor">2</span>\s*<span class="metrica__label">en el catálogo',
+        html,
+    )
 
 
 # ------------------------------------------------------- galeria de fotos
@@ -976,3 +1552,1071 @@ def test_borrar_un_usuario_borra_sus_emprendimientos_y_lo_que_cuelga(
     assert Favorite.query.filter_by(post_id=post_id).count() == 0
     # El otro usuario no se toca: solo se va lo que colgaba del que se borro.
     assert User.query.get(cliente.id) is not None
+
+# --- formulario compartido por el alta y la edicion
+
+def test_el_alta_y_la_edicion_usan_el_mismo_formulario(
+    client, crear_usuario, crear_post, login
+):
+    """Las dos pantallas incluyen el mismo parcial, asi que traen las mismas piezas.
+
+    Es lo que evita que se vuelvan a separar en dos copias: si alguien duplica
+    una de las dos, este test lo dice.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería")
+    login(autor.id)
+
+    alta = client.get("/blog/create").get_data(as_text=True)
+    edicion = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    for html in (alta, edicion):
+        # Los tres tramos, los campos reales y el checklist.
+        assert 'id="tramo-basico"' in html
+        assert 'id="tramo-fotos"' in html
+        assert 'id="tramo-ubicacion"' in html
+        assert 'name="title"' in html
+        assert 'name="body"' in html
+        assert 'name="category"' in html
+        assert 'name="galeria"' in html
+        assert "Qué te falta" in html
+
+    assert "Publicar emprendimiento" in alta
+    assert "Guardar cambios" in edicion
+
+
+def test_la_edicion_trae_los_valores_del_post(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(
+        autor.id, title="Panadería La Espiga", body="Pan de masa madre.",
+        category=Categorias.ALIMENTOS,
+    )
+    login(autor.id)
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert "Panadería La Espiga" in html
+    assert "Pan de masa madre." in html
+
+    # El chip tildado tiene que ser el de la categoria guardada, y solo ese.
+    tildados = re.findall(r'value="([^"]+)"[^>]*\bchecked\b', html)
+    assert tildados == [Categorias.ALIMENTOS]
+
+
+def test_la_categoria_viaja_como_radio_y_no_como_select(
+    client, crear_usuario, login
+):
+    """Los chips del rediseño son radios de verdad: la eleccion va en el POST.
+
+    Si alguien los vuelve a maquetar como <span> sin input, el formulario
+    guardaria siempre la categoria por defecto sin fallar en ningun lado.
+    """
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    html = client.get("/blog/create").get_data(as_text=True)
+
+    assert '<select id="category"' not in html
+    assert 'type="radio" name="category"' in html
+
+
+def test_el_checklist_del_alta_esta_todo_sin_tildar(client, crear_usuario, login):
+    """En el alta no hay nada cargado todavia, asi que no puede decir lo contrario."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    html = client.get("/blog/create").get_data(as_text=True)
+
+    assert "0 de 6" in html
+
+
+def test_el_checklist_de_la_edicion_cuenta_lo_que_el_post_tiene(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(
+        autor.id,
+        title="Panadería",
+        body="x" * reglas.DESCRIPCION_COMPLETA,
+        category=Categorias.ALIMENTOS,
+    )
+    post.address_street = "Av. San Martín 1240"
+    db.session.commit()
+    login(autor.id)
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    # Nombre y categoria, descripcion larga y direccion: tres de seis.
+    # Faltan la foto principal, las dos de galeria y los horarios.
+    assert "3 de 6" in html
+
+
+def test_el_checklist_no_da_por_cumplida_una_descripcion_corta(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería", body="Corta.")
+    login(autor.id)
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert "1 de 6" in html
+
+
+def test_el_checklist_cuenta_los_horarios_del_usuario(
+    client, db, crear_usuario, crear_post, login
+):
+    """Los horarios cuelgan del usuario, no del emprendimiento.
+
+    Asi que el item puede estar cumplido en un emprendimiento recien creado, si
+    el usuario ya los habia cargado antes.
+    """
+    from app.perfil.modelo_horario import Horario
+
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería", body="Corta.")
+    db.session.add(Horario(user_id=autor.id, dia_semana=0, cerrado=True))
+    db.session.commit()
+    login(autor.id)
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert "2 de 6" in html
+
+# --- home: rubros, buscador por cercania y favoritos en la API
+
+def test_el_home_cuenta_los_emprendimientos_de_cada_rubro(
+    client, crear_usuario, crear_post
+):
+    """El "N activos" de cada rubro es real, no decorativo."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Pan", category=Categorias.ALIMENTOS)
+    crear_post(autor.id, title="Facturas", category=Categorias.ALIMENTOS)
+    crear_post(autor.id, title="Macetas", category=Categorias.HOGAR)
+
+    html = client.get("/").get_data(as_text=True)
+
+    assert "2 activos" in html
+    assert "1 activo" in html
+    # Los siete rubros se muestran enteros aunque alguno este en cero: la lista
+    # es fija y conteo_por_categoria() no devuelve los vacios.
+    assert "0 activos" in html
+
+
+def test_el_home_no_dice_de_que_ciudad_es_nada(
+    client, crear_usuario, crear_post
+):
+    """Post no tiene localidad, asi que el home no puede nombrar una ciudad.
+
+    Antes esto cuidaba al contador ("218 emprendimientos en San Rafael": el
+    "San Rafael" era un texto escrito a mano en el editor, no un dato). El
+    contador se fue con el titular en el rediseño del 2026-09-03 -- la banda de
+    arriba quedo siendo el filtro y nada mas -- pero la regla sigue valiendo
+    para todo lo que quede en la pantalla.
+    """
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Pan")
+
+    html = client.get("/").get_data(as_text=True)
+
+    assert "San Rafael" not in html
+    # El titular y el contador ya no estan; el <h1> accesible si.
+    assert "Todo lo que se hace cerca tuyo" not in html
+    assert "emprendimiento publicado" not in html
+    assert '<h1 class="sr-only">' in html
+
+
+def test_el_home_ofrece_buscar_por_cercania(client):
+    """El tercer campo del buscador existe y trae el atajo de ubicacion."""
+    html = client.get("/").get_data(as_text=True)
+
+    assert 'id="search-near"' in html
+    assert 'id="search-lat"' in html
+    assert 'id="search-lon"' in html
+    assert "Cerca de mí" in html
+
+
+def test_el_home_no_promete_un_orden_que_no_existe(client):
+    """La grilla trae los ultimos publicados y el titulo lo dice.
+
+    El rediseño propone "Destacados esta semana · los mejor calificados con
+    reseñas de los ultimos 30 dias", y esa consulta no existe.
+    """
+    html = client.get("/").get_data(as_text=True)
+
+    assert "Últimos emprendimientos" in html
+    assert "Destacados esta semana" not in html
+
+
+def test_la_api_no_dice_nada_de_favoritos_sin_sesion(
+    client, crear_usuario, crear_post
+):
+    """Sin login la respuesta es la de siempre: la clave ni siquiera viaja.
+
+    Que no venga es distinto de que venga en False: el que consume tiene que
+    poder distinguir "no lo tenes" de "no sabemos quien sos" para decidir si
+    dibuja el corazon.
+    """
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Pan")
+
+    item = client.get("/api/posts/").get_json()["items"][0]
+
+    assert "favorito" not in item
+
+
+def test_la_api_marca_los_favoritos_del_usuario_logueado(
+    client, db, crear_usuario, crear_post, login
+):
+    from app.blog.modelo_favorito import Favorite
+
+    autor = crear_usuario(username="autor")
+    guardado = crear_post(autor.id, title="Guardado")
+    suelto = crear_post(autor.id, title="Suelto")
+
+    lector = crear_usuario(username="lector")
+    db.session.add(Favorite(user_id=lector.id, post_id=guardado.id))
+    db.session.commit()
+    login(lector.id)
+
+    items = client.get("/api/posts/").get_json()["items"]
+    por_titulo = {i["title"]: i for i in items}
+
+    assert por_titulo["Guardado"]["favorito"] is True
+    assert por_titulo["Suelto"]["favorito"] is False
+
+
+def test_la_api_manda_el_promedio_y_quien_publico(
+    client, db, crear_usuario, crear_post
+):
+    """La tarjeta del inicio muestra las dos cosas, igual que la del listado.
+
+    No son columnas de Post, asi que no salen del serialize(): el promedio sale
+    de la misma subquery agrupada que usa /blog/ y el nombre de la relacion
+    author_user. Si dejaran de viajar, la tarjeta de la home volveria a ser
+    una version pobre de la del listado sin que se rompa nada.
+    """
+    autor = crear_usuario(username="Marina")
+    post = crear_post(autor.id, title="Panadería")
+
+    for indice, puntaje in enumerate([4, 5]):
+        cliente = crear_usuario(username=f"cliente{indice}")
+        db.session.add(Review(post_id=post.id, user_id=cliente.id, rating=puntaje))
+    db.session.commit()
+
+    item = client.get("/api/posts/").get_json()["items"][0]
+
+    assert item["avg_rating"] == 4.5
+    assert item["review_count"] == 2
+    assert item["author_name"] == "Marina"
+
+
+def test_la_api_no_califica_con_cero_al_que_no_tiene_resenias(
+    client, crear_usuario, crear_post
+):
+    """Sin reseñas el promedio va en None y no en 0.
+
+    Un emprendimiento recien publicado no esta calificado con un cero: la
+    tarjeta tiene que poder decir "sin reseñas todavía", y con un 0 dibujaria
+    la peor nota posible.
+    """
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Nuevo")
+
+    item = client.get("/api/posts/").get_json()["items"][0]
+
+    assert item["avg_rating"] is None
+    assert item["review_count"] == 0
+
+
+def test_el_token_csrf_esta_disponible_para_el_javascript(client):
+    """El corazon de la home es un form POST que arma el JS.
+
+    Sin este meta no tendria de donde sacar el token y el toggle rebotaria con
+    un error de CSRF.
+    """
+    html = client.get("/").get_data(as_text=True)
+
+    assert 'name="csrf-token"' in html
+
+def test_el_listado_no_dice_que_un_emprendimiento_esta_verificado(
+    client, crear_usuario, crear_post
+):
+    """No hay verificacion de un Post, asi que el listado no puede afirmarla.
+
+    El sello estaba puesto sin ningun if y lo llevaban todos. La verificacion
+    que existe es de cada Service (Service.verificado, que pone un admin
+    despues de mirar la matricula) y se muestra en las pantallas de servicios,
+    con su condicion.
+    """
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería sin verificar")
+
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert "Panadería sin verificar" in html
+    assert "Verificado" not in html
+
+
+def test_el_detalle_no_dice_que_un_emprendimiento_esta_verificado(
+    client, crear_usuario, crear_post
+):
+    """Mismo criterio que el listado: sin dato de verificacion, sin sello.
+
+    La verificacion que existe es de cada Service (Service.verificado, que
+    pone un admin despues de mirar la matricula) y se muestra en las
+    pantallas de servicios, con su condicion.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería sin verificar")
+
+    html = client.get(f"/blog/{post.id}").get_data(as_text=True)
+
+    assert "Panadería sin verificar" in html
+    assert "Verificado" not in html
+
+
+def test_mis_emprendimientos_no_dice_que_un_emprendimiento_esta_verificado(
+    client, crear_usuario, crear_post, login
+):
+    """El sello tampoco puede afirmarse en la pantalla del propio vendedor."""
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería sin verificar")
+
+    login(autor.id)
+    html = client.get("/blog/mis-emprendimientos").get_data(as_text=True)
+
+    assert "Panadería sin verificar" in html
+    assert "Verificado" not in html
+
+
+# ------------------------------------------- la busqueda mira tambien el catalogo
+
+def _buscar(texto):
+    """buscar_posts con lo demas en su default, que es como la usa el listado."""
+    paginacion, _ = consultas.buscar_posts(
+        busqueda=texto, categoria=None, lat=None, lon=None,
+        pagina=1, por_pagina=20,
+    )
+    return paginacion
+
+
+def test_la_busqueda_encuentra_por_nombre_de_producto(db, crear_usuario, crear_post):
+    """El caso que motiva el cambio: la palabra no esta en el emprendimiento.
+
+    Ni el titulo ni el cuerpo del post dicen "alfajores"; lo dice un producto
+    suyo, que es donde la gente espera que este.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    crear_post(autor.id, title="Taller mecánico", body="Arreglamos autos")
+    db.session.add(Product(post_id=post.id, nombre="Alfajores de maicena", precio=100))
+    db.session.commit()
+
+    paginacion = _buscar("alfajor")
+
+    assert [fila[0].title for fila in paginacion.items] == ["Panadería del barrio"]
+    assert paginacion.total == 1
+
+
+def test_la_busqueda_encuentra_por_descripcion_de_producto(db, crear_usuario, crear_post):
+    """La descripcion tambien, no solo el nombre."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    db.session.add(Product(
+        post_id=post.id, nombre="Caja surtida", precio=100,
+        descripcion="Doce piezas sin TACC",
+    ))
+    db.session.commit()
+
+    assert [fila[0].title for fila in _buscar("sin tacc").items] == ["Panadería del barrio"]
+
+
+def test_la_busqueda_encuentra_por_titulo_de_servicio(db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    crear_post(autor.id, title="Taller mecánico", body="Arreglamos autos")
+    db.session.add(Service(post_id=post.id, titulo="Catering para eventos"))
+    db.session.commit()
+
+    paginacion = _buscar("catering")
+
+    assert [fila[0].title for fila in paginacion.items] == ["Panadería del barrio"]
+    assert paginacion.total == 1
+
+
+def test_la_busqueda_encuentra_por_descripcion_de_servicio(db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    db.session.add(Service(
+        post_id=post.id, titulo="Delivery", descripcion="Llegamos hasta Maipú",
+    ))
+    db.session.commit()
+
+    assert [fila[0].title for fila in _buscar("maipú").items] == ["Panadería del barrio"]
+
+
+def test_un_post_sin_catalogo_se_sigue_encontrando_por_lo_suyo(
+    db, crear_usuario, crear_post
+):
+    """El EXISTS es una rama mas del OR, no un reemplazo.
+
+    Si el catalogo pasara a ser obligatorio para matchear, un emprendimiento
+    recien publicado -- que todavia no cargo ni un producto -- desapareceria de
+    la busqueda. Es la regresion mas cara que podria tener este cambio.
+    """
+    autor = crear_usuario(username="autor")
+    crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+
+    assert [fila[0].title for fila in _buscar("panader").items] == ["Panadería del barrio"]
+    assert [fila[0].title for fila in _buscar("artesanal").items] == ["Panadería del barrio"]
+
+
+def test_un_post_con_varios_productos_que_matchean_vuelve_una_sola_vez(
+    db, crear_usuario, crear_post
+):
+    """Lo que rompe un JOIN y no rompe un EXISTS.
+
+    Cuatro productos con la palabra buscada: joineando, el mismo
+    emprendimiento vuelve cuatro veces y la grilla lo repite.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    for sabor in ("maicena", "chocolate", "dulce de leche", "coco"):
+        db.session.add(Product(
+            post_id=post.id, nombre=f"Alfajores de {sabor}", precio=100,
+        ))
+    db.session.commit()
+
+    paginacion = _buscar("alfajor")
+
+    assert len(paginacion.items) == 1
+    assert paginacion.total == 1
+
+
+def test_un_post_que_matchea_por_los_dos_lados_tampoco_se_duplica(
+    db, crear_usuario, crear_post
+):
+    """El peor caso para la duplicacion: matchea por title, por un producto Y
+    por un servicio a la vez. Son las tres ramas del OR ciertas en la misma
+    fila, y aun asi tiene que volver una sola."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Todo sobre pan", body="x")
+    db.session.add(Product(post_id=post.id, nombre="Pan de campo", precio=100))
+    db.session.add(Product(post_id=post.id, nombre="Pan dulce", precio=100))
+    db.session.add(Service(post_id=post.id, titulo="Taller de pan casero"))
+    db.session.commit()
+
+    paginacion = _buscar("pan")
+
+    assert len(paginacion.items) == 1
+    assert paginacion.total == 1
+
+
+def test_el_total_sigue_exacto_con_el_filtro_nuevo(client, db, crear_usuario, crear_post):
+    """El numero de arriba tiene que ser el de la consulta, mismo criterio que
+    "abierto ahora": si el catalogo se joinea, el titulo dice cuatro y la
+    grilla muestra una."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    crear_post(autor.id, title="Taller mecánico", body="Arreglamos autos")
+    for sabor in ("maicena", "chocolate", "dulce de leche"):
+        db.session.add(Product(
+            post_id=post.id, nombre=f"Alfajores de {sabor}", precio=100,
+        ))
+    db.session.commit()
+
+    html = client.get("/blog/?q=alfajor").get_data(as_text=True)
+
+    assert re.search(r"1 emprendimiento\s*<", html)
+    assert html.count('class="tarjeta"') == 1
+    assert "Taller mecánico" not in html
+
+
+def test_un_producto_no_disponible_no_hace_aparecer_al_emprendimiento(
+    db, crear_usuario, crear_post
+):
+    """Lo apagado no se lo muestra a nadie salvo al dueño, asi que tampoco
+    puede traer al emprendimiento a los resultados: se entraria a la panaderia
+    para no encontrar ni un alfajor."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    db.session.add(Product(
+        post_id=post.id, nombre="Alfajores de maicena", precio=100, disponible=False,
+    ))
+    db.session.commit()
+
+    assert _buscar("alfajor").total == 0
+
+
+def test_un_servicio_no_disponible_tampoco(db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    db.session.add(Service(
+        post_id=post.id, titulo="Catering para eventos", disponible=False,
+    ))
+    db.session.commit()
+
+    assert _buscar("catering").total == 0
+
+
+def test_lo_apagado_no_esconde_al_post_que_matchea_por_otra_via(
+    db, crear_usuario, crear_post
+):
+    """El filtro de disponible acota UNA rama del OR, no el resultado entero.
+
+    Los tres caminos por los que el mismo emprendimiento tiene que seguir
+    apareciendo aunque tenga un producto apagado con la palabra buscada: su
+    propio titulo, su propio cuerpo, y otro item del catalogo que si esta
+    disponible.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Alfajores del barrio", body="Los mejores")
+    otro = crear_post(autor.id, title="Kiosco", body="Golosinas")
+    db.session.add(Product(
+        post_id=post.id, nombre="Alfajor de maicena", precio=100, disponible=False,
+    ))
+    # El del otro post esta apagado, pero tiene un servicio vivo que matchea.
+    db.session.add(Product(
+        post_id=otro.id, nombre="Alfajor triple", precio=100, disponible=False,
+    ))
+    db.session.add(Service(post_id=otro.id, titulo="Cajas de alfajores por mayor"))
+    db.session.commit()
+
+    titulos = sorted(fila[0].title for fila in _buscar("alfajor").items)
+    assert titulos == ["Alfajores del barrio", "Kiosco"]
+    assert _buscar("alfajor").total == 2
+
+
+def test_una_busqueda_que_no_esta_en_ningun_lado_no_trae_nada(
+    db, crear_usuario, crear_post
+):
+    """Que el OR nuevo no convierta el filtro en un pasa-todo."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, title="Panadería del barrio", body="Pan artesanal")
+    db.session.add(Product(post_id=post.id, nombre="Alfajores", precio=100))
+    db.session.add(Service(post_id=post.id, titulo="Catering"))
+    db.session.commit()
+
+    assert _buscar("zzzzz").total == 0
+
+
+# ------------------------------------------------- filtro "Abierto ahora"
+
+def _abierto_todo_el_dia(user_id):
+    """Un horario del dia de hoy (hora argentina) que cubre cualquier momento."""
+    from datetime import time as _time
+
+    from app.perfil.modelo_horario import Horario
+    from services.horarios import ventana_actual
+
+    hoy, _ayer, _momento = ventana_actual()
+    return Horario(
+        user_id=user_id, dia_semana=hoy,
+        abre=_time(0, 0, 0), cierra=_time(23, 59, 59),
+    )
+
+
+def _cerrado_hoy(user_id):
+    from app.perfil.modelo_horario import Horario
+    from services.horarios import ventana_actual
+
+    hoy, _ayer, _momento = ventana_actual()
+    return Horario(user_id=user_id, dia_semana=hoy, cerrado=True)
+
+
+def test_abierto_ahora_deja_solo_a_los_que_atienden(
+    client, db, crear_usuario, crear_post
+):
+    """El filtro mira los horarios del autor, no una marca del post.
+
+    Los tres casos que tienen que quedar afuera o adentro son distintos entre
+    si: quien atiende, quien tiene el dia marcado cerrado y quien nunca cargo
+    horarios. Sin horarios NO es "abierto": seria afirmar algo que no se sabe.
+    """
+    abierta = crear_usuario(username="abierta")
+    cerrada = crear_usuario(username="cerrada")
+    sin_datos = crear_usuario(username="sindatos")
+    db.session.add_all([_abierto_todo_el_dia(abierta.id), _cerrado_hoy(cerrada.id)])
+    db.session.commit()
+
+    crear_post(abierta.id, title="Panadería que atiende")
+    crear_post(cerrada.id, title="Panadería con franco")
+    crear_post(sin_datos.id, title="Panadería sin horarios")
+
+    html = client.get("/blog/?abierto_ahora=1").get_data(as_text=True)
+
+    assert "Panadería que atiende" in html
+    assert "Panadería con franco" not in html
+    assert "Panadería sin horarios" not in html
+
+
+def test_sin_el_parametro_el_listado_no_filtra_por_horario(
+    client, db, crear_usuario, crear_post
+):
+    """Un checkbox sin marcar no viaja: el listado tiene que verse entero."""
+    cerrada = crear_usuario(username="cerrada")
+    db.session.add(_cerrado_hoy(cerrada.id))
+    db.session.commit()
+    crear_post(cerrada.id, title="Panadería con franco")
+
+    html = client.get("/blog/").get_data(as_text=True)
+
+    assert "Panadería con franco" in html
+
+
+def test_abierto_ahora_deja_su_ficha_prendida_y_viaja(
+    client, db, crear_usuario, crear_post
+):
+    """Igual que reseñas: la ficha muestra el estado y el hidden lo conserva."""
+    html = client.get("/blog/?abierto_ahora=1").get_data(as_text=True)
+
+    assert 'name="abierto_ahora" value="1"' in html
+    assert re.search(
+        r'class="ficha-filtro ficha-filtro--activa"[^>]*>.*?Abierto ahora', html, re.S
+    )
+
+
+def test_el_total_cuenta_solo_los_abiertos(client, db, crear_usuario, crear_post):
+    """El numero de arriba tiene que ser el de la consulta, no el de todos.
+
+    Es lo que se rompe si el filtro se resuelve en Python despues de paginar:
+    el listado muestra uno y el titulo sigue diciendo dos.
+    """
+    abierta = crear_usuario(username="abierta")
+    cerrada = crear_usuario(username="cerrada")
+    db.session.add_all([_abierto_todo_el_dia(abierta.id), _cerrado_hoy(cerrada.id)])
+    db.session.commit()
+    crear_post(abierta.id, title="Panadería que atiende")
+    crear_post(cerrada.id, title="Panadería con franco")
+
+    html = client.get("/blog/?abierto_ahora=1").get_data(as_text=True)
+
+    assert re.search(r"1 emprendimiento\s*<", html)
+    assert "Panadería con franco" not in html
+
+
+def test_el_listado_no_consulta_de_mas_por_cada_fila(
+    app, client, db, crear_usuario, crear_post
+):
+    """El costo del listado no puede depender de cuantas filas trae la pagina.
+
+    "Abierto ahora" se resuelve con un EXISTS dentro del WHERE. Si en cambio se
+    resolviera iterando las filas y mirando post.author_user.horarios, la
+    relacion Horario<-User es lazy="select" y cada emprendimiento agregaria un
+    SELECT propio: el N+1 que ya se corrigio en la moderacion y en "Mis
+    emprendimientos".
+
+    Se vacia el identity map antes de cada medicion: con los objetos ya
+    cargados en la sesion del test, un lazy load no llega a la base y el
+    contador daria un falso negativo.
+    """
+    def contar_consultas(url):
+        db.session.expunge_all()
+        consultas_vistas = []
+
+        def escuchar(conn, cursor, statement, params, context, many):
+            consultas_vistas.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", escuchar)
+        try:
+            client.get(url)
+        finally:
+            event.remove(db.engine, "before_cursor_execute", escuchar)
+        return len(consultas_vistas)
+
+    def sumar_posts(desde, hasta):
+        for numero in range(desde, hasta):
+            autor = crear_usuario(username=f"autor{numero}")
+            db.session.add(_abierto_todo_el_dia(autor.id))
+            db.session.commit()
+            crear_post(autor.id, title=f"Emprendimiento {numero}")
+
+    sumar_posts(0, 3)
+    con_tres = contar_consultas("/blog/?abierto_ahora=1")
+
+    sumar_posts(3, 9)
+    con_nueve = contar_consultas("/blog/?abierto_ahora=1")
+
+    assert con_nueve == con_tres
+
+
+# --------------------------------------------- reordenar fotos / principal
+
+def _con_fotos(db, post, *nombres):
+    """Le cuelga fotos de galeria al post, en ese orden."""
+    from app.blog.modelo_imagen import PostImage
+
+    for posicion, nombre in enumerate(nombres):
+        db.session.add(
+            PostImage(post_id=post.id, filename=nombre, posicion=posicion)
+        )
+    db.session.commit()
+    return [
+        img.id
+        for img in PostImage.query.filter_by(post_id=post.id)
+        .order_by(PostImage.posicion)
+    ]
+
+
+def test_los_tokens_salen_en_el_mismo_orden_que_la_galeria(db, crear_usuario, crear_post):
+    """tokens_de_fotos y post.galeria se recorren juntos: tienen que alinear."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    assert reglas.tokens_de_fotos(post) == ["principal", str(ids[0]), str(ids[1])]
+    assert post.galeria == ["principal.png", "b.png", "c.png"]
+
+
+def test_un_orden_que_no_es_permutacion_exacta_se_rechaza(db, crear_usuario, crear_post):
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png")
+    completo = ["principal", str(ids[0])]
+
+    assert reglas.orden_de_fotos_valido(post, completo)
+    # Falta una: seria un borrado encubierto.
+    assert not reglas.orden_de_fotos_valido(post, ["principal"])
+    # Repetida: duplicaria un archivo y perderia el otro.
+    assert not reglas.orden_de_fotos_valido(post, ["principal", "principal"])
+    # De otro emprendimiento.
+    assert not reglas.orden_de_fotos_valido(post, ["principal", "99999"])
+    # Vacia.
+    assert not reglas.orden_de_fotos_valido(post, [])
+
+
+def test_reordenar_con_un_orden_no_validado_corta_y_no_pierde_fotos(
+    db, crear_usuario, crear_post
+):
+    """La red de abajo de reordenar_fotos(), que antes era un assert.
+
+    La funcion confia en que los tokens ya pasaron por
+    reglas.orden_de_fotos_valido. Si alguna vez la llaman sin eso, un orden con
+    mas fotos que filas hace que el zip() interno corte en la mas corta y que
+    despues se borren las filas "sobrantes": fotos perdidas y sin aviso. Con un
+    assert eso quedaba tapado corriendo con `python -O`, que los saca del
+    bytecode; con el raise pasa siempre.
+
+    Se llama a la consulta directamente y no por la ruta a proposito: por la
+    ruta este orden no llega nunca, que es justamente lo que se esta cubriendo.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png")
+
+    # Una foto de galeria repetida: pide dos filas donde hay una sola.
+    orden_roto = ["principal", str(ids[0]), str(ids[0])]
+    assert not reglas.orden_de_fotos_valido(post, orden_roto)
+
+    with pytest.raises(ValueError):
+        consultas.reordenar_fotos(post, orden_roto)
+
+    db.session.rollback()
+    assert post.image == "principal.png"
+    assert post.galeria == ["principal.png", "b.png"]
+
+
+def test_reordenar_la_galeria_no_toca_la_principal(client, db, crear_usuario, crear_post, login):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    client.post(
+        f"/blog/{post.id}/fotos/reordenar",
+        data={"orden": f"principal,{ids[1]},{ids[0]}"},
+    )
+
+    db.session.expire_all()
+    assert post.image == "principal.png"
+    assert post.galeria == ["principal.png", "c.png", "b.png"]
+
+
+def test_promover_una_foto_de_la_galeria_intercambia_los_archivos(
+    client, db, crear_usuario, crear_post, login
+):
+    """La principal vieja baja a la galeria: es un swap de strings, no de archivos.
+
+    Lo que se fija es que no se pierda ni se duplique ningun archivo, y que la
+    cantidad de filas de post_images no cambie.
+    """
+    from app.blog.modelo_imagen import PostImage
+
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    client.post(
+        f"/blog/{post.id}/fotos/reordenar",
+        data={"orden": f"{ids[1]},principal,{ids[0]}"},
+    )
+
+    db.session.expire_all()
+    assert post.image == "c.png"
+    assert post.galeria == ["c.png", "principal.png", "b.png"]
+    # Las mismas tres fotos, ninguna perdida ni repetida.
+    assert sorted(post.galeria) == ["b.png", "c.png", "principal.png"]
+    # Y las mismas dos filas de siempre: no se creo ni se borro ninguna.
+    assert PostImage.query.filter_by(post_id=post.id).count() == 2
+
+
+def test_un_post_sin_principal_promueve_y_le_sobra_una_fila(
+    client, db, crear_usuario, crear_post, login
+):
+    """Sin Post.image, promover una foto la saca de post_images.
+
+    El total de fotos no cambia, pero una pasa a vivir en Post.image, asi que
+    sobra exactamente una fila. El archivo no se toca: pasa a referenciarlo
+    Post.image.
+    """
+    from app.blog.modelo_imagen import PostImage
+
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image=None)
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    client.post(
+        f"/blog/{post.id}/fotos/reordenar",
+        data={"orden": f"{ids[1]},{ids[0]}"},
+    )
+
+    db.session.expire_all()
+    assert post.image == "c.png"
+    assert post.galeria == ["c.png", "b.png"]
+    assert PostImage.query.filter_by(post_id=post.id).count() == 1
+
+
+def test_reordenar_las_fotos_de_otro_no_se_puede(
+    client, db, crear_usuario, crear_post, login
+):
+    """El chequeo de dueño, que es lo que esta ruta no puede no tener."""
+    autor = crear_usuario(username="autor")
+    intruso = crear_usuario(username="intruso")
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png")
+
+    login(intruso.id)
+    respuesta = client.post(
+        f"/blog/{post.id}/fotos/reordenar",
+        data={"orden": f"{ids[0]},principal"},
+    )
+
+    assert respuesta.status_code == 302
+    db.session.expire_all()
+    assert post.image == "principal.png"
+    assert post.galeria == ["principal.png", "b.png"]
+
+
+def test_un_orden_invalido_no_aplica_nada(client, db, crear_usuario, crear_post, login):
+    """Ni siquiera la parte que cerraba: o entra entero o no entra."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    # Sobra una foto ajena, aunque el resto sea una reordenacion legitima.
+    client.post(
+        f"/blog/{post.id}/fotos/reordenar",
+        data={"orden": f"{ids[1]},principal,{ids[0]},99999"},
+    )
+
+    db.session.expire_all()
+    assert post.galeria == ["principal.png", "b.png", "c.png"]
+
+
+def test_reordenar_no_acepta_get(client, crear_usuario, crear_post, login):
+    """Un GET con efectos se dispara desde un <img src> ajeno."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+
+    assert client.get(f"/blog/{post.id}/fotos/reordenar").status_code == 405
+
+
+# ------------------------------------ la pantalla de edicion: mover fotos
+
+def test_la_edicion_dibuja_el_formulario_de_reordenar(
+    client, db, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    _con_fotos(db, post, "b.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert f'action="/blog/{post.id}/fotos/reordenar"' in html
+    assert 'id="form-reordenar"' in html
+
+
+def test_el_formulario_de_reordenar_no_queda_anidado_en_el_grande(
+    client, db, crear_usuario, crear_post, login
+):
+    """Un <form> dentro de otro no es HTML valido: el navegador cierra el
+    primero al abrir el segundo y pierde el resto de los campos.
+
+    Se chequea contando: entre el <form> del alta/edicion y el de reordenar hay
+    que tener dos aperturas y dos cierres, y el cierre del grande tiene que
+    venir ANTES de la apertura del de reordenar.
+    """
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    _con_fotos(db, post, "b.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    apertura_grande = html.index('class="form-empren__form"')
+    apertura_reordenar = html.index('id="form-reordenar"')
+    cierre_del_grande = html.index("</form>", apertura_grande)
+
+    assert cierre_del_grande < apertura_reordenar
+
+
+def test_cada_foto_trae_sus_botones_con_el_orden_ya_calculado(
+    client, db, crear_usuario, crear_post, login
+):
+    """Los botones son submits comunes: andan sin una linea de JavaScript.
+
+    Cada value es el orden COMPLETO que resulta de ese movimiento, asi que la
+    ruta recibe lo mismo venga del boton o del arrastre.
+    """
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    ids = _con_fotos(db, post, "b.png", "c.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    # Subir la segunda (y bajar la principal) dan el mismo orden: b, principal, c.
+    assert f'value="{ids[0]},principal,{ids[1]}"' in html
+    # Bajar la segunda (y subir la tercera): principal, c, b.
+    assert f'value="principal,{ids[1]},{ids[0]}"' in html
+    # La ultima se hace principal de una, sin pasar por el medio: c, principal, b.
+    assert f'value="{ids[1]},principal,{ids[0]}"' in html
+    # Y todos apuntan al form de afuera.
+    assert 'form="form-reordenar"' in html
+
+
+def test_los_botones_que_no_tienen_a_donde_mover_no_se_dibujan(
+    client, db, crear_usuario, crear_post, login
+):
+    """Un control apagado que no hace nada es peor que no tenerlo."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    _con_fotos(db, post, "b.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    # La primera no puede subir y la ultima no puede bajar: con dos fotos hay
+    # una sola flecha de cada lado.
+    assert html.count("un lugar antes") == 1
+    assert html.count("un lugar después") == 1
+    # "Hacer principal" tampoco va en la que ya es principal.
+    assert html.count("Hacer principal la foto") == 1
+
+
+def test_con_una_sola_foto_no_hay_nada_que_reordenar(
+    client, crear_usuario, crear_post, login
+):
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert 'id="form-reordenar"' not in html
+    assert 'form="form-reordenar"' not in html
+
+
+def test_el_alta_no_dibuja_controles_de_reordenar(client, crear_usuario, login):
+    """En el alta todavia no hay fotos, asi que no hay nada que mover."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+
+    html = client.get("/blog/create").get_data(as_text=True)
+
+    assert 'id="form-reordenar"' not in html
+    assert "Hacer principal" not in html
+
+
+def test_ya_no_se_avisa_que_no_se_puede_reordenar(
+    client, db, crear_usuario, crear_post, login
+):
+    """El aviso decia la verdad hasta esta tanda; ahora seria falso."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    _con_fotos(db, post, "b.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert "Todavía no se pueden reordenar" not in html
+    assert "el orden es el de carga" not in html
+
+
+def test_el_arrastre_es_un_agregado_y_no_el_unico_camino(
+    client, db, crear_usuario, crear_post, login
+):
+    """fotos.js se carga, pero los botones estan en el HTML sin depender de el."""
+    autor = crear_usuario(username="autor")
+    login(autor.id)
+    post = crear_post(autor.id, image="principal.png")
+    _con_fotos(db, post, "b.png")
+
+    html = client.get(f"/blog/update/{post.id}").get_data(as_text=True)
+
+    assert "js/fotos.js" in html
+    # Los submits ya vienen servidos, no los crea el script.
+    assert 'form="form-reordenar"' in html
+    assert "un lugar antes" in html
+
+
+def test_la_vista_se_suma_en_la_base_y_no_en_python(db, crear_usuario, crear_post):
+    """Sin esto se perdian vistas cuando dos personas abrian el mismo
+    emprendimiento a la vez.
+
+    El read-modify-write que habia antes (post.views_count += 1 y commit) leia
+    el contador en Python, y con dos visitas simultaneas los dos procesos leian
+    el mismo numero y los dos escribian ese numero mas uno: una vista se
+    perdia.
+
+    La carrera se reproduce sin hilos, que en SQLite en memoria no serviria:
+    se deja que la sesion cargue el contador (el "read"), se lo cambia por
+    detras como lo haria el otro proceso, y recien ahi se suma. Con la version
+    vieja el resultado era 1, el valor viejo mas uno; con el UPDATE de la base
+    es 6.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    assert post.views_count == 0  # el "read" de la sesion, ya en el identity map
+
+    # El otro proceso, que escribe sin que esta sesion se entere.
+    db.session.connection().exec_driver_sql(
+        f"UPDATE posts SET views_count = 5 WHERE id = {post.id}"
+    )
+
+    consultas.sumar_una_vista(post)
+
+    guardado = db.session.connection().exec_driver_sql(
+        f"SELECT views_count FROM posts WHERE id = {post.id}"
+    ).scalar()
+    assert guardado == 6
+
+
+def test_el_contador_no_queda_viejo_en_la_sesion(db, crear_usuario, crear_post):
+    """El UPDATE no toca el objeto que ya esta en la sesion, asi que se expira
+    el atributo para que se relea si alguien lo mira."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    assert post.views_count == 0
+
+    consultas.sumar_una_vista(post)
+
+    assert post.views_count == 1

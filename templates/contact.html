@@ -1,32 +1,112 @@
 {% extends "base.html" %}
 
 {% block title %}Contacto – IMPULSAR{% endblock %}
+{% block meta_description %}Una sola casilla, y los cuatro caminos que la app ya resuelve sola: reportar, escribirle a un emprendimiento, publicar y Ajustes.{% endblock %}
+
+{#  Contacto (disenio-paginas/Contacto.dc.html).
+
+    SIGUE SIENDO UN MAILTO Y NO UN FORMULARIO, a propósito: la ruta es un
+    render_template sin lógica (views/pages.py), no hay tabla de consultas ni
+    envío de mail. Un formulario dibujado que en realidad no manda nada es peor
+    que un correo honesto.
+
+    Se va el emoji 📧 que llevaba el mail: la guía sólo admite emoji si son de
+    la marca, y ahí era decoración. Queda un ícono de trazo, como el resto.
+
+    Lo que se agrega son los cuatro atajos, y los cuatro existen hoy. Sin ellos
+    la casilla se vuelve el cajón donde caen «este emprendimiento es trucho» y
+    «quiero cambiar mi mail», que la app ya resuelve sola y más rápido. #}
+
+{% macro atajo(destino, tono, titulo, texto) %}
+    <a href="{{ destino }}" class="atajo">
+        <span class="atajo__icono atajo__icono--{{ tono }}" aria-hidden="true">{{ caller() }}</span>
+        <span class="atajo__cuerpo">
+            <span class="atajo__titulo">{{ titulo }}</span>
+            <span class="atajo__texto">{{ texto }}</span>
+        </span>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             class="atajo__flecha" aria-hidden="true">
+            <path d="m9.5 6 6 6-6 6"/>
+        </svg>
+    </a>
+{% endmacro %}
 
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Contacto</h2>
-                <p class="section__subtitle">Estamos para acompañarte en tu camino emprendedor</p>
-            </div>
+        <div class="pagina__intro">
+            <h1 class="pagina__titulo pagina__titulo--chico">Contacto</h1>
+            <p class="pagina__bajada">
+                Hay una sola casilla y la leemos nosotros. Antes de escribir, fijate si lo
+                tuyo se resuelve más rápido adentro de la plataforma: casi todo tiene su
+                propio camino.
+            </p>
         </div>
 
-        <div class="contact">
-            <p class="contact__text">
-                Si tenés dudas, sugerencias o querés ser parte de IMPULSAR,
-                podés escribirnos al correo oficial:
-            </p>
+        <div class="contacto">
+            <div class="contacto__casilla">
+                <span class="contacto__icono" aria-hidden="true">
+                    {% with clave = 'mensajes', tamanio = 24, trazo = 1.7 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </span>
+                <h2 class="contacto__titulo">Escribinos por correo</h2>
+                <p class="contacto__texto">
+                    Dudas, sugerencias, problemas con tu cuenta o cualquier cosa que no
+                    encaje en los caminos de al lado.
+                </p>
 
-            <div class="contact__info">
-                <a href="mailto:impulsARmdz@gmail.com" class="contact__email">
-                    📧 impulsARmdz@gmail.com
-                </a>
+                {# El mail es un enlace de verdad (mailto), no un texto con un
+                   botón de copiar: el botón necesitaría JS y el enlace ya abre
+                   el cliente de correo en cualquier dispositivo. Quien prefiera
+                   copiarlo lo copia del enlace, que está entero a la vista. #}
+                <a href="mailto:impulsARmdz@gmail.com" class="contacto__mail">impulsARmdz@gmail.com</a>
+
+                <p class="contacto__nota">
+                    Somos un equipo chico: contestamos, pero puede tardar unos días. Si es
+                    urgente, decilo en el asunto.
+                </p>
             </div>
 
-            <p class="contact__text">
-                Te responderemos lo antes posible para ayudarte con tu consulta o proyecto.
-            </p>
+            <div class="contacto__atajos">
+                <h2 class="contacto__atajos-titulo">Esto no hace falta que nos lo escribas</h2>
+
+                {% call atajo(url_for('blog.index'), 'terracota',
+                              'Reportar un emprendimiento o una reseña',
+                              'Hay un botón de reportar en cada ficha y en cada reseña. Entra a una cola que revisamos a mano.') %}
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3.8 21 19.5H3Z"/><path d="M12 10v3.6M12 16.6h.01"/>
+                    </svg>
+                {% endcall %}
+
+                {% call atajo(url_for('blog.index'), 'indigo',
+                              'Preguntarle algo a un emprendimiento',
+                              'Va por el chat de la plataforma, desde su ficha. Nosotros no somos intermediarios de esa charla.') %}
+                    {% with clave = 'mensajes', tamanio = 21, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                {% endcall %}
+
+                {% call atajo(url_for('blog.create') if g.user else url_for('auth.register'), 'indigo',
+                              'Publicar tu emprendimiento',
+                              'No hay que pedir permiso ni esperar aprobación: se publica solo, gratis, desde tu cuenta.') %}
+                    {% with clave = 'publicar', tamanio = 21, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                {% endcall %}
+
+                {% call atajo(url_for('profile.edit') if g.user else url_for('auth.login'), 'gris',
+                              'Cambiar tus datos o cerrar tu cuenta',
+                              'Está en Ajustes, dentro de tu cuenta. Para borrar tus datos por completo, ahí sí escribinos.') %}
+                    {% with clave = 'ajustes', tamanio = 21, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                {% endcall %}
+
+                <p class="contacto__aviso">
+                    <span class="contacto__aviso-icono" aria-hidden="true">
+                        {% with clave = 'info', tamanio = 17, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    </span>
+                    <span>
+                        IMPULSAR no vende nada: si tu consulta es por un pedido, un precio o
+                        una entrega, la respuesta la tiene el emprendimiento, no nosotros.
+                    </span>
+                </p>
+            </div>
         </div>
     </div>
 </section>

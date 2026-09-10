@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #F5F7FA; color: #1B2430;
+           font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    svg { display: block; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-item { display: flex; align-items: center; gap: 11px; height: 40px; padding: 0 12px;
+              border-radius: 9px; color: #1B2430; font-size: 14px; font-weight: 500; }
+    .u-item:hover { background: #ECEAF7; color: #3E2F94; }
+    .u-item--danger { color: #B91C1C; }
+    .u-item--danger:hover { background: #FEE2E2; color: #B91C1C; }
+    .u-rotulo { font-family: "Poppins", system-ui, sans-serif; font-weight: 600; font-size: 10.5px;
+                letter-spacing: .09em; text-transform: uppercase; color: #5F6B7C;
+                padding: 0 12px; margin: 14px 0 4px; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-btn:hover { background: #483BA1; }
+    .u-campo:hover { background: #EEF1F7; }
+  </style>
+</helmet>
+
+<div style="min-height: 800px; background: #F5F7FA;">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06); position: relative; z-index: 2;">
+
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+
+      <a href="#" style="display: flex; align-items: center;">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto;">
+      </a>
+
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px;">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+          <span style="position: absolute; top: 3px; right: 3px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 10.5px; border: 2px solid #FFFFFF;">3</span>
+        </a>
+
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer;">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px;"></span>
+
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: #ECEAF7; cursor: pointer; color: #3E2F94;">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 14px;">L</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14.5 6-6 6 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid #EEF1F7;">
+      <div style="max-width: 1160px; margin: 0 auto; padding: 14px 24px; display: flex; justify-content: center;">
+        <div style="width: 100%; max-width: 720px; height: 52px; display: flex; align-items: center; padding: 0 6px 0 0; background: #F5F7FA; border: 1px solid #E2E6EE; border-radius: 999px; box-sizing: border-box;">
+          <div class="u-campo" style="flex: 1.8; min-width: 0; height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-radius: 999px 0 0 999px;">
+            <span style="color: #5F6B7C; flex-shrink: 0; display: flex;">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 15px; color: #5F6B7C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Pan de masa madre, plomero, cerámica…</span>
+          </div>
+          <span style="width: 1px; height: 26px; background: #E2E6EE; flex-shrink: 0;"></span>
+          <div class="u-campo" style="flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 9px; padding: 0 14px;">
+            <span style="color: #3E2F94; flex-shrink: 0; display: flex;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 15px; font-weight: 500; color: #1B2430; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Mendoza Capital</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m6 9.5 6 6 6-6"/></svg>
+          </div>
+          <button type="button" class="u-btn" style="flex-shrink: 0; height: 40px; padding: 0 24px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; cursor: pointer; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 14.5px;">Buscar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; position: relative;">
+    <div style="position: absolute; top: 8px; right: 24px; width: 296px; background: #FFFFFF; border: 1px solid #E2E6EE; border-radius: 16px; box-shadow: 0 10px 30px rgba(15,23,42,.10); padding: 8px; box-sizing: border-box;">
+
+      <div style="display: flex; align-items: center; gap: 11px; padding: 10px 12px 14px;">
+        <span style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 17px;">L</span>
+        <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0;">
+          <span style="font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 15px; color: #1B2430;">Lucía Pérez</span>
+          <a href="#" style="font-size: 13px; font-weight: 500;">Ver mi perfil público</a>
+        </div>
+      </div>
+
+      <!-- PUBLICAR ENTRA ACÁ Y SALE DE LA BARRA (2026-09-06).
+           Era el único botón lleno de la barra de escritorio y se repetía en
+           cada pantalla, aunque cada sección ya tiene su propio llamado. En el
+           teléfono ya vivía arriba de la pestaña Perfil: esto deja las dos
+           plataformas diciendo lo mismo, y libera ~130 px en la barra. -->
+      <a href="#" style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; margin: 0 4px 10px; border-radius: 12px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 14.5px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Publicar un emprendimiento
+      </a>
+
+      <div style="height: 1px; background: #EEF1F7; margin: 0 12px;"></div>
+
+      <p class="u-rotulo">Mi actividad</p>
+      <a href="#" class="u-item">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        <span style="flex: 1;">Mensajes</span>
+        <span style="min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 11px;">3</span>
+      </a>
+      <a href="#" class="u-item">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9.5 13h5M9.5 16.5h3"/></svg>
+        <span style="flex: 1;">Presupuestos</span>
+        <span style="min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 11px;">2</span>
+      </a>
+      <a href="#" class="u-item">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/></svg>
+        <span style="flex: 1;">Mis turnos</span>
+      </a>
+      <a href="#" class="u-item">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        <span style="flex: 1;">Favoritos</span>
+      </a>
+
+      <p class="u-rotulo">Mi emprendimiento</p>
+      <a href="#" class="u-item">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5 12 4l8 5.5"/><path d="M6 10.5V20h12v-9.5"/><path d="M10 20v-5h4v5"/></svg>
+        <span style="flex: 1;">Mis emprendimientos</span>
+      </a>
+      <a href="#" class="u-item">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>
+        <span style="flex: 1;">Mi catálogo</span>
+      </a>
+      <a href="#" class="u-item">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6.5a3.5 3.5 0 0 1 4.6 4.6l-7.3 7.3-4.6-4.6Z"/><path d="M5.5 18.5h2.5"/></svg>
+        <span style="flex: 1;">Mis servicios</span>
+      </a>
+      <a href="#" class="u-item">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/><path d="M10 13.5h5"/></svg>
+        <span style="flex: 1;">Agenda de turnos</span>
+      </a>
+      <a href="#" class="u-item">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.5 5.1 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8Z"/></svg>
+        <span style="flex: 1;">Reseñas recibidas</span>
+        <span style="min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 11px;">1</span>
+      </a>
+
+      <div style="height: 1px; background: #EEF1F7; margin: 10px 12px;"></div>
+
+      <a href="#" class="u-item">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.2 14.4a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7h-.3a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.8l-.1-.1A2 2 0 1 1 6.9 3.8l.1.1a1.6 1.6 0 0 0 2.7-1.1v-.3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.8 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7h.3a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+        <span style="flex: 1;">Ajustes</span>
+      </a>
+      <a href="#" class="u-item u-item--danger">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 20H6a1.5 1.5 0 0 1-1.5-1.5v-13A1.5 1.5 0 0 1 6 4h8"/><path d="m17 15 3.5-3-3.5-3"/><path d="M20 12h-9.5"/></svg>
+        <span style="flex: 1;">Salir</span>
+      </a>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,83 @@
+{#  La columna izquierda del panel de administración (disenio-admin/).
+
+    Va como parcial porque las cinco pantallas del panel la comparten. Quien la
+    incluya pasa `seccion` con el nombre del ítem activo.
+
+    Los dos badges son conteos reales y de ahora: los inyecta el context
+    processor del blueprint (ver views/admin.py), así que no hay que pasarlos
+    desde cada vista. Cuando una cola está vacía el badge no se dibuja, en vez
+    de mostrar un cero.
+
+    EN EL TELÉFONO EL PANEL SE RECORTA A LA COLA. Las tablas de cinco columnas
+    y las métricas no entran ni tienen por qué: al celular se viene a resolver
+    algo urgente, no a mirar números. Por eso el menú lateral se apaga y en su
+    lugar quedan el contador de pendientes y un segmentado de dos —Reportes y
+    Verificaciones—; Usuarios y Emprendimientos se quedan en escritorio. Las
+    dos versiones viven en este mismo parcial para que ninguna pantalla del
+    panel se olvide de una. #}
+<aside class="admin-menu">
+    <div class="admin-menu__marca">
+        <span class="admin-menu__rotulo">Administración</span>
+        <span class="admin-menu__usuario">{{ g.user.username }}</span>
+    </div>
+
+    <nav class="admin-menu__nav" aria-label="Panel de administración">
+        {% set items = [
+            ('Resumen', url_for('admin.dashboard'), None, 'resumen'),
+            ('Reportes', url_for('admin.reportes'), badge_reportes, 'reportes'),
+            ('Verificaciones', url_for('admin.verificaciones'), badge_verificaciones, 'admin'),
+            ('Usuarios', url_for('admin.usuarios'), None, 'usuarios'),
+            ('Emprendimientos', url_for('admin.emprendimientos'), None, 'emprendimientos'),
+        ] %}
+        {% for etiqueta, destino, badge, icono in items %}
+            <a href="{{ destino }}"
+               class="admin-menu__item {% if etiqueta == seccion %}admin-menu__item--activo{% endif %}"
+               {% if etiqueta == seccion %}aria-current="page"{% endif %}>
+                {% with clave = icono, tamanio = 18, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                <span class="admin-menu__texto">{{ etiqueta }}</span>
+                {% if badge %}
+                    <span class="admin-menu__badge">{{ badge }}</span>
+                {% endif %}
+            </a>
+        {% endfor %}
+    </nav>
+</aside>
+
+{# --- Lo que ve el teléfono en lugar del menú ------------------------------ #}
+
+{% set pendientes_total = badge_reportes + badge_verificaciones %}
+
+{# El único número grande de la pantalla, igual que en el Resumen: es el que
+   decide si hoy hay trabajo. Con las dos colas vacías no se dibuja: un cero
+   grande ocuparía media pantalla para decir que no hay nada. #}
+{% if pendientes_total %}
+    <div class="admin-movil__pendientes">
+        <span class="admin-movil__numero">{{ pendientes_total }}</span>
+        <span class="admin-movil__texto">
+            <span class="admin-movil__titulo">
+                cosa{{ '' if pendientes_total == 1 else 's' }} para revisar
+            </span>
+            <span class="admin-movil__detalle">
+                {{ badge_reportes }} reporte{{ '' if badge_reportes == 1 else 's' }}
+                y {{ badge_verificaciones }} verificación{{ '' if badge_verificaciones == 1 else 'es' }}
+            </span>
+        </span>
+    </div>
+{% endif %}
+
+<nav class="admin-seg" aria-label="Colas pendientes">
+    {% set colas = [
+        ('Reportes', url_for('admin.reportes'), badge_reportes),
+        ('Verificaciones', url_for('admin.verificaciones'), badge_verificaciones),
+    ] %}
+    {% for etiqueta, destino, badge in colas %}
+        <a href="{{ destino }}"
+           class="admin-seg__item {% if etiqueta == seccion %}admin-seg__item--activo{% endif %}"
+           {% if etiqueta == seccion %}aria-current="page"{% endif %}>
+            {{ etiqueta }}
+            {% if badge %}
+                <span class="admin-seg__badge">{{ badge }}</span>
+            {% endif %}
+        </a>
+    {% endfor %}
+</nav>

@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Mi panel – IMPULSAR{% endblock %}
+
+{#  La portada del panel del vendedor (disenio-panel/Main.dc.html).
+
+    ARRANCA POR LO QUE HAY QUE HACER, NO POR LOS NUMEROS: quien entra viene a
+    resolver algo. Solo se dibuja lo que tiene algo pendiente -- una fila que
+    dice "0 presupuestos" es ruido, y con las cuatro en cero la seccion entera
+    no aparece.
+
+    Los numeros son los cinco que la base sabe contar
+    (perfil.consultas.estadisticas_de_usuario). Del diseño NO estan las
+    flechitas de variacion ("+18%") ni ningun grafico: la consulta da el total
+    de hoy y no hay historico, asi que serian una linea inventada. Si alguna
+    vez se guarda una foto diaria de esas metricas, ahi entra el grafico. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Inicio del panel" %}
+                {% include "partials/_menu_panel.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <h1 class="cuenta__titulo">Hola, {{ g.user.username }}</h1>
+                    <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}"
+                       class="btn btn--secondary">
+                        {% with clave = 'ojo', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        Ver mi ficha pública
+                    </a>
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% set turno = pendientes.turnos_hoy[0] if pendientes.turnos_hoy else None %}
+                {% if pendientes.solicitudes or pendientes.mensajes or turno or pendientes.resenias %}
+                    <section class="panel-bloque">
+                        <h2 class="panel-bloque__titulo">Lo que te está esperando</h2>
+                        <div class="pendientes">
+                            {% if pendientes.solicitudes %}
+                                <a href="{{ url_for('servicios.solicitudes') }}" class="pendiente">
+                                    <span class="pendiente__ico pendiente__ico--aviso">
+                                        {% with clave = 'presupuestos', tamanio = 21 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                    </span>
+                                    <span class="pendiente__texto">
+                                        <span class="pendiente__titulo">
+                                            {{ pendientes.solicitudes }} presupuesto{{ '' if pendientes.solicitudes == 1 else 's' }} sin responder
+                                        </span>
+                                        <span class="pendiente__detalle">Quien lo pidió está esperando un precio</span>
+                                    </span>
+                                    {% with clave = 'chevron-derecha', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                </a>
+                            {% endif %}
+
+                            {% if pendientes.mensajes %}
+                                <a href="{{ url_for('messages.inbox') }}" class="pendiente">
+                                    <span class="pendiente__ico pendiente__ico--marca">
+                                        {% with clave = 'mensajes', tamanio = 21 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                    </span>
+                                    <span class="pendiente__texto">
+                                        <span class="pendiente__titulo">
+                                            {{ pendientes.mensajes }} mensaje{{ '' if pendientes.mensajes == 1 else 's' }} sin leer
+                                        </span>
+                                        <span class="pendiente__detalle">En tus conversaciones</span>
+                                    </span>
+                                    {% with clave = 'chevron-derecha', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                </a>
+                            {% endif %}
+
+                            {% if turno %}
+                                {# El primero con nombre y hora, y el resto como
+                                   numero: la fila dice cual es lo proximo, no la
+                                   agenda entera. #}
+                                <a href="{{ url_for('turnos.agenda') }}" class="pendiente">
+                                    <span class="pendiente__ico pendiente__ico--ok">
+                                        {% with clave = 'agenda', tamanio = 21 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                    </span>
+                                    <span class="pendiente__texto">
+                                        <span class="pendiente__titulo">
+                                            {{ pendientes.turnos_hoy | length }} turno{{ '' if pendientes.turnos_hoy | length == 1 else 's' }} hoy
+                                        </span>
+                                        <span class="pendiente__detalle">
+                                            {{ turno.servicio.titulo }},
+                                            {{ turno.hora_inicio.strftime('%H:%M') }} ·
+                                            {{ turno.cliente.username }}
+                                        </span>
+                                    </span>
+                                    {% with clave = 'chevron-derecha', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                </a>
+                            {% endif %}
+
+                            {% if pendientes.resenias %}
+                                <a href="{{ url_for('profile.reviews', slug=g.user.slug) }}" class="pendiente">
+                                    <span class="pendiente__ico pendiente__ico--aviso">
+                                        {% with clave = 'resenias', tamanio = 21 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                    </span>
+                                    <span class="pendiente__texto">
+                                        <span class="pendiente__titulo">
+                                            {{ pendientes.resenias }} reseña{{ '' if pendientes.resenias == 1 else 's' }} sin responder
+                                        </span>
+                                        <span class="pendiente__detalle">Contestarlas queda a la vista de todos</span>
+                                    </span>
+                                    {% with clave = 'chevron-derecha', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </section>
+                {% endif %}
+
+                <section class="panel-bloque">
+                    <div class="panel-bloque__head">
+                        <h2 class="panel-bloque__titulo">Tus números</h2>
+                        {% if contadores.emprendimientos %}
+                            <span class="panel-bloque__nota">
+                                {% if contadores.emprendimientos == 1 %}
+                                    De tu emprendimiento
+                                {% else %}
+                                    Acumulados de tus {{ contadores.emprendimientos }} emprendimientos
+                                {% endif %}
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="cifras">
+                        <div class="cifra">
+                            <span class="cifra__valor">{{ estadisticas.vistas }}</span>
+                            <span class="cifra__label">Visitas a tus fichas</span>
+                        </div>
+                        <div class="cifra">
+                            <span class="cifra__valor">{{ estadisticas.favoritos }}</span>
+                            <span class="cifra__label">Veces que te guardaron</span>
+                        </div>
+                        <div class="cifra">
+                            <span class="cifra__valor">
+                                {{ estadisticas.promedio if estadisticas.promedio else '—' }}
+                                {% if estadisticas.promedio %}
+                                    <svg class="cifra__estrella" width="20" height="20" viewBox="0 0 24 24"
+                                         fill="currentColor" aria-hidden="true" focusable="false">
+                                        <path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/>
+                                    </svg>
+                                {% endif %}
+                            </span>
+                            <span class="cifra__label">
+                                {% if estadisticas.resenias %}
+                                    Promedio de {{ estadisticas.resenias }} reseña{{ '' if estadisticas.resenias == 1 else 's' }}
+                                {% else %}
+                                    Todavía no te dejaron reseñas
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="cifra">
+                            <span class="cifra__valor">{{ estadisticas.seguidores }}</span>
+                            <span class="cifra__label">Personas que te siguen</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel-bloque">
+                    <div class="panel-bloque__head">
+                        <h2 class="panel-bloque__titulo">Tus emprendimientos</h2>
+                        {% if emprendimientos %}
+                            <a href="{{ url_for('blog.create') }}" class="panel-bloque__accion">Publicar otro</a>
+                        {% endif %}
+                    </div>
+
+                    {% if emprendimientos %}
+                        <div class="negocios">
+                            {% for item in emprendimientos %}
+                                {% set post = item.post %}
+                                <article class="negocio">
+                                    <a href="{{ url_for('blog.detail', id=post.id) }}"
+                                       class="negocio__foto" tabindex="-1" aria-hidden="true">
+                                        {% if post.image %}
+                                            <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                                                 alt="" class="negocio__img" loading="lazy">
+                                        {% endif %}
+                                    </a>
+
+                                    <div class="negocio__cuerpo">
+                                        <div class="negocio__nombre">
+                                            <a href="{{ url_for('blog.detail', id=post.id) }}">{{ post.title }}</a>
+                                            <span class="badge badge--category">{{ post.category_label }}</span>
+                                        </div>
+                                        <p class="negocio__contenido">
+                                            {{ item.contenido.fotos }} foto{{ '' if item.contenido.fotos == 1 else 's' }} ·
+                                            {{ item.metricas.productos }} producto{{ '' if item.metricas.productos == 1 else 's' }} ·
+                                            {{ item.metricas.servicios }} servicio{{ '' if item.metricas.servicios == 1 else 's' }} ·
+                                            {{ item.contenido.ferias }} feria{{ '' if item.contenido.ferias == 1 else 's' }}
+                                        </p>
+                                        {% if item.aviso %}
+                                            <p class="negocio__aviso">
+                                                {% with clave = 'info', tamanio = 14, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                                {{ item.aviso }}
+                                            </p>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="negocio__acciones">
+                                        <a href="{{ url_for('blog.detail', id=post.id) }}" class="btn btn--secondary btn--chico">
+                                            Ver ficha
+                                        </a>
+                                        <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--suave btn--chico">
+                                            Editar
+                                        </a>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="catalogo__vacio">
+                            <p>
+                                Todavía no registraste ningún emprendimiento.
+                                <a href="{{ url_for('blog.create') }}">Publicá el primero acá</a>
+                                y desde este panel vas a manejar su catálogo, sus turnos y sus reseñas.
+                            </p>
+                        </div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

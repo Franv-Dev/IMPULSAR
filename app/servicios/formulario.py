@@ -9,6 +9,11 @@ proyecto: Flask-WTF esta instalado pero solo se usa para el CSRF.
 from flask import request
 
 from app.servicios.modelo import Rubros
+from app.servicios.reglas import (
+    MAX_DURACION_TURNO_MINUTOS,
+    MIN_DURACION_TURNO_MINUTOS,
+    duracion_de_turno_valida,
+)
 from services.precios import parsear_precio
 
 
@@ -26,10 +31,25 @@ def leer_servicio():
     precio_texto = (request.form.get("precio_estimado") or "").strip()
     # Un checkbox que no se marca directamente no viaja en el POST.
     disponible = request.form.get("disponible") is not None
+    turnos_habilitados = request.form.get("turnos_habilitados") is not None
+    duracion_texto = (request.form.get("duracion_turno_minutos") or "").strip()
 
     # obligatorio=False: un servicio sin precio es "a presupuestar", que es un
     # caso valido y no un formulario incompleto.
     precio, error_precio = parsear_precio(precio_texto, obligatorio=False)
+
+    # int() a mano y no request.form.get(type=int), que devuelve None tanto
+    # para "no vino" como para "vino 'tres'". Aca la diferencia importa: sin
+    # turnos, vacio es lo normal; con turnos, hay que distinguir el campo en
+    # blanco de un numero mal escrito para no decir "completá la duración"
+    # cuando el usuario si la completo.
+    duracion = None
+    duracion_ilegible = False
+    if duracion_texto:
+        try:
+            duracion = int(duracion_texto)
+        except ValueError:
+            duracion_ilegible = True
 
     error = None
     if not titulo:
@@ -41,18 +61,38 @@ def leer_servicio():
         error = "Elegí uno de los rubros de la lista."
     elif error_precio:
         error = error_precio
+    elif turnos_habilitados and duracion_ilegible:
+        error = "La duración del turno tiene que ser un número de minutos."
+    elif not duracion_de_turno_valida(turnos_habilitados, duracion):
+        # Un solo mensaje para "falta" y "esta fuera de rango": los dos se
+        # arreglan escribiendo un numero del rango, asi que separarlos solo
+        # agregaria una rama sin decirle nada nuevo al usuario.
+        error = (
+            "Si el servicio toma turnos, indicá cuánto dura cada uno "
+            f"(entre {MIN_DURACION_TURNO_MINUTOS} y "
+            f"{MAX_DURACION_TURNO_MINUTOS} minutos)."
+        )
 
     # En `datos` va el texto crudo del precio y no el Decimal: si estaba mal
     # escrito, el formulario tiene que volver con lo que puso el usuario.
     datos = {
         "titulo": titulo, "rubro": rubro, "descripcion": descripcion,
         "zona_cobertura": zona, "precio_estimado": precio_texto,
-        "disponible": disponible,
+        "disponible": disponible, "turnos_habilitados": turnos_habilitados,
+        # Igual que el precio: el texto crudo, para que el formulario vuelva
+        # con lo que el usuario escribio si estaba mal.
+        "duracion_turno_minutos": duracion_texto,
     }
     valores = {
         "titulo": titulo, "rubro": rubro,
         "descripcion": descripcion or None, "zona_cobertura": zona or None,
         "precio_estimado": precio, "disponible": disponible,
+        "turnos_habilitados": turnos_habilitados,
+        # NULL cuando los turnos estan apagados, aunque el campo haya quedado
+        # escrito: la columna solo significa algo con el flag prendido, y
+        # dejarla con el valor viejo haria que apagar y volver a prender los
+        # turnos reviva una duracion que el vendedor ya no eligio.
+        "duracion_turno_minutos": duracion if turnos_habilitados else None,
     }
     return datos, valores, error
 
@@ -69,13 +109,22 @@ def leer_busqueda():
     "disponible" de leer_servicio(): un checkbox destildado no manda nada, y
     tildado manda "on". Preguntar por el valor obligaria a decidir que hacer con
     "0", "false" y demas, que nadie manda desde este formulario.
+
+    Devuelve un dict y no una tupla: son seis filtros y desempaquetar seis
+    posiciones en la vista es una linea que se lee mal y que se rompe en
+    silencio el dia que se agregue el septimo en el medio.
     """
-    return (
-        (request.args.get("rubro") or "").strip(),
-        (request.args.get("zona") or "").strip(),
-        request.args.get("verificados") is not None,
-        request.args.get("page", 1, type=int),
-    )
+    return {
+        "rubro": (request.args.get("rubro") or "").strip(),
+        "zona": (request.args.get("zona") or "").strip(),
+        "solo_verificados": request.args.get("verificados") is not None,
+        # El precio y el orden viajan por valor y no por presencia: no son
+        # si/no sino uno de varios, y el que no conozco se ignora (lo decide
+        # reglas.precio_valido / reglas.orden_valido, igual que el rubro).
+        "precio": (request.args.get("precio") or "").strip(),
+        "orden": (request.args.get("orden") or "").strip(),
+        "pagina": request.args.get("page", 1, type=int),
+    }
 
 
 def leer_solicitud():

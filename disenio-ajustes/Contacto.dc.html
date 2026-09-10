@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input { font-family: inherit; }
+    input { outline: none; }
+    .u-campo:focus-within { border-color: #3E2F94; background: #FFFFFF; box-shadow: 0 0 0 3px #ECEAF7; }
+    .u-btn-borde:hover { background: #ECEAF7; border-color: #ECEAF7; }
+    .u-btn-primario:hover { background: #483BA1; }
+    .u-item:hover { background: #EEF1F7; color: #1B2430; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #4A5666">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #4A5666">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 5px; border: 1px solid #ECEAF7; border-radius: 999px; background: #ECEAF7; cursor: pointer">
+        <span style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">TG</span>
+        <span style="font-size: 13.5px; font-weight: 600; color: #33267C">Tomás</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 24px 24px 56px; display: flex; flex-direction: column; gap: 18px">
+
+    <div>
+      <h1 style="font-size: 24px; letter-spacing: -.01em">Ajustes de mi cuenta</h1>
+      <p style="margin: 5px 0 0; font-size: 14px; color: #5F6B7C">Por dónde te escriben. Todo lo de acá se publica en tu perfil.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; align-items: start">
+
+      <aside style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: #ECEAF7; color: #3E2F94; font-weight: 700">T</span>
+          <span style="display: flex; flex-direction: column; min-width: 0">
+            <span style="font-weight: 600; font-size: 14.5px">Tomás</span>
+            <a href="#" style="font-size: 12.5px; color: #5F6B7C">Ver mi perfil</a>
+          </span>
+        </div>
+        <nav style="display: flex; flex-direction: column; gap: 2px">
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mis emprendimientos</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mi catálogo</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mis servicios</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Presupuestos</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Mensajes</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Reseñas recibidas</a>
+          <a href="#" class="u-item" style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666">Favoritos</a>
+          <span style="padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; background: #ECEAF7; color: #3E2F94; font-weight: 600">Ajustes</span>
+        </nav>
+      </aside>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+        <nav style="display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 12px; background: #EEF1F7">
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Perfil público</a>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Horarios</a>
+          <span style="padding: 8px 14px; border-radius: 8px; background: #FFFFFF; color: #1B2430; font-size: 13.6px; font-weight: 600; box-shadow: 0 4px 12px rgba(15,23,42,.08)">Contacto y redes</span>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Cuenta y contraseña</a>
+          <a href="#" style="padding: 8px 14px; border-radius: 8px; color: #4A5666; font-size: 13.6px">Notificaciones</a>
+        </nav>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 24px; align-items: start">
+
+          <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+            <!-- TELEFONOS. Son los dos unicos campos del perfil que se validan
+                 (ver formulario.leer_perfil): un telefono con letras se publica
+                 y el cliente que lo marque no llega a nadie. -->
+            <section style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; padding: 18px 22px 20px">
+              <h2 style="font-size: 16px; letter-spacing: -.01em">Teléfono</h2>
+              <p style="margin: 6px 0 16px; font-size: 13.6px; line-height: 1.55; color: #5F6B7C">Los dos aparecen como botón en tu perfil. El de WhatsApp abre el chat directo.</p>
+
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+                <div style="display: flex; flex-direction: column; gap: 7px">
+                  <label style="font-size: 12.6px; font-weight: 600">Teléfono</label>
+                  <div class="u-campo" style="display: flex; align-items: center; gap: 11px; height: 48px; padding: 0 12px 0 14px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3z"/></svg>
+                    <input value="261 555-0143" style="flex: 1; min-width: 0; border: 0; background: transparent; color: #1B2430; font-size: 15.2px">
+                  </div>
+                  <p style="margin: 0; font-size: 13.6px; color: #5F6B7C">Con característica, como lo marcarías vos.</p>
+                </div>
+
+                <!-- El error del campo, EN el campo. Hoy vuelve como un aviso
+                     suelto arriba de todo y hay que buscar cuál de los diez
+                     campos lo produjo. -->
+                <div style="display: flex; flex-direction: column; gap: 7px">
+                  <label style="font-size: 12.6px; font-weight: 600">WhatsApp</label>
+                  <div style="display: flex; align-items: center; gap: 11px; height: 48px; padding: 0 12px 0 14px; border: 1px solid #FCA5A5; border-radius: 13px; background: #FEF2F2">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+                    <input value="261 555 01" style="flex: 1; min-width: 0; border: 0; background: transparent; color: #1B2430; font-size: 15.2px">
+                  </div>
+                  <p style="display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13.4px; font-weight: 500; color: #B91C1C">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.2v.3"/></svg>
+                    Le faltan números para poder marcarlo.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <!-- REDES: el prefijo fijo adentro del campo. Hoy son tres <input
+                 type=url> vacios con la URL entera de ejemplo en el placeholder. -->
+            <section style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; padding: 18px 22px 20px">
+              <h2 style="font-size: 16px; letter-spacing: -.01em">Redes</h2>
+              <p style="margin: 6px 0 16px; font-size: 13.6px; line-height: 1.55; color: #5F6B7C">Va tu usuario, no la dirección completa: el resto lo pone IMPULSAR.</p>
+
+              <div style="display: flex; flex-direction: column; gap: 14px">
+                <div style="display: flex; align-items: center; gap: 14px">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: #FBEBF2; color: #954D71">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1.2" fill="currentColor" stroke="none"/></svg>
+                  </span>
+                  <div class="u-campo" style="display: flex; align-items: center; height: 48px; flex: 1; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+                    <span style="font-size: 15.2px; color: #5F6B7C">instagram.com/</span>
+                    <input value="tostaderia.guemes" style="flex: 1; min-width: 0; border: 0; background: transparent; color: #1B2430; font-size: 15.2px">
+                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #1F7A4D">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                      Cargado
+                    </span>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 14px">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: #E5F2FD; color: #1D6FA0">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8.5h2.5V5H14a4 4 0 0 0-4 4v2H7.5v3.5H10V21h3.5v-6.5H16l.6-3.5H13.5V9.4c0-.6.3-.9.9-.9Z"/></svg>
+                  </span>
+                  <div class="u-campo" style="display: flex; align-items: center; height: 48px; flex: 1; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+                    <span style="font-size: 15.2px; color: #5F6B7C">facebook.com/</span>
+                    <input placeholder="tu-página" style="flex: 1; min-width: 0; border: 0; background: transparent; color: #1B2430; font-size: 15.2px">
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 14px">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: #EEF1F7; color: #4A5666">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 4.5 15 15M19.5 4.5l-15 15"/></svg>
+                  </span>
+                  <div class="u-campo" style="display: flex; align-items: center; height: 48px; flex: 1; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 13px; background: #F5F7FA">
+                    <span style="font-size: 15.2px; color: #5F6B7C">x.com/</span>
+                    <input placeholder="tu-usuario" style="flex: 1; min-width: 0; border: 0; background: transparent; color: #1B2430; font-size: 15.2px">
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div style="position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid #D9D2F0; border-radius: 16px; background: #ECEAF7">
+              <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+                <span style="font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: #33267C">Tenés cambios sin guardar</span>
+                <span style="font-size: 12.6px; color: #5F6B7C">Corregí el WhatsApp para poder guardar.</span>
+              </span>
+              <button type="button" class="u-btn-borde" style="min-height: 42px; padding: 0 18px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 14.4px; cursor: pointer">Descartar</button>
+              <button type="button" style="min-height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: #C7C2E4; color: #FFFFFF; font-size: 14.4px; cursor: default">Guardar cambios</button>
+            </div>
+          </div>
+
+          <aside style="display: flex; flex-direction: column; gap: 10px">
+            <span style="display: inline-flex; align-items: center; gap: 7px; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; color: #33267C">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              Así te ven
+            </span>
+
+            <div style="border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; padding: 18px">
+              <p style="margin: 0 0 12px; font-size: 12.6px; color: #5F6B7C">Los botones de contacto de tu perfil:</p>
+
+              <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                <span style="display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 15px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 13.5px; font-weight: 600">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+                  WhatsApp
+                </span>
+                <span style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #4A5666">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3z"/></svg>
+                </span>
+                <span style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; color: #954D71">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1.2" fill="currentColor" stroke="none"/></svg>
+                </span>
+              </div>
+
+              <p style="margin: 14px 0 0; padding-top: 14px; border-top: 1px solid #E2E6EE; font-size: 12.8px; line-height: 1.6; color: #5F6B7C">El botón de WhatsApp aparece sólo si el número es válido. Con el que está cargado ahora no aparecería.</p>
+            </div>
+
+            <p style="margin: 2px 0 0; font-size: 12.6px; line-height: 1.55; color: #5F6B7C">Ninguno de estos datos se le muestra a quien no entró a tu perfil: no se listan en las búsquedas.</p>
+          </aside>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

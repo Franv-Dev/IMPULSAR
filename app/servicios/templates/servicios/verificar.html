@@ -2,22 +2,62 @@
 
 {% block title %}Verificar {{ servicio.titulo }} – IMPULSAR{% endblock %}
 
+{#  La verificacion de credenciales, rediseñada.
+
+    Los cuatro estados (sin pedido, en revision, rechazado, verificado) eran
+    parrafos sueltos y habia que leerlos para saber en cual estabas: la unica
+    señal era que apareciera o no el formulario. Ahora los tres pasos estan
+    siempre arriba y marcan donde estas, y cada estado tiene su panel.
+
+    El cambio que mas se nota es el rechazo: el motivo se dibuja AL LADO de la
+    foto que mandaste, en vez de un alert arriba y una imagen suelta abajo.
+    Rehacer la foto sin ver cual fue es adivinar.
+
+    Los dos textos del costado son la parte que la app nunca decia: que papel
+    sirve, y que significa el sello. Sin eso, el sello es un adorno. #}
+
+{% set en_revision = pendiente is not none %}
+{% set rechazado = not en_revision and ultima and ultima.estado == estados.RECHAZADA %}
+{# El paso en el que esta: 0 subir, 1 esperando, 2 resuelto. Un servicio
+   verificado que ademas tiene un pedido en revision (se puede: el admin marca
+   el flag y despues llega otro pedido) muestra la revision, que es lo que esta
+   pasando ahora. #}
+{% set paso = 1 if en_revision else (2 if servicio.verificado else 0) %}
+
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
+        <p class="volver">
+            <a href="{{ url_for('servicios.index') }}">‹ Volver a mis servicios</a>
+        </p>
+
+        <div class="cuenta__head">
             <div>
-                <h2 class="section__title">Verificar credenciales</h2>
-                <p class="section__subtitle">
-                    {{ servicio.titulo }} — {{ servicio.rubro_label }}
+                <h1 class="cuenta__titulo">Verificar credenciales</h1>
+                <p class="cuenta__bajada">
+                    El sello lo pone un administrador después de mirar tu documentación.
+                    Vos no lo podés activar: si no, no significaría nada para quien lo mira.
                 </p>
             </div>
-            <a href="{{ url_for('servicios.index') }}" class="section__link">← Volver a mis servicios</a>
+
+            <div class="ficha-servicio ficha-servicio--chica">
+                <span class="servicio__emblema" aria-hidden="true">
+                    {% with clave = servicio.rubro, medida = 21 %}
+                        {% include "partials/_icono_oficio.html" %}
+                    {% endwith %}
+                </span>
+                <div>
+                    <p class="ficha-servicio__titulo">{{ servicio.titulo }}</p>
+                    <p class="ficha-servicio__sub">
+                        {{ servicio.rubro_label }} · {{ servicio.post.title }}
+                    </p>
+                </div>
+            </div>
         </div>
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
+                <div class="auth__messages">
                     {% for message in messages %}
                         <div class="auth__alert">{{ message }}</div>
                     {% endfor %}
@@ -25,65 +65,173 @@
             {% endif %}
         {% endwith %}
 
-        {% if servicio.verificado %}
-            <p class="review-form-info">
-                <span class="badge badge--verificado">✓ Verificado</span>
-                Este servicio ya está verificado: el sello se muestra en la búsqueda pública.
-            </p>
-        {% endif %}
+        <div class="editor">
+            <div class="editor__campos">
 
-        {% if pendiente %}
-            {# Ya hay un pedido esperando: se muestra eso en vez del formulario,
-               mismo criterio que solicitar() con la solicitud pendiente. #}
-            <p class="review-form-info">
-                Mandaste tu documentación
-                {% if pendiente.created_at %}el {{ pendiente.created_at.strftime("%d/%m/%Y") }}{% endif %}
-                y un administrador la va a revisar. Cuando haya una respuesta la vas a ver acá.
-            </p>
-            {% if pendiente.foto %}
-                {# Por la ruta del blueprint y no por /static: el documento no es
-                   publico y sale de carpeta_privada(), que ni siquiera cuelga de
-                   static/. El permiso lo chequea la ruta (ver
-                   servicios.foto_de_verificacion) y ademas esta pagina entera ya
-                   pasa por _servicio_propio, asi que este link solo se dibuja
-                   para el dueño. #}
-                <img src="{{ url_for('servicios.foto_de_verificacion', id=pendiente.id) }}"
-                     alt="La documentación que mandaste"
-                     style="max-width:100%; border-radius:8px; margin-top:0.75rem;">
-            {% endif %}
-        {% else %}
-            {% if ultima and ultima.estado == estados.RECHAZADA %}
-                <div class="auth__alert" style="margin-bottom:1rem;">
-                    Tu último pedido no fue aprobado.
-                    {% if ultima.motivo_rechazo %}
-                        Motivo: {{ ultima.motivo_rechazo }}
-                    {% endif %}
-                    Podés corregirlo y volver a mandarlo.
-                </div>
-                {% if ultima.foto %}
-                    {# La misma ruta protegida que arriba: ver que se mando ayuda
-                       a entender el motivo del rechazo antes de rehacerlo. #}
-                    <img src="{{ url_for('servicios.foto_de_verificacion', id=ultima.id) }}"
-                         alt="La documentación que no fue aprobada"
-                         style="max-width:100%; border-radius:8px; margin-bottom:1rem;">
+                <section class="panel">
+                    <ol class="pasos-verificacion">
+                        {% for numero, titulo, texto in [
+                            (1, 'Subís el documento', 'Matrícula, certificado o habilitación de este servicio.'),
+                            (2, 'Lo mira un administrador', 'Puede aprobarlo o pedirte una foto mejor, con el motivo.'),
+                            (3, 'Aparece el sello', 'En la búsqueda y en la página de tu emprendimiento.'),
+                        ] %}
+                            {% set indice = loop.index0 %}
+                            <li class="paso-v
+                                       {{ 'paso-v--hecho' if indice < paso }}
+                                       {{ 'paso-v--activo' if indice == paso }}"
+                                {% if indice == paso %}aria-current="step"{% endif %}>
+                                <span class="paso-v__numero" aria-hidden="true">{{ numero }}</span>
+                                <span class="paso-v__titulo">{{ titulo }}</span>
+                                <span class="paso-v__texto">{{ texto }}</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </section>
+
+                {% if servicio.verificado %}
+                    <section class="panel panel--ok">
+                        <div class="estado-v">
+                            <span class="estado-v__icono estado-v__icono--ok" aria-hidden="true">✓</span>
+                            <div>
+                                <h2 class="panel__titulo">Este servicio está verificado</h2>
+                                <p class="panel__bajada">
+                                    El sello se muestra en la búsqueda y en tu emprendimiento,
+                                    y quien filtra por "solo verificados" te encuentra.
+                                </p>
+                            </div>
+                        </div>
+                        <p class="muestra-sello">
+                            <span class="badge badge--verificado">✓ Verificado</span>
+                            Así lo ve quien busca un {{ servicio.rubro_label | lower }}.
+                        </p>
+                    </section>
                 {% endif %}
-            {% endif %}
 
-            <p class="section__subtitle">
-                Subí una foto de tu matrícula, certificado o habilitación para este
-                servicio. La verificación es por servicio y no por persona: si ofrecés
-                varios oficios, cada uno lleva su propia documentación.
-            </p>
+                {% if en_revision %}
+                    {# Ya hay un pedido esperando: se muestra eso en vez del
+                       formulario, mismo criterio que solicitar() con la
+                       solicitud pendiente. #}
+                    <section class="panel">
+                        <div class="estado-v">
+                            <span class="estado-v__icono estado-v__icono--espera" aria-hidden="true">⏱</span>
+                            <div>
+                                <h2 class="panel__titulo">Tu documentación está en revisión</h2>
+                                <p class="panel__bajada">
+                                    Mandaste tu documentación
+                                    {% if pendiente.created_at %}el {{ pendiente.created_at.strftime("%d/%m/%Y") }}{% endif %}
+                                    y un administrador la va a revisar. Cuando haya una
+                                    respuesta la vas a ver acá. No hace falta que mandes otra.
+                                </p>
+                            </div>
+                        </div>
 
-            <form method="post" enctype="multipart/form-data" class="auth__form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="auth__field">
-                    <label for="foto" class="auth__label">Foto del documento</label>
-                    <input type="file" name="foto" id="foto" accept="image/*" class="auth__input">
-                </div>
-                <button type="submit" class="btn btn--primary">Pedir verificación</button>
-            </form>
-        {% endif %}
+                        {% if pendiente.foto %}
+                            {# Por la ruta del blueprint y no por /static: el documento no es
+                               publico y sale de carpeta_privada(), que ni siquiera cuelga de
+                               static/. El permiso lo chequea la ruta (ver
+                               servicios.foto_de_verificacion) y ademas esta pagina entera ya
+                               pasa por _servicio_propio, asi que este link solo se dibuja
+                               para el dueño. #}
+                            <div class="documento">
+                                <img src="{{ url_for('servicios.foto_de_verificacion', id=pendiente.id) }}"
+                                     alt="La documentación que mandaste" class="documento__foto">
+                                <div class="documento__texto">
+                                    <p class="documento__titulo">Lo que mandaste</p>
+                                    <p class="documento__nota">
+                                        Se guarda fuera de las carpetas públicas y solo lo
+                                        abren el administrador y vos.
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </section>
+                {% else %}
+                    {% if rechazado %}
+                        <section class="panel panel--rechazo">
+                            <div class="estado-v">
+                                <span class="estado-v__icono estado-v__icono--no" aria-hidden="true">!</span>
+                                <div>
+                                    <h2 class="panel__titulo">Tu último pedido no fue aprobado</h2>
+                                    {% if ultima.motivo_rechazo %}
+                                        <p class="motivo">
+                                            <span class="motivo__rotulo">Motivo</span>
+                                            {{ ultima.motivo_rechazo }}
+                                        </p>
+                                    {% else %}
+                                        <p class="panel__bajada">
+                                            El administrador no dejó un motivo. Revisá que se
+                                            lea el número y tu nombre, y volvé a mandarla.
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if ultima.foto %}
+                                {# La misma ruta protegida que arriba: ver que se mando ayuda
+                                   a entender el motivo del rechazo antes de rehacerlo. #}
+                                <div class="documento">
+                                    <img src="{{ url_for('servicios.foto_de_verificacion', id=ultima.id) }}"
+                                         alt="La documentación que no fue aprobada" class="documento__foto">
+                                    <div class="documento__texto">
+                                        <p class="documento__titulo">Lo que mandaste</p>
+                                        <p class="documento__nota">
+                                            Verla al lado del motivo evita rehacerla a ciegas.
+                                        </p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </section>
+                    {% endif %}
+
+                    <section class="panel">
+                        <h2 class="panel__titulo">
+                            {{ "Mandá otra foto" if rechazado else "Subí tu documentación" }}
+                        </h2>
+                        <p class="panel__bajada">
+                            Una foto de tu matrícula, certificado o habilitación para
+                            <strong>este</strong> servicio. La verificación es por servicio
+                            y no por persona: si ofrecés varios oficios, cada uno lleva la suya.
+                        </p>
+
+                        <form method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="campo">
+                                <label for="foto" class="campo__label">Foto del documento</label>
+                                <input type="file" name="foto" id="foto" accept="image/*"
+                                       class="auth__input">
+                                <p class="campo__ayuda">
+                                    Una imagen. Que se lea el número, tu nombre y la fecha.
+                                </p>
+                            </div>
+                            <button type="submit" class="btn btn--primary">Pedir verificación</button>
+                        </form>
+                    </section>
+                {% endif %}
+            </div>
+
+            <aside class="editor__previa">
+                <section class="panel">
+                    <h2 class="panel__titulo">Qué sirve como documentación</h2>
+                    <ul class="lista-tildes">
+                        <li>La matrícula del oficio, con el número visible.</li>
+                        <li>Un certificado de curso o de capacitación del rubro.</li>
+                        <li>La habilitación municipal, si el trabajo la necesita.</li>
+                    </ul>
+                    <p class="panel__pie">
+                        Si está vencida, no alcanza.
+                    </p>
+                </section>
+
+                <section class="panel">
+                    <h2 class="panel__titulo">Qué cambia el sello</h2>
+                    <p class="panel__bajada">
+                        Dice que alguien de IMPULSAR miró un papel tuyo, nada más. No es
+                        una garantía del trabajo ni un aval del municipio, y por eso está
+                        atado al servicio y no a vos.
+                    </p>
+                </section>
+            </aside>
+        </div>
     </div>
 </section>
 {% endblock %}

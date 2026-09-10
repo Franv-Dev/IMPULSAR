@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-nav--on { color: #33267C; font-weight: 600; border-bottom-color: #3E2F94; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-tarjeta { display: flex; flex-direction: column; gap: 10px; padding: 22px;
+                 border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF;
+                 transition: border-color .18s ease, box-shadow .18s ease; }
+    .u-tarjeta:hover { border-color: #C9D0E0; box-shadow: 0 14px 34px rgba(23,20,71,.09); }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" style="display: inline-flex; align-items: center; height: 40px; padding: 0 14px; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 500; color: #4A5666">Acceder</a>
+        <a href="#" style="display: inline-flex; align-items: center; height: 42px; padding: 0 20px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; box-shadow: 0 8px 20px rgba(62,47,148,.22)">Crear cuenta</a>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 44px 24px 56px">
+
+    <!-- LA PÁGINA LA LEE UN VISITANTE, NO EL EQUIPO QUE LA HIZO.
+         El texto anterior contaba que estaba hecha con Flask y MySQL "siguiendo
+         buenas prácticas y una estética moderna en tonos pastel": tres datos que
+         no le sirven a nadie que entre a buscar un emprendimiento, y el último
+         además hace rato que es falso. Lo que va acá es el posicionamiento que
+         la guía ya decidió: qué hace IMPULSAR que Mercado Libre no. -->
+    <div style="max-width: 760px">
+      <h1 style="font-size: 40px; line-height: 1.18; letter-spacing: -.025em">
+        Los emprendimientos de Mendoza, con nombre, horario y dirección
+      </h1>
+      <p style="margin: 18px 0 0; font-size: 17.5px; line-height: 1.65; color: #4A5666">
+        IMPULSAR no es una tienda: es la guía de quién hace qué cerca tuyo. Ves si está
+        abierto ahora, a cuántas cuadras queda, quién está atrás y dónde lo encontrás en
+        persona este fin de semana. Después arreglás con esa persona, directo.
+      </p>
+    </div>
+
+    <!-- Los cinco datos del posicionamiento, y los cinco salen de una tabla que
+         existe: horarios, latitude/longitude, el autor con antigüedad y reseñas,
+         los eventos, y el chat interno. Ninguno es una promesa a futuro. -->
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 40px">
+
+      <div class="u-tarjeta">
+        <span style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: #E6F4EC; color: #1F7A4D">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.2 1.9"/></svg>
+        </span>
+        <h2 style="font-size: 17px">Abierto ahora, no "consultar"</h2>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: #4A5666">
+          Cada emprendimiento carga sus horarios reales, y podés filtrar por los que están
+          atendiendo en este momento.
+        </p>
+      </div>
+
+      <div class="u-tarjeta">
+        <span style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: #ECEAF7; color: #33267C">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/></svg>
+        </span>
+        <h2 style="font-size: 17px">A cuántas cuadras</h2>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: #4A5666">
+          Distancia de verdad desde donde estás, con un radio en kilómetros. No "envío a
+          todo el país": el de la vuelta de tu casa.
+        </p>
+      </div>
+
+      <div class="u-tarjeta">
+        <span style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: #FBEDE4; color: #8C4A22">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 11.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8M2.6 20.2a6.6 6.6 0 0 1 13.2 0M16.8 5.6a3.4 3.4 0 0 1 0 6M18.6 20.2a6.8 6.8 0 0 0-1.8-4.6"/></svg>
+        </span>
+        <h2 style="font-size: 17px">La persona, no el vendedor 4.8★</h2>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: #4A5666">
+          Quién está atrás, desde cuándo, y las reseñas de quienes ya le compraron. Con
+          nombre y cara, no un alias.
+        </p>
+      </div>
+
+      <div class="u-tarjeta">
+        <span style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: #EEF1F7; color: #4A5666">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5 6 4.5h12l2.5 5M3.5 9.5h17M5.5 9.5V20h13V9.5M9.5 20v-5.5h5V20"/></svg>
+        </span>
+        <h2 style="font-size: 17px">Dónde los encontrás en persona</h2>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: #4A5666">
+          Las ferias, pop-ups y talleres de este mes, con fecha y lugar. Es lo que ninguna
+          plataforma grande te va a decir.
+        </p>
+      </div>
+
+      <div class="u-tarjeta">
+        <span style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: #E6F4EC; color: #1F7A4D">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        </span>
+        <h2 style="font-size: 17px">Le escribís y arreglan</h2>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: #4A5666">
+          El contacto es directo por el chat de la plataforma. Cómo se paga y cómo se
+          entrega lo arreglan ustedes dos.
+        </p>
+      </div>
+
+      <div class="u-tarjeta" style="background: linear-gradient(160deg, #4A3B8E, #3E2F94 52%, #33267C); border-color: transparent">
+        <span style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,.14); color: #FFFFFF">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </span>
+        <h2 style="font-size: 17px; color: #FFFFFF">Publicar es gratis</h2>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: rgba(255,255,255,.84)">
+          No cobramos comisión por lo que vendas, ni ahora ni después. Con la cuenta que
+          ya tenés.
+        </p>
+        <a href="#" style="margin-top: 6px; display: inline-flex; align-items: center; justify-content: center; align-self: flex-start; height: 42px; padding: 0 20px; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600">Publicar mi emprendimiento</a>
+      </div>
+    </div>
+
+    <!-- DECIR QUÉ NO HACE ES PARTE DEL ARGUMENTO, no una disculpa. La plataforma
+         no tiene pagos ni envíos ni protección al comprador, y esconderlo hasta
+         el final del chat es lo que hace que la gente se sienta estafada. -->
+    <section style="margin-top: 40px; padding: 28px 30px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+      <h2 style="font-size: 21px; letter-spacing: -.02em">Lo que IMPULSAR no hace</h2>
+      <p style="margin: 10px 0 0; max-width: 680px; font-size: 15px; line-height: 1.65; color: #4A5666">
+        Preferimos decirlo acá y no cuando ya estás por comprar.
+      </p>
+      <ul style="margin: 20px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+        <li style="display: flex; gap: 11px; font-size: 14.5px; line-height: 1.6; color: #4A5666">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA5B5" stroke-width="2" stroke-linecap="round" style="flex-shrink: 0; margin-top: 3px"><circle cx="12" cy="12" r="8.6"/><path d="m6.5 6.5 11 11"/></svg>
+          <span><strong style="font-weight: 600; color: #1B2430">No procesamos pagos.</strong> No hay carrito ni cuotas: el precio lo pone cada emprendimiento y se arregla afuera.</span>
+        </li>
+        <li style="display: flex; gap: 11px; font-size: 14.5px; line-height: 1.6; color: #4A5666">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA5B5" stroke-width="2" stroke-linecap="round" style="flex-shrink: 0; margin-top: 3px"><circle cx="12" cy="12" r="8.6"/><path d="m6.5 6.5 11 11"/></svg>
+          <span><strong style="font-weight: 600; color: #1B2430">No hacemos envíos.</strong> Si el emprendimiento entrega, lo dice él; nosotros no tenemos logística.</span>
+        </li>
+        <li style="display: flex; gap: 11px; font-size: 14.5px; line-height: 1.6; color: #4A5666">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA5B5" stroke-width="2" stroke-linecap="round" style="flex-shrink: 0; margin-top: 3px"><circle cx="12" cy="12" r="8.6"/><path d="m6.5 6.5 11 11"/></svg>
+          <span><strong style="font-weight: 600; color: #1B2430">No hay protección al comprador.</strong> Por eso mostramos tan adelante quién vende, desde cuándo y qué dijeron los demás.</span>
+        </li>
+      </ul>
+      <p style="margin: 20px 0 0; display: flex; align-items: flex-start; gap: 10px; max-width: 760px; font-size: 14px; line-height: 1.6; color: #4A5666; padding-top: 18px; border-top: 1px solid #EEF1F7">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3E2F94" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px"><path d="M12 3.2 4.5 6.1v5.4c0 4.4 3.1 8.2 7.5 9.3 4.4-1.1 7.5-4.9 7.5-9.3V6.1Z"/><path d="m9.2 12 2 2 3.6-3.8"/></svg>
+        Lo que sí hacemos: moderamos. Si algo no cierra, cualquiera puede reportarlo desde la
+        ficha y lo revisamos a mano. Los servicios que necesitan matrícula la presentan antes
+        de mostrar el sello.
+      </p>
+    </section>
+
+    <section style="margin-top: 24px; padding: 26px 30px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+      <div style="display: flex; align-items: center; gap: 24px">
+        <div style="min-width: 0">
+          <h2 style="font-size: 19px; letter-spacing: -.02em">¿Tenés una duda o querés contarnos algo?</h2>
+          <p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #4A5666">
+            Hay una sola casilla y la leemos nosotros.
+          </p>
+        </div>
+        <span style="flex: 1"></span>
+        <a href="#" style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+          Ir a Contacto
+        </a>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

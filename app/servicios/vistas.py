@@ -21,11 +21,14 @@ from flask import (
 )
 from sqlalchemy.exc import IntegrityError
 
+from app.panel.consultas import contadores_de as contadores_del_panel
 from app.servicios import consultas, formulario, reglas
 from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from app.servicios.modelo_verificacion import EstadosVerificacion, VerificationRequest
 from db import utcnow
+from services.eventos import hoy_en_argentina
+from services.notificaciones_email import notificar_solicitud_respondida
 from services.precios import texto_para_formulario
 from models.user import Roles
 from services.uploads import borrar_de_disco, carpeta_privada, save_post_image
@@ -34,6 +37,20 @@ from views.auth import login_required
 servicios = Blueprint(
     "servicios", __name__, url_prefix="/servicios", template_folder="templates"
 )
+
+
+def _limites_de_turno():
+    """El rango valido de duracion, para que el template lo muestre y lo cite.
+
+    Sale de reglas.py y no de numeros escritos en el HTML: el mensaje de error
+    del formulario ya los cita desde ahi, y con el rango repetido en la
+    plantilla mover el limite dejaria el <input> y el error diciendo cosas
+    distintas.
+    """
+    return {
+        "min_duracion_turno": reglas.MIN_DURACION_TURNO_MINUTOS,
+        "max_duracion_turno": reglas.MAX_DURACION_TURNO_MINUTOS,
+    }
 
 
 def _servicio_propio(id):
@@ -114,22 +131,40 @@ def buscar():
     incluso sin cuenta. Pedir el presupuesto si necesita estar logueado, pero
     eso ya lo resuelve solicitar().
     """
-    rubro, zona, solo_verificados, pagina = formulario.leer_busqueda()
+    filtros = formulario.leer_busqueda()
+    # Lo que no esta en el catalogo no filtra, pero se le devuelve igual al
+    # template para repintar el control con lo que el usuario tenia.
+    rubro = filtros["rubro"] if reglas.rubro_valido(filtros["rubro"]) else None
+    precio = filtros["precio"] if reglas.precio_valido(filtros["precio"]) else None
+    orden = filtros["orden"] if reglas.orden_valido(filtros["orden"]) else None
+
     return render_template(
         "servicios/buscar.html",
         paginacion=consultas.buscar_servicios(
-            # Un rubro que no existe no filtra nada, pero se le devuelve igual
-            # al template para repintar el <select> con lo que el usuario tenia.
-            rubro=rubro if reglas.rubro_valido(rubro) else None,
-            zona=zona,
-            solo_verificados=solo_verificados,
-            pagina=pagina,
+            rubro=rubro,
+            zona=filtros["zona"],
+            solo_verificados=filtros["solo_verificados"],
+            precio=precio,
+            orden=orden,
+            pagina=filtros["pagina"],
             por_pagina=current_app.config["POSTS_POR_PAGINA"],
         ),
+        # El conteo NO recibe el rubro a proposito: cada numero dice cuantos
+        # hay en ese rubro con los demas filtros puestos, que es lo que hace
+        # que sirva para decidir a donde ir (ver consultas.conteos_por_rubro).
+        conteos=consultas.conteos_por_rubro(
+            zona=filtros["zona"],
+            solo_verificados=filtros["solo_verificados"],
+            precio=precio,
+        ),
         rubros=Rubros.ETIQUETAS,
-        rubro_actual=rubro,
-        zona_actual=zona,
-        solo_verificados_actual=solo_verificados,
+        precios=reglas.Precios,
+        ordenes=reglas.Ordenes,
+        rubro_actual=filtros["rubro"],
+        zona_actual=filtros["zona"],
+        solo_verificados_actual=filtros["solo_verificados"],
+        precio_actual=precio or reglas.Precios.TODOS,
+        orden_actual=orden or reglas.Ordenes.RECIENTE,
     )
 
 
@@ -139,13 +174,55 @@ def buscar():
 @login_required
 def index():
     """El panel: todos los servicios de los emprendimientos propios."""
+    servicios = consultas.servicios_de(g.user.id)
     return render_template(
         "servicios/index.html",
-        servicios=consultas.servicios_de(g.user.id),
+        servicios=servicios,
         posts=consultas.emprendimientos_de(g.user.id),
         maximo=MAX_SERVICIOS_POR_POST,
         rubros=Rubros,
+        # El estado del ultimo pedido de verificacion de cada uno. Se pide en
+        # una consulta para todos y no de a uno por fila (problema N+1).
+        verificaciones=consultas.estados_de_verificacion(
+            [servicio.id for servicio in servicios]
+        ),
+        estados_verificacion=EstadosVerificacion,
+        pendientes=consultas.cuantas_solicitudes_pendientes_para(g.user.id),
+        contadores=contadores_del_panel(g.user.id, hoy_en_argentina()),
     )
+
+
+@servicios.route("/<int:id>/disponible", methods=("POST",))
+@login_required
+def alternar_disponible(id):
+    """Prender y apagar un servicio desde el panel, sin abrir el formulario.
+
+    Es la unica escritura de esta pantalla y toca una sola columna. Existe
+    porque hasta ahora apagar un servicio ("no estoy tomando trabajos esta
+    semana") obligaba a entrar al formulario de ocho campos, releerlos todos y
+    volver a guardarlos, con el riesgo de pisar de paso algo que no se queria
+    tocar.
+
+    POST y no GET aunque sea un solo campo: cambia el estado de una fila y
+    ademas se vuelve a mostrar en la busqueda publica. Con GET lo dispararia
+    cualquier cosa que precargue enlaces.
+
+    El permiso es el mismo _servicio_propio del resto del ABM, asi que un
+    id ajeno responde igual que en editar() o eliminar() y no de una forma que
+    delate si ese servicio existe.
+    """
+    servicio, rechazo = _servicio_propio(id)
+    if rechazo:
+        return rechazo
+
+    servicio.disponible = not servicio.disponible
+    consultas.guardar()
+    flash(
+        f'"{servicio.titulo}" ahora está disponible.'
+        if servicio.disponible
+        else f'"{servicio.titulo}" quedó oculto: lo seguís viendo solo vos.'
+    )
+    return redirect(url_for("servicios.index"))
 
 
 @servicios.route("/nuevo", methods=("GET", "POST"))
@@ -180,7 +257,7 @@ def nuevo():
             flash(error)
             return render_template(
                 "servicios/form.html", posts=posts, datos=datos,
-                servicio=None, rubros=Rubros,
+                servicio=None, rubros=Rubros, **_limites_de_turno(),
             )
 
         consultas.guardar(Service(post_id=post_id, **valores))
@@ -191,9 +268,11 @@ def nuevo():
         "titulo": "", "rubro": Rubros.OTROS, "descripcion": "",
         "zona_cobertura": "", "precio_estimado": "",
         "disponible": True, "post_id": None,
+        "turnos_habilitados": False, "duracion_turno_minutos": "",
     }
     return render_template(
-        "servicios/form.html", posts=posts, datos=datos, servicio=None, rubros=Rubros
+        "servicios/form.html", posts=posts, datos=datos, servicio=None,
+        rubros=Rubros, **_limites_de_turno(),
     )
 
 
@@ -231,7 +310,7 @@ def editar(id):
             flash(error)
             return render_template(
                 "servicios/form.html", posts=posts, datos=datos,
-                servicio=servicio, rubros=Rubros,
+                servicio=servicio, rubros=Rubros, **_limites_de_turno(),
             )
 
         servicio.post_id = post_id
@@ -250,9 +329,14 @@ def editar(id):
         "precio_estimado": texto_para_formulario(servicio.precio_estimado),
         "disponible": servicio.disponible,
         "post_id": servicio.post_id,
+        "turnos_habilitados": servicio.turnos_habilitados,
+        # Cadena vacia y no None: es lo que el <input> tiene que mostrar cuando
+        # el servicio no toma turnos, igual que hace el precio.
+        "duracion_turno_minutos": servicio.duracion_turno_minutos or "",
     }
     return render_template(
-        "servicios/form.html", posts=posts, datos=datos, servicio=servicio, rubros=Rubros
+        "servicios/form.html", posts=posts, datos=datos, servicio=servicio,
+        rubros=Rubros, **_limites_de_turno(),
     )
 
 
@@ -326,6 +410,7 @@ def solicitar(id):
             flash(error)
             return render_template(
                 "servicios/solicitar.html", servicio=servicio, datos=datos,
+                acepta_turnos=reglas.acepta_turnos(servicio),
             )
 
         solicitud = ServiceRequest(
@@ -363,6 +448,7 @@ def solicitar(id):
     return render_template(
         "servicios/solicitar.html", servicio=servicio,
         datos={"descripcion": "", "zona": ""},
+        acepta_turnos=reglas.acepta_turnos(servicio),
     )
 
 
@@ -375,12 +461,27 @@ def solicitudes():
     cliente), igual que messages.inbox lista las conversaciones sin importar
     de que lado esta uno: la mitad de los usuarios va a ser las dos cosas, y
     dos paginas separadas obligarian a acordarse de cual mirar.
+
+    Los dos lados siguen viniendo enteros en cada carga aunque la pantalla
+    muestre uno solo: son las mismas dos consultas de siempre, y traerlas
+    juntas es lo que deja poner el numero del otro lado en su solapa sin una
+    tercera consulta. El `lado` solo elige cual se pinta.
     """
+    recibidas = consultas.solicitudes_recibidas_por(g.user.id)
+    enviadas = consultas.solicitudes_enviadas_por(g.user.id)
+
+    # Se normaliza a "recibidas" cualquier cosa que no sea exactamente
+    # "enviadas": la solapa viaja en la URL y se escribe a mano.
+    lado = "enviadas" if request.args.get("lado") == "enviadas" else "recibidas"
+
     return render_template(
         "servicios/solicitudes.html",
-        recibidas=consultas.solicitudes_recibidas_por(g.user.id),
-        enviadas=consultas.solicitudes_enviadas_por(g.user.id),
+        recibidas=recibidas,
+        enviadas=enviadas,
+        lado=lado,
+        resumen=reglas.resumen_de_solicitudes(recibidas, utcnow()),
         estados=EstadosSolicitud,
+        contadores=contadores_del_panel(g.user.id, hoy_en_argentina()),
     )
 
 
@@ -429,11 +530,26 @@ def responder(id):
         flash(error)
         return redirect(url_for("servicios.solicitud", id=id))
 
+    # Se mira ANTES de tocar el estado: es lo que distingue la primera
+    # respuesta de una correccion posterior. El prestador puede volver a
+    # contestar la misma solicitud todas las veces que quiera (arreglar el
+    # precio, agregar un dato), y de eso no se avisa: el cliente ya recibio el
+    # mail que le decia que le habian contestado, y mandarle uno por cada
+    # retoque es spam. Un aviso por cambio de estado, ver
+    # services/notificaciones_email.py.
+    era_la_primera_respuesta = solicitud.estado == EstadosSolicitud.PENDIENTE
+
     solicitud.respuesta_precio = precio
     solicitud.respuesta_mensaje = mensaje
     solicitud.estado = EstadosSolicitud.RESPONDIDA
     solicitud.responded_at = utcnow()
     consultas.guardar()
+
+    if era_la_primera_respuesta:
+        # Despues del commit, y sin envolver en try: la funcion no lanza
+        # aunque el SMTP este caido, asi que la respuesta ya guardada no se
+        # pierde por un problema de mail.
+        notificar_solicitud_respondida(solicitud)
 
     flash("Respuesta enviada.")
     return redirect(url_for("servicios.solicitud", id=id))

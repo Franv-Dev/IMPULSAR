@@ -1,0 +1,45 @@
+{#  La columna izquierda de las pantallas del panel del vendedor (artboards de
+    disenio-panel/). Reemplaza a partials/_menu_cuenta.html en las seis
+    pantallas de "Mi emprendimiento"; _menu_cuenta sigue en las de "Mi
+    actividad" y ajustes, que es el mismo corte que ya hace el menu del avatar.
+
+    Sin avatar arriba: eso es identidad y ya esta en la barra. Lo que va es el
+    rotulo de que seccion es, como en el menu del panel de administracion.
+
+    Quien lo incluya pasa `seccion` (el nombre del item activo, o nada si esa
+    pantalla no esta en el menu) y `contadores`
+    (app/panel/consultas.contadores_de).
+
+    "Eventos y ferias" entro con la tanda de eventos, que es la que hizo su
+    pantalla (/eventos/mios). Hasta entonces faltaba a proposito: Event se
+    cargaba desde la ficha de cada emprendimiento y /eventos es la cartelera
+    publica de todos, asi que el item no habria tenido adonde ir. #}
+<aside class="panel-menu">
+    <p class="panel-menu__rotulo">Mi emprendimiento</p>
+
+    <nav class="panel-menu__nav" aria-label="Panel">
+        {% set items = [
+            ('Inicio del panel', url_for('panel.inicio'), 'resumen', None, false),
+            ('Emprendimientos', url_for('blog.my_posts'), 'emprendimientos', contadores.emprendimientos, false),
+            ('Catálogo', url_for('products.mios'), 'catalogo', contadores.productos, false),
+            ('Servicios', url_for('servicios.index'), 'servicios', contadores.servicios, false),
+            ('Presupuestos', url_for('servicios.solicitudes'), 'presupuestos', contadores.solicitudes, true),
+            ('Agenda de turnos', url_for('turnos.agenda'), 'agenda', contadores.turnos, false),
+            ('Eventos y ferias', url_for('eventos.mios'), 'eventos', contadores.eventos, false),
+            ('Reseñas recibidas', url_for('profile.reviews', slug=g.user.slug), 'resenias', contadores.resenias, true),
+        ] %}
+        {% for etiqueta, destino, icono, total, urgente in items %}
+            <a href="{{ destino }}"
+               class="panel-menu__item {% if etiqueta == seccion %}panel-menu__item--activo{% endif %}"
+               {% if etiqueta == seccion %}aria-current="page"{% endif %}>
+                {% with clave = icono, tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                <span class="panel-menu__etiqueta">{{ etiqueta }}</span>
+                {# El contador solo si hay algo. En cero no dice nada que la
+                   pantalla no diga mejor, y pinta de pendiente lo que no lo es. #}
+                {% if total %}
+                    <span class="panel-menu__total{% if urgente %} panel-menu__total--pendiente{% endif %}">{{ total }}</span>
+                {% endif %}
+            </a>
+        {% endfor %}
+    </nav>
+</aside>

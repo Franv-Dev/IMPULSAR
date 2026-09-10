@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+
+{% block title %}Productos – IMPULSAR{% endblock %}
+
+{#  El catálogo público (disenio-productos/Main.dc.html y Movil.dc.html).
+
+    La pantalla que no existía: hasta esta tanda un producto sólo se veía
+    adentro de la ficha de su emprendimiento, o sea que para encontrarlo había
+    que saber antes quién lo vende.
+
+    NO ES UNA TIENDA y la pantalla no finge que lo sea: no hay «Comprar», ni
+    cuotas, ni envío, ni «más vendido» — no existe ninguna métrica de ventas
+    que mostrar. La acción de una tarjeta es entrar al detalle y consultar.
+
+    La barra de filtros es la MISMA .barra-filtros del listado de
+    emprendimientos, con los mismos .ficha-filtro: son la misma pregunta hecha
+    sobre otra tabla, y dos barras distintas para lo mismo se despegan a la
+    primera. Por eso también hereda su <details> de teléfono, que main.js
+    cierra en pantallas chicas buscando esa clase.
+
+    El punto de color de cada tarjeta es el del rubro del EMPRENDIMIENTO:
+    Product no tiene categoría propia (ver el docstring del modelo). #}
+
+{# La misma URL de ahora con un parámetro cambiado, sin la página: al cambiar
+   un filtro hay que volver a la primera, porque con ?page=3 conservado se
+   puede caer en una página que con menos resultados ya no existe. Mismo
+   criterio (y misma forma) que en blog/index.html y en servicios/buscar.html. #}
+{% macro url_con(param, valor) -%}
+    {%- set args = request.args.to_dict() -%}
+    {%- set _ = args.pop('page', None) -%}
+    {%- if valor -%}
+        {%- set _ = args.update({param: valor}) -%}
+    {%- else -%}
+        {%- set _ = args.pop(param, None) -%}
+    {%- endif -%}
+    {{- url_for('products.catalogo', **args) -}}
+{%- endmacro %}
+
+{# La misma URL con un filtro de sí/no dado vuelta. Es lo que hace que las
+   fichas se prendan y apaguen de un toque. #}
+{% macro url_alternando(param) -%}
+    {%- set args = request.args.to_dict() -%}
+    {%- set _ = args.pop('page', None) -%}
+    {%- if args.pop(param, None) is none -%}
+        {%- set _ = args.update({param: '1'}) -%}
+    {%- endif -%}
+    {{- url_for('products.catalogo', **args) -}}
+{%- endmacro %}
+
+{% block content %}
+{# La cercanía cuenta sólo cuando la dirección se pudo geocodificar. El texto
+   que escribió el usuario viaja igual (y se le devuelve al input para no
+   perdérselo), pero si MapTiler no la resolvió no se acotó nada: contarla
+   dejaría un chip que anuncia un filtro que no se aplicó. #}
+{% set cercania_aplicada = cerca_de_actual and ordenado_por_distancia %}
+{% set hay_filtros = busqueda_actual or categoria_actual or cercania_aplicada
+                     or precio_min_actual or precio_max_actual
+                     or not solo_disponibles_actual or abierto_ahora_actual
+                     or (radio_actual and ordenado_por_distancia) %}
+
+<section class="barra-filtros">
+    <div class="container barra-filtros__caja">
+        <form method="get" class="barra-filtros__form">
+            {# En teléfono los campos apilados empujan la primera tarjeta abajo
+               del doblez. Van adentro de un <details> que main.js cierra en
+               pantallas chicas; el `open` está puesto en el HTML a propósito,
+               así que sin JS queda desplegado, que es peor pero nunca roto. #}
+            <details class="barra-filtros__desplegable" open>
+                <summary class="barra-filtros__resumen">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
+                    </svg>
+                    <span class="barra-filtros__resumen-texto">
+                        <span class="barra-filtros__resumen-que">{{ busqueda_actual or 'Buscar productos' }}</span>
+                        <span class="barra-filtros__resumen-detalle">
+                            {%- set partes = [] -%}
+                            {%- if categoria_actual %}{% set _ = partes.append(categorias.get(categoria_actual, categoria_actual)) %}{% endif -%}
+                            {%- if precio_min_actual or precio_max_actual %}{% set _ = partes.append('con precio acotado') %}{% endif -%}
+                            {%- if cercania_aplicada %}{% set _ = partes.append('cerca de ' ~ cerca_de_actual) %}{% endif -%}
+                            {{ partes | join(' · ') if partes else 'Todos los rubros' }}
+                        </span>
+                    </span>
+                </summary>
+
+            <div class="barra-filtros__campo barra-filtros__campo--ancho">
+                <label class="barra-filtros__label" for="filtro-q">Qué buscás</label>
+                <input type="text" name="q" id="filtro-q"
+                       class="barra-filtros__input"
+                       placeholder="Dulce de leche"
+                       value="{{ busqueda_actual or '' }}">
+            </div>
+
+            <div class="barra-filtros__campo">
+                <label class="barra-filtros__label" for="filtro-rubro">Rubro</label>
+                <select name="category" id="filtro-rubro" class="barra-filtros__select">
+                    <option value="">Todos</option>
+                    {% for valor, etiqueta in categorias.items() %}
+                        <option value="{{ valor }}" {% if valor == categoria_actual %}selected{% endif %}>
+                            {{ etiqueta }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {# El filtro de precio se queda aunque la venta la coordine el
+               vendedor: cada tarjeta muestra un precio que pone el
+               emprendimiento, y esto sólo acota el rango, no fija nada.
+               inputmode="decimal" y no type="number": el precio se escribe con
+               coma en Argentina y el control numérico del navegador la
+               rechaza. Lo lee el mismo parsear_precio del formulario de carga,
+               que entiende las dos formas. #}
+            <div class="barra-filtros__campo barra-filtros__campo--precio">
+                <label class="barra-filtros__label" for="filtro-precio-min">Precio desde</label>
+                <input type="text" name="precio_min" id="filtro-precio-min"
+                       class="barra-filtros__input" inputmode="decimal"
+                       placeholder="$" value="{{ precio_min_actual or '' }}">
+            </div>
+
+            <div class="barra-filtros__campo barra-filtros__campo--precio">
+                <label class="barra-filtros__label" for="filtro-precio-max">Hasta</label>
+                <input type="text" name="precio_max" id="filtro-precio-max"
+                       class="barra-filtros__input" inputmode="decimal"
+                       placeholder="$" value="{{ precio_max_actual or '' }}">
+            </div>
+
+            <div class="barra-filtros__campo">
+                <label class="barra-filtros__label" for="near-input">Cerca de</label>
+                <input type="text" name="near" id="near-input"
+                       class="barra-filtros__input"
+                       placeholder="Tu barrio o dirección"
+                       value="{{ cerca_de_actual or '' }}">
+                <input type="hidden" name="lat" id="near-lat" value="{{ request.args.get('lat', '') }}">
+                <input type="hidden" name="lon" id="near-lon" value="{{ request.args.get('lon', '') }}">
+            </div>
+
+            {# Lo que está puesto tiene que viajar también cuando se manda el
+               form, o apretar «Buscar» lo perdería. #}
+            {% if not solo_disponibles_actual %}<input type="hidden" name="disponibles" value="0">{% endif %}
+            {% if abierto_ahora_actual %}<input type="hidden" name="abierto_ahora" value="1">{% endif %}
+            {% if radio_actual %}<input type="hidden" name="radio" value="{{ radio_actual }}">{% endif %}
+            {# El orden viaja sólo si estaba ESCRITO en la URL, no si es el que la
+               vista dedujo: mandarlo siempre haría que escribir una dirección y
+               apretar «Buscar» se quede en «Más nuevos», justo cuando acaba de
+               aparecer «Cercanía» y es lo que se estaba pidiendo. #}
+            {% if request.args.get('orden') %}<input type="hidden" name="orden" value="{{ request.args.get('orden') }}">{% endif %}
+
+            <button type="submit" class="btn btn--primary barra-filtros__buscar">Buscar</button>
+            </details>
+        </form>
+
+        {# El modificador --catalogo existe por el teléfono: en el listado las
+           fichas pasan a una tira que se desliza de costado, y acá son seis con
+           un «Ordenar por» largo, así que envuelven en vez de deslizarse. #}
+        <div class="fichas-filtro fichas-filtro--catalogo">
+            {# «Disponibles» viene ENCENDIDA: un catálogo que arranca mostrando
+               lo que no hay hace perder tiempo. Por eso el enlace apaga en vez
+               de prender, y el parámetro que viaja es el apagado. #}
+            <a href="{{ url_con('disponibles', '' if not solo_disponibles_actual else '0') }}"
+               class="ficha-filtro {{ 'ficha-filtro--activa' if solo_disponibles_actual }}"
+               aria-pressed="{{ 'true' if solo_disponibles_actual else 'false' }}">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m5 12.5 4.5 4.5L19 7.5"/>
+                </svg>
+                Disponibles
+            </a>
+
+            <a href="{{ url_alternando('abierto_ahora') }}"
+               class="ficha-filtro {{ 'ficha-filtro--activa' if abierto_ahora_actual }}"
+               aria-pressed="{{ 'true' if abierto_ahora_actual else 'false' }}">
+                <span class="ficha-filtro__punto" aria-hidden="true"></span>
+                Abierto ahora
+            </a>
+
+            {# El radio sólo tiene sentido con una dirección resuelta: sin
+               coordenadas la consulta lo ignora, así que dibujarlo siempre
+               sería ofrecer un filtro que no hace nada. #}
+            {% if ordenado_por_distancia %}
+                <form method="get" class="fichas-filtro__radio">
+                    {% for clave, valor in request.args.items() %}
+                        {% if clave not in ('radio', 'page') %}
+                            <input type="hidden" name="{{ clave }}" value="{{ valor }}">
+                        {% endif %}
+                    {% endfor %}
+                    <label class="sr-only" for="filtro-radio">Radio de distancia</label>
+                    <select name="radio" id="filtro-radio"
+                            class="ficha-filtro ficha-filtro--select {{ 'ficha-filtro--activa' if radio_actual }}"
+                            onchange="this.form.submit()">
+                        <option value="" {% if not radio_actual %}selected{% endif %}>Sin límite de distancia</option>
+                        {% for km in radios_km %}
+                            <option value="{{ km }}" {% if km == radio_actual %}selected{% endif %}>
+                                Hasta {{ km }} km
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            {% endif %}
+
+            <span class="fichas-filtro__relleno"></span>
+
+            <button type="button" id="use-my-location" class="ficha-filtro ficha-filtro--ubicacion">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>
+                </svg>
+                Cerca de mí
+            </button>
+
+            {# El orden es un <select> y no una fila de enlaces como en «Mis
+               favoritos»: son cuatro opciones con etiquetas largas, y cuatro
+               enlaces al lado de las fichas no entran en 390 px sin
+               deslizarse de costado. #}
+            <form method="get" class="fichas-filtro__radio">
+                {% for clave, valor in request.args.items() %}
+                    {% if clave not in ('orden', 'page') %}
+                        <input type="hidden" name="{{ clave }}" value="{{ valor }}">
+                    {% endif %}
+                {% endfor %}
+                <label class="sr-only" for="filtro-orden">Ordenar por</label>
+                <select name="orden" id="filtro-orden" class="ficha-filtro ficha-filtro--select"
+                        onchange="this.form.submit()">
+                    {% for valor, etiqueta in ordenes.items() %}
+                        {# «Cercanía» sólo cuando hay desde dónde medir. #}
+                        {% if valor != orden_cercania or ordenado_por_distancia %}
+                            <option value="{{ valor }}" {% if valor == orden_actual %}selected{% endif %}>
+                                Ordenar por: {{ etiqueta }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </form>
+
+            {% if hay_filtros %}
+                <a href="{{ url_for('products.catalogo') }}" class="ficha-filtro ficha-filtro--limpiar">Limpiar todo</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="resultados__head">
+            <div>
+                <h1 class="resultados__titulo">
+                    {% if busqueda_actual %}
+                        «{{ busqueda_actual }}» en el catálogo
+                    {% else %}
+                        Productos de emprendimientos
+                    {% endif %}
+                </h1>
+                {# En una sola línea de plantilla y no en tres: entre líneas
+                   Jinja deja el salto y la sangría, y «11 emprendimientos»
+                   queda partido en el HTML. #}
+                <p class="resultados__bajada">{{ paginacion.total }} producto{{ '' if paginacion.total == 1 else 's' }} de {{ cuantos_emprendimientos }} emprendimiento{{ '' if cuantos_emprendimientos == 1 else 's' }}.</p>
+            </div>
+        </div>
+
+        {% if busqueda_actual or categoria_actual or cercania_aplicada
+              or precio_min_actual or precio_max_actual %}
+            <div class="chips">
+                {% if busqueda_actual %}
+                    <span class="chip">
+                        {{ busqueda_actual }}
+                        <a href="{{ url_con('q', '') }}" class="chip__quitar" aria-label="Quitar el filtro de texto">×</a>
+                    </span>
+                {% endif %}
+                {% if categoria_actual %}
+                    <span class="chip">
+                        {{ categorias.get(categoria_actual, categoria_actual) }}
+                        <a href="{{ url_con('category', '') }}" class="chip__quitar" aria-label="Quitar el filtro de rubro">×</a>
+                    </span>
+                {% endif %}
+                {% if precio_min_actual %}
+                    <span class="chip">
+                        Desde {{ precio_min_actual }}
+                        <a href="{{ url_con('precio_min', '') }}" class="chip__quitar" aria-label="Quitar el precio mínimo">×</a>
+                    </span>
+                {% endif %}
+                {% if precio_max_actual %}
+                    <span class="chip">
+                        Hasta {{ precio_max_actual }}
+                        <a href="{{ url_con('precio_max', '') }}" class="chip__quitar" aria-label="Quitar el precio máximo">×</a>
+                    </span>
+                {% endif %}
+                {# Sólo si de verdad acotó algo: una dirección que MapTiler no
+                   resolvió deja el catálogo entero, así que el chip mentiría. #}
+                {% if cercania_aplicada %}
+                    <span class="chip">
+                        Cerca de {{ cerca_de_actual }}
+                        <a href="{{ url_con('near', '') }}" class="chip__quitar" aria-label="Quitar el filtro de cercanía">×</a>
+                    </span>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {% if filas %}
+            <div class="catalogo__grilla">
+                {% for fila in filas %}
+                    {% set producto = fila.producto %}
+                    {% set negocio = producto.post %}
+                    <article class="producto-tarjeta">
+                        <a href="{{ url_for('products.detalle', id=producto.id) }}"
+                           class="producto-tarjeta__foto">
+                            {% if producto.foto %}
+                                <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
+                                     alt="Foto de {{ producto.nombre }}" loading="lazy">
+                            {% endif %}
+                            {% if not producto.disponible %}
+                                <span class="producto-tarjeta__agotado">Sin stock por ahora</span>
+                            {% endif %}
+                        </a>
+
+                        {% if g.user %}
+                            {# Sólo con sesión: sin ella el corazón no tendría
+                               dónde guardar nada, y un botón que rebota a
+                               entrar es peor que no dibujarlo. #}
+                            <form method="post" class="producto-tarjeta__guardar"
+                                  action="{{ url_for('products.toggle_favorito', id=producto.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit"
+                                        class="favorite-btn {% if fila.es_favorito %}favorite-btn--active{% endif %}"
+                                        aria-pressed="{{ 'true' if fila.es_favorito else 'false' }}"
+                                        aria-label="{% if fila.es_favorito %}Quitar de tus productos guardados{% else %}Guardar este producto{% endif %}"
+                                        title="{% if fila.es_favorito %}Quitar de guardados{% else %}Guardar{% endif %}">
+                                    {% if fila.es_favorito %}♥{% else %}♡{% endif %}
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        <div class="producto-tarjeta__cuerpo">
+                            {# El precio va ARRIBA del nombre: en una grilla de
+                               tarjetas chicas es el dato que hace comparar. #}
+                            <span class="producto-tarjeta__precio">{{ producto.precio | precio }}</span>
+                            <h2 class="producto-tarjeta__nombre">
+                                <a href="{{ url_for('products.detalle', id=producto.id) }}">{{ producto.nombre }}</a>
+                            </h2>
+
+                            <span class="producto-tarjeta__negocio">
+                                <span class="punto-rubro punto-rubro--{{ negocio.category }}" aria-hidden="true"></span>
+                                <a href="{{ url_for('blog.detail', id=negocio.id) }}">{{ negocio.title }}</a>
+                            </span>
+
+                            {% if fila.distance_km is not none %}
+                                <span class="producto-tarjeta__donde">a {{ fila.distance_km }} km</span>
+                            {% elif negocio.address_street %}
+                                <span class="producto-tarjeta__donde">{{ negocio.address_street }}</span>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            {% include "partials/_paginacion.html" %}
+
+            <p class="catalogo__nota">
+                Los precios los pone cada emprendimiento. IMPULSAR no cobra comisión ni
+                procesa pagos: la compra se acuerda directo con quien vende.
+            </p>
+        {% else %}
+            <div class="vacio">
+                <span class="vacio__icono" aria-hidden="true">
+                    <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 8h16l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H6.7a1.5 1.5 0 0 1-1.5-1.3Z"/>
+                        <path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>
+                    </svg>
+                </span>
+                {% if ordenado_por_distancia %}
+                    <h2 class="vacio__titulo">No hay productos cerca de ahí</h2>
+                    <p class="vacio__texto">
+                        Sólo entran los emprendimientos que cargaron su ubicación. Probá
+                        ampliando el radio o sacando la dirección.
+                    </p>
+                {% elif abierto_ahora_actual %}
+                    {# Se mira aparte porque tiene arreglo propio y concreto: no
+                       es que no haya, es que en este momento están todos
+                       cerrados. #}
+                    <h2 class="vacio__titulo">Ninguno está abierto en este momento</h2>
+                    <p class="vacio__texto">Probá sacando «Abierto ahora».</p>
+                {% elif hay_filtros %}
+                    <h2 class="vacio__titulo">No encontramos productos con esos filtros</h2>
+                    <p class="vacio__texto">Probá con menos filtros o con otras palabras.</p>
+                {% else %}
+                    <h2 class="vacio__titulo">Todavía no hay productos cargados</h2>
+                    <p class="vacio__texto">
+                        Cuando los emprendimientos carguen su catálogo, va a aparecer acá.
+                    </p>
+                {% endif %}
+                {% if hay_filtros %}
+                    <a href="{{ url_for('products.catalogo') }}" class="btn btn--secondary">Ver todo el catálogo</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

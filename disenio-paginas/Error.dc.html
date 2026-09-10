@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-btn:hover { background: #483BA1; }
+    .u-sec { border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+             color: #4A5666; font-family: "Poppins", sans-serif; font-weight: 600; }
+    .u-sec:hover { border-color: #C9D0E0; color: #3E2F94; }
+    .u-rubro { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 15px;
+               border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+               color: #4A5666; font-size: 13.5px; font-weight: 500; }
+    .u-rubro:hover { border-color: #C9D0E0; color: #3E2F94; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" style="display: inline-flex; align-items: center; height: 40px; padding: 0 14px; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 500; color: #4A5666">Acceder</a>
+        <a href="#" style="display: inline-flex; align-items: center; height: 42px; padding: 0 20px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; box-shadow: 0 8px 20px rgba(62,47,148,.22)">Crear cuenta</a>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 72px 24px 80px">
+
+    <!-- UN 404 NO ES UN CARTEL, ES UNA BIFURCACIÓN.
+         Casi siempre se llega acá desde un emprendimiento que se dio de baja o un
+         link viejo compartido por WhatsApp: la persona venía a buscar algo
+         concreto. Dos botones sueltos la dejan a mitad de camino, así que el
+         buscador va en la pantalla y los rubros abajo. -->
+    <div style="max-width: 680px">
+      <p style="margin: 0; display: inline-flex; align-items: center; gap: 9px; height: 30px; padding: 0 13px; border-radius: 999px; background: #EEF1F7; color: #5F6B7C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 600; letter-spacing: .04em">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.4M12 7.8h.01"/></svg>
+        ERROR 404
+      </p>
+
+      <h1 style="margin-top: 20px; font-size: 40px; line-height: 1.18; letter-spacing: -.025em">
+        Esta página ya no está
+      </h1>
+      <p style="margin: 16px 0 0; font-size: 17px; line-height: 1.65; color: #4A5666">
+        Puede que el emprendimiento se haya dado de baja, o que el enlace esté mal escrito.
+        Si llegaste por un link que te pasaron, probablemente sea lo primero.
+      </p>
+
+      <div style="display: flex; align-items: center; margin-top: 28px; padding: 0 6px 0 0; height: 56px; background: #FFFFFF; border: 1px solid #E2E6EE; border-radius: 999px; box-shadow: 0 6px 18px rgba(23,20,71,.06)">
+        <span style="display: flex; align-items: center; gap: 11px; flex: 1; min-width: 0; padding: 0 18px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" style="flex-shrink: 0"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+          <span style="flex: 1; font-size: 15.5px; color: #9AA5B5">Buscá lo que venías a buscar</span>
+        </span>
+        <button type="button" class="u-btn" style="flex-shrink: 0; height: 44px; padding: 0 26px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer">Buscar</button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 22px">
+        <a href="#" class="u-sec" style="display: inline-flex; align-items: center; height: 44px; padding: 0 20px; font-size: 14.5px">Volver al inicio</a>
+        <a href="#" class="u-sec" style="display: inline-flex; align-items: center; height: 44px; padding: 0 20px; font-size: 14.5px">Ver todos los emprendimientos</a>
+      </div>
+    </div>
+
+    <!-- Los siete rubros con su par de color de la guía: el mismo par que se usa
+         en la grilla del inicio y en el puntito de cada tarjeta. Un rubro no
+         cambia de color según la pantalla. -->
+    <div style="margin-top: 46px; padding-top: 30px; border-top: 1px solid #E2E6EE">
+      <p style="margin: 0 0 16px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #5F6B7C">O empezá por un rubro</p>
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 9px">
+        <a href="#" class="u-rubro"><span style="width: 9px; height: 9px; border-radius: 999px; background: #9A5230"></span>Alimentos</a>
+        <a href="#" class="u-rubro"><span style="width: 9px; height: 9px; border-radius: 999px; background: #7C6700"></span>Servicios</a>
+        <a href="#" class="u-rubro"><span style="width: 9px; height: 9px; border-radius: 999px; background: #1C7B53"></span>Hogar</a>
+        <a href="#" class="u-rubro"><span style="width: 9px; height: 9px; border-radius: 999px; background: #1D6FA0"></span>Tecnología</a>
+        <a href="#" class="u-rubro"><span style="width: 9px; height: 9px; border-radius: 999px; background: #635EA3"></span>Artesanías</a>
+        <a href="#" class="u-rubro"><span style="width: 9px; height: 9px; border-radius: 999px; background: #954D71"></span>Indumentaria</a>
+        <a href="#" class="u-rubro"><span style="width: 9px; height: 9px; border-radius: 999px; background: #5F6B7C"></span>Otros</a>
+      </div>
+    </div>
+
+    <!-- EL 500 ES ESTA MISMA PANTALLA CON OTRO TEXTO, y con una diferencia que
+         importa: ahí NO va el buscador ni los rubros. Si el servidor se cayó, un
+         buscador que tampoco va a andar es una segunda frustración. Van el
+         código, "algo salió mal de nuestro lado", "ya quedó registrado", y dos
+         botones: reintentar y Contacto. -->
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":780}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

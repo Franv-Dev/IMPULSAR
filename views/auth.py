@@ -5,7 +5,9 @@ from models.user import Roles, User
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.exc import IntegrityError
 from db import db
-from services.validation import validate_password, validate_username
+from services.validation import (
+    validate_email, validate_password, validate_username,
+)
 import functools
 
 # --- JWT ---
@@ -14,6 +16,29 @@ from flask_jwt_extended import (
 )
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
+
+# Los unicos roles que alguien puede pedir para si mismo al registrarse.
+#
+# Roles.ADMIN NO esta, y esa es la razon de que exista esta constante: el
+# formulario tenia un <select> con "Administrador" adentro y la vista guardaba
+# lo que viniera, asi que cualquiera se registraba como admin (y por la API,
+# mandando {"rol": "admin"}, sin siquiera pasar por el formulario). Sacarlo del
+# HTML no alcanza: el que decide es el servidor.
+#
+# Administrador es un permiso que se otorga, no una opcion que se elige. Hoy se
+# asigna a mano en la base; cuando exista el panel para darlo, va por ahi.
+ROLES_AL_REGISTRARSE = (Roles.USUARIO, Roles.EMPRENDEDOR)
+
+
+def _rol_pedido(valor):
+    """El rol que se guarda, a partir de lo que mando el cliente.
+
+    Cualquier cosa que no sea uno de los dos permitidos cae en USUARIO, que es
+    el que menos puede: ante un valor raro se elige el menor privilegio, no el
+    mayor, y tampoco se corta con un error porque el rol es opcional.
+    """
+    normalizado = (valor or "").strip().lower()
+    return normalizado if normalizado in ROLES_AL_REGISTRARSE else Roles.USUARIO
 
 # ============
 #  VISTAS HTML (sesiones tradicionales)
@@ -24,7 +49,7 @@ def register():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        rol = request.form.get("rol", "usuario").strip() or "usuario"
+        rol = _rol_pedido(request.form.get("rol"))
         # Se normaliza a minusculas para que Tomy@x.com y tomy@x.com sean el
         # mismo usuario, tanto al registrar como al consultar unicidad.
         email = request.form.get("email", "").strip().lower()
@@ -36,10 +61,8 @@ def register():
             error = username_error
         elif not password:
             error = "Se requiere una contraseña"
-        elif not email:
-            error = "Se requiere un email"
         else:
-            error = validate_password(password)
+            error = validate_email(email) or validate_password(password)
 
         # Unicidad
         if error is None and User.existe_username_equivalente(username):
@@ -151,12 +174,13 @@ def api_register():
     username = (data.get("username") or "").strip()
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
-    rol = (data.get("rol") or "usuario").strip() or "usuario"
+    rol = _rol_pedido(data.get("rol"))
 
     errors = []
     username_error = validate_username(username)
     if username_error: errors.append(username_error)
-    if not email: errors.append("email requerido")
+    email_error = validate_email(email)
+    if email_error: errors.append(email_error)
     if not password:
         errors.append("password requerido")
     else:

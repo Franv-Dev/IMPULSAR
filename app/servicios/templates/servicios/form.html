@@ -1,110 +1,291 @@
 {% extends "base.html" %}
 {% block title %}{{ "Editar servicio" if servicio else "Nuevo servicio" }}{% endblock %}
 
+{#  El alta y la edicion de un servicio, rediseñadas: los ocho campos dejan de
+    ser una columna de 640 px y se reparten en tres grupos con nombre, con la
+    vista previa de la ficha al costado.
+
+    La previa se pinta EN EL SERVIDOR desde `datos` y main.js le va
+    acompañando lo que se escribe. Asi existe sin JavaScript y, al volver por
+    un error, muestra lo que la persona escribio y no lo viejo de la base
+    (mismo criterio que la previa de Ajustes).
+
+    El campo de duracion del turno nace visible y lo esconde el JS cuando los
+    turnos estan apagados: al reves, sin JS quedaria un campo obligatorio
+    invisible. #}
+
+{% set es_edicion = servicio is not none %}
+
 {% block content %}
 <section class="section">
-    <div class="container" style="max-width: 640px;">
-        <div class="auth__card">
-            <h1 class="auth__title">{{ "Editar servicio" if servicio else "Nuevo servicio" }}</h1>
-            <p class="auth__subtitle">
-                Un trabajo que ofrecés. Se muestra en la página de tu
-                emprendimiento y los clientes te piden presupuesto desde ahí.
-            </p>
+    <div class="container">
+        <p class="volver">
+            <a href="{{ url_for('servicios.index') }}">‹ Volver a mis servicios</a>
+        </p>
 
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="auth__messages">
-                        {% for message in messages %}
-                            <div class="auth__alert">{{ message }}</div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-
-            <form method="post" class="auth__form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <div class="auth__field">
-                    <label for="post_id" class="auth__label">Emprendimiento</label>
-                    <select name="post_id" id="post_id" class="auth__input" required>
-                        {% for post in posts %}
-                            <option value="{{ post.id }}"
-                                    {% if datos.post_id == post.id %}selected{% endif %}>
-                                {{ post.title }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="auth__field">
-                    <label for="titulo" class="auth__label">Título</label>
-                    <input type="text" name="titulo" id="titulo" class="auth__input"
-                           maxlength="120" required value="{{ datos.titulo }}"
-                           placeholder="Destapación de cañerías">
-                </div>
-
-                <div class="auth__field">
-                    <label for="rubro" class="auth__label">Rubro</label>
-                    <select name="rubro" id="rubro" class="auth__input" required>
-                        {% for valor in rubros.TODOS %}
-                            <option value="{{ valor }}"
-                                    {% if datos.rubro == valor %}selected{% endif %}>
-                                {{ rubros.ETIQUETAS[valor] }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <small>
-                        Con esto te van a poder encontrar los que busquen por rubro.
-                    </small>
-                </div>
-
-                <div class="auth__field">
-                    <label for="descripcion" class="auth__label">Descripción corta (opcional)</label>
-                    <textarea name="descripcion" id="descripcion" class="auth__input"
-                              rows="3" maxlength="300">{{ datos.descripcion }}</textarea>
-                </div>
-
-                <div class="auth__field">
-                    <label for="zona_cobertura" class="auth__label">Zona de cobertura (opcional)</label>
-                    <input type="text" name="zona_cobertura" id="zona_cobertura"
-                           class="auth__input" maxlength="120"
-                           value="{{ datos.zona_cobertura }}"
-                           placeholder="Maipú y alrededores">
-                </div>
-
-                <div class="auth__field">
-                    <label for="precio_estimado" class="auth__label">Precio estimado (opcional)</label>
-                    <input type="text" name="precio_estimado" id="precio_estimado"
-                           class="auth__input" inputmode="decimal"
-                           value="{{ datos.precio_estimado }}"
-                           placeholder="1500 o 1500,50">
-                    <small>
-                        Si lo dejás vacío, el servicio se muestra como
-                        "A presupuestar".
-                    </small>
-                </div>
-
-                <div class="auth__field">
-                    <label class="auth__label" for="disponible">
-                        <input type="checkbox" name="disponible" id="disponible"
-                               {% if datos.disponible %}checked{% endif %}>
-                        Disponible
-                    </label>
-                    <small>
-                        Si lo destildás, el servicio queda visible solo para vos,
-                        sin que tengas que borrarlo.
-                    </small>
-                </div>
-
-                <button type="submit" class="btn btn--primary auth__submit">
-                    {{ "Guardar cambios" if servicio else "Agregar servicio" }}
-                </button>
-            </form>
-
-            <p class="auth__footer">
-                Volver a <a href="{{ url_for('servicios.index') }}">mis servicios</a>.
-            </p>
+        <div class="cuenta__head">
+            <div>
+                <h1 class="cuenta__titulo">{{ "Editar servicio" if es_edicion else "Nuevo servicio" }}</h1>
+                <p class="cuenta__bajada">
+                    Un trabajo que hacés a pedido. Aparece en la búsqueda de servicios y
+                    en la página de tu emprendimiento, y desde ahí te piden presupuesto.
+                </p>
+            </div>
         </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="post" class="editor" data-preview-servicio>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="editor__campos">
+
+                <section class="panel">
+                    <h2 class="panel__titulo">Qué ofrecés</h2>
+
+                    <div class="campo">
+                        <label for="post_id" class="campo__label">Emprendimiento</label>
+                        <select name="post_id" id="post_id" class="auth__input" required>
+                            {% for post in posts %}
+                                <option value="{{ post.id }}"
+                                        {% if datos.post_id == post.id %}selected{% endif %}>
+                                    {{ post.title }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <p class="campo__ayuda">
+                            Los servicios cuelgan del emprendimiento, no de tu usuario.
+                        </p>
+                    </div>
+
+                    <div class="campo">
+                        <label for="titulo" class="campo__label">Título</label>
+                        <input type="text" name="titulo" id="titulo" class="auth__input"
+                               maxlength="120" required value="{{ datos.titulo }}"
+                               placeholder="Destapación de cañerías"
+                               data-previa="titulo">
+                        <p class="campo__ayuda">
+                            El trabajo, no el oficio: "destapación de cañerías" se busca
+                            mejor que "plomería".
+                        </p>
+                    </div>
+
+                    <div class="campo">
+                        <label for="rubro" class="campo__label">Rubro</label>
+                        <select name="rubro" id="rubro" class="auth__input" required
+                                data-previa="rubro">
+                            {% for valor in rubros.TODOS %}
+                                <option value="{{ valor }}"
+                                        {% if datos.rubro == valor %}selected{% endif %}>
+                                    {{ rubros.ETIQUETAS[valor] }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <p class="campo__ayuda">
+                            Es por lo que te van a filtrar. Si no encaja en ninguno, "Otros".
+                        </p>
+                    </div>
+
+                    <div class="campo">
+                        <label for="descripcion" class="campo__label">
+                            Descripción <span class="campo__opcional">· opcional</span>
+                        </label>
+                        <textarea name="descripcion" id="descripcion" class="auth__input"
+                                  rows="3" maxlength="300"
+                                  placeholder="Qué incluye, qué no, y cualquier cosa que te evite una pregunta."
+                                  data-previa="descripcion">{{ datos.descripcion }}</textarea>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2 class="panel__titulo">Dónde y cuánto</h2>
+
+                    <div class="campo-par">
+                        <div class="campo">
+                            <label for="zona_cobertura" class="campo__label">
+                                Zona de cobertura <span class="campo__opcional">· opcional</span>
+                            </label>
+                            <input type="text" name="zona_cobertura" id="zona_cobertura"
+                                   class="auth__input" maxlength="120"
+                                   value="{{ datos.zona_cobertura }}"
+                                   placeholder="Maipú y alrededores"
+                                   data-previa="zona">
+                            <p class="campo__ayuda">
+                                Texto libre: es lo que se compara cuando alguien filtra por zona.
+                            </p>
+                        </div>
+
+                        <div class="campo">
+                            <label for="precio_estimado" class="campo__label">
+                                Precio estimado <span class="campo__opcional">· opcional</span>
+                            </label>
+                            <input type="text" name="precio_estimado" id="precio_estimado"
+                                   class="auth__input" inputmode="decimal"
+                                   value="{{ datos.precio_estimado }}"
+                                   placeholder="1500 o 1500,50"
+                                   data-previa="precio">
+                            <p class="campo__ayuda">
+                                Si lo dejás vacío, el servicio se muestra como
+                                "A presupuestar", que es lo normal en un oficio.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2 class="panel__titulo">Cómo te lo piden</h2>
+
+                    <label class="opcion">
+                        <input type="checkbox" name="disponible" id="disponible"
+                               class="opcion__input" data-previa="disponible"
+                               {% if datos.disponible %}checked{% endif %}>
+                        <span class="opcion__texto">
+                            <span class="opcion__nombre">Disponible</span>
+                            <span class="opcion__ayuda">
+                                Si lo destildás, el servicio queda visible solo para vos,
+                                sin que tengas que borrarlo.
+                            </span>
+                        </span>
+                    </label>
+
+                    <div class="panel__separador" aria-hidden="true"></div>
+
+                    <label class="opcion">
+                        <input type="checkbox" name="turnos_habilitados" id="turnos_habilitados"
+                               class="opcion__input" data-previa="turnos"
+                               {% if datos.turnos_habilitados %}checked{% endif %}>
+                        <span class="opcion__texto">
+                            <span class="opcion__nombre">Tomar turnos para este servicio</span>
+                            <span class="opcion__ayuda">
+                                El cliente reserva una hora concreta en vez de pedir
+                                presupuesto. Las horas salen de tus horarios de atención
+                                del perfil.
+                            </span>
+                        </span>
+                    </label>
+
+                    {# Nace visible a proposito: sin JavaScript esconderlo dejaria
+                       un campo obligatorio que no se puede completar. #}
+                    <div class="bloque-turnos" data-bloque-turnos>
+                        <div class="campo">
+                            <label for="duracion_turno_minutos" class="campo__label">
+                                Cuánto dura cada turno
+                            </label>
+                            {# type="number" con min/max ayuda al que usa el formulario,
+                               pero no valida nada: el POST se manda a mano igual. Quien
+                               decide es reglas.duracion_de_turno_valida. #}
+                            <div class="campo__con-unidad">
+                                <input type="number" name="duracion_turno_minutos"
+                                       id="duracion_turno_minutos" class="auth__input"
+                                       min="{{ min_duracion_turno }}" max="{{ max_duracion_turno }}"
+                                       step="1" value="{{ datos.duracion_turno_minutos }}"
+                                       placeholder="30">
+                                <span class="campo__unidad">minutos</span>
+                            </div>
+                            <p class="campo__ayuda">
+                                Obligatorio si tomás turnos. Entre {{ min_duracion_turno }}
+                                y {{ max_duracion_turno }} minutos: es el bloque que se le
+                                reserva al cliente.
+                            </p>
+                        </div>
+
+                        <p class="aviso-suave">
+                            Si todavía no cargaste horarios de atención no va a haber turnos
+                            para elegir.
+                            <a href="{{ url_for('profile.horarios') }}">Cargalos en Ajustes › Horarios</a>.
+                        </p>
+                    </div>
+                </section>
+
+                <div class="barra-guardar">
+                    <p class="barra-guardar__texto">
+                        {% if es_edicion %}
+                            Los cambios se ven en cuanto guardás.
+                        {% else %}
+                            Lo vas a poder editar o apagar cuando quieras.
+                        {% endif %}
+                    </p>
+                    <a href="{{ url_for('servicios.index') }}" class="barra-guardar__cancelar">Cancelar</a>
+                    <button type="submit" class="btn btn--primary">
+                        {{ "Guardar cambios" if es_edicion else "Agregar servicio" }}
+                    </button>
+                </div>
+            </div>
+
+            {# ===================== VISTA PREVIA ===================== #}
+            <aside class="editor__previa">
+                <div class="editor__previa-head">
+                    <h2 class="panel__titulo">Cómo se va a ver</h2>
+                    <span class="editor__previa-donde">En la búsqueda</span>
+                </div>
+
+                <article class="servicio servicio--previa {{ 'servicio--apagado' if not datos.disponible }}"
+                         data-previa-ficha>
+                    {# Los trece iconos van dibujados y escondidos, y el JS
+                       muestra el del rubro elegido. Es feo tener trece SVG en
+                       el HTML, pero la alternativa es meter los trazos en
+                       main.js, y el marcado vive en las plantillas (ver
+                       partials/_icono_oficio.html). Sin JS se ve el que
+                       corresponde al rubro guardado, que es lo correcto. #}
+                    <span class="servicio__emblema" aria-hidden="true" data-previa-emblema>
+                        {% for valor in rubros.TODOS %}
+                            <span class="servicio__emblema-icono" data-oficio="{{ valor }}"
+                                  {% if valor != datos.rubro %}hidden{% endif %}>
+                                {% with clave = valor %}
+                                    {% include "partials/_icono_oficio.html" %}
+                                {% endwith %}
+                            </span>
+                        {% endfor %}
+                    </span>
+
+                    <div class="servicio__cuerpo">
+                        <h3 class="servicio__titulo {{ 'servicio__titulo--vacio' if not datos.titulo }}"
+                            data-previa-titulo>
+                            {{ datos.titulo or "El título de tu servicio" }}
+                        </h3>
+
+                        <p class="servicio__desc {{ 'servicio__desc--vacia' if not datos.descripcion }}"
+                           data-previa-descripcion>
+                            {{ datos.descripcion or "La descripción aparece acá, debajo del título." }}
+                        </p>
+
+                        <div class="servicio__datos">
+                            <span class="dato" data-previa-rubro>{{ rubros.ETIQUETAS[datos.rubro] }}</span>
+                            <span class="dato {{ 'dato--vacio' if not datos.zona_cobertura }}" data-previa-zona>
+                                {{ datos.zona_cobertura or "Sin zona" }}
+                            </span>
+                            <span class="dato dato--turnos" data-previa-chip-turnos
+                                  {% if not datos.turnos_habilitados %}hidden{% endif %}>
+                                Toma turnos
+                            </span>
+                        </div>
+
+                        <div class="servicio__precio-caja servicio__precio-caja--previa">
+                            <p class="servicio__precio" data-previa-precio>
+                                {{ datos.precio_estimado or "A presupuestar" }}
+                            </p>
+                            <p class="servicio__precio-nota" data-previa-precio-nota>
+                                {{ "Precio estimado" if datos.precio_estimado else "Le cotizás su caso" }}
+                            </p>
+                        </div>
+                    </div>
+                </article>
+
+                <p class="editor__previa-nota" data-previa-oculto
+                   {% if datos.disponible %}hidden{% endif %}>
+                    Está apagado: no aparece en la búsqueda ni en tu emprendimiento.
+                    Lo seguís viendo vos en Mis servicios.
+                </p>
+            </aside>
+        </form>
     </div>
 </section>
 {% endblock %}

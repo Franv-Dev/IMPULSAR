@@ -1,0 +1,21 @@
+{#  Las cinco estrellas de un puntaje, en SVG.
+
+    Quien lo incluya pasa `puntaje` (un número de 0 a 5; se redondea hacia
+    abajo para llenar) y opcionalmente `tamanio` (px, por defecto 14) y
+    `etiqueta` (el aria-label; si no viene, el grupo queda oculto para lectores
+    de pantalla porque el número ya se dice al lado en texto).
+
+    Antes esto eran los glifos ★ y ☆ escritos como texto. Van contra la regla
+    de iconografía de la guía por lo mismo que los emoji: cambian de dibujo
+    según la fuente instalada, no se pueden recolorear parcialmente y en
+    algunos sistemas el ☆ ni siquiera existe y sale como recuadro. #}
+<span class="estrellas"
+      {% if etiqueta is defined %}role="img" aria-label="{{ etiqueta }}"{% else %}aria-hidden="true"{% endif %}>
+    {% for i in range(1, 6) %}
+        <svg class="estrellas__una {% if i <= puntaje|int %}estrellas__una--llena{% endif %}"
+             width="{{ tamanio|default(14) }}" height="{{ tamanio|default(14) }}"
+             viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+            <path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/>
+        </svg>
+    {% endfor %}
+</span>

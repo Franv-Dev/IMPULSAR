@@ -1,0 +1,82 @@
+{#  La barra de abajo del telefono (artboards disenio-navegacion/Movil.dc.html y
+    MovilPerfil.dc.html). Reemplaza a la hamburguesa, que se fue.
+
+    Cinco pestanas con sesion: Inicio, Explorar, Favoritos, Mensajes y Perfil.
+    Son las cinco cosas que se hacen sin pensar. "Publicar" NO entra: es una
+    accion de dueno, no de todos los dias, y vive arriba de la pantalla Mi
+    cuenta como boton principal. Nada de boton flotante: taparia una tarjeta,
+    que es el error que ya se corrigio con el mapa.
+
+    Sin sesion son tres (Inicio, Explorar, Entrar) y no cinco: Favoritos y
+    Mensajes piden login, asi que como pestanas solo rebotarian. Los artboards
+    del telefono estan los dos con sesion iniciada; esto es la adaptacion.
+
+    "Explorar" agrupa lo que en escritorio son tres entradas (Emprendimientos,
+    Servicios, Eventos): en 390px no entran tres. Lleva al listado, y las otras
+    dos quedan a un toque en las solapas que base.html pinta arriba del
+    contenido de esas tres pantallas.
+
+    El CSS la apaga en escritorio. #}
+{# El hueco del alto de la barra, para que no tape el final del pie. Va en
+   este mismo parcial a proposito: las pantallas que apagan la barra (entrar
+   y crear cuenta) se llevan tambien el hueco, sin tener que acordarse. #}
+<div class="tabbar__hueco" aria-hidden="true"></div>
+
+<nav class="tabbar" aria-label="Navegación principal">
+    <a href="{{ url_for('index') }}"
+       class="tabbar__tab {% if request.endpoint == 'index' %}tabbar__tab--activa{% endif %}"
+       {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>
+        {% with clave = 'inicio', tamanio = 23 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+        Inicio
+    </a>
+
+    {# El catalogo y el detalle de un producto son "Explorar" tanto como el
+       listado: se entra desde ahi y se vuelve ahi. El resto de /productos es
+       del dueño (su panel y el ABM) y vive en la pestaña Perfil, asi que se
+       nombran de a uno en vez de mirar el prefijo del blueprint. #}
+    {% set explorando = request.endpoint and (
+        request.endpoint.startswith('blog.')
+        or request.endpoint.startswith('eventos.')
+        or request.endpoint == 'servicios.buscar'
+        or request.endpoint in ('products.catalogo', 'products.detalle')
+    ) and request.endpoint != 'blog.my_favorites' %}
+    <a href="{{ url_for('blog.index') }}"
+       class="tabbar__tab {% if explorando %}tabbar__tab--activa{% endif %}"
+       {% if explorando %}aria-current="page"{% endif %}>
+        {% with clave = 'explorar', tamanio = 23 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+        Explorar
+    </a>
+
+    {% if g.user %}
+        <a href="{{ url_for('blog.my_favorites') }}"
+           class="tabbar__tab {% if request.endpoint == 'blog.my_favorites' %}tabbar__tab--activa{% endif %}"
+           {% if request.endpoint == 'blog.my_favorites' %}aria-current="page"{% endif %}>
+            {% with clave = 'favoritos', tamanio = 23 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            Favoritos
+        </a>
+
+        <a href="{{ url_for('messages.inbox') }}"
+           class="tabbar__tab tabbar__tab--con-badge {% if request.endpoint and request.endpoint.startswith('messages.') %}tabbar__tab--activa{% endif %}"
+           {% if request.endpoint and request.endpoint.startswith('messages.') %}aria-current="page"{% endif %}>
+            {% with clave = 'mensajes', tamanio = 23 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            {# Solo los mensajes sin leer, igual que el sobre de la barra de
+               escritorio: cada contador va en su item. #}
+            <span class="badge-notif badge-notif--flotante" data-notif="unread_messages" hidden aria-live="polite"></span>
+            Mensajes
+        </a>
+
+        <a href="{{ url_for('profile.cuenta') }}"
+           class="tabbar__tab {% if request.endpoint == 'profile.cuenta' %}tabbar__tab--activa{% endif %}"
+           {% if request.endpoint == 'profile.cuenta' %}aria-current="page"{% endif %}>
+            <span class="tabbar__avatar" aria-hidden="true">{{ g.user.username[0]|upper }}</span>
+            Perfil
+        </a>
+    {% else %}
+        <a href="{{ url_for('auth.login') }}"
+           class="tabbar__tab {% if request.endpoint and request.endpoint.startswith('auth.') %}tabbar__tab--activa{% endif %}"
+           {% if request.endpoint and request.endpoint.startswith('auth.') %}aria-current="page"{% endif %}>
+            {% with clave = 'entrar', tamanio = 23 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            Entrar
+        </a>
+    {% endif %}
+</nav>

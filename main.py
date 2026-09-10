@@ -21,8 +21,12 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from config import get_config
 from db import db
-from services.eventos import formatear_fecha, mes_corto
-from services.formatting import render_biography
+from services.eventos import (
+    dia_semana_corto, formatear_fecha, mes_corto, parsear_fecha,
+)
+from services.formatting import render_biography, tiempo_relativo
+from services.horarios import formatear as formatear_hora
+from services.notificaciones_email import mail
 from services.precios import formatear as formatear_precio
 from services.precios import texto_para_formulario as precio_para_formulario
 from services.uploads import MAX_IMAGE_BYTES
@@ -31,12 +35,17 @@ from services.uploads import MAX_IMAGE_BYTES
 # es de donde se pide: ninguno reexporta desde su __init__, para no meter las
 # vistas en el medio de cada import de sus modelos (ver app/blog/__init__.py).
 # Los que todavia no se migraron siguen en views/.
+from app.blog import consultas as consultas_blog
+from app.blog.modelo_post import Categorias, Post
 from app.blog.vistas import blog
+from app.panel.vistas import panel
 from app.perfil.vistas import profile
 from app.servicios.vistas import servicios
+from app.turnos.vistas import turnos
 from views.admin import admin
 from views.auth import api_login, api_register, auth
 from views.eventos import eventos
+from views.eventos_api import eventos_api
 from views.messages import messages
 from views.pages import pages
 from views.posts_api import posts_api
@@ -80,6 +89,11 @@ def _registrar_extensiones(app):
     migrate.init_app(app, db)
     jwt.init_app(app)
     csrf.init_app(app)
+    # El correo saliente de las notificaciones (ver
+    # services/notificaciones_email.py). Se enlaza siempre, aunque no haya
+    # credenciales: sin ellas la app arranca igual y los avisos no se mandan,
+    # que es lo que pasa en los tests y en una copia local recien clonada.
+    mail.init_app(app)
 
     # La API JSON queda exenta de CSRF: se autentica con el header
     # Authorization, que el navegador no manda solo, asi que no es vulnerable
@@ -93,19 +107,38 @@ def _registrar_blueprints(app):
     app.register_blueprint(auth)
     app.register_blueprint(blog)
     app.register_blueprint(eventos)
+    app.register_blueprint(eventos_api)
     app.register_blueprint(posts_api)
     app.register_blueprint(products)
     app.register_blueprint(servicios)
+    app.register_blueprint(turnos)
     app.register_blueprint(pages)
     app.register_blueprint(profile)
     app.register_blueprint(messages)
+    app.register_blueprint(panel)
     app.register_blueprint(admin)
 
 
 def _registrar_rutas(app):
     @app.route("/")
     def index():
-        return render_template("home.html")
+        # Los 7 rubros salen del mismo lugar que el <select> del listado
+        # (Categorias.ETIQUETAS), asi que agregar uno nuevo lo hace aparecer en
+        # los dos lados sin tocar el template.
+        #
+        # El conteo es un COUNT, no un len() del listado: la grilla de abajo
+        # trae solo una pagina, y el numero del titulo habla de la plataforma
+        # entera. Sigue siendo de toda la plataforma y no de una ciudad: Post
+        # no tiene localidad, solo una direccion en texto libre.
+        #
+        # El de cada rubro sale de la misma consulta agrupada que ya usa la
+        # columna de filtros del listado, no de siete COUNT.
+        return render_template(
+            "home.html",
+            categorias=Categorias.ETIQUETAS,
+            total_posts=Post.query.count(),
+            conteo_por_rubro=consultas_blog.conteo_por_categoria(),
+        )
 
 
 def _registrar_filtros_jinja(app):
@@ -113,11 +146,26 @@ def _registrar_filtros_jinja(app):
     # seguro (ver services/formatting.py). Se registra como filtro para no
     # tener que importarlo en cada vista que renderiza una biografia.
     app.jinja_env.filters["render_bio"] = render_biography
+    # "hace 2 semanas". Fecha las resenias de la ficha: leyendo una resenia
+    # lo que importa es si es de esta temporada o de hace dos anios, no el
+    # dia exacto (que igual queda en el title del elemento).
+    app.jinja_env.filters["hace"] = tiempo_relativo
     # "13 de septiembre de 2026". Se registra como filtro por lo mismo que
     # render_bio: lo usan el perfil y la cartelera, y asi no hay que pasarlo
     # como variable de contexto desde cada vista.
     app.jinja_env.filters["fecha_evento"] = formatear_fecha
     app.jinja_env.filters["mes_corto"] = mes_corto
+    app.jinja_env.filters["dia_semana_corto"] = dia_semana_corto
+    # "09:30". El mismo formateo de hora que ya usaba el perfil, ahora tambien
+    # en las tres pantallas de turnos, que muestran horas en cada fila. Filtro
+    # y no strftime en la plantilla: strftime("%H:%M") repetido veinte veces es
+    # el formato escrito veinte veces, y ademas devuelve "" con una hora vacia
+    # en vez de reventar.
+    app.jinja_env.filters["hora"] = formatear_hora
+    # "2026-09-13" -> date, para la vista previa del formulario de evento,
+    # que trabaja sobre el texto crudo que mando el usuario. Devuelve None
+    # si esta vacio o mal escrito, y la plantilla ya pregunta antes de usarlo.
+    app.jinja_env.filters["fecha_desde_iso"] = parsear_fecha
     # "$ 1.500,50", con los separadores de aca (ver services/precios.py).
     # Filtro y no property del modelo: como mostrar un precio es de la
     # vista, y asi lo usan igual el catalogo y el panel.
@@ -152,7 +200,12 @@ def _registrar_manejadores_de_error(app):
 
     @app.errorhandler(404)
     def manejar_no_encontrado(e):
-        return render_template("errors/404.html"), 404
+        # Los rubros van a la plantilla porque el 404 dejo de ser un cartel y
+        # pasa a ser una bifurcacion: casi siempre se llega desde un
+        # emprendimiento dado de baja o un link viejo, y la persona venia a
+        # buscar algo. Es el mismo Categorias.ETIQUETAS del listado, no una
+        # lista propia de esta pantalla.
+        return render_template("errors/404.html", categorias=Categorias.ETIQUETAS), 404
 
     @app.errorhandler(500)
     def manejar_error_interno(e):

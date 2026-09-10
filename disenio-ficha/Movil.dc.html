@@ -1,0 +1,285 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-tira { scrollbar-width: none; -ms-overflow-style: none; }
+    .u-tira::-webkit-scrollbar { display: none; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; max-width: 100%; overflow-x: hidden; background: #F5F7FA">
+
+  <!-- FOTO A SANGRE, sin barra blanca arriba: en la ficha la foto es lo primero
+       y los controles flotan encima. Nada de barra de estado ni de teclado
+       dibujados: los pone el telefono de verdad. -->
+  <div style="position: relative; height: 250px; background: linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)">
+    <span style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,8,28,.4) 0%, transparent 30%, rgba(10,8,28,.3) 100%)"></span>
+    <button type="button" aria-label="Volver" style="position: absolute; left: 12px; top: 12px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: rgba(10,8,28,.5); color: #FFFFFF; cursor: pointer; padding: 0">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5-7 7 7 7"/></svg>
+    </button>
+    <div style="position: absolute; right: 12px; top: 12px; display: flex; gap: 8px">
+      <button type="button" aria-label="Compartir" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: rgba(10,8,28,.5); color: #FFFFFF; cursor: pointer; padding: 0">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17.5" cy="6" r="2.8"/><circle cx="6.5" cy="12" r="2.8"/><circle cx="17.5" cy="18" r="2.8"/><path d="m9 10.6 6-3.2M9 13.4l6 3.2"/></svg>
+      </button>
+      <button type="button" aria-label="Guardar" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: rgba(10,8,28,.5); color: #FFFFFF; cursor: pointer; padding: 0">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.2-4.5-7.2-9.4A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.9C19.2 15.5 12 20 12 20Z"/></svg>
+      </button>
+    </div>
+    <span style="position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: rgba(10,8,28,.55); color: rgba(255,255,255,.92); font-size: 12px; font-weight: 600">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+      Ver las 8 fotos
+    </span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 0 108px">
+
+    <!-- CABECERA -->
+    <section style="display: flex; flex-direction: column; gap: 11px; padding: 18px 16px 20px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px">
+        <span style="display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: #EEEFFE; color: #635EA3; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase">Artesanías</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 11.5px; font-weight: 600">
+          <span style="width: 5px; height: 5px; border-radius: 999px; background: #1C7B53"></span>Abierto · cierra 19:00
+        </span>
+      </div>
+
+      <h1 style="font-size: 26px; line-height: 1.14; letter-spacing: -.03em">Estudio Verde Cerámica</h1>
+
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 13px; color: #4A5666">
+        <span style="display: inline-flex; align-items: center; gap: 6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+          <strong style="color: #1B2430">4,6</strong> · 23 reseñas
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5248AE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          <strong style="color: #1B2430">a 400 m</strong>
+        </span>
+      </div>
+
+      <p style="margin: 2px 0 0; font-size: 14.5px; line-height: 1.65; color: #4A5666">Hacemos vajilla de gres a torno para casas y restaurantes de la ciudad. Todo sale del taller de Güemes: el torno, el esmalte y los dos hornos.</p>
+
+      <div style="display: flex; align-items: center; gap: 11px; margin-top: 4px; padding-top: 14px; border-top: 1px solid #E2E6EE">
+        <span style="flex-shrink: 0; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 700">VR</span>
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: -.01em">Valentina Ruiz</span>
+          <span style="font-size: 12.5px; color: #5F6B7C">Publica en IMPULSAR desde 2024</span>
+        </span>
+      </div>
+    </section>
+
+    <!-- LO QUE VENDE: grilla de dos columnas que entra entera en los 390 px.
+         Antes era una tira que se deslizaba de costado y cortaba la tercera
+         tarjeta contra el borde: se leia como que la pantalla se desbordaba.
+         Cuatro tarjetas y el resto detras del enlace del pie. -->
+    <section style="display: flex; flex-direction: column; gap: 12px; padding: 18px 16px 20px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+        <h2 style="font-size: 17px; letter-spacing: -.02em">Lo que vende</h2>
+        <span style="font-size: 12px; color: #5F6B7C">Precios de referencia</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <sc-for list="{{ productos }}" as="p" hint-placeholder-count="4">
+          <article style="display: flex; flex-direction: column; min-width: 0; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF; overflow: hidden">
+            <div style="position: relative; height: 112px; background: {{ p.foto }}">
+              <span style="{{ p.agotado }}">Sin stock</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 3px; padding: 11px 12px 13px; min-width: 0">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ p.nombre }}</span>
+              <span style="font-size: 11.5px; color: #5F6B7C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ p.detalle }}</span>
+              <span style="margin-top: 2px; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: -.02em">{{ p.precio }}</span>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+      <a href="#" style="display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 44px; border: 1px solid #E2E6EE; border-radius: 999px; font-size: 14px; font-weight: 600">
+        Ver los 8 productos
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+      </a>
+    </section>
+
+    <!-- LO QUE HACE POR ENCARGO -->
+    <section style="display: flex; flex-direction: column; gap: 12px; padding: 18px 16px 20px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+      <h2 style="font-size: 17px; letter-spacing: -.02em">Lo que hace por encargo</h2>
+      <sc-for list="{{ servicios }}" as="s" hint-placeholder-count="2">
+        <div style="display: flex; flex-direction: column; gap: 9px; padding: 14px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+            <span style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em">{{ s.titulo }}</span>
+              <span style="font-size: 12.5px; line-height: 1.5; color: #5F6B7C">{{ s.detalle }}</span>
+            </span>
+            <span style="flex-shrink: 0; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700; white-space: nowrap">{{ s.precio }}</span>
+          </div>
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px">
+            <span style="display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 11.5px; font-weight: 600">{{ s.zona }}</span>
+            <span style="{{ s.turnoChip }}">{{ s.turno }}</span>
+            <span style="{{ s.verificado }}">Verificado</span>
+          </div>
+          <button type="button" style="display: inline-flex; align-items: center; justify-content: center; height: 44px; margin-top: 2px; border: 1px solid #5248AE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-size: 14px; font-weight: 600; cursor: pointer">Pedir presupuesto</button>
+        </div>
+      </sc-for>
+    </section>
+
+    <!-- HORARIOS -->
+    <section style="display: flex; flex-direction: column; gap: 11px; padding: 18px 16px 20px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+        <h2 style="font-size: 17px; letter-spacing: -.02em">Horarios</h2>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 11.5px; font-weight: 700">
+          <span style="width: 5px; height: 5px; border-radius: 999px; background: #1C7B53"></span>Abierto
+        </span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 1px">
+        <sc-for list="{{ horarios }}" as="h" hint-placeholder-count="7">
+          <span style="{{ h.fila }}">
+            <span>{{ h.dia }}</span>
+            <span style="{{ h.horaEstilo }}">{{ h.hora }}</span>
+          </span>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- DÓNDE ENCONTRARLA -->
+    <section style="display: flex; flex-direction: column; gap: 12px; padding: 18px 16px 20px; background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+      <h2 style="font-size: 17px; letter-spacing: -.02em">Dónde encontrarla</h2>
+      <div style="display: flex; gap: 12px; padding: 13px; border-radius: 14px; background: #EEF1F7">
+        <span style="flex-shrink: 0; width: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 11px; background: #FFFFFF; border: 1px solid #E2E6EE">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 700; line-height: 1; color: #33267C">6</span>
+          <span style="font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: #5F6B7C">Sep</span>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+          <span style="font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600">Feria de Plaza Mitre</span>
+          <span style="font-size: 12px; line-height: 1.5; color: #5F6B7C">Sábado y domingo, de 10 a 19. Puesto 14.</span>
+        </span>
+      </div>
+      <div style="position: relative; height: 132px; border-radius: 14px; overflow: hidden; background: linear-gradient(160deg, #EEF1F7 0%, #E2E6EE 100%)">
+        <span style="position: absolute; inset: 0; background-image: linear-gradient(rgba(94,106,122,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(94,106,122,.13) 1px, transparent 1px); background-size: 28px 28px"></span>
+        <span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; border-radius: 999px; background: #5248AE; border: 3px solid #FFFFFF; box-shadow: 0 2px 8px rgba(23,20,71,.3)"></span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+        <span style="font-size: 13px; color: #5F6B7C">Güemes 1480</span>
+        <a href="#" style="font-size: 13.5px; font-weight: 600">Cómo llegar</a>
+      </div>
+    </section>
+
+    <!-- RESEÑAS -->
+    <section style="display: flex; flex-direction: column; gap: 14px; padding: 18px 16px 22px; background: #FFFFFF">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+        <h2 style="font-size: 17px; letter-spacing: -.02em">Reseñas</h2>
+        <a href="#" style="font-size: 13px; font-weight: 600">Ver las 23</a>
+      </div>
+      <sc-for list="{{ resenias }}" as="r" hint-placeholder-count="2">
+        <div style="display: flex; flex-direction: column; gap: 7px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span style="flex-shrink: 0; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 700">{{ r.iniciales }}</span>
+            <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+              <span style="font-size: 13.5px; font-weight: 600">{{ r.nombre }}</span>
+              <span style="display: flex; align-items: center; gap: 7px">
+                <span style="display: flex; gap: 1px">
+                  <sc-for list="{{ r.estrellas }}" as="e" hint-placeholder-count="5">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="{{ e.color }}"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+                  </sc-for>
+                </span>
+                <span style="font-size: 11.5px; color: #5F6B7C">{{ r.cuando }}</span>
+              </span>
+            </span>
+          </div>
+          <span style="font-size: 13.5px; line-height: 1.6; color: #4A5666">{{ r.texto }}</span>
+        </div>
+      </sc-for>
+    </section>
+  </div>
+
+  <!-- BARRA DE ACCIÓN FIJA
+       En telefono el contacto no puede vivir en una columna al costado ni al
+       final de 2000 px de scroll: es LA acción de la pantalla, y va fija abajo
+       de punta a punta. La frase de la comisión va acá, no escondida: es el
+       argumento contra Mercado Libre y se lee en el momento de decidir. -->
+  <div style="position: sticky; bottom: 0; z-index: 6; display: flex; flex-direction: column; gap: 7px; padding: 12px 16px 16px; background: #FFFFFF; border-top: 1px solid #E2E6EE; box-shadow: 0 -8px 26px rgba(23,20,71,.10)">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <button type="button" aria-label="Guardar" style="flex-shrink: 0; width: 52px; height: 52px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #5F6B7C; cursor: pointer; padding: 0">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.2-4.5-7.2-9.4A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.9C19.2 15.5 12 20 12 20Z"/></svg>
+      </button>
+      <button type="button" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 52px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 15.5px; font-weight: 600; cursor: pointer">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+        Enviar un mensaje
+      </button>
+    </div>
+    <span style="text-align: center; font-size: 11px; color: #5F6B7C">Hablás directo con Valentina. Sin comisión.</span>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":2140}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const PLANCHA = "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)";
+
+    const productos = [
+      { nombre: "Juego de 4 tazas", detalle: "Gres, 250 ml", precio: "$ 38.000", hay: true },
+      { nombre: "Bowl hondo", detalle: "Ensalada, 22 cm", precio: "$ 21.500", hay: true },
+      { nombre: "Set de mate", detalle: "Con bombilla", precio: "$ 44.000", hay: false },
+      { nombre: "Fuente ovalada", detalle: "Horno, 32 cm", precio: "$ 29.000", hay: true }
+    ].map((p) => Object.assign({}, p, {
+      foto: PLANCHA,
+      agotado: p.hay
+        ? "display: none"
+        : "position: absolute; left: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; background: rgba(10,8,28,.6); color: rgba(255,255,255,.9); font-size: 9.5px; font-weight: 700"
+    }));
+
+    const servicios = [
+      { titulo: "Vajilla por encargo para restaurantes", detalle: "Se acuerda modelo y cantidad, con muestra antes de la tanda.",
+        zona: "Toda la ciudad", precio: "Desde $ 90.000", turno: "Responde en 24 h", conTurno: false, esVerificado: true },
+      { titulo: "Taller de torno y esmaltado", detalle: "Cuatro clases, materiales incluidos. Grupos de hasta 6.",
+        zona: "En el taller", precio: "$ 62.000", turno: "Con turno online", conTurno: true, esVerificado: false }
+    ].map((s) => Object.assign({}, s, {
+      verificado: s.esVerificado
+        ? "display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 11px; font-weight: 700"
+        : "display: none",
+      turnoChip: "display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; "
+        + (s.conTurno ? "background: #ECEAF7; color: #33267C" : "background: #EEF1F7; color: #4A5666")
+    }));
+
+    const estrellas = (n) => {
+      const salida = [];
+      for (let k = 0; k < 5; k++) salida.push({ color: k < n ? "#E8A33D" : "#E2E6EE" });
+      return salida;
+    };
+
+    const resenias = [
+      { nombre: "Camila Suárez", iniciales: "CS", cuando: "hace 2 semanas", puntos: 5,
+        texto: "Encargué una bajada de platos para el restaurante y salió mejor de lo que esperaba. Fue mandando fotos del proceso, así que no hubo sorpresas." },
+      { nombre: "Julián Ortiz", iniciales: "JO", cuando: "hace 1 mes", puntos: 4,
+        texto: "Las tazas son hermosas y aguantan el lavavajillas. Tardó una semana más de lo hablado, pero avisó." }
+    ].map((r) => Object.assign({}, r, { estrellas: estrellas(r.puntos) }));
+
+    const HOY = 3;
+    const horarios = [
+      { dia: "Lunes", hora: "Cerrado", abre: false },
+      { dia: "Martes", hora: "10:00 – 19:00", abre: true },
+      { dia: "Miércoles", hora: "10:00 – 19:00", abre: true },
+      { dia: "Jueves", hora: "10:00 – 19:00", abre: true },
+      { dia: "Viernes", hora: "10:00 – 19:00", abre: true },
+      { dia: "Sábado", hora: "10:00 – 14:00", abre: true },
+      { dia: "Domingo", hora: "Cerrado", abre: false }
+    ].map((h, n) => Object.assign({}, h, {
+      fila: "display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 13.5px; "
+        + (n === HOY ? "background: #ECEAF7; color: #1B2430; font-weight: 600" : "color: #4A5666"),
+      horaEstilo: h.abre ? "color: inherit" : "color: #5F6B7C"
+    }));
+
+    return { productos: productos, servicios: servicios, resenias: resenias, horarios: horarios };
+  }
+}
+</script>
+</body>
+</html>

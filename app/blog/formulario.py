@@ -12,7 +12,9 @@ haya validado bien, asi que lo hace la vista.
 
 from flask import request
 
-from app.blog.reglas import RATING_MAXIMO, RATING_MINIMO
+from app.blog.reglas import (
+    MAX_TITULO, RATING_MAXIMO, RATING_MINIMO, radio_valido,
+)
 
 
 def leer_post(pedir_descripcion=True):
@@ -41,6 +43,11 @@ def leer_post(pedir_descripcion=True):
     error = None
     if not valores["title"]:
         error = "Se requiere un título."
+    elif len(valores["title"]) > MAX_TITULO:
+        error = (
+            f"El título no puede tener más de {MAX_TITULO} caracteres "
+            f"(escribiste {len(valores['title'])})."
+        )
     elif pedir_descripcion and not valores["body"]:
         error = "Se requiere una descripción."
 
@@ -110,18 +117,56 @@ def leer_busqueda():
 
 
 def leer_cercania():
-    """Los tres campos de la busqueda por cercania, sin resolver nada.
+    """Los campos de la busqueda por cercania, sin resolver nada.
+
+    Devuelve (cerca_de, lat, lon, radio_km).
 
     Se puede pasar lat/lon directamente (por ejemplo desde la geolocalizacion
     del navegador) o una direccion en texto para geocodificar. Traducir el texto
     a coordenadas es una llamada a MapTiler, o sea trabajo con red de por medio,
     y eso lo hace la vista: aca solo se lee lo que vino.
+
+    El radio si se valida aca, y no como la categoria (que se devuelve tal cual
+    vino para repintar el <select>): un radio raro no se le repinta a nadie
+    -- son tres botones, se marca el que coincida y listo -- y dejarlo pasar
+    mandaria un numero cualquiera de la URL a una cuenta en el WHERE. Cualquier
+    cosa que no sea uno de reglas.RADIOS_KM vuelve como None, que es "sin
+    radio", el mismo caso que no mandar nada.
     """
+    radio = request.args.get("radio", type=int)
     return (
         (request.args.get("near") or "").strip(),
         request.args.get("lat", type=float),
         request.args.get("lon", type=float),
+        radio if radio_valido(radio) else None,
     )
+
+
+def leer_con_resenias():
+    """Si el listado tiene que dejar solo los emprendimientos con resenias.
+
+    Es un checkbox: lo que importa es si vino o no, no que dice. Un checkbox
+    sin marcar directamente no viaja en el GET, asi que "no esta" es "no".
+    """
+    return request.args.get("con_resenias") is not None
+
+
+def leer_abierto_ahora():
+    """Si el listado tiene que dejar solo los que estan atendiendo ahora.
+
+    Checkbox, igual que con_resenias: se lee por presencia y no por valor.
+    """
+    return request.args.get("abierto_ahora") is not None
+
+
+def leer_orden_de_favoritos():
+    """El orden elegido en "Mis favoritos", tal como vino.
+
+    Se devuelve crudo y no validado, igual que leer_categoria_de_filtro: quien
+    decide que hacer con un valor que no existe es la vista (cae al default), y
+    el template igual necesita repintar el <select> con lo que habia en la URL.
+    """
+    return (request.args.get("orden") or "").strip()
 
 
 def leer_pagina():

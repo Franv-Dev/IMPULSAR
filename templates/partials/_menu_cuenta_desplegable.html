@@ -1,0 +1,105 @@
+{#  El menu de la cuenta que cuelga del avatar de la barra (artboard
+    disenio-navegacion/Menu.dc.html).
+
+    Tres grupos y no una lista de nueve: lo que me pasa a mi, lo que administro,
+    y la cuenta. Antes eran seis items sueltos y "Mis turnos" y "Agenda de
+    turnos" no estaban en ningun menu, aunque las dos rutas existen.
+
+    "Publicar" vive aca arriba y no en la barra (decision del 2026-09-06
+    anotada en el artboard): era el unico boton lleno de la barra de escritorio
+    y se repetia en cada pantalla, aunque cada seccion ya tiene su propio
+    llamado. En el telefono ya vivia arriba de la pestana Perfil, asi que esto
+    deja las dos plataformas diciendo lo mismo.
+
+    Los contadores los rellena main.js con /mensajes/notificaciones, cada uno
+    con SU numero: el endpoint ya los devuelve separados. Nacen vacios y
+    ocultos, y solo aparecen si hay algo. #}
+<div class="menu-cuenta" id="user-menu" role="menu" aria-labelledby="user-menu-toggle">
+
+    <div class="menu-cuenta__usuario">
+        <span class="menu-cuenta__avatar" aria-hidden="true">{{ g.user.username[0]|upper }}</span>
+        <div class="menu-cuenta__usuario-datos">
+            <span class="menu-cuenta__usuario-nombre">{{ g.user.username }}</span>
+            <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}" class="menu-cuenta__usuario-link" role="menuitem">
+                Ver mi perfil público
+            </a>
+        </div>
+    </div>
+
+    <a href="{{ url_for('blog.create') }}" class="menu-cuenta__publicar" role="menuitem">
+        {% with clave = 'publicar', tamanio = 18, trazo = 1.9 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+        Publicar un emprendimiento
+    </a>
+
+    <hr class="menu-cuenta__linea">
+
+    <p class="menu-cuenta__rotulo" id="menu-cuenta-actividad">Mi actividad</p>
+    <div class="menu-cuenta__grupo" role="group" aria-labelledby="menu-cuenta-actividad">
+        <a href="{{ url_for('messages.inbox') }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'mensajes', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Mensajes</span>
+            <span class="badge-notif" data-notif="unread_messages" hidden aria-live="polite"></span>
+        </a>
+        <a href="{{ url_for('servicios.solicitudes') }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'presupuestos', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Presupuestos</span>
+            <span class="badge-notif badge-notif--suave" data-notif="pending_service_requests" hidden aria-live="polite"></span>
+        </a>
+        <a href="{{ url_for('turnos.mios') }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'turnos', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Mis turnos</span>
+        </a>
+        <a href="{{ url_for('blog.my_favorites') }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'favoritos', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Favoritos</span>
+        </a>
+    </div>
+
+    <p class="menu-cuenta__rotulo" id="menu-cuenta-emprendimiento">Mi emprendimiento</p>
+    <div class="menu-cuenta__grupo" role="group" aria-labelledby="menu-cuenta-emprendimiento">
+        <a href="{{ url_for('panel.inicio') }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'resumen', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Mi panel</span>
+        </a>
+        <a href="{{ url_for('blog.my_posts') }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'emprendimientos', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Mis emprendimientos</span>
+        </a>
+        <a href="{{ url_for('products.mios') }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'catalogo', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Mi catálogo</span>
+        </a>
+        <a href="{{ url_for('servicios.index') }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'servicios', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Mis servicios</span>
+        </a>
+        <a href="{{ url_for('turnos.agenda') }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'agenda', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Agenda de turnos</span>
+        </a>
+        <a href="{{ url_for('profile.reviews', slug=g.user.slug) }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'resenias', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Reseñas recibidas</span>
+            <span class="badge-notif badge-notif--suave" data-notif="unanswered_reviews" hidden aria-live="polite"></span>
+        </a>
+    </div>
+
+    <hr class="menu-cuenta__linea">
+
+    <div class="menu-cuenta__grupo">
+        {% if g.user.rol == 'admin' %}
+            <a href="{{ url_for('admin.dashboard') }}" class="menu-cuenta__item" role="menuitem">
+                {% with clave = 'admin', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                <span class="menu-cuenta__etiqueta">Panel de administración</span>
+            </a>
+        {% endif %}
+        <a href="{{ url_for('profile.edit') }}" class="menu-cuenta__item" role="menuitem">
+            {% with clave = 'ajustes', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Ajustes</span>
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="menu-cuenta__item menu-cuenta__item--danger" role="menuitem">
+            {% with clave = 'salir', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span class="menu-cuenta__etiqueta">Salir</span>
+        </a>
+    </div>
+</div>

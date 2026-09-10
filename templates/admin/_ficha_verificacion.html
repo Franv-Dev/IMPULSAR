@@ -1,0 +1,108 @@
+{#  Un pedido de verificación, como ficha (disenio-admin/Cola.dc.html).
+
+    Parcial por lo mismo que _ficha_reporte.html: lo dibujan la cola y el
+    recorte del Resumen. Requiere `v` (un VerificationRequest) y, opcional,
+    `compacta` (por defecto False).
+
+    `compacta` es lo único que cambia entre las dos pantallas: en el Resumen el
+    documento es un enlace en la línea de datos, y en la cola tiene su propia
+    caja. La cola es donde se decide, y ahí el documento es lo único que hay que
+    mirar; el Resumen sólo avisa que existe.
+
+    EL MOTIVO VIAJA EN EL MISMO ENVÍO QUE EL RECHAZO — un solo <form> con el
+    campo y el botón. Si fuera otra pantalla, el prestador se quedaría sin saber
+    qué corregir cada vez que el admin tiene apuro (ver
+    admin.rechazar_verificacion).
+
+    SIN FOTO ES UN ESTADO, NO UN HUECO: `foto` es nullable. Aprobar se apaga
+    —no hay nada que mirar, no hay nada que aprobar— y el rechazo trae el motivo
+    ya escrito, que es la única salida sensata. #}
+<article class="admin-ficha">
+    <div class="admin-ficha__cabecera">
+        <span class="admin-pastilla admin-pastilla--rubro">{{ v.servicio.rubro_label }}</span>
+        <h3 class="admin-ficha__titulo">{{ v.servicio.titulo }}</h3>
+        <span class="admin-ficha__espera">
+            {% with clave = 'reloj', tamanio = 14, trazo = 1.9 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            Esperando {{ v.created_at | hace }}
+        </span>
+    </div>
+
+    <p class="admin-ficha__meta">
+        <a href="{{ url_for('blog.detail', id=v.servicio.post_id) }}">{{ v.servicio.post.title }}</a>
+        · pedido el
+        <span class="num">{{ v.created_at.strftime("%d/%m/%Y") if v.created_at else "—" }}</span>
+        {% if compacta %}
+            {% if v.foto %}
+                · <a href="{{ url_for('servicios.foto_de_verificacion', id=v.id) }}"
+                     target="_blank" rel="noopener">Ver documento</a>
+            {% else %}
+                · <span class="text-muted">no adjuntó documento</span>
+            {% endif %}
+        {% endif %}
+    </p>
+
+    {% if not compacta %}
+        {% if v.foto %}
+            <div class="admin-doc">
+                <span class="admin-doc__icono" aria-hidden="true">
+                    {% with clave = 'documento', tamanio = 22 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </span>
+                <span class="admin-doc__datos">
+                    <span class="admin-doc__titulo">Matrícula profesional</span>
+                    {# Por la ruta del blueprint y no por /static: es una matrícula
+                       con nombre y número reales, y ahí va el chequeo de permiso
+                       (ver servicios.foto_de_verificacion). #}
+                    <span class="admin-doc__nota">
+                        Tiene nombre y número reales: se abre por la ruta con permiso,
+                        nunca desde /static.
+                    </span>
+                </span>
+                <a href="{{ url_for('servicios.foto_de_verificacion', id=v.id) }}"
+                   class="btn btn--secondary btn--chico admin-doc__accion"
+                   target="_blank" rel="noopener">Ver documento</a>
+            </div>
+        {% else %}
+            <div class="admin-doc admin-doc--sin">
+                <span class="admin-doc__icono" aria-hidden="true">
+                    {% with clave = 'sin-documento', tamanio = 22 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </span>
+                <span class="admin-doc__datos">
+                    <span class="admin-doc__titulo">No adjuntó documento</span>
+                    <span class="admin-doc__nota">
+                        No hay nada que mirar, así que no hay nada que aprobar.
+                    </span>
+                </span>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    <div class="admin-ficha__acciones">
+        <form method="post" action="{{ url_for('admin.aprobar_verificacion', verificacion_id=v.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {# Deshabilitado sin foto. La ruta NO lo rechaza —un admin podría
+               tener el documento por otro lado— así que esto es la pantalla
+               diciendo lo obvio, no un permiso: el permiso vive en
+               @admin_required. #}
+            <button type="submit" class="btn btn--primary admin-ficha__aprobar"
+                    {% if not v.foto %}disabled
+                    title="No adjuntó documento: no hay nada que mirar"{% endif %}>
+                {% with clave = 'check', tamanio = 16, trazo = 2.2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                Aprobar
+            </button>
+        </form>
+
+        <form method="post" action="{{ url_for('admin.rechazar_verificacion', verificacion_id=v.id) }}"
+              class="admin-ficha__rechazo">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="sr-only" for="motivo-{{ v.id }}">Motivo del rechazo (opcional)</label>
+            {# Sin documento el motivo viene escrito: es el único rechazo posible
+               y el prestador necesita saber exactamente eso para volver a
+               mandarlo. Se puede borrar y escribir otra cosa. #}
+            <input type="text" name="motivo_rechazo" id="motivo-{{ v.id }}"
+                   class="admin-ficha__motivo" maxlength="300"
+                   placeholder="Motivo del rechazo (opcional)"
+                   value="{{ 'Falta la foto de la matrícula.' if not v.foto else '' }}">
+            <button type="submit" class="btn btn--peligro btn--chico">Rechazar</button>
+        </form>
+    </div>
+</article>

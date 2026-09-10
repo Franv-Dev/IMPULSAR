@@ -62,3 +62,10 @@ logs/
 
 # --- Node (por si se agregan herramientas de frontend a futuro) ---
 node_modules/
+
+# --- Material de referencia de Design (bundle pesado, no va al repo) ---
+redisenio/
+rediseno-artifact/
+
+# --- Config local de Claude Code (herramienta, no proyecto) ---
+.claude/

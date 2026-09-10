@@ -1,397 +1,779 @@
 {% extends "base.html" %}
 
-{% block title %}{{ post.title }} – Emprendimiento{% endblock %}
+{% block title %}{{ post.title }} – IMPULSAR{% endblock %}
+{% block meta_description %}{{ post.body[:150] }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.body[:150] }}{% endblock %}
+
+{#  La ficha del emprendimiento (disenio-ficha/).
+
+    El orden responde las cuatro preguntas que trae quien entra: qué es esto
+    (la galería), de quién es y si está abierto (identidad), qué vende o hace
+    (productos y servicios), y cómo llegar a la persona (la columna derecha).
+
+    ANCLAS, NO PESTAÑAS. El pedido original evaluaba solapas. No van: la
+    mayoría de los emprendimientos tiene dos o tres productos y ninguna reseña,
+    así que tres de las cuatro solapas abrirían vacías y la ficha parecería
+    abandonada. Con anclas nada se esconde detrás de un click y la página sigue
+    siendo una sola para buscadores y para compartir.
+
+    LOS BLOQUES SON UNA LISTA PLANA, no dos columnas anidadas. El teléfono los
+    quiere en otro orden que el escritorio (horarios y ferias ANTES de las
+    reseñas: son lo que decide si conviene ir ahora), y con dos <div> anidados
+    ese reordenamiento no se puede hacer con CSS. Acá van los nueve seguidos y
+    el CSS los reparte: en escritorio con dos envoltorios en grilla, en
+    teléfono con `display: contents` sobre esos envoltorios y `order` sobre
+    cada bloque. #}
 
 {% block content %}
-<section class="section">
-    <div class="container" style="max-width: 900px;">
-        
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
-                    {% for message in messages %}
-                        <div class="auth__alert">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+<section class="ficha">
 
-        <div class="card post-detail-card">
-            {% set galeria = post.galeria %}
-            {% if galeria %}
-                <div class="card__image-wrapper">
-                    <img
-                        src="{{ url_for('static', filename='uploads/' ~ galeria[0]) }}"
-                        alt="Imagen de {{ post.title }}"
-                        class="card__image"
-                    >
-                </div>
-                {# El resto de la galeria va abajo de la principal, en grilla. #}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="container ficha__avisos">
+                {% for message in messages %}
+                    <div class="auth__alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {# La barra de dueña. La app nunca decía que estás parada en tu propia
+       ficha, y sin eso los bloques vacíos se leen como una pantalla rota en
+       vez de como algo que falta cargar. #}
+    {% if es_dueño %}
+        <div class="ficha-duenio">
+            <div class="container ficha-duenio__fila">
+                <span class="ficha-duenio__icono">
+                    {% with clave = 'info', tamanio = 19, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </span>
+                <span class="ficha-duenio__texto">Ésta es tu ficha, tal como la ve cualquiera que entre.</span>
+                <span class="ficha-duenio__vistas" title="Sólo lo ves vos">
+                    {% with clave = 'ojo', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    {{ post.views_count }} visita{{ '' if post.views_count == 1 else 's' }}
+                </span>
+                <a href="{{ url_for('blog.update', id=post.id) }}" class="ficha-duenio__accion">Editar los datos</a>
+                <form method="post"
+                      action="{{ url_for('blog.delete', id=post.id) }}"
+                      class="form-inline"
+                      data-confirm="¿Seguro que querés eliminar este emprendimiento?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="ficha-duenio__accion ficha-duenio__accion--danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="container ficha__contenido">
+
+        <nav class="ficha__migas" aria-label="Dónde estás">
+            <a href="{{ url_for('blog.index') }}">Emprendimientos</a>
+            {% with clave = 'chevron-derecha', tamanio = 14, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <a href="{{ url_for('blog.index', category=post.category) }}">{{ post.category_label }}</a>
+            {% with clave = 'chevron-derecha', tamanio = 14, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            <span aria-current="page">{{ post.title }}</span>
+        </nav>
+
+        {# GALERÍA. Una grande y tres chicas; el resto se ve en el visor.
+           Antes las miniaturas abrían el archivo suelto de /static/uploads/ en
+           una pestaña nueva -- se salía del sitio para mirar una foto. #}
+        {% set galeria = post.galeria %}
+        {% if galeria %}
+            <div class="ficha-galeria {% if galeria|length == 1 %}ficha-galeria--sola{% endif %}">
+                <button type="button"
+                        class="ficha-galeria__principal"
+                        data-visor="0"
+                        aria-label="Ver la foto 1 de {{ galeria|length }} en grande">
+                    <img src="{{ url_for('static', filename='uploads/' ~ galeria[0]) }}"
+                         alt="Foto principal de {{ post.title }}">
+                    {% if galeria|length > 1 %}
+                        <span class="ficha-galeria__contador">
+                            {% with clave = 'fotos', tamanio = 14, trazo = 1.6 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                            Ver las {{ galeria|length }} fotos
+                        </span>
+                    {% endif %}
+                </button>
+
                 {% if galeria|length > 1 %}
-                    <div class="galeria-grid">
-                        {% for foto in galeria[1:] %}
-                            <a href="{{ url_for('static', filename='uploads/' ~ foto) }}"
-                               target="_blank" rel="noopener noreferrer" class="galeria-grid__item">
-                                <img
-                                    src="{{ url_for('static', filename='uploads/' ~ foto) }}"
-                                    alt="Foto {{ loop.index + 1 }} de {{ post.title }}"
-                                    loading="lazy"
-                                >
-                            </a>
+                    <div class="ficha-galeria__chicas">
+                        {% for foto in galeria[1:4] %}
+                            <button type="button"
+                                    class="ficha-galeria__chica"
+                                    data-visor="{{ loop.index }}"
+                                    aria-label="Ver la foto {{ loop.index + 1 }} de {{ galeria|length }} en grande">
+                                <img src="{{ url_for('static', filename='uploads/' ~ foto) }}"
+                                     alt="Foto {{ loop.index + 1 }} de {{ post.title }}"
+                                     loading="lazy">
+                            </button>
                         {% endfor %}
                     </div>
                 {% endif %}
+            </div>
+
+            {# El visor. Nace oculto y lo abre static/js/visor.js; sin JS las
+               fotos siguen estando arriba, sólo que no se agrandan.
+
+               Con una sola foto no se arma: no habría nada que recorrer, y el
+               <script> que lo maneja tampoco se carga (ver el bloque scripts,
+               que pregunta lo mismo). #}
+            {% if galeria|length > 1 %}
+            <div class="visor" id="visor" hidden>
+                <div class="visor__fondo" data-visor-cerrar></div>
+                <button type="button" class="visor__cerrar" data-visor-cerrar aria-label="Cerrar el visor">
+                    {% with clave = 'cerrar', tamanio = 22, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </button>
+                <button type="button" class="visor__flecha visor__flecha--previa" data-visor-mover="-1" aria-label="Foto anterior">
+                    {% with clave = 'volver', tamanio = 24, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </button>
+                <figure class="visor__marco">
+                    {% for foto in galeria %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ foto) }}"
+                             alt="Foto {{ loop.index }} de {{ post.title }}"
+                             class="visor__foto"
+                             data-visor-foto="{{ loop.index0 }}"
+                             loading="lazy"
+                             hidden>
+                    {% endfor %}
+                    <figcaption class="visor__pie" data-visor-pie></figcaption>
+                </figure>
+                <button type="button" class="visor__flecha visor__flecha--siguiente" data-visor-mover="1" aria-label="Foto siguiente">
+                    {% with clave = 'chevron-derecha', tamanio = 24, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </button>
+            </div>
             {% endif %}
-            
-            <div class="card__body">
-                <div class="card__tags" style="display:flex; justify-content:space-between; align-items:flex-start;">
-                    <span class="badge badge--category">{{ post.category_label }}</span>
-                    <div style="display:flex; gap:0.35rem; align-items:center;">
-                        {% include "partials/_compartir_boton.html" %}
-                        {% if g.user %}
-                            {% include "partials/_favorito_boton.html" %}
+        {% elif es_dueño %}
+            {# Un rectángulo gris con un iconito se lee como carga rota. El
+               hueco explica POR QUÉ conviene llenarlo. #}
+            <div class="ficha-vacio ficha-vacio--galeria">
+                <span class="ficha-vacio__icono">
+                    {% with clave = 'fotos', tamanio = 26, trazo = 1.6 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </span>
+                <h2 class="ficha-vacio__titulo">Todavía no subiste ninguna foto</h2>
+                <p class="ficha-vacio__texto">
+                    La foto es lo primero que se ve en el listado y en el buscador. Sin
+                    ella tu emprendimiento aparece como un recuadro vacío al lado de los
+                    que sí tienen.
+                </p>
+                <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--primary">Subir fotos</a>
+            </div>
+        {% endif %}
+
+        <div class="ficha__cuerpo">
+
+            <div class="ficha__principal">
+
+                {# 1 · IDENTIDAD #}
+                <div class="ficha-bloque ficha-bloque--identidad" id="ficha-arriba">
+                    <div class="ficha-identidad__chips">
+                        <span class="rubro-pastilla rubro-pastilla--{{ post.category }}">{{ post.category_label }}</span>
+
+                        {% if horarios and abierto %}
+                            <span class="chip-estado chip-estado--abierto">
+                                <span class="chip-estado__punto" aria-hidden="true"></span>
+                                Abierto ahora{% if cierra %} · cierra {{ cierra.strftime("%H:%M") }}{% endif %}
+                            </span>
+                        {% elif horarios %}
+                            <span class="chip-estado chip-estado--cerrado">
+                                <span class="chip-estado__punto" aria-hidden="true"></span>
+                                Cerrado ahora
+                            </span>
+                        {% elif es_dueño %}
+                            <a href="{{ url_for('profile.horarios') }}" class="chip-estado chip-estado--falta">
+                                {% with clave = 'reloj', tamanio = 13, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                Sin horarios · cargalos
+                            </a>
                         {% endif %}
                     </div>
+
+                    <h1 class="ficha__titulo">{{ post.title }}</h1>
+
+                    <div class="ficha-identidad__datos">
+                        {% if avg_rating %}
+                            <span class="ficha-identidad__dato">
+                                {# Una sola estrella llena, no las cinco: al lado va el
+                                   numero, que es el dato. Las cinco van en cada
+                                   resenia, donde no hay numero. #}
+                                <svg class="estrellas__una estrellas__una--llena" width="16" height="16"
+                                     viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+                                    <path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/>
+                                </svg>
+                                <strong>{{ avg_rating }}</strong> · {{ reviews|length }} reseña{{ '' if reviews|length == 1 else 's' }}
+                            </span>
+                        {% else %}
+                            <span class="ficha-identidad__dato ficha-identidad__dato--suave">Todavía nadie dejó una reseña</span>
+                        {% endif %}
+
+                        {% if post.address_street %}
+                            <span class="ficha-identidad__dato">
+                                {% with clave = 'ubicacion', tamanio = 16, trazo = 1.7 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                {{ post.address_street }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="ficha-identidad__descripcion">{{ post.body }}</p>
                 </div>
 
-                <h1 class="card__title" style="font-size:1.6rem;">{{ post.title }}</h1>
-                
-                <p class="card__location">
-                    Publicado por 
-                    <a href="{{ url_for('profile.view_profile', slug=author.slug) }}" class="post-author-link">
-                        {{ author.username }}
-                    </a>
-                </p>
-
-                <div class="post-rating">
-                    {% if avg_rating %}
-                        <span class="post-rating__stars">⭐</span> 
-                        <span class="post-rating__score">{{ avg_rating }} / 5</span>
-                        <span class="post-rating__count">(promedio de {{ reviews|length }} reseña{% if reviews|length != 1 %}s{% endif %})</span>
-                    {% else %}
-                        <span class="post-rating__count">Aún no hay reseñas.</span>
+                {# 2 · ANCLAS. Sólo en escritorio: en el teléfono los bloques
+                   ya están uno abajo del otro y una barra pegada arriba come
+                   pantalla sin ahorrar scroll. #}
+                <nav class="ficha-anclas" aria-label="Secciones de esta ficha">
+                    {% if productos or es_dueño %}
+                        <a href="#ficha-productos" class="ficha-anclas__ancla">Lo que vende</a>
                     {% endif %}
-                </div>
+                    {% if servicios or es_dueño %}
+                        <a href="#ficha-servicios" class="ficha-anclas__ancla">Por encargo</a>
+                    {% endif %}
+                    <a href="#ficha-resenias" class="ficha-anclas__ancla">
+                        Reseñas
+                        {% if reviews %}<span class="ficha-anclas__cuenta">{{ reviews|length }}</span>{% endif %}
+                    </a>
+                    <a href="#ficha-informacion" class="ficha-anclas__ancla">Información</a>
+                </nav>
 
-                <hr class="card-divider">
+                {# 3 · PRODUCTOS. La vista ya filtró los no disponibles cuando
+                   mira un visitante. A la dueña el bloque se le muestra siempre
+                   aunque esté vacío; a un visitante sólo si tiene algo, así un
+                   emprendimiento que es puro servicio no muestra un "Lo que
+                   vende" en blanco. #}
+                {% if productos or es_dueño %}
+                    <section class="ficha-bloque" id="ficha-productos">
+                        <div class="ficha-bloque__head">
+                            <h2 class="ficha-bloque__titulo">Lo que vende</h2>
+                            {% if productos %}
+                                <span class="ficha-bloque__nota">Precios de referencia, se acuerdan por mensaje</span>
+                            {% endif %}
+                            {% if es_dueño %}
+                                <a href="{{ url_for('products.mios') }}" class="ficha-bloque__link">Editar catálogo</a>
+                            {% endif %}
+                        </div>
 
-                <div class="post-body-content">
-                    {{ post.body }}
-                </div>
-
-                {% if post.latitude and post.longitude %}
-                <section class="profile-map-section">
-                    <h2>Ubicación</h2>
-                    
-                    <p class="map-address-text">
-                        {{ post.address_street }}
-                    </p>
-                    
-                    <div id="map"></div>
-                </section>
+                        {% if productos %}
+                            <div class="ficha-productos">
+                                {# Desde la tanda del catálogo cada producto tiene
+                                   su propia pantalla, así que la tarjeta deja de
+                                   ser un cartel y pasa a ser un enlace: es donde
+                                   está el botón de consultar por ese producto. #}
+                                {% for producto in productos %}
+                                    <article class="producto-ficha">
+                                        <a href="{{ url_for('products.detalle', id=producto.id) }}"
+                                           class="producto-ficha__foto">
+                                            {% if producto.foto %}
+                                                <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
+                                                     alt="Foto de {{ producto.nombre }}" loading="lazy">
+                                            {% endif %}
+                                            {% if not producto.disponible %}
+                                                <span class="producto-ficha__agotado">Sin stock</span>
+                                            {% endif %}
+                                        </a>
+                                        <div class="producto-ficha__cuerpo">
+                                            <h3 class="producto-ficha__nombre">
+                                                <a href="{{ url_for('products.detalle', id=producto.id) }}">{{ producto.nombre }}</a>
+                                            </h3>
+                                            {% if producto.descripcion %}
+                                                <p class="producto-ficha__detalle">{{ producto.descripcion }}</p>
+                                            {% endif %}
+                                            <span class="producto-ficha__precio">{{ producto.precio | precio }}</span>
+                                        </div>
+                                    </article>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="ficha-vacio">
+                                <h3 class="ficha-vacio__titulo">Todavía no cargaste productos</h3>
+                                <p class="ficha-vacio__texto">
+                                    Cada producto con foto y precio es una razón más para que te
+                                    escriban. Podés empezar con uno.
+                                </p>
+                                <a href="{{ url_for('products.nuevo') }}" class="ficha-vacio__accion">
+                                    {% with clave = 'publicar', tamanio = 16, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                    Agregar un producto
+                                </a>
+                            </div>
+                        {% endif %}
+                    </section>
                 {% endif %}
-                {% if g.user and g.user.id == post.author %}
-                    <div class="post-actions">
-                        <a href="{{ url_for('blog.update', id=post.id) }}" class="btn btn--secondary">
-                            Editar
-                        </a>
-                        <form method="post"
-                            action="{{ url_for('blog.delete', id=post.id) }}"
-                            class="form-inline"
-                            onsubmit="return confirm('¿Seguro que querés eliminar este emprendimiento?');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn--ghost">
-                                Eliminar
-                            </button>
-                        </form>
+
+                {# 4 · SERVICIOS. El otro lado: un trabajo a pedido, con
+                   presupuesto o turno, no algo que se compra tal cual está. #}
+                {% if servicios or es_dueño %}
+                    <section class="ficha-bloque" id="ficha-servicios">
+                        <div class="ficha-bloque__head">
+                            <h2 class="ficha-bloque__titulo">Lo que hace por encargo</h2>
+                            <span class="ficha-bloque__nota">Trabajos a pedido, con presupuesto o turno</span>
+                            {% if es_dueño %}
+                                <a href="{{ url_for('servicios.index') }}" class="ficha-bloque__link">Editar servicios</a>
+                            {% endif %}
+                        </div>
+
+                        {% if servicios %}
+                            <div class="ficha-servicios">
+                                {% for servicio in servicios %}
+                                    <article class="servicio-ficha">
+                                        <span class="servicio-ficha__icono" aria-hidden="true">
+                                            {% with clave = 'servicios', tamanio = 22, trazo = 1.6 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                        </span>
+
+                                        <div class="servicio-ficha__cuerpo">
+                                            <div class="servicio-ficha__nombre-fila">
+                                                <h3 class="servicio-ficha__nombre">{{ servicio.titulo }}</h3>
+                                                {% if servicio.verificado %}
+                                                    <span class="chip-verificado">
+                                                        {% with clave = 'check', tamanio = 12, trazo = 2.4 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                                        Verificado
+                                                    </span>
+                                                {% endif %}
+                                                {% if not servicio.disponible %}
+                                                    <span class="chip-estado chip-estado--cerrado">No disponible · sólo lo ves vos</span>
+                                                {% endif %}
+                                            </div>
+
+                                            {% if servicio.descripcion %}
+                                                <p class="servicio-ficha__detalle">{{ servicio.descripcion }}</p>
+                                            {% endif %}
+
+                                            <div class="servicio-ficha__chips">
+                                                <span class="chip-neutro">{{ servicio.rubro_label }}</span>
+                                                {% if servicio.zona_cobertura %}
+                                                    <span class="chip-neutro">{{ servicio.zona_cobertura }}</span>
+                                                {% endif %}
+                                                {% if servicio.turnos_habilitados %}
+                                                    <span class="chip-marca">Con turno online</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        <div class="servicio-ficha__accion">
+                                            <span class="servicio-ficha__precio">
+                                                {# Sin precio no es gratis ni cero: se cotiza. #}
+                                                {{ servicio.precio_estimado | precio if servicio.precio_estimado else "A presupuestar" }}
+                                            </span>
+                                            {# Al dueño no se le ofrece: las solicitudes le llegan, no
+                                               las hace. Sin sesión tampoco, que la solicitud necesita
+                                               a quién atribuírsela. #}
+                                            {% if g.user and not es_dueño %}
+                                                <a href="{{ url_for('servicios.solicitar', id=servicio.id) }}"
+                                                   class="btn btn--primary servicio-ficha__pedir">Pedir presupuesto</a>
+                                            {% elif not g.user %}
+                                                <a href="{{ url_for('auth.login') }}"
+                                                   class="btn btn--secondary servicio-ficha__pedir">Entrá para pedir presupuesto</a>
+                                            {% endif %}
+                                        </div>
+                                    </article>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="ficha-vacio">
+                                <h3 class="ficha-vacio__titulo">Todavía no cargaste servicios</h3>
+                                <p class="ficha-vacio__texto">
+                                    Un <strong>producto</strong> tiene precio y se compra tal cual está.
+                                    Un <strong>servicio</strong> es un trabajo a pedido: podés dejar el
+                                    precio abierto y que te pidan presupuesto, o dar turno online.
+                                </p>
+                                <p class="ficha-vacio__texto">
+                                    Si tu emprendimiento es sólo de servicios, este bloque va a ser el
+                                    principal de tu ficha y el de productos no se le muestra a nadie.
+                                </p>
+                                <a href="{{ url_for('servicios.nuevo') }}" class="ficha-vacio__accion">
+                                    {% with clave = 'publicar', tamanio = 16, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                    Agregar un servicio
+                                </a>
+                            </div>
+                        {% endif %}
+                    </section>
+                {% endif %}
+
+                {# 5 · RESEÑAS #}
+                <section class="ficha-bloque" id="ficha-resenias">
+                    <div class="ficha-bloque__head">
+                        <h2 class="ficha-bloque__titulo">Reseñas</h2>
+                        {% if avg_rating %}
+                            <span class="ficha-bloque__nota">{{ avg_rating }} de 5 · {{ reviews|length }} en total</span>
+                        {% endif %}
                     </div>
-                {% elif g.user %}
-                    <div class="post-actions">
-                        <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id) }}" class="btn btn--primary">
-                            Escribirle al emprendedor
+
+                    {% if reviews %}
+                        <div class="resenias-ficha">
+                            {% for r in reviews %}
+                                <article class="resenia">
+                                    {# El nombre de quien escribió, no "Usuario #7". La consulta
+                                       trae el autor en el mismo query (joinedload). #}
+                                    {# r.user siempre existe: reviews.user_id es NOT NULL y su
+                                       FK borra en cascada, asi que no hay resenia huerfana. #}
+                                    <span class="resenia__avatar" aria-hidden="true">
+                                        {{ r.user.username[0] | upper }}
+                                    </span>
+
+                                    <div class="resenia__cuerpo">
+                                        <div class="resenia__cabecera">
+                                            <span class="resenia__nombre">{{ r.user.username }}</span>
+                                            <span class="resenia__cuando" title="{{ r.created }}">
+                                                {{ r.created | hace }}{% if r.updated_at %} · editada{% endif %}
+                                            </span>
+                                        </div>
+
+                                        {% with puntaje = r.rating, etiqueta = r.rating ~ ' de 5 estrellas' %}
+                                            {% include "partials/_estrellas.html" %}
+                                        {% endwith %}
+
+                                        <p class="resenia__texto {% if not r.comment %}resenia__texto--vacio{% endif %}">
+                                            {{ r.comment or 'Sin comentario escrito.' }}
+                                        </p>
+
+                                        {% if r.reply %}
+                                            <div class="resenia__respuesta">
+                                                <span class="resenia__respuesta-quien">Respuesta de {{ author.username }}</span>
+                                                <p>{{ r.reply }}</p>
+                                            </div>
+                                        {% elif es_dueño %}
+                                            <form method="post"
+                                                  action="{{ url_for('blog.reply_review', review_id=r.id) }}"
+                                                  class="resenia__form">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <label class="sr-only" for="reply-{{ r.id }}">Responder a esta reseña</label>
+                                                <textarea id="reply-{{ r.id }}" name="reply" rows="2" class="auth__input"
+                                                          placeholder="Responder públicamente…" required></textarea>
+                                                <button type="submit" class="btn btn--secondary">Responder</button>
+                                            </form>
+                                        {% endif %}
+
+                                        {% if g.user and g.user.id != r.user_id %}
+                                            <a href="{{ url_for('blog.report', tipo='review', target_id=r.id) }}"
+                                               class="report-link">Reportar</a>
+                                        {% endif %}
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% elif es_dueño %}
+                        <div class="ficha-vacio">
+                            <h3 class="ficha-vacio__titulo">Todavía nadie te reseñó</h3>
+                            <p class="ficha-vacio__texto">
+                                Las reseñas las escribe quien te compró. No se piden desde acá ni
+                                se pueden cargar a mano: aparecen solas cuando alguien deja la suya.
+                            </p>
+                        </div>
+                    {% else %}
+                        <p class="ficha-bloque__nota">Todavía no hay reseñas. Podés ser la primera persona en opinar.</p>
+                    {% endif %}
+
+                    {# El formulario para dejar la propia. No está en el artboard
+                       -- que dibuja la ficha vista por alguien que sólo mira --
+                       pero existe desde antes y es la única forma de que haya
+                       reseñas: se conserva, al pie del bloque. #}
+                    {% if not es_dueño %}
+                        <div class="resenia-propia">
+                            <h3 class="resenia-propia__titulo">
+                                {% if mi_review %}Tu reseña{% else %}Dejar una reseña{% endif %}
+                            </h3>
+
+                            {% if not g.user %}
+                                <p class="ficha-bloque__nota">
+                                    Tenés que <a href="{{ url_for('auth.login') }}">iniciar sesión</a> para dejar una reseña.
+                                </p>
+                            {% else %}
+                                <form method="post" action="{{ url_for('blog.add_review', id=post.id) }}" class="auth__form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <div class="auth__field">
+                                        <label class="auth__label">Tu calificación</label>
+                                        <div class="rating">
+                                            {% for i in range(5, 0, -1) %}
+                                                <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}"
+                                                       {% if mi_review and mi_review.rating == i %}checked{% endif %} required>
+                                                <label for="star{{ i }}" aria-label="{{ i }} estrella{{ '' if i == 1 else 's' }}">
+                                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"
+                                                         aria-hidden="true" focusable="false">
+                                                        <path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/>
+                                                    </svg>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="auth__field">
+                                        <label for="comment" class="auth__label">Comentario (opcional)</label>
+                                        <textarea id="comment" name="comment" rows="4" class="auth__input"
+                                                  placeholder="Contá tu experiencia con este emprendimiento…">{{ mi_review.comment or '' if mi_review else '' }}</textarea>
+                                    </div>
+
+                                    <button type="submit" class="btn btn--primary auth__submit">
+                                        {% if mi_review %}Actualizar reseña{% else %}Enviar reseña{% endif %}
+                                    </button>
+                                </form>
+
+                                {% if mi_review %}
+                                    <form method="post"
+                                          action="{{ url_for('blog.delete_review', review_id=mi_review.id) }}"
+                                          class="form-inline"
+                                          data-confirm="¿Seguro que querés eliminar tu reseña?">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn--ghost">Eliminar mi reseña</button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </section>
+            </div>
+
+            {# La columna derecha. Va DESPUÉS de la principal en el HTML aunque
+               en escritorio se vea al lado, para que un lector de pantalla lea
+               primero de qué emprendimiento se trata y después cómo
+               contactarlo. #}
+            <div class="ficha__lateral">
+
+                {# 6 · CONTACTO, o la lista de lo que falta si sos la dueña.
+                   En una ficha nueva lo que falta ES la acción. #}
+                {% if es_dueño %}
+                    {% set tareas = [
+                        ('Nombre y descripción', post.body and post.body|trim, url_for('blog.update', id=post.id)),
+                        ('Dirección en el mapa', post.latitude and post.longitude, url_for('blog.update', id=post.id)),
+                        ('Subir las fotos', galeria, url_for('blog.update', id=post.id)),
+                        ('Cargar los horarios', horarios, url_for('profile.horarios')),
+                        ('Cargar un producto o un servicio', productos or servicios, url_for('products.nuevo')),
+                    ] %}
+                    {% set hechas = tareas | selectattr(1) | list | length %}
+
+                    {% if hechas < tareas | length %}
+                        <div class="ficha-bloque ficha-bloque--tareas">
+                            <div class="ficha-bloque__head">
+                                <h2 class="ficha-bloque__titulo ficha-bloque__titulo--chico">Completá tu ficha</h2>
+                                <span class="ficha-tareas__cuenta">{{ hechas }} de {{ tareas | length }}</span>
+                            </div>
+
+                            <div class="ficha-tareas__barra">
+                                <span class="ficha-tareas__relleno" style="width: {{ (hechas * 100 / (tareas | length)) | round | int }}%"></span>
+                            </div>
+
+                            <ul class="ficha-tareas">
+                                {% for etiqueta, hecha, destino in tareas %}
+                                    <li class="ficha-tareas__item {% if hecha %}ficha-tareas__item--hecha{% endif %}">
+                                        {% if hecha %}
+                                            <span class="ficha-tareas__marca" aria-hidden="true">
+                                                {% with clave = 'check', tamanio = 13, trazo = 2.6 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                            </span>
+                                            <span class="ficha-tareas__etiqueta">{{ etiqueta }}</span>
+                                        {% else %}
+                                            <a href="{{ destino }}" class="ficha-tareas__link">
+                                                <span class="ficha-tareas__marca ficha-tareas__marca--vacia" aria-hidden="true"></span>
+                                                <span class="ficha-tareas__etiqueta">{{ etiqueta }}</span>
+                                                {% with clave = 'chevron-derecha', tamanio = 16, trazo = 1.9 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                            </a>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+
+                            {% if not horarios %}
+                                <p class="ficha-bloque__pie">
+                                    Sin horarios cargados tu ficha no aparece cuando alguien filtra
+                                    por «abierto ahora».
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="ficha-bloque ficha-bloque--contacto">
+                        <a href="{{ url_for('profile.view_profile', slug=author.slug) }}" class="ficha-duenia">
+                            <span class="ficha-duenia__avatar" aria-hidden="true">{{ author.username[0] | upper }}</span>
+                            <span class="ficha-duenia__datos">
+                                <span class="ficha-duenia__nombre">{{ author.username }}</span>
+                                <span class="ficha-duenia__desde">
+                                    Publica en IMPULSAR desde {{ author.created_at.year }}
+                                </span>
+                            </span>
                         </a>
-                        <a href="{{ url_for('blog.report', tipo='post', target_id=post.id) }}" class="report-link">
-                            Reportar
+
+                        {% if g.user %}
+                            <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id) }}"
+                               class="btn btn--primary ficha-contacto__accion">
+                                {% with clave = 'mensaje', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                Enviar un mensaje
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('auth.login') }}" class="btn btn--primary ficha-contacto__accion">
+                                {% with clave = 'mensaje', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                Entrá para escribirle
+                            </a>
+                        {% endif %}
+
+                        <div class="ficha-contacto__secundarias">
+                            {% include "partials/_compartir_boton.html" %}
+                            {% if g.user %}
+                                {% include "partials/_favorito_boton.html" %}
+                            {% endif %}
+                        </div>
+
+                        <p class="ficha-bloque__pie">
+                            Hablás directo con {{ author.username }}. IMPULSAR no cobra comisión ni
+                            se mete en el trato, y los mensajes quedan adentro: no hace falta dar
+                            tu teléfono.
+                        </p>
+                    </div>
+                {% endif %}
+
+                {# 7 · HORARIOS #}
+                {% if horarios %}
+                    <div class="ficha-bloque" id="ficha-informacion">
+                        <div class="ficha-bloque__head">
+                            <h2 class="ficha-bloque__titulo ficha-bloque__titulo--chico">Horarios</h2>
+                            <span class="chip-estado {{ 'chip-estado--abierto' if abierto else 'chip-estado--cerrado' }}">
+                                <span class="chip-estado__punto" aria-hidden="true"></span>
+                                {{ 'Abierto' if abierto else 'Cerrado' }}
+                            </span>
+                        </div>
+                        <ul class="ficha-horarios">
+                            {% for horario in horarios %}
+                                <li class="ficha-horarios__fila {% if horario.dia_semana == hoy_semana %}ficha-horarios__fila--hoy{% endif %}">
+                                    <span>{{ etiquetas_dias[horario.dia_semana] }}</span>
+                                    <span class="{% if horario.cerrado or not horario.abre %}ficha-horarios__cerrado{% endif %}">
+                                        {% if horario.cerrado or not horario.abre %}
+                                            Cerrado
+                                        {% else %}
+                                            {{ horario.abre.strftime("%H:%M") }} – {{ horario.cierra.strftime("%H:%M") }}
+                                        {% endif %}
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                {# 8 · FERIAS. Post.eventos existe desde la tanda de eventos y la
+                   ficha no lo mostraba. Es lo único que ni Mercado Libre ni
+                   Marketplace muestran: dónde encontrar a la persona en vivo. #}
+                {% if ferias %}
+                    <div class="ficha-bloque ficha-bloque--ferias">
+                        <h2 class="ficha-bloque__titulo ficha-bloque__titulo--chico">Dónde encontrarla</h2>
+                        {% for feria in ferias[:3] %}
+                            <div class="ficha-feria">
+                                <span class="ficha-feria__fecha" aria-hidden="true">
+                                    <span class="ficha-feria__dia">{{ feria.fecha.day }}</span>
+                                    <span class="ficha-feria__mes">{{ feria.fecha | mes_corto }}</span>
+                                </span>
+                                <span class="ficha-feria__datos">
+                                    <span class="ficha-feria__titulo">{{ feria.titulo }}</span>
+                                    <span class="ficha-feria__detalle">
+                                        {{ feria.fecha | fecha_evento }}{% if feria.hora %}, {{ feria.hora.strftime("%H:%M") }}{% endif %}{% if feria.lugar %} · {{ feria.lugar }}{% endif %}
+                                    </span>
+                                </span>
+                            </div>
+                        {% endfor %}
+                        <a href="{{ url_for('eventos.index') }}" class="ficha-bloque__link">
+                            Ver todas las ferias
+                            {% with clave = 'flecha', tamanio = 15, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
                         </a>
                     </div>
+                {% elif es_dueño %}
+                    <div class="ficha-bloque ficha-bloque--ferias">
+                        <h2 class="ficha-bloque__titulo ficha-bloque__titulo--chico">Dónde encontrarte</h2>
+                        <p class="ficha-bloque__nota">
+                            Si vas a una feria, cargala: es lo único que ni Mercado Libre ni
+                            Marketplace muestran, y es por donde te encuentran en persona.
+                        </p>
+                        <a href="{{ url_for('eventos.nuevo') }}" class="ficha-bloque__link">
+                            Cargar una feria o evento
+                            {% with clave = 'flecha', tamanio = 15, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </a>
+                    </div>
+                {% endif %}
+
+                {# 9 · MAPA #}
+                {% if post.latitude and post.longitude %}
+                    <div class="ficha-bloque ficha-bloque--mapa">
+                        <div id="map"></div>
+                        <div class="ficha-mapa__pie">
+                            <span>{{ post.address_street }}</span>
+                            <a href="https://www.openstreetmap.org/?mlat={{ post.latitude }}&mlon={{ post.longitude }}#map=17/{{ post.latitude }}/{{ post.longitude }}"
+                               target="_blank" rel="noopener noreferrer">Cómo llegar</a>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if g.user and not es_dueño %}
+                    <a href="{{ url_for('blog.report', tipo='post', target_id=post.id) }}" class="report-link">
+                        Reportar este emprendimiento
+                    </a>
                 {% endif %}
             </div>
         </div>
-
-        {# El catalogo. La vista ya filtro los no disponibles cuando mira un
-           visitante, asi que aca no hace falta volver a chequearlo: lo que
-           llega es lo que se puede ver. #}
-        {% if productos or es_dueño %}
-        <section class="products-section">
-            <div class="section__header">
-                {# "Qué vende" y no "Catálogo" a secas: al lado hay una seccion
-                   de servicios ("Qué hace"), y las dos son catalogo. #}
-                <h2 class="section__title">Qué vende</h2>
-                {% if es_dueño %}
-                    <a href="{{ url_for('products.index') }}" class="btn btn--secondary"
-                       style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                        Editar catálogo
-                    </a>
-                {% endif %}
-            </div>
-
-            {% if productos %}
-                <div class="cards-grid">
-                    {% for producto in productos %}
-                        <article class="card product-card">
-                            {% if producto.foto %}
-                                <div class="card__image-wrapper">
-                                    <img
-                                        src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
-                                        alt="Foto de {{ producto.nombre }}"
-                                        class="card__image"
-                                        loading="lazy"
-                                    >
-                                </div>
-                            {% endif %}
-                            <div class="card__body">
-                                <h3 class="card__title">{{ producto.nombre }}</h3>
-                                <p class="card__price" style="font-weight:600;">
-                                    {{ producto.precio | precio }}
-                                    {% if not producto.disponible %}
-                                        <span class="badge">Sin stock (solo lo ves vos)</span>
-                                    {% endif %}
-                                </p>
-                                {% if producto.descripcion %}
-                                    <p class="card__description">{{ producto.descripcion }}</p>
-                                {% endif %}
-                            </div>
-                        </article>
-                    {% endfor %}
-                </div>
-                <p class="products-note">
-                    Los precios son de referencia. Para comprar, escribile al emprendedor.
-                </p>
-            {% else %}
-                <p class="reviews-empty">
-                    Todavía no cargaste ningún producto.
-                    <a href="{{ url_for('products.nuevo') }}">Agregá el primero acá.</a>
-                </p>
-            {% endif %}
-        </section>
-        {% endif %}
-
-        {# Los servicios: trabajos a presupuestar, al lado del catalogo y no
-           mezclados con el. Se presentan distinto (zona, precio opcional) y se
-           piden con una solicitud, no se compran. Mismo criterio de visibilidad
-           que los productos: los no disponibles ya vienen filtrados de la vista
-           salvo para el dueño. #}
-        {% if servicios or es_dueño %}
-        <section class="products-section">
-            <div class="section__header">
-                <h2 class="section__title">Qué hace</h2>
-                {% if es_dueño %}
-                    <a href="{{ url_for('servicios.index') }}" class="btn btn--secondary"
-                       style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                        Editar servicios
-                    </a>
-                {% endif %}
-            </div>
-
-            {% if servicios %}
-                <div class="cards-grid">
-                    {% for servicio in servicios %}
-                        <article class="card product-card">
-                            <div class="card__body">
-                                <div class="card__tags">
-                                    <span class="badge badge--category">{{ servicio.rubro_label }}</span>
-                                </div>
-                                <h3 class="card__title">{{ servicio.titulo }}</h3>
-                                <p class="card__price" style="font-weight:600;">
-                                    {# Sin precio no es gratis ni cero: se cotiza. #}
-                                    {{ servicio.precio_estimado | precio if servicio.precio_estimado else "A presupuestar" }}
-                                    {% if not servicio.disponible %}
-                                        <span class="badge">No disponible (solo lo ves vos)</span>
-                                    {% endif %}
-                                </p>
-                                {% if servicio.zona_cobertura %}
-                                    <p class="card__description">📍 {{ servicio.zona_cobertura }}</p>
-                                {% endif %}
-                                {% if servicio.descripcion %}
-                                    <p class="card__description">{{ servicio.descripcion }}</p>
-                                {% endif %}
-                                {# Al dueño no se le ofrece: las solicitudes le
-                                   llegan, no las hace. Sin sesion tampoco, que
-                                   la solicitud necesita a quien atribuirsela. #}
-                                {% if g.user and not es_dueño %}
-                                    <a href="{{ url_for('servicios.solicitar', id=servicio.id) }}"
-                                       class="btn btn--primary"
-                                       style="margin-top:0.75rem; font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                        Pedir presupuesto
-                                    </a>
-                                {% endif %}
-                            </div>
-                        </article>
-                    {% endfor %}
-                </div>
-                <p class="products-note">
-                    Los precios son estimados. Pedile un presupuesto para tu caso.
-                </p>
-            {% else %}
-                <p class="reviews-empty">
-                    Todavía no cargaste ningún servicio.
-                    <a href="{{ url_for('servicios.nuevo') }}">Agregá el primero acá.</a>
-                </p>
-            {% endif %}
-        </section>
-        {% endif %}
-
-        <section class="reviews-section">
-            <h2 class="section__title">Reseñas</h2>
-
-            {% if reviews %}
-                <div class="reviews-list">
-                    {% for r in reviews %}
-                        <div class="review-card">
-                            <div class="review-card__header">
-                                <strong class="review-card__author">
-                                    Usuario #{{ r.user_id }}
-                                    {% if r.updated_at %}
-                                        <span class="review-card__edited" title="Editada el {{ r.updated_at }}">(editado)</span>
-                                    {% endif %}
-                                </strong>
-                                <div class="review-card__stars">
-                                    {% for i in range(1, 6) %}
-                                        {% if i <= r.rating %}★{% else %}☆{% endif %}
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <p class="review-card__comment {% if not r.comment %}review-card__comment--empty{% endif %}">
-                                {{ r.comment or 'Sin comentario escrito.' }}
-                            </p>
-
-                            {% if r.reply %}
-                                <div class="review-card__reply">
-                                    <strong>Respuesta de {{ author.username }}:</strong>
-                                    <p>{{ r.reply }}</p>
-                                </div>
-                            {% elif g.user and g.user.id == post.author %}
-                                <form method="post"
-                                    action="{{ url_for('blog.reply_review', review_id=r.id) }}"
-                                    class="review-card__reply-form">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <textarea
-                                        name="reply"
-                                        rows="2"
-                                        class="auth__input"
-                                        placeholder="Responder públicamente a esta reseña..."
-                                        required
-                                    ></textarea>
-                                    <button type="submit" class="btn btn--secondary" style="font-size:0.8rem; padding:0.3rem 0.8rem; margin-top:0.5rem;">
-                                        Responder
-                                    </button>
-                                </form>
-                            {% endif %}
-
-                            {% if g.user and g.user.id != r.user_id %}
-                                <a href="{{ url_for('blog.report', tipo='review', target_id=r.id) }}" class="report-link">
-                                    Reportar
-                                </a>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="reviews-empty">
-                    Todavía no hay reseñas. ¡Sé la primera persona en opinar!
-                </p>
-            {% endif %}
-        </section>
-
-        <section class="review-form-section">
-            <h2 class="section__title">{% if mi_review %}Tu reseña{% else %}Dejar una reseña{% endif %}</h2>
-
-            {% if not g.user %}
-                <p class="review-form-info">
-                    Tenés que <a href="{{ url_for('auth.login') }}">iniciar sesión</a> para dejar una reseña.
-                </p>
-            {% elif g.user.id == post.author %}
-                <p class="review-form-info">
-                    No podés dejar reseñas sobre tu propio emprendimiento.
-                </p>
-            {% else %}
-                <form method="post" action="{{ url_for('blog.add_review', id=post.id) }}" class="auth__form">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="auth__field">
-                        <label class="auth__label">Tu calificación</label>
-                        <div class="rating">
-                            {% for i in range(5, 0, -1) %}
-                                <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}"
-                                    {% if mi_review and mi_review.rating == i %}checked{% endif %} required>
-                                <label for="star{{ i }}">★</label>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <div class="auth__field">
-                        <label for="comment" class="auth__label">Comentario (opcional)</label>
-                        <textarea
-                            id="comment"
-                            name="comment"
-                            rows="4"
-                            class="auth__input"
-                            placeholder="Contá tu experiencia con este emprendimiento..."
-                        >{{ mi_review.comment or '' if mi_review else '' }}</textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn--primary auth__submit">
-                        {% if mi_review %}Actualizar reseña{% else %}Enviar reseña{% endif %}
-                    </button>
-                </form>
-
-                {% if mi_review %}
-                    <form method="post"
-                        action="{{ url_for('blog.delete_review', review_id=mi_review.id) }}"
-                        class="form-inline"
-                        style="margin-top:0.75rem;"
-                        onsubmit="return confirm('¿Seguro que querés eliminar tu reseña?');">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn--ghost" style="font-size:0.85rem;">
-                            Eliminar mi reseña
-                        </button>
-                    </form>
-                {% endif %}
-            {% endif %}
-        </section>
-
-        <a href="{{ url_for('blog.index') }}" class="back-link">← Volver al listado</a>
     </div>
+
+    {# La barra fija del teléfono. El contacto es LA acción de la pantalla y no
+       puede vivir al final de dos mil píxeles de scroll ni en una columna que
+       ahí no existe. Ocupa el lugar de la barra de pestañas: la ficha es una
+       pantalla abierta ENCIMA de Explorar, y al volver reaparecen las cinco.
+       El CSS la apaga en escritorio, donde la columna derecha ya la cubre. #}
+    {% if not es_dueño %}
+        <div class="ficha-barra">
+            <div class="ficha-barra__fila">
+                {% if g.user %}
+                    {% include "partials/_favorito_boton.html" %}
+                    <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id) }}"
+                       class="btn btn--primary ficha-barra__accion">
+                        {% with clave = 'mensaje', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        Enviar un mensaje
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn--primary ficha-barra__accion">
+                        {% with clave = 'mensaje', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        Entrá para escribirle
+                    </a>
+                {% endif %}
+            </div>
+            <span class="ficha-barra__nota">Hablás directo con {{ author.username }}. Sin comisión.</span>
+        </div>
+    {% endif %}
 </section>
 {% endblock %}
 
 
+{# La ficha es una pantalla abierta ENCIMA de Explorar: en telefono la barra de
+   accion de abajo ocupa el lugar de la de pestañas, y al volver reaparecen las
+   cinco. Al duenio no se le dibuja barra de accion (sus acciones estan arriba),
+   asi que conserva las pestañas. #}
+{% block tabbar %}
+    <div class="tabbar-envoltura {% if not es_dueño %}tabbar-envoltura--tapada{% endif %}">
+        {% include "partials/_tabbar.html" with context %}
+    </div>
+{% endblock %}
+
+
 {% block scripts %}
-<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+{% if post.galeria|length > 1 %}
+    <script src="{{ url_for('static', filename='js/visor.js') }}"></script>
+{% endif %}
+{% if post.latitude and post.longitude %}
+{# Version pineada a proposito. Sin el @5.24.0 unpkg sirve la ultima, y
+   maplibre 6 dejo de publicar el build UMD: en dist/ solo quedan .mjs, asi
+   que dist/maplibre-gl.js pasa a ser un 404 y maplibregl nunca llega a
+   existir. El mapa se caia sin decir nada, porque el codigo de abajo esta
+   adentro de un DOMContentLoaded y el ReferenceError se queda en la
+   consola. Para subir a la 6 hay que pasar este bloque a type="module" e
+   importar el .mjs; mientras tanto, 5.x sigue teniendo UMD. #}
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    const mapContainer = document.getElementById("map");
-    
-    // Solo si el post tiene coordenadas Y existe el div del mapa
-    {% if post.latitude and post.longitude %}
-    if (mapContainer) {
-        const postLat = {{ post.latitude }};
-        const postLon = {{ post.longitude }};
+    const contenedor = document.getElementById("map");
+    if (!contenedor) return;
 
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
-            center: [postLon, postLat],
-            zoom: 14,
-            interactive: true
-        });
+    const lat = {{ post.latitude }};
+    const lon = {{ post.longitude }};
 
-        map.addControl(new maplibregl.NavigationControl());
+    const mapa = new maplibregl.Map({
+        container: "map",
+        style: `https://api.maptiler.com/maps/streets/style.json?key={{ MAPTILER_KEY }}`,
+        center: [lon, lat],
+        zoom: 14,
+        interactive: true
+    });
 
-        new maplibregl.Marker({ color: "var(--color-primary, #6C63FF)" })
-            .setLngLat([postLon, postLat])
-            .addTo(map);
-    }
-    {% endif %}
+    mapa.addControl(new maplibregl.NavigationControl());
+
+    new maplibregl.Marker({ color: "#5248AE" })
+        .setLngLat([lon, lat])
+        .addTo(mapa);
 });
 </script>
+{% endif %}
 {% endblock %}

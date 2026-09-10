@@ -17,6 +17,19 @@ class Roles:
 
     TODOS = (USUARIO, EMPRENDEDOR, ADMIN)
 
+    # Como se escribe cada rol cuando lo lee una persona. Vive al lado de los
+    # valores, igual que Categorias.ETIQUETAS, para que la columna "Rol" del
+    # panel no muestre el string crudo en minuscula ("emprendedor") mientras el
+    # filtro de al lado dice "Emprendedores".
+    #
+    # En singular y en masculino generico: el rol es del registro, no de la
+    # persona, y la tabla no tiene con que saber como se nombra cada quien.
+    ETIQUETAS = {
+        USUARIO: "Usuario",
+        EMPRENDEDOR: "Emprendedor",
+        ADMIN: "Administrador",
+    }
+
 
 class User(db.Model):
     __tablename__ = "users"

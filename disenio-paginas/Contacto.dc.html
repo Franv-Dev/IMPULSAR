@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-atajo { display: flex; align-items: center; gap: 14px; padding: 16px 18px;
+               border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF;
+               transition: border-color .18s ease, box-shadow .18s ease; }
+    .u-atajo:hover { border-color: #C9D0E0; box-shadow: 0 10px 26px rgba(23,20,71,.07); }
+    .u-copiar:hover { border-color: #C9D0E0; color: #3E2F94; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" style="display: inline-flex; align-items: center; height: 40px; padding: 0 14px; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 500; color: #4A5666">Acceder</a>
+        <a href="#" style="display: inline-flex; align-items: center; height: 42px; padding: 0 20px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; box-shadow: 0 8px 20px rgba(62,47,148,.22)">Crear cuenta</a>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 44px 24px 56px">
+
+    <div style="max-width: 680px">
+      <h1 style="font-size: 34px; letter-spacing: -.025em">Contacto</h1>
+      <p style="margin: 14px 0 0; font-size: 16.5px; line-height: 1.65; color: #4A5666">
+        Hay una sola casilla y la leemos nosotros. Antes de escribir, fijate si lo tuyo se
+        resuelve más rápido adentro de la plataforma: casi todo tiene su propio camino.
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 420px minmax(0, 1fr); gap: 28px; align-items: start; margin-top: 34px">
+
+      <!-- NO HAY FORMULARIO DE CONTACTO Y NO SE DIBUJA UNO: la ruta es un
+           render_template sin lógica (views/pages.py), no hay tabla de consultas
+           ni envío de mail. Un formulario que en realidad no manda nada es peor
+           que un mailto honesto. El emoji del sobre sí se va: la guía sólo admite
+           emoji si son de la marca, y acá era decoración. -->
+      <div style="padding: 26px; border-radius: 20px; background: linear-gradient(160deg, #4A3B8E, #3E2F94 52%, #33267C); color: #FFFFFF">
+        <span style="display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 13px; background: rgba(255,255,255,.14); color: #FFFFFF">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        </span>
+        <h2 style="margin-top: 16px; font-size: 18px; color: #FFFFFF">Escribinos por correo</h2>
+        <p style="margin: 9px 0 18px; font-size: 14.5px; line-height: 1.6; color: rgba(255,255,255,.82)">
+          Dudas, sugerencias, problemas con tu cuenta o cualquier cosa que no encaje en los
+          caminos de al lado.
+        </p>
+
+        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 16px; border-radius: 999px; background: rgba(255,255,255,.12)">
+          <span style="flex: 1; min-width: 0; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; color: #FFFFFF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">impulsARmdz@gmail.com</span>
+          <button type="button" style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 5.5v-.5a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h.5"/></svg>
+            Copiar
+          </button>
+        </div>
+
+        <p style="margin: 16px 0 0; font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.72)">
+          Somos un equipo chico: contestamos, pero puede tardar unos días. Si es urgente,
+          decilo en el asunto.
+        </p>
+      </div>
+
+      <!-- LOS ATAJOS EXISTEN TODOS HOY. Sin esto, la casilla se convierte en el
+           cajón donde cae "quiero borrar mi cuenta" y "este emprendimiento es
+           trucho", que la app ya resuelve sola y más rápido. -->
+      <div style="min-width: 0">
+        <h2 style="font-size: 18px">Esto no hace falta que nos lo escribas</h2>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 16px">
+
+          <a href="#" class="u-atajo">
+            <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 11px; background: #FBEDE4; color: #8C4A22">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.8 21 19.5H3Z"/><path d="M12 10v3.6M12 16.6h.01"/></svg>
+            </span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; color: #1B2430">Reportar un emprendimiento o una reseña</span>
+              <span style="font-size: 13.5px; line-height: 1.5; color: #5F6B7C">Hay un botón de reportar en cada ficha y en cada reseña. Entra a una cola que revisamos a mano.</span>
+            </span>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C9D0E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+
+          <a href="#" class="u-atajo">
+            <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 11px; background: #ECEAF7; color: #33267C">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+            </span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; color: #1B2430">Preguntarle algo a un emprendimiento</span>
+              <span style="font-size: 13.5px; line-height: 1.5; color: #5F6B7C">Va por el chat de la plataforma, desde su ficha. Nosotros no somos intermediarios de esa charla.</span>
+            </span>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C9D0E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+
+          <a href="#" class="u-atajo">
+            <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 11px; background: #ECEAF7; color: #33267C">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            </span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; color: #1B2430">Publicar tu emprendimiento</span>
+              <span style="font-size: 13.5px; line-height: 1.5; color: #5F6B7C">No hay que pedir permiso ni esperar aprobación: se publica solo, gratis, desde tu cuenta.</span>
+            </span>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C9D0E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+
+          <a href="#" class="u-atajo">
+            <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 11px; background: #EEF1F7; color: #4A5666">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 0 1-4 0v-.2a1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7h-.3a2 2 0 0 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1v-.3a2 2 0 0 1 4 0v.2a1.6 1.6 0 0 0 2.8 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7h.3a2 2 0 0 1 0 4h-.2a1.6 1.6 0 0 0-1.4.9Z"/></svg>
+            </span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; color: #1B2430">Cambiar tus datos o cerrar tu cuenta</span>
+              <span style="font-size: 13.5px; line-height: 1.5; color: #5F6B7C">Está en Ajustes, dentro de tu cuenta. Para borrar tus datos por completo, ahí sí escribinos.</span>
+            </span>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#C9D0E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+        </div>
+
+        <p style="margin: 20px 0 0; display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; line-height: 1.6; color: #5F6B7C">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.4M12 7.8h.01"/></svg>
+          IMPULSAR no vende nada: si tu consulta es por un pedido, un precio o una entrega,
+          la respuesta la tiene el emprendimiento, no nosotros.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":880}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

@@ -13,8 +13,20 @@ from app.blog.modelo_post import Post
 from app.blog.modelo_resenia import Review
 
 
-def query_posts_con_rating(query=None):
-    """Devuelve una Query de Post que trae (Post, avg_rating, review_count) por fila."""
+def query_posts_con_rating(query=None, solo_con_resenias=False):
+    """Devuelve una Query de Post que trae (Post, avg_rating, review_count) por fila.
+
+    solo_con_resenias deja afuera a los que no tienen ninguna. Se resuelve
+    sobre ESTA misma subquery en vez de agregar un EXISTS o un segundo join: la
+    agregacion por post ya esta calculada aca, asi que pedirle que la fila
+    exista (post_id no nulo) convierte el outerjoin en un inner join sin sumar
+    otra pasada por reviews.
+
+    El filtro vive en este helper y no afuera justamente porque `ratings` es
+    local: sin esto, quien quisiera filtrar por reseñas tendria que rearmar la
+    subquery por su cuenta y terminariamos con dos agregaciones que se pueden
+    desincronizar.
+    """
     if query is None:
         query = Post.query
 
@@ -27,11 +39,19 @@ def query_posts_con_rating(query=None):
         .group_by(Review.post_id)
         .subquery()
     )
-    return (
+    query = (
         query
         .outerjoin(ratings, ratings.c.post_id == Post.id)
         .add_columns(ratings.c.avg_rating, ratings.c.review_count)
     )
+
+    if solo_con_resenias:
+        # Se mira post_id y no review_count > 0: el COUNT de un grupo nunca da
+        # cero (un post sin reseñas no arma grupo), asi que lo que distingue es
+        # si el outerjoin encontro fila o la dejo en NULL.
+        query = query.filter(ratings.c.post_id.isnot(None))
+
+    return query
 
 
 def serializar_con_rating(filas, favoritos=frozenset()):

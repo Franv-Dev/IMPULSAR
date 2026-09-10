@@ -1,0 +1,314 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-item:hover { background: #EEF1F7; color: #1B2430; }
+    .u-btn-primario:hover { background: #483BA1; }
+    .u-btn-borde:hover { background: #ECEAF7; border-color: #ECEAF7; }
+    .u-fila:hover { border-color: #ECEAF7; box-shadow: 0 4px 12px rgba(15,23,42,.08); }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #4A5666">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #4A5666">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 5px; border: 1px solid #ECEAF7; border-radius: 999px; background: #ECEAF7; cursor: pointer">
+        <span style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">TG</span>
+        <span style="font-size: 13.5px; font-weight: 600; color: #33267C">Tomas</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 24px 24px 60px">
+    <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; align-items: start">
+
+      <!-- El mismo parcial de siempre: templates/partials/_menu_cuenta.html -->
+      <aside style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: #ECEAF7; color: #3E2F94; font-weight: 700">T</span>
+          <span style="display: flex; flex-direction: column; min-width: 0">
+            <span style="font-weight: 600; font-size: 14.5px">Tomas</span>
+            <a href="#" style="font-size: 12.5px; color: #5F6B7C">Ver mi perfil</a>
+          </span>
+        </div>
+        <nav style="display: flex; flex-direction: column; gap: 2px">
+          <sc-for list="{{ menu }}" as="m" hint-placeholder-count="8">
+            <a href="#" class="u-item" style="{{ m.estilo }}">{{ m.etiqueta }}</a>
+          </sc-for>
+        </nav>
+      </aside>
+
+      <div style="display: flex; flex-direction: column; gap: 18px; min-width: 0">
+
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px">
+          <div style="max-width: 560px">
+            <h1 style="font-size: 24px; letter-spacing: -.01em">Mis servicios</h1>
+            <p style="margin: 6px 0 0; font-size: 14px; line-height: 1.55; color: #5F6B7C">
+              Los trabajos que ofrecés en cada emprendimiento. Se muestran en la
+              búsqueda de servicios y en la página del emprendimiento.
+            </p>
+          </div>
+          <a href="#" class="u-btn-primario" style="{{ botonAgregarEstilo }}">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Agregar servicio
+          </a>
+        </div>
+
+        <!-- La línea de contexto: en vez de tres cajas con números, un renglón
+             que dice lo único accionable (lo que espera respuesta). -->
+        <div style="{{ resumenEstilo }}">
+          <span style="font-size: 13.4px; color: #4A5666">{{ resumenTexto }}</span>
+          <span style="flex: 1"></span>
+          <a href="#" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13.4px; font-weight: 600">
+            <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-size: 11.6px; font-weight: 700">3</span>
+            presupuestos esperando tu respuesta
+          </a>
+        </div>
+
+        <!-- ============ LOS GRUPOS, uno por emprendimiento ============ -->
+        <div style="{{ listaEstilo }}">
+          <sc-for list="{{ grupos }}" as="g" hint-placeholder-count="2">
+            <section style="display: flex; flex-direction: column; gap: 12px">
+
+              <div style="display: flex; align-items: center; gap: 12px">
+                <span style="width: 30px; height: 30px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: #ECEAF7; color: #3E2F94; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700">{{ g.inicial }}</span>
+                <h2 style="font-size: 16px; letter-spacing: -.01em">{{ g.nombre }}</h2>
+                <span style="padding: 4px 10px; border-radius: 999px; background: #EEF1F7; color: #5F6B7C; font-size: 12.2px; font-weight: 600">{{ g.cupo }}</span>
+                <span style="flex: 1; height: 1px; background: #E2E6EE"></span>
+                <a href="#" style="font-size: 13px; font-weight: 500">Ver el emprendimiento</a>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <sc-for list="{{ g.servicios }}" as="s" hint-placeholder-count="3">
+                  <article class="u-fila" style="{{ s.filaEstilo }}">
+
+                    <span style="{{ s.emblemaEstilo }}">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{ s.icono }}"/></svg>
+                    </span>
+
+                    <div style="min-width: 0; display: flex; flex-direction: column; gap: 6px">
+                      <h3 style="{{ s.tituloEstilo }}">{{ s.titulo }}</h3>
+                      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 7px">
+                        <span style="padding: 4px 10px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.2px; font-weight: 600">{{ s.rubroLabel }}</span>
+                        <span style="font-size: 12.6px; color: #5F6B7C">{{ s.zona }}</span>
+                        <span style="{{ s.turnosEstilo }}">Turnos de {{ s.duracion }} min</span>
+                        <!-- ESTADO DE LA VERIFICACION. Hoy la fila solo sabe
+                             decir "verificado" o nada; los otros dos estados
+                             existen en VerificationRequest y no se ven en
+                             ningún lado. -->
+                        <a href="#" style="{{ s.verifEstilo }}">
+                          <span style="{{ s.verifPuntoEstilo }}"></span>
+                          {{ s.verifTexto }}
+                        </a>
+                      </div>
+                    </div>
+
+                    <div style="text-align: right; min-width: 104px">
+                      <p style="{{ s.precioEstilo }}">{{ s.precio }}</p>
+                      <p style="margin: 3px 0 0; font-size: 11.8px; color: #5F6B7C">{{ s.precioNota }}</p>
+                    </div>
+
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer">
+                      <span style="{{ s.pistaEstilo }}">
+                        <span style="{{ s.perillaEstilo }}"></span>
+                      </span>
+                      <span style="{{ s.estadoTextoEstilo }}">{{ s.estadoTexto }}</span>
+                      <input type="checkbox" onChange="{{ s.alternar }}" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none">
+                    </label>
+
+                    <div style="display: flex; align-items: center; gap: 6px">
+                      <a href="#" class="u-btn-borde" style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #1B2430; font-size: 13px; font-weight: 600">Editar</a>
+                      <button type="button" aria-label="Más acciones" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #5F6B7C; cursor: pointer">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5.5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18.5" r="1.6"/></svg>
+                      </button>
+                    </div>
+
+                  </article>
+                </sc-for>
+              </div>
+            </section>
+          </sc-for>
+        </div>
+
+        <!-- VACIO 1: tiene emprendimientos pero ningún servicio. -->
+        <div style="{{ vacioServiciosEstilo }}">
+          <span style="width: 54px; height: 54px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #3E2F94">
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4.5 16.5V20H8l4.8-4.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.5-2.5 2.6-2.6Z"/></svg>
+          </span>
+          <h2 style="margin-top: 14px; font-size: 18px">Todavía no cargaste ningún servicio</h2>
+          <p style="margin: 8px 0 0; max-width: 460px; font-size: 13.8px; line-height: 1.6; color: #5F6B7C">
+            Un servicio es un trabajo que hacés a pedido: "destapación de cañerías",
+            "corte de pasto". Si lo que vendés tiene precio fijo y se lleva puesto,
+            eso va en <a href="#">tu catálogo</a>.
+          </p>
+          <a href="#" class="u-btn-primario" style="display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; height: 42px; padding: 0 20px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 600">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Agregar el primero
+          </a>
+        </div>
+
+        <!-- VACIO 2: ni siquiera hay un emprendimiento del que colgarlos. -->
+        <div style="{{ vacioPostsEstilo }}">
+          <span style="width: 54px; height: 54px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FBEDE4; color: #8C4A22">
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9.5L12 4l8 5.5V20z"/><path d="M9.5 20v-6h5v6"/></svg>
+          </span>
+          <h2 style="margin-top: 14px; font-size: 18px">Primero necesitás un emprendimiento</h2>
+          <p style="margin: 8px 0 0; max-width: 460px; font-size: 13.8px; line-height: 1.6; color: #5F6B7C">
+            Los servicios cuelgan de un emprendimiento, no de tu usuario: así alguien
+            puede tener una gasista y una electricista con servicios distintos.
+          </p>
+          <a href="#" class="u-btn-primario" style="display: inline-flex; align-items: center; margin-top: 18px; height: 42px; padding: 0 20px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 600">Registrar mi emprendimiento</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"estado":{"editor":"enum","options":["con servicios","sin servicios","sin emprendimiento"],"default":"con servicios","section":"Contenido"},"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    // Qué servicios están apagados. El interruptor de la fila es lo único que
+    // hoy obliga a entrar al formulario entero para cambiar una sola cosa.
+    this.state = { apagados: { "pintura-lavable": true } };
+  }
+
+  datos() {
+    return [
+      { post: "Plomería Sánchez", cupo: "3 de 50", servicios: [
+        { id: "destapacion", titulo: "Destapación de cañerías", rubroLabel: "Plomería",
+          zona: "Maipú y alrededores", precio: null, verif: "verificado", turnos: 60,
+          icono: "M14.7 6.3a4 4 0 0 1-5.4 5.4L4.5 16.5V20H8l4.8-4.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.5-2.5 2.6-2.6Z" },
+        { id: "termotanque", titulo: "Instalación de termotanque", rubroLabel: "Plomería",
+          zona: "Maipú y alrededores", precio: 145000, verif: "revision", turnos: 0,
+          icono: "M8 3.5h8v17H8zM8 8.5h8M12 20.5v2M10 12h4" },
+        { id: "gas-conexion", titulo: "Conexión de gas natural", rubroLabel: "Gas",
+          zona: "Maipú", precio: null, verif: "rechazado", turnos: 0,
+          icono: "M12 21.5a5.5 5.5 0 0 0 5.5-5.5c0-3.7-2.8-5.5-3.7-8.3-1.8 1.4-2.3 3.2-2.3 3.2s-1.4-1.4-2.8-2.4c-1.4 1.9-2.2 4.2-2.2 7.5a5.5 5.5 0 0 0 5.5 5.5Z" },
+      ] },
+      { post: "Pintor Ríos", cupo: "2 de 50", servicios: [
+        { id: "pintura-interiores", titulo: "Pintura de interiores por m2", rubroLabel: "Pintura",
+          zona: "Guaymallén", precio: 12500, verif: "sin", turnos: 0,
+          icono: "M4 5.5h10v5H4zM14 8h3.8a1.7 1.7 0 0 1 1.7 1.7v2a1.7 1.7 0 0 1-1.7 1.7H12.5v2.1M10.4 15.5h4.2v6h-4.2z" },
+        { id: "pintura-lavable", titulo: "Pintura lavable para cocinas", rubroLabel: "Pintura",
+          zona: "Guaymallén", precio: 18900, verif: "sin", turnos: 0,
+          icono: "M4 5.5h10v5H4zM14 8h3.8a1.7 1.7 0 0 1 1.7 1.7v2a1.7 1.7 0 0 1-1.7 1.7H12.5v2.1M10.4 15.5h4.2v6h-4.2z" },
+      ] },
+    ];
+  }
+
+  renderVals() {
+    const modo = this.props.estado ?? "con servicios";
+    const hayServicios = modo === "con servicios";
+    const hayPosts = modo !== "sin emprendimiento";
+    const apagados = this.state.apagados;
+
+    const itemBase = "padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; color: #4A5666";
+    const itemActivo = "padding: 9.6px 12px; border-radius: 8px; font-size: 14.4px; background: #ECEAF7; color: #3E2F94; font-weight: 600";
+    const menu = [
+      "Mis emprendimientos", "Mi catálogo", "Mis servicios", "Presupuestos",
+      "Mensajes", "Reseñas recibidas", "Favoritos", "Ajustes",
+    ].map((etiqueta) => ({
+      etiqueta: etiqueta,
+      estilo: etiqueta === "Mis servicios" ? itemActivo : itemBase,
+    }));
+
+    const plata = (n) => "$ " + n.toLocaleString("es-AR");
+
+    // Los cuatro estados de la verificación, con el color que ya usa el resto
+    // del proyecto para cada uno.
+    const verifs = {
+      verificado: { texto: "Verificado", fondo: "#E6F4EC", tinta: "#1F7A4D", punto: "#1F7A4D" },
+      revision: { texto: "En revisión", fondo: "#FBEDE4", tinta: "#8C4A22", punto: "#D97544" },
+      rechazado: { texto: "No aprobado", fondo: "#FEE2E2", tinta: "#B91C1C", punto: "#B91C1C" },
+      sin: { texto: "Pedir verificación", fondo: "#EEF1F7", tinta: "#4A5666", punto: "#C9CFDB" },
+    };
+
+    const grupos = this.datos().map((g) => ({
+      nombre: g.post,
+      inicial: g.post.charAt(0).toUpperCase(),
+      cupo: g.cupo,
+      servicios: g.servicios.map((s) => {
+        const encendido = !apagados[s.id];
+        const v = verifs[s.verif];
+        return {
+          titulo: s.titulo,
+          rubroLabel: s.rubroLabel,
+          zona: s.zona,
+          icono: s.icono,
+          duracion: s.turnos,
+          filaEstilo: "display: grid; grid-template-columns: 48px minmax(0, 1fr) auto auto auto; align-items: center; gap: 16px; padding: 14px 18px; border: 1px solid #E2E6EE; border-radius: 14px; transition: border-color .18s ease, box-shadow .18s ease; background: " + (encendido ? "#FFFFFF" : "#FAFBFD"),
+          emblemaEstilo: "width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: " + (encendido ? "#ECEAF7" : "#EEF1F7") + "; color: " + (encendido ? "#3E2F94" : "#9AA3B2"),
+          tituloEstilo: "font-size: 15.5px; letter-spacing: -.01em; color: " + (encendido ? "#1B2430" : "#5F6B7C"),
+          turnosEstilo: s.turnos
+            ? "display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12.2px; font-weight: 600"
+            : "display: none",
+          precio: s.precio === null ? "A presupuestar" : plata(s.precio),
+          precioEstilo: s.precio === null
+            ? "margin: 0; font-family: 'Poppins', sans-serif; font-size: 13.6px; font-weight: 600; color: #5F6B7C"
+            : "margin: 0; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #1B2430",
+          precioNota: s.precio === null ? "Se cotiza" : "Estimado",
+          verifTexto: v.texto,
+          verifEstilo: "display: inline-flex; align-items: center; gap: 7px; justify-self: start; padding: 6px 12px; border-radius: 999px; background: " + v.fondo + "; color: " + v.tinta + "; font-size: 12.6px; font-weight: 600",
+          verifPuntoEstilo: "width: 7px; height: 7px; border-radius: 999px; background: " + v.punto,
+          estadoTexto: encendido ? "Disponible" : "Oculto",
+          estadoTextoEstilo: "font-size: 13px; font-weight: 600; color: " + (encendido ? "#1B2430" : "#5F6B7C"),
+          pistaEstilo: "position: relative; width: 38px; height: 22px; flex-shrink: 0; border-radius: 999px; transition: background-color .15s ease; background: " + (encendido ? "#3E2F94" : "#C9CFDB"),
+          perillaEstilo: "position: absolute; top: 3px; left: " + (encendido ? "19px" : "3px") + "; width: 16px; height: 16px; border-radius: 999px; background: #FFFFFF; transition: left .15s ease; box-shadow: 0 1px 3px rgba(15,23,42,.25)",
+          alternar: () => {
+            const proximos = Object.assign({}, this.state.apagados);
+            if (proximos[s.id]) delete proximos[s.id];
+            else proximos[s.id] = true;
+            this.setState({ apagados: proximos });
+          },
+        };
+      }),
+    }));
+
+    return {
+      menu: menu,
+      grupos: grupos,
+      botonAgregarEstilo: hayPosts
+        ? "flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 20px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(15,23,42,.08)"
+        : "display: none",
+      resumenEstilo: hayServicios
+        ? "display: flex; align-items: center; gap: 14px; padding: 12px 18px; border: 1px solid #E2E6EE; border-radius: 12px; background: #FFFFFF"
+        : "display: none",
+      resumenTexto: "5 servicios en 2 emprendimientos · 1 verificado",
+      listaEstilo: hayServicios ? "display: flex; flex-direction: column; gap: 26px" : "display: none",
+      vacioServiciosEstilo: modo === "sin servicios"
+        ? "display: flex; flex-direction: column; align-items: center; text-align: center; padding: 52px 24px; border: 1px dashed #E2E6EE; border-radius: 18px; background: #FFFFFF"
+        : "display: none",
+      vacioPostsEstilo: modo === "sin emprendimiento"
+        ? "display: flex; flex-direction: column; align-items: center; text-align: center; padding: 52px 24px; border: 1px dashed #E2E6EE; border-radius: 18px; background: #FFFFFF"
+        : "display: none",
+    };
+  }
+}
+</script>
+</body>
+</html>

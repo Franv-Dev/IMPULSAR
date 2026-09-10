@@ -1,0 +1,275 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-lat { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 13px;
+             border-radius: 11px; color: #4A5666; font-family: "Poppins", sans-serif;
+             font-size: 14px; font-weight: 500; }
+    .u-lat:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-lat--on { background: #ECEAF7; color: #33267C; font-weight: 600; }
+    .u-lat--on:hover { background: #ECEAF7; color: #33267C; }
+    .u-btn:hover { background: #483BA1; }
+    .u-sec { border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+             color: #4A5666; font-family: "Poppins", sans-serif; font-weight: 600;
+             cursor: pointer; }
+    .u-sec:hover { border-color: #C9D0E0; color: #3E2F94; }
+    .u-peligro { border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+                 color: #4A5666; font-family: "Poppins", sans-serif; font-weight: 600;
+                 cursor: pointer; }
+    .u-peligro:hover { border-color: #B91C1C; color: #B91C1C; background: #FEE2E2; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: #4A5666">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">T</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 26px 24px 56px">
+    <div style="display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 28px; align-items: start">
+
+      <!-- EL MENÚ DEL PANEL ES EL MISMO EN LAS CINCO PANTALLAS
+           (templates/admin/_menu_admin.html). Hoy Reportes y Verificaciones NO lo
+           dibujan aunque el menú les enlaza: se quedaron afuera del rediseño de
+           agosto y siguen con .section__header y una tabla pelada. Acá lo tienen. -->
+      <aside style="position: sticky; top: 24px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 0 4px 14px; border-bottom: 1px solid #EEF1F7">
+          <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: #ECEAF7; color: #33267C">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 4.5 6.1v5.4c0 4.4 3.1 8.2 7.5 9.3 4.4-1.1 7.5-4.9 7.5-9.3V6.1Z"/><path d="m9.2 12 2 2 3.6-3.8"/></svg>
+          </span>
+          <span style="min-width: 0; display: flex; flex-direction: column; gap: 1px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; color: #1B2430">Administración</span>
+            <span style="font-size: 12.5px; color: #5F6B7C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Tomás</span>
+          </span>
+        </div>
+
+        <nav style="display: flex; flex-direction: column; gap: 2px; margin-top: 10px">
+          <a href="#" class="u-lat u-lat--on">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/></svg>
+            <span style="flex: 1">Resumen</span>
+          </a>
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.8 21 19.5H3Z"/><path d="M12 10v3.6M12 16.6h.01"/></svg>
+            <span style="flex: 1">Reportes</span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">2</span>
+          </a>
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 4.5 6.1v5.4c0 4.4 3.1 8.2 7.5 9.3 4.4-1.1 7.5-4.9 7.5-9.3V6.1Z"/><path d="m9.2 12 2 2 3.6-3.8"/></svg>
+            <span style="flex: 1">Verificaciones</span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">3</span>
+          </a>
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 11.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8M2.6 20.2a6.6 6.6 0 0 1 13.2 0M16.8 5.6a3.4 3.4 0 0 1 0 6M18.6 20.2a6.8 6.8 0 0 0-1.8-4.6"/></svg>
+            <span style="flex: 1">Usuarios</span>
+          </a>
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16l1.6 5.2H2.4ZM5 9.2V20h14V9.2M10 20v-6.2h4V20"/></svg>
+            <span style="flex: 1">Emprendimientos</span>
+          </a>
+        </nav>
+      </aside>
+
+      <div style="min-width: 0; display: flex; flex-direction: column; gap: 22px">
+
+        <!-- UN SOLO NÚMERO GRANDE EN LA PANTALLA, y es el que decide si hoy hay
+             trabajo. Las métricas de abajo son contexto y van chicas: si compiten
+             en tamaño con esto, la pantalla deja de tener un titular. -->
+        <div style="padding: 26px 28px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <div style="display: flex; align-items: center; gap: 20px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 60px; font-weight: 700; line-height: 1; letter-spacing: -.03em; color: #33267C">5</span>
+            <div style="min-width: 0">
+              <h1 style="font-size: 24px; letter-spacing: -.02em">cosas para revisar hoy</h1>
+              <p style="margin: 7px 0 0; font-size: 14.2px; line-height: 1.6; color: #5F6B7C">
+                Dos reportes sin resolver y tres verificaciones sin revisar. Las colas van
+                primero; las métricas de la plataforma, abajo.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <section style="padding: 22px 24px 24px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #EEF1F7">
+            <h2 style="font-size: 17px">Reportes</h2>
+            <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">2 sin resolver</span>
+            <span style="flex: 1"></span>
+            <a href="#" style="font-size: 13.5px; font-weight: 500">Ver todos</a>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px">
+
+            <article style="padding: 16px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+              <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px">
+                <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">Emprendimiento</span>
+                <a href="#" style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; color: #1B2430">Tortas Mari</a>
+                <span style="flex: 1"></span>
+                <span style="font-size: 12.5px; color: #5F6B7C; font-variant-numeric: tabular-nums">04/09</span>
+              </div>
+              <p style="margin: 11px 0 0; font-size: 14px; line-height: 1.6; color: #1B2430">«Usa fotos de otra pastelería, las saqué de su Instagram.»</p>
+              <p style="margin: 7px 0 0; font-size: 13px; color: #5F6B7C">Reportó marian.g</p>
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 15px; padding-top: 14px; border-top: 1px solid #EEF1F7">
+                <button type="button" class="u-sec" style="height: 38px; padding: 0 17px; font-size: 13.5px">Marcar resuelto</button>
+                <button type="button" class="u-peligro" style="height: 38px; padding: 0 17px; font-size: 13.5px">Eliminar emprendimiento</button>
+                <span style="flex: 1"></span>
+                <span style="display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #5F6B7C">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8C4A22" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.8 21 19.5H3Z"/><path d="M12 10v3.6M12 16.6h.01"/></svg>
+                  Eliminar borra también sus productos, servicios, reseñas y eventos
+                </span>
+              </div>
+            </article>
+
+            <article style="padding: 16px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+              <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px">
+                <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">Reseña</span>
+                <a href="#" style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; color: #1B2430">Reseña de fedeq</a>
+                <span style="font-size: 13px; color: #5F6B7C">en Taller Rueda Libre</span>
+                <span style="flex: 1"></span>
+                <span style="font-size: 12.5px; color: #5F6B7C; font-variant-numeric: tabular-nums">02/09</span>
+              </div>
+              <p style="margin: 11px 0 0; font-size: 14px; line-height: 1.6; color: #1B2430">«Nunca me compró nada, es la competencia bajándome el puntaje.»</p>
+              <p style="margin: 7px 0 0; font-size: 13px; color: #5F6B7C">Reportó rueda.libre</p>
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 15px; padding-top: 14px; border-top: 1px solid #EEF1F7">
+                <button type="button" class="u-sec" style="height: 38px; padding: 0 17px; font-size: 13.5px">Marcar resuelto</button>
+                <button type="button" class="u-peligro" style="height: 38px; padding: 0 17px; font-size: 13.5px">Eliminar reseña</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section style="padding: 22px 24px 24px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #EEF1F7">
+            <h2 style="font-size: 17px">Verificaciones</h2>
+            <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">3 sin revisar</span>
+            <span style="flex: 1"></span>
+            <a href="#" style="font-size: 13.5px; font-weight: 500">Ver todas</a>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px">
+            <article style="padding: 16px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+              <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px">
+                <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">Electricidad</span>
+                <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600">Instalaciones eléctricas domiciliarias</span>
+                <span style="flex: 1"></span>
+                <span style="font-size: 12.5px; color: #5F6B7C; font-variant-numeric: tabular-nums">01/09</span>
+              </div>
+              <p style="margin: 9px 0 0; font-size: 13.5px; color: #5F6B7C">Servicios del Oeste · matrícula presentada</p>
+
+              <!-- EL DOCUMENTO SE MIRA ACÁ, no en otra pestaña: es lo único que
+                   decide el aprobar o rechazar. La ruta del blueprint ya tiene el
+                   chequeo de permiso (servicios.foto_de_verificacion), así que
+                   sigue sin pasar por /static. -->
+              <div style="display: flex; align-items: center; gap: 13px; margin-top: 13px; padding: 12px 14px; border: 1px solid #E2E6EE; border-radius: 14px; background: #F5F7FA">
+                <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E2E6EE; color: #5F6B7C">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4.5 4.5V21H6Z"/><path d="M14 3v5h4.5"/></svg>
+                </span>
+                <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+                  <span style="font-size: 13.5px; font-weight: 500">Matrícula profesional</span>
+                  <span style="font-size: 12.5px; color: #5F6B7C">Tiene nombre y número reales: no se comparte ni se guarda en la ficha.</span>
+                </span>
+                <button type="button" class="u-sec" style="flex-shrink: 0; height: 36px; padding: 0 15px; font-size: 13px">Ver documento</button>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 15px; padding-top: 14px; border-top: 1px solid #EEF1F7">
+                <button type="button" class="u-btn" style="height: 38px; padding: 0 19px; display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                  Aprobar
+                </button>
+                <!-- El motivo viaja en el MISMO envío que el rechazo. Si fuera otra
+                     pantalla, el prestador se quedaría sin saber qué corregir cada
+                     vez que el admin tiene apuro. -->
+                <input type="text" placeholder="Motivo del rechazo (opcional)" style="flex: 1; min-width: 0; height: 38px; padding: 0 14px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; font-size: 13.5px; color: #1B2430">
+                <button type="button" class="u-peligro" style="flex-shrink: 0; height: 38px; padding: 0 17px; font-size: 13.5px">Rechazar</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- LAS TRES MÉTRICAS: número, etiqueta y las altas de la ventana. SIN
+             flecha de tendencia y sin sparkline, y no por pereza: la consulta da el
+             total de hoy y el alta de cada fila, no hay histórico contra el que
+             comparar. "+47 en 30 días" es lo que se puede sostener; una flecha
+             verde diría "creció respecto del mes pasado", que nadie sabe. -->
+        <section style="padding: 22px 24px 24px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <div style="display: flex; align-items: baseline; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid #EEF1F7">
+            <h2 style="font-size: 17px">La plataforma</h2>
+            <span style="flex: 1"></span>
+            <span style="font-size: 13px; color: #5F6B7C">Altas de los últimos 30 días</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 18px">
+            <div style="display: flex; flex-direction: column; gap: 4px; padding: 18px 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #F5F7FA">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 30px; font-weight: 600; line-height: 1.1; letter-spacing: -.02em; color: #1B2430">1.284</span>
+              <span style="font-size: 13.5px; font-weight: 500; color: #4A5666">Usuarios</span>
+              <span style="margin-top: 3px; font-size: 12.5px; color: #5F6B7C">+47 en 30 días</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px; padding: 18px 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #F5F7FA">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 30px; font-weight: 600; line-height: 1.1; letter-spacing: -.02em; color: #1B2430">312</span>
+              <span style="font-size: 13.5px; font-weight: 500; color: #4A5666">Emprendimientos</span>
+              <span style="margin-top: 3px; font-size: 12.5px; color: #5F6B7C">+18 en 30 días</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px; padding: 18px 20px; border: 1px solid #E2E6EE; border-radius: 16px; background: #F5F7FA">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 30px; font-weight: 600; line-height: 1.1; letter-spacing: -.02em; color: #1B2430">946</span>
+              <span style="font-size: 13.5px; font-weight: 500; color: #4A5666">Reseñas</span>
+              <span style="margin-top: 3px; font-size: 12.5px; color: #5F6B7C">+63 en 30 días</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 18px">
+            <button type="button" class="u-sec" style="height: 42px; padding: 0 19px; font-size: 14px">Gestionar usuarios</button>
+            <button type="button" class="u-sec" style="height: 42px; padding: 0 19px; font-size: 14px">Moderar emprendimientos</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

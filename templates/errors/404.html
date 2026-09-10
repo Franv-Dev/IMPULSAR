@@ -2,19 +2,68 @@
 
 {% block title %}Página no encontrada – IMPULSAR{% endblock %}
 
+{#  El 404 (disenio-paginas/Error.dc.html y Movil.dc.html).
+
+    UN 404 NO ES UN CARTEL, ES UNA BIFURCACIÓN. Casi siempre se llega desde un
+    emprendimiento dado de baja o un link viejo que alguien pasó por WhatsApp:
+    la persona venía a buscar algo concreto. Dos botones sueltos —que es lo que
+    había— la dejan a mitad de camino, así que el buscador entra a la pantalla y
+    los siete rubros van abajo.
+
+    El 500 es esta misma pantalla con otro texto y SIN el buscador ni los
+    rubros: si el servidor se cayó, un buscador que tampoco va a andar es una
+    segunda frustración. Por eso los dos comparten el molde de arriba
+    (`.error`) y no el bloque de abajo. #}
+
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="error-page">
-            <p class="error-page__code">404</p>
-            <h2 class="error-page__title">No encontramos esta página</h2>
-            <p class="error-page__text">
-                Puede que el emprendimiento que buscabas se haya dado de baja,
-                o que el enlace esté mal escrito.
+        <div class="error">
+            <p class="error__codigo">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.4M12 7.8h.01"/>
+                </svg>
+                ERROR 404
             </p>
-            <div class="error-page__actions">
-                <a href="{{ url_for('index') }}" class="btn btn--primary">Volver al inicio</a>
-                <a href="{{ url_for('blog.index') }}" class="btn btn--secondary">Ver emprendimientos</a>
+
+            <h1 class="error__titulo">Esta página ya no está</h1>
+            <p class="error__texto">
+                Puede que el emprendimiento se haya dado de baja, o que el enlace esté mal
+                escrito. Si llegaste por un link que te pasaron, probablemente sea lo primero.
+            </p>
+
+            {# El buscador manda al listado, que es donde la búsqueda de verdad
+               vive: acá no se resuelve nada, se reencamina. #}
+            <form class="error__buscador" action="{{ url_for('blog.index') }}" method="get" role="search">
+                <span class="error__buscador-icono" aria-hidden="true">
+                    {% with clave = 'buscar', tamanio = 20, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </span>
+                <label class="sr-only" for="error-q">Qué buscabas</label>
+                <input type="search" name="q" id="error-q" class="error__buscador-input"
+                       placeholder="Buscá lo que venías a buscar">
+                <button type="submit" class="btn btn--primary error__buscador-boton">Buscar</button>
+            </form>
+
+            <div class="error__acciones">
+                <a href="{{ url_for('index') }}" class="btn btn--secondary">Volver al inicio</a>
+                <a href="{{ url_for('blog.index') }}" class="btn btn--secondary">Ver todos los emprendimientos</a>
+            </div>
+        </div>
+
+        {# Los siete rubros con el par de color de la guía, el mismo `.punto-rubro`
+           que usa cada tarjeta del catálogo: un rubro no cambia de color según la
+           pantalla. (La app todavía tiene su propia paleta de rubros en
+           styles.css y no es ésta — sigue anotado como pendiente.) #}
+        <div class="error__rubros">
+            <p class="error__rubros-rotulo">O empezá por un rubro</p>
+            <div class="error__rubros-lista">
+                {% for valor, etiqueta in categorias.items() %}
+                    <a href="{{ url_for('blog.index', category=valor) }}" class="error__rubro">
+                        <span class="punto-rubro punto-rubro--{{ valor }}" aria-hidden="true"></span>
+                        {{ etiqueta }}
+                    </a>
+                {% endfor %}
             </div>
         </div>
     </div>

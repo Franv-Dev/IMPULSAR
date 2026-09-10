@@ -1,0 +1,47 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Sobre IMPULSAR — escritorio", "x": 0, "y": 0, "w": 1440, "h": 1240 },
+    { "file": "Contacto.dc.html", "title": "Contacto — escritorio", "x": 1560, "y": 0, "w": 1440, "h": 880 },
+    { "file": "Legal.dc.html", "title": "Privacidad — escritorio (molde legal)", "x": 3120, "y": 0, "w": 1440, "h": 1080 },
+    { "file": "Error.dc.html", "title": "404 — escritorio (molde de error)", "x": 4680, "y": 0, "w": 1440, "h": 780 },
+    { "file": "Movil.dc.html", "title": "404 — teléfono", "x": 6240, "y": 0, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    {
+      "id": "nota-sobre",
+      "x": 0,
+      "y": -420,
+      "w": 700,
+      "text": "EL TEXTO DE «SOBRE» ESTÁ REESCRITO, Y NO ERA UN PROBLEMA DE ESTILO.\nDecía que la plataforma «fue desarrollada por un equipo académico utilizando Flask (Python) y MySQL, siguiendo buenas prácticas de diseño y una estética moderna en tonos pastel». Tres datos que no le sirven a nadie que entre a buscar un emprendimiento — y el último hace rato que es falso, la paleta es el índigo del logo.\n\nLO QUE VA EN SU LUGAR ES EL POSICIONAMIENTO QUE LA GUÍA YA DECIDIÓ: los cinco datos que Mercado Libre no tiene, y los cinco salen de una tabla que existe (horarios, latitude/longitude, el autor con antigüedad y reseñas, los eventos, el chat interno). Ninguno es una promesa a futuro.\n\n«LO QUE IMPULSAR NO HACE» ES PARTE DEL ARGUMENTO, no una disculpa. Sin pagos, sin envíos, sin protección al comprador: es la verdad del repo, y decirlo acá es lo que evita que alguien se sienta estafado a mitad del chat. Es también por qué la ficha muestra tan adelante quién vende.\n\nNO HAY NINGÚN NÚMERO EN ESTA PÁGINA. Cuántos emprendimientos, desde cuándo, cuánta gente: no tengo esos datos y no se inventan."
+    },
+    {
+      "id": "nota-contacto",
+      "x": 1560,
+      "y": -420,
+      "w": 660,
+      "text": "CONTACTO SIGUE SIENDO UN MAILTO, Y ESO ESTÁ BIEN.\nLa ruta es un render_template sin lógica (views/pages.py): no hay tabla de consultas, ni envío de mail, ni nada. Un formulario dibujado que en realidad no manda nada es peor que un correo honesto, así que no lo hay.\n\nSE VA EL EMOJI. El mail estaba escrito como «📧 impulsARmdz@gmail.com»; la guía sólo admite emoji si son parte de la marca, y acá era decoración. Queda un ícono de trazo, como el resto.\n\nLO QUE SE AGREGA SON LOS ATAJOS, y los cuatro existen hoy: reportar desde la ficha, escribirle al emprendimiento por el chat, publicar sin pedir permiso, y Ajustes. Sin eso, la casilla se vuelve el cajón donde cae «este emprendimiento es trucho» y «quiero cambiar mi mail», que la app ya resuelve sola y más rápido."
+    },
+    {
+      "id": "nota-legal",
+      "x": 3120,
+      "y": -420,
+      "w": 660,
+      "text": "ESTE ARTBOARD ES PRIVACIDAD, Y TÉRMINOS ES LA MISMA CÁSCARA con otro índice y otro texto. Por eso hay uno solo.\n\nLO QUE CAMBIA NO ES SÓLO LA PALETA: las listas estaban hechas con «<br>•» adentro de un <p>. Visualmente parecen viñetas, pero para un lector de pantalla es un párrafo con un punto medio en el medio — no es una lista. Acá son <ul> de verdad.\n\nEL TEXTO NO SE TOCÓ: es el mismo de templates/privacy.html, palabra por palabra. Lo que se agrega es el índice al costado (cuatro secciones, se lee de un vistazo qué hay) y la medida de lectura: 66ch, que es lo único en toda la app con línea larga de verdad.\n\nFALTA LA FECHA, Y ES UN HUECO REAL. Ninguna de las dos legales tiene «última actualización», así que no se puede saber qué versión aceptó cada usuario. Va marcado como [COMPLETAR] porque no es un dato que se pueda inventar."
+    },
+    {
+      "id": "nota-error",
+      "x": 4680,
+      "y": -420,
+      "w": 700,
+      "text": "UN 404 NO ES UN CARTEL, ES UNA BIFURCACIÓN.\nCasi siempre se llega desde un emprendimiento dado de baja o un link viejo que alguien pasó por WhatsApp: la persona venía a buscar algo concreto. Dos botones sueltos —que es lo que hay hoy— la dejan a mitad de camino, así que el buscador entra a la pantalla y los siete rubros van abajo.\n\nLOS RUBROS LLEVAN SU PAR DE COLOR DE LA GUÍA, el mismo de la grilla del inicio y del puntito de cada tarjeta. Un rubro no cambia de color según la pantalla. (Ojo: la app todavía tiene su propia paleta de rubros en styles.css:6199 y no es ésta — sigue anotado como pendiente.)\n\nEL 500 ES ESTA MISMA PANTALLA CON OTRO TEXTO, y con una diferencia que importa: ahí NO van el buscador ni los rubros. Si el servidor se cayó, ofrecer un buscador que tampoco va a andar es una segunda frustración. Van el código, «algo salió mal de nuestro lado», «ya quedó registrado el error», y dos botones: reintentar y Contacto."
+    },
+    {
+      "id": "nota-movil",
+      "x": 6240,
+      "y": 900,
+      "w": 440,
+      "text": "EL 404 ES LA ÚNICA DE LAS SEIS CON VERSIÓN DE TELÉFONO, y es a propósito: es la que más se ve en celular, porque se llega por un link viejo compartido por WhatsApp. Las páginas de texto en 390 px son la misma columna más angosta y no enseñan nada nuevo.\n\nLos dos botones van apilados y a lo ancho: uno al lado del otro quedan de 165 px y «Ver todos los emprendimientos» no entra sin cortarse. Los rubros, en grilla de dos columnas — nunca una tira que se desliza de costado."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

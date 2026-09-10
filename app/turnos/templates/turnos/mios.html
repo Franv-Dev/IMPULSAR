@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Mis turnos – IMPULSAR{% endblock %}
+
+{#  Mis turnos (disenio-turnos/Mios.dc.html y MiosMovil.dc.html).
+
+    TRES COSAS CAMBIAN respecto de la pantalla vieja, que era una sola lista de
+    tarjetas ordenada por fecha DESC:
+
+    1. Se parte en PROXIMOS y PASADOS. Antes lo primero que se veia era el turno
+       mas viejo del historial y el de mañana quedaba al final.
+    2. CANCELAR PIDE CONFIRMACION, y en la misma fila. Antes era un boton que
+       hacia el POST de una, y cancelado no se revierte: el horario vuelve a la
+       calle y para recuperarlo hay que reservarlo de nuevo.
+    3. SE VA el boton "Turnos que recibí". La agenda del vendedor vive en el
+       panel desde la tanda anterior, y son dos cabezas distintas: "adónde
+       tengo que ir" contra "qué tengo que atender".
+
+    La confirmacion es un <details>, no JavaScript: se abre y se cierra sola y
+    el formulario de adentro es el mismo POST de siempre. Mismo recurso con el
+    que la barra de filtros del catalogo se pliega en el telefono. #}
+
+{% macro cancelar(turno, otra_parte) %}
+    {# El boton no es un permiso: quien decide sigue siendo turnos.cancelar. #}
+    <details class="cancelar">
+        <summary class="cancelar__abrir">
+            {% with clave = 'cerrar', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            Cancelar
+        </summary>
+        <div class="cancelar__aviso">
+            <span class="cancelar__icono" aria-hidden="true">
+                {% with clave = 'info', tamanio = 19 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+            </span>
+            <div class="cancelar__cuerpo">
+                <p class="cancelar__titulo">¿Cancelás este turno?</p>
+                <p class="cancelar__texto">
+                    El horario vuelve a quedar libre para otra persona y a
+                    {{ otra_parte }} le llega un aviso por mail. Si después lo
+                    querés de vuelta, tenés que reservarlo otra vez y puede que
+                    ya no esté.
+                </p>
+                <div class="cancelar__acciones">
+                    <form method="post"
+                          action="{{ url_for('turnos.cancelar', id=turno.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn--peligro">Sí, cancelar</button>
+                    </form>
+                    {# Cierra el <details> sin JavaScript: el summary tambien
+                       lo cierra, asi que esto es solo el segundo camino
+                       visible, el que dice que hacer para NO cancelar. #}
+                    <p class="cancelar__salir">o cerrá este aviso para dejarlo como está</p>
+                </div>
+            </div>
+        </div>
+    </details>
+{% endmacro %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="mis-turnos">
+
+        <div class="mis-turnos__intro">
+            <h1 class="mis-turnos__titulo">Mis turnos</h1>
+            <p class="mis-turnos__bajada">
+                Los que reservaste vos. Los turnos que te sacan a vos están en
+                <a href="{{ url_for('turnos.agenda') }}">tu panel</a>, en Agenda.
+            </p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages mis-turnos__avisos">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if not proximos and not pasados %}
+            <p class="mis-turnos__vacio">
+                Todavía no reservaste ningún turno. Los servicios que toman
+                turnos lo dicen en su ficha, y el botón está ahí.
+            </p>
+        {% endif %}
+
+        {% if proximos %}
+            <section class="mis-turnos__seccion">
+                <h2 class="mis-turnos__seccion-titulo">Próximos</h2>
+
+                {% for turno in proximos %}
+                    {% set cancelado = turno.estado == estados.CANCELADO %}
+                    <article class="turno {% if not cancelado %}turno--activo{% endif %}">
+                        <span class="turno__fecha" aria-hidden="true">
+                            <span class="turno__dia-semana">{{ turno.fecha | dia_semana_corto }}</span>
+                            <span class="turno__dia">{{ turno.fecha.day }}</span>
+                            <span class="turno__mes">{{ turno.fecha | mes_corto }}</span>
+                        </span>
+
+                        <div class="turno__cuerpo">
+                            <div class="turno__cuando">
+                                {% if turno.fecha == ahora.date() %}
+                                    <span class="badge badge--category">Hoy</span>
+                                {% elif turno.fecha == manana %}
+                                    <span class="badge badge--category">Mañana</span>
+                                {% endif %}
+                                <span class="turno__hora">
+                                    {{ turno.hora_inicio | hora }} a {{ turno.hora_fin | hora }}
+                                </span>
+                            </div>
+
+                            <p class="turno__que">
+                                <strong>{{ turno.servicio.titulo }}</strong>
+                                <span class="turno__quien">
+                                    ·
+                                    <a href="{{ url_for('blog.detail', id=turno.servicio.post_id) }}">
+                                        {{ turno.servicio.post.title }}
+                                    </a>
+                                </span>
+                            </p>
+
+                            {% if turno.servicio.post.address_street %}
+                                <p class="turno__donde">
+                                    {% with clave = 'ubicacion', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                    {{ turno.servicio.post.address_street }}
+                                </p>
+                            {% endif %}
+
+                            {% if cancelado %}
+                                <p class="turno__cancelado">
+                                    Cancelado ·
+                                    {% if turno.cancelado_por == quien.CLIENTE %}
+                                        lo cancelaste vos
+                                    {% else %}
+                                        lo canceló el prestador
+                                    {% endif %}
+                                </p>
+                            {% else %}
+                                <div class="turno__acciones">
+                                    <a class="btn btn--borde"
+                                       href="{{ url_for('messages.conversation', post_id=turno.servicio.post_id, client_id=g.user.id) }}">
+                                        {% with clave = 'mensajes', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                        Escribirle a {{ turno.servicio.post.author_user.username }}
+                                    </a>
+                                    {{ cancelar(turno, turno.servicio.post.author_user.username) }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+        {% endif %}
+
+        {% if pasados %}
+            <section class="mis-turnos__seccion">
+                <h2 class="mis-turnos__seccion-titulo">Pasados</h2>
+
+                {#  El historial va en filas y no en tarjetas: son datos que se
+                    repasan, no cosas que haya que hacer. Un turno cancelado no
+                    se borra y aca dice DE QUE LADO salio la cancelacion, que es
+                    lo que guarda la columna cancelado_por. #}
+                <div class="historial">
+                    {% for turno in pasados %}
+                        {% set cancelado = turno.estado == estados.CANCELADO %}
+                        <div class="historial__fila">
+                            <span class="historial__fecha" aria-hidden="true">
+                                <span class="historial__dia">{{ turno.fecha.day }}</span>
+                                <span class="historial__mes">{{ turno.fecha | mes_corto }}</span>
+                            </span>
+                            <div class="historial__cuerpo">
+                                <p class="historial__que {% if cancelado %}historial__que--cancelado{% endif %}">
+                                    <strong>{{ turno.servicio.titulo }}</strong>
+                                    · {{ turno.hora_inicio | hora }} a {{ turno.hora_fin | hora }}
+                                </p>
+                                <p class="historial__quien">
+                                    {{ turno.servicio.post.title }}
+                                    {% if cancelado %}
+                                        ·
+                                        <strong class="historial__cancelado">
+                                            {% if turno.cancelado_por == quien.CLIENTE %}
+                                                Lo cancelaste vos
+                                            {% else %}
+                                                Lo canceló el prestador
+                                            {% endif %}
+                                        </strong>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <a class="btn btn--borde"
+                               href="{{ url_for('turnos.reservar', id=turno.service_id) }}">
+                                Volver a reservar
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+
+        {% if proximos or pasados %}
+            <p class="mis-turnos__nota">
+                No existe reprogramar un turno: para cambiarlo hay que cancelarlo
+                y reservar el horario nuevo. Mientras tanto, el que dejás libre lo
+                puede tomar otra persona.
+            </p>
+        {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

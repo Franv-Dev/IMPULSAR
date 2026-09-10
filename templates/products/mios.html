@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Mi catálogo – IMPULSAR{% endblock %}
+
+{#  La pantalla "Catálogo" del panel del vendedor (disenio-panel/Catalogo.dc.html):
+    el menu del panel a la izquierda y los productos a la derecha, en filas y
+    agrupados por emprendimiento.
+
+    Agrupados y no en una grilla suelta porque el tope de productos es por
+    emprendimiento, asi que el contador tambien tiene que serlo. Y el
+    emprendimiento sin productos aparece igual, en su caja chica con la accion
+    de cargar el primero: es el hueco de la tanda de la ficha, dicho acá con la
+    salida al lado.
+
+    EL INTERRUPTOR DE "SIN STOCK" es un form de un boton y no un checkbox con
+    JavaScript, por el mismo criterio que los filtros del catalogo publico:
+    tiene que andar sin JS. Hasta esta tanda apagar un producto obligaba a
+    abrir el formulario entero y volver a guardar los cinco campos.
+
+    Del diseño NO estan el buscador del catalogo propio, el filtro "Todos" y el
+    orden "Nombre (A-Z)", que el artboard dibuja adentro de cada grupo: con el
+    tope de 50 por emprendimiento las filas entran todas en la pantalla, asi
+    que serian tres controles con backend propio para filtrar una lista que ya
+    se ve entera. Por lo mismo tampoco esta el "Mostrando 5 de 14 · Ver todos".
+
+    Tampoco estan las solapas "Productos / Servicios / Solicitudes" que el
+    diseño pone arriba: hoy son tres pantallas propias (esta, servicios.index y
+    servicios.solicitudes) y fundirlas es un cambio de navegacion, no de
+    estilo. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Catálogo" %}
+                {% include "partials/_menu_panel.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Catálogo</h1>
+                        <p class="cuenta__bajada">
+                            Lo que vendés en cada uno de tus emprendimientos, con su precio.
+                        </p>
+                    </div>
+                    {% if posts %}
+                        <a href="{{ url_for('products.nuevo') }}" class="btn btn--primary">
+                            + Agregar producto
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% if not posts %}
+                    <div class="catalogo__vacio">
+                        <p>
+                            Todavía no registraste ningún emprendimiento.
+                            <a href="{{ url_for('blog.create') }}">Creá el primero acá</a>
+                            y después vas a poder cargarle productos.
+                        </p>
+                    </div>
+                {% else %}
+                    {% for grupo in grupos %}
+                        {% if grupo.total %}
+                            <section class="grupo">
+                                <div class="grupo__head">
+                                    <a href="{{ url_for('blog.detail', id=grupo.post.id) }}"
+                                       class="grupo__foto" tabindex="-1" aria-hidden="true">
+                                        {% if grupo.post.image %}
+                                            <img src="{{ url_for('static', filename='uploads/' ~ grupo.post.image) }}"
+                                                 alt="" class="grupo__img" loading="lazy">
+                                        {% endif %}
+                                    </a>
+                                    <div class="grupo__datos">
+                                        <h2 class="grupo__titulo">
+                                            <a href="{{ url_for('blog.detail', id=grupo.post.id) }}">
+                                                {{ grupo.post.title }}
+                                            </a>
+                                        </h2>
+                                        {# El contador va siempre; el tope, solo cerca del
+                                           tope. Ver UMBRAL_AVISO_LIMITE: "7 de 50" desde
+                                           el primer producto anuncia un techo que casi
+                                           nadie roza y le da cara de plan pago a algo que
+                                           no lo es. #}
+                                        <p class="grupo__conteo">
+                                            {% if grupo.cerca_del_limite %}
+                                                <span class="grupo__conteo-limite">{{ grupo.total }} de {{ maximo }} productos</span>
+                                                {% if grupo.completo %}
+                                                    · llegaste al máximo, borrá alguno para cargar otro
+                                                {% else %}
+                                                    · te quedan {{ maximo - grupo.total }}
+                                                {% endif %}
+                                            {% else %}
+                                                {{ grupo.total }} producto{{ '' if grupo.total == 1 else 's' }}
+                                            {% endif %}
+                                            {% if grupo.sin_stock %}
+                                                · {{ grupo.sin_stock }} sin stock
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <a href="{{ url_for('blog.detail', id=grupo.post.id) }}" class="grupo__link">
+                                        Ver en la ficha
+                                    </a>
+                                </div>
+
+                                <div class="filas">
+                                    {% for producto in grupo.productos %}
+                                        <div class="fila-prod{% if not producto.disponible %} fila-prod--apagada{% endif %}">
+                                            <a href="{{ url_for('products.detalle', id=producto.id) }}"
+                                               class="fila-prod__foto" tabindex="-1" aria-hidden="true">
+                                                {% if producto.foto %}
+                                                    <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
+                                                         alt="" class="fila-prod__img" loading="lazy">
+                                                {% endif %}
+                                            </a>
+
+                                            <div class="fila-prod__datos">
+                                                <a href="{{ url_for('products.detalle', id=producto.id) }}"
+                                                   class="fila-prod__nombre">{{ producto.nombre }}</a>
+                                                {% if producto.descripcion %}
+                                                    <p class="fila-prod__desc">{{ producto.descripcion }}</p>
+                                                {% endif %}
+                                            </div>
+
+                                            <span class="fila-prod__precio">{{ producto.precio | precio }}</span>
+
+                                            {# El estado se dice con palabra y no solo con el
+                                               color de la pastilla: el interruptor solo, sin
+                                               texto, no se lee sin ver el otro. #}
+                                            <form method="post"
+                                                  action="{{ url_for('products.alternar_disponible', id=producto.id) }}"
+                                                  class="fila-prod__stock">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="interruptor-stock"
+                                                        aria-pressed="{{ 'true' if producto.disponible else 'false' }}">
+                                                    <span class="interruptor-stock__pista" aria-hidden="true">
+                                                        <span class="interruptor-stock__bolita"></span>
+                                                    </span>
+                                                    <span class="interruptor-stock__texto">
+                                                        {{ 'Disponible' if producto.disponible else 'Sin stock' }}
+                                                    </span>
+                                                </button>
+                                            </form>
+
+                                            <div class="fila-prod__acciones">
+                                                <a href="{{ url_for('products.editar', id=producto.id) }}"
+                                                   class="accion-ico" aria-label="Editar {{ producto.nombre }}">
+                                                    {% with clave = 'editar', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                                </a>
+                                                <form method="post"
+                                                      action="{{ url_for('products.eliminar', id=producto.id) }}"
+                                                      class="form-inline"
+                                                      data-confirm="¿Seguro que querés eliminar «{{ producto.nombre }}»?">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="accion-ico accion-ico--peligro"
+                                                            aria-label="Eliminar {{ producto.nombre }}">
+                                                        {% with clave = 'eliminar', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% else %}
+                            <div class="grupo grupo--vacio">
+                                <a href="{{ url_for('blog.detail', id=grupo.post.id) }}"
+                                   class="grupo__foto" tabindex="-1" aria-hidden="true">
+                                    {% if grupo.post.image %}
+                                        <img src="{{ url_for('static', filename='uploads/' ~ grupo.post.image) }}"
+                                             alt="" class="grupo__img" loading="lazy">
+                                    {% endif %}
+                                </a>
+                                <div class="grupo__datos">
+                                    <h2 class="grupo__titulo">
+                                        <a href="{{ url_for('blog.detail', id=grupo.post.id) }}">
+                                            {{ grupo.post.title }}
+                                        </a>
+                                    </h2>
+                                    <p class="grupo__conteo">Todavía no tiene productos cargados</p>
+                                </div>
+                                <a href="{{ url_for('products.nuevo') }}" class="btn btn--suave btn--chico">
+                                    + Cargar el primero
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <p class="cuenta__pendiente">
+                        Cada emprendimiento puede tener hasta {{ maximo }} productos.
+                        El tope se avisa recién a partir de los {{ umbral }} cargados.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

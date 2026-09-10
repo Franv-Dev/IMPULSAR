@@ -1,0 +1,189 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+  </style>
+</helmet>
+
+<div style="width: 960px; background: #F5F7FA; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 26px">
+
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px">
+    <div style="display: flex; flex-direction: column; gap: 7px">
+      <span style="display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; padding: 6px 11px; border-radius: 7px; background: #FBEDE4; color: #8C4A22; font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase">
+        <span style="width: 5px; height: 5px; border-radius: 999px; background: #D97544"></span>Bloque de publicidad
+      </span>
+      <h2 style="font-size: 26px; letter-spacing: -.025em">Anatomía del anuncio</h2>
+      <p style="margin: 0; max-width: 66ch; font-size: 14px; line-height: 1.6; color: #5F6B7C">La columna izquierda siempre es de IMPULSAR: mismo panel índigo, misma jerarquía, misma tipografía. Lo único que cambia por anunciante es el acento y la galería de la derecha, que son las fotos que él sube.</p>
+    </div>
+    <span style="flex-shrink: 0; padding: 8px 14px; border-radius: 999px; border: 1px solid #E2E6EE; background: #FFFFFF; font-size: 12.5px; font-weight: 600; color: #3E2F94">{{ variante.nombre }}</span>
+  </div>
+
+  <!-- El anuncio con sus referencias -->
+  <div style="position: relative; display: grid; grid-template-columns: 1.02fr 1fr; min-height: {{ variante.alto }}; border-radius: 22px; overflow: hidden; box-shadow: 0 22px 50px rgba(23,20,71,.16); background: radial-gradient(700px 380px at 8% -10%, rgba(255,255,255,.10), transparent 62%), radial-gradient(560px 360px at 96% 118%, rgba(217,117,68,.34), transparent 68%), linear-gradient(128deg, #4A3B8E 0%, #3E2F94 52%, #33267C 100%)">
+
+    <div style="display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 36px 30px 36px 38px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <span style="flex-shrink: 0; width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.22); color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 700">LM</span>
+        <span style="display: inline-flex; align-items: center; padding: 7px 13px; border-radius: 999px; background: rgba(217,117,68,.22); color: #F0B48A; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase">Alimentos</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-size: 11px; font-weight: 700">1</span>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 10px">
+        <h3 style="font-size: 34px; line-height: 1.08; letter-spacing: -.03em; color: #FFFFFF">Pan de masa madre, todos los días</h3>
+        <span style="flex-shrink: 0; margin-top: 8px; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-size: 11px; font-weight: 700">2</span>
+      </div>
+
+      <p style="margin: 0; max-width: 40ch; font-size: 15px; line-height: 1.6; color: rgba(255,255,255,.74)">Fermentación de 24 horas, harinas de molino local. Los pedidos del fin de semana se toman hasta el jueves.</p>
+
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px">
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,.11); color: #FFFFFF; font-size: 12.5px; font-weight: 600">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+          4,8 <span style="font-weight: 400; color: rgba(255,255,255,.6)">(31 reseñas)</span>
+        </span>
+        <span style="display: inline-flex; align-items: center; padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,.11); color: rgba(255,255,255,.86); font-size: 12.5px">Güemes · a 1,2 km</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: rgba(126,226,168,.16); color: #A7EFC6; font-size: 12.5px; font-weight: 600">
+          <span style="width: 6px; height: 6px; border-radius: 999px; background: #7EE2A8"></span>Abierto ahora
+        </span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-size: 11px; font-weight: 700">3</span>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 11px; margin-top: 2px">
+        <a href="#" style="display: inline-flex; align-items: center; height: 46px; padding: 0 22px; border-radius: 999px; background: #FFFFFF; color: #2A2068; font-size: 14.5px; font-weight: 600; box-shadow: 0 10px 24px rgba(0,0,0,.18)">Ver el emprendimiento</a>
+        <a href="#" style="display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 20px; border-radius: 999px; border: 1px solid rgba(255,255,255,.28); color: #FFFFFF; font-size: 14.5px; font-weight: 500">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+          Enviar consulta
+        </a>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-size: 11px; font-weight: 700">4</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin: 18px 18px 18px 0">
+      <div style="position: relative; flex: 1 1 auto; min-height: 208px; border-radius: 16px; overflow: hidden; background: linear-gradient(150deg, #4A3AA8 0%, #2A2068 60%, #B25E31 160%); border: 1px solid rgba(255,255,255,.14)">
+        <span style="position: absolute; top: -34px; right: 4px; font-family: 'Poppins', sans-serif; font-size: 172px; font-weight: 700; letter-spacing: -.05em; line-height: 1; color: rgba(255,255,255,.09)">LM</span>
+        <span style="position: absolute; top: 14px; right: 14px; padding: 6px 12px; border-radius: 999px; background: rgba(10,8,28,.5); color: rgba(255,255,255,.9); font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase">{{ variante.rotulo }}</span>
+        <span style="position: absolute; top: 14px; left: 14px; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-size: 11px; font-weight: 700">5</span>
+        <span style="position: absolute; left: 16px; bottom: 14px; display: flex; align-items: center; gap: 9px; color: rgba(255,255,255,.55)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+          <span style="font-size: 11px; letter-spacing: .09em; text-transform: uppercase">Foto principal · 1200 × 680</span>
+        </span>
+      </div>
+      <div style="flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+        <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); background-size: 240% 240%; background-image: linear-gradient(150deg, #4A3AA8 0%, #2A2068 60%, #B25E31 160%); background-position: 0% 0%"><span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.4)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg></span><span style="position: absolute; left: 9px; bottom: 7px; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.42)">800 × 800</span></div>
+        <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); background-size: 240% 240%; background-image: linear-gradient(150deg, #4A3AA8 0%, #2A2068 60%, #B25E31 160%); background-position: 50% 50%"><span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.4)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg></span><span style="position: absolute; left: 9px; bottom: 7px; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.42)">800 × 800</span></div>
+        <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); background-size: 240% 240%; background-image: linear-gradient(150deg, #4A3AA8 0%, #2A2068 60%, #B25E31 160%); background-position: 100% 100%"><span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.4)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg></span><span style="position: absolute; left: 9px; bottom: 7px; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.42)">800 × 800</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Referencias -->
+  <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px">
+    <div style="display: flex; flex-direction: column; gap: 7px; padding: 15px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-size: 11px; font-weight: 700">1</span>
+      <span style="font-size: 13px; font-weight: 600">Identidad</span>
+      <span style="font-size: 12.5px; line-height: 1.5; color: #5F6B7C">Logo y rubro. El rubro toma el acento del anunciante.</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 7px; padding: 15px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-size: 11px; font-weight: 700">2</span>
+      <span style="font-size: 13px; font-weight: 600">Promesa</span>
+      <span style="font-size: 12.5px; line-height: 1.5; color: #5F6B7C">Lo que ofrece, en una línea. No el nombre del local.</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 7px; padding: 15px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-size: 11px; font-weight: 700">3</span>
+      <span style="font-size: 13px; font-weight: 600">Confianza</span>
+      <span style="font-size: 12.5px; line-height: 1.5; color: #5F6B7C">Reseñas, distancia y horario reales, no del anunciante.</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 7px; padding: 15px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-size: 11px; font-weight: 700">4</span>
+      <span style="font-size: 13px; font-weight: 600">Acción</span>
+      <span style="font-size: 12.5px; line-height: 1.5; color: #5F6B7C">Una principal y una secundaria. Las dos quedan adentro.</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 7px; padding: 15px; border: 1px solid #E2E6EE; border-radius: 14px; background: #FFFFFF">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #D97544; color: #FFFFFF; font-size: 11px; font-weight: 700">5</span>
+      <span style="font-size: 13px; font-weight: 600">Galería</span>
+      <span style="font-size: 12.5px; line-height: 1.5; color: #5F6B7C">Lo que sube el anunciante: una foto principal de 1200×680 y hasta tres cuadradas de 800×800. Ninguna lleva texto crítico.</span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; align-items: start">
+
+    <!-- Acento por anunciante -->
+    <div style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+      <div style="display: flex; flex-direction: column; gap: 5px">
+        <span style="font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #5F6B7C">Acento por anunciante</span>
+        <span style="font-size: 13px; line-height: 1.55; color: #4A5666">Tres acentos fijos, uno por familia de rubro. Pintan el chip y el resplandor del panel, nunca el texto largo ni los botones.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+        <div style="display: flex; flex-direction: column; gap: 9px">
+          <span style="height: 58px; border-radius: 12px; background: linear-gradient(150deg, #4A3AA8 0%, #2A2068 60%, #B25E31 160%)"></span>
+          <span style="font-size: 12.5px; font-weight: 600">Terracota</span>
+          <span style="font-size: 12px; color: #5F6B7C">Alimentos, ferias</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 9px">
+          <span style="height: 58px; border-radius: 12px; background: linear-gradient(150deg, #3A2F8E 0%, #241C63 55%, #1F7A4D 160%)"></span>
+          <span style="font-size: 12.5px; font-weight: 600">Verde</span>
+          <span style="font-size: 12px; color: #5F6B7C">Artesanías, hogar</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 9px">
+          <span style="height: 58px; border-radius: 12px; background: linear-gradient(150deg, #3F3196 0%, #241C63 55%, #8A6416 160%)"></span>
+          <span style="font-size: 12.5px; font-weight: 600">Ámbar</span>
+          <span style="font-size: 12px; color: #5F6B7C">Servicios, tecnología</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sin anunciantes -->
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border: 1px dashed #C9D0E0; border-radius: 18px; background: #FFFFFF">
+      <span style="font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #5F6B7C">Sin anunciantes esta semana</span>
+      <h3 style="font-size: 18px; font-weight: 600; letter-spacing: -.02em">El espacio no queda vacío: se ofrece</h3>
+      <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #4A5666">Cuando ningún emprendimiento tiene un plan activo, el bloque se reemplaza por esta invitación en vez de desaparecer y mover toda la página.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 2px">
+        <a href="#" style="display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 600; box-shadow: 0 10px 24px rgba(62,47,148,.24)">Anunciar mi emprendimiento</a>
+        <a href="#" style="display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border: 1px solid #E2E6EE; border-radius: 999px; font-size: 14px; font-weight: 600">Ver planes</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Reglas -->
+  <div style="display: flex; flex-direction: column; gap: 13px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+    <span style="font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #5F6B7C">Reglas del bloque</span>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 26px; font-size: 13px; line-height: 1.55; color: #4A5666">
+      <span style="display: flex; gap: 10px"><span style="flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px; border-radius: 999px; background: #D97544"></span>El rótulo "Publicidad" está siempre visible, arriba del título de la sección.</span>
+      <span style="display: flex; gap: 10px"><span style="flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px; border-radius: 999px; background: #D97544"></span>El anuncio rota solo cada 6 s. Sin flechas ni selector: la rotación reparte la exposición sin que nadie tenga que tocar nada.</span>
+      <span style="display: flex; gap: 10px"><span style="flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px; border-radius: 999px; background: #D97544"></span>No hay navegación visible: el bloque es un anuncio, no un carrusel que el visitante tenga que operar.</span>
+      <span style="display: flex; gap: 10px"><span style="flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px; border-radius: 999px; background: #D97544"></span>Todo lo que se toca mide 44 px o más, en escritorio y en teléfono.</span>
+      <span style="display: flex; gap: 10px"><span style="flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px; border-radius: 999px; background: #D97544"></span>Reseñas, distancia y horario los pone la plataforma: el anunciante no los escribe.</span>
+      <span style="display: flex; gap: 10px"><span style="flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px; border-radius: 999px; background: #D97544"></span>Cada anuncio entra al emprendimiento dentro de IMPULSAR, no a una página externa.</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"plan":{"editor":"enum","options":["Plan Destacado","Plan Plus","Plan Base"],"default":"Plan Destacado","section":"Publicidad"},"$preview":{"width":960,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const plan = this.props.plan ?? "Plan Destacado";
+    const variantes = {
+      "Plan Destacado": { nombre: "Plan Destacado", rotulo: "Anuncio destacado", alto: "404px" },
+      "Plan Plus": { nombre: "Plan Plus", rotulo: "Anuncio", alto: "352px" },
+      "Plan Base": { nombre: "Plan Base", rotulo: "Anuncio", alto: "300px" }
+    };
+    return { variante: variantes[plan] ?? variantes["Plan Destacado"] };
+  }
+}
+</script>
+</body>
+</html>

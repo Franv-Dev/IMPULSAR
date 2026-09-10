@@ -1,0 +1,67 @@
+{#  Un reporte pendiente, como ficha (disenio-admin/Cola.dc.html y Main.dc.html).
+
+    Es un parcial porque lo dibujan DOS pantallas con el mismo aspecto: la cola
+    de reportes y el recorte del Resumen. Antes cada una tenía su propia copia
+    del marcado, con las mismas dos acciones escritas dos veces — y en la cola,
+    además, adentro de una celda de tabla que cortaba la cita.
+
+    Requiere `r` (un Report) en el contexto.
+
+    Las dos acciones son las que ya existían: marcar resuelto no borra nada, y
+    eliminar sí. El aviso de la cascada ENUMERA lo que se lleva, en vez de decir
+    «no se puede deshacer»: está declarado en Post (cascade="all,
+    delete-orphan") y en las FK de reviews y reports, así que se puede nombrar. #}
+<article class="admin-ficha">
+    <div class="admin-ficha__cabecera">
+        <span class="admin-pastilla">{{ 'Reseña' if r.review_id else 'Emprendimiento' }}</span>
+        <h3 class="admin-ficha__titulo">
+            {% if r.post %}
+                <a href="{{ url_for('blog.detail', id=r.post.id) }}">{{ r.post.title }}</a>
+            {% elif r.review %}
+                <a href="{{ url_for('blog.detail', id=r.review.post_id) }}">
+                    Reseña de {{ r.review.user.username if r.review.user else 'usuario borrado' }}
+                </a>
+            {% else %}
+                {# El contenido se borró después de que lo reportaran: el reporte
+                   queda para poder cerrarlo, pero ya no hay a dónde ir. #}
+                <span class="text-muted">Contenido eliminado</span>
+            {% endif %}
+        </h3>
+        {% if r.review and r.review.post %}
+            <span class="admin-ficha__donde">en {{ r.review.post.title }}</span>
+        {% endif %}
+        <span class="admin-ficha__fecha num">{{ r.created.strftime("%d/%m") if r.created else "" }}</span>
+    </div>
+
+    {# La cita entera: en la tabla vieja vivía en una celda con max-width de
+       280 px, que es donde se corta justo lo que hay que leer para decidir. #}
+    <p class="admin-ficha__cita">«{{ r.reason }}»</p>
+    <p class="admin-ficha__meta">Reportó {{ r.reporter.username if r.reporter else '—' }}</p>
+
+    <div class="admin-ficha__acciones">
+        <form method="post" action="{{ url_for('admin.resolve_report', report_id=r.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn--secondary btn--chico">Marcar resuelto</button>
+        </form>
+
+        {% if r.post %}
+            <form method="post" action="{{ url_for('admin.delete_post', post_id=r.post.id) }}"
+                  data-confirm="¿Seguro que querés eliminar «{{ r.post.title }}»? Se borran también sus productos, servicios, reseñas, eventos, fotos y reportes.">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn--peligro btn--chico">Eliminar emprendimiento</button>
+            </form>
+            <span class="admin-ficha__aviso">
+                {% with clave = 'reportes', tamanio = 15, trazo = 1.9 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                Eliminar borra también sus productos, servicios, reseñas y eventos
+            </span>
+        {% elif r.review %}
+            {# Antes esta rama no existía: un reporte de reseña se podía marcar
+               resuelto pero no se podía actuar sobre él (ver admin.delete_review). #}
+            <form method="post" action="{{ url_for('admin.delete_review', review_id=r.review.id) }}"
+                  data-confirm="¿Seguro que querés eliminar esta reseña? No se puede deshacer.">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn--peligro btn--chico">Eliminar reseña</button>
+            </form>
+        {% endif %}
+    </div>
+</article>

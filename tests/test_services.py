@@ -2,11 +2,13 @@
 
 import os
 import threading
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from app.servicios import reglas
 from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
 from app.servicios.modelo_solicitud import EstadosSolicitud, ServiceRequest
 from app.servicios.modelo_verificacion import (
@@ -460,8 +462,9 @@ def test_los_servicios_no_reemplazan_al_catalogo_de_productos(
 
     assert "Caño de PVC" in html
     assert "Destapaciones" in html
-    assert "Qué vende" in html
-    assert "Qué hace" in html
+    # Los dos titulos los renombro el rediseño de la ficha.
+    assert "Lo que vende" in html
+    assert "Lo que hace por encargo" in html
 
 
 # --- busqueda publica por rubro y zona
@@ -649,8 +652,13 @@ def test_la_busqueda_pagina(client, crear_usuario, crear_post, crear_servicio, a
     primera = client.get("/servicios/buscar").get_data(as_text=True)
     segunda = client.get("/servicios/buscar?page=2").get_data(as_text=True)
 
-    assert f"Trabajo {por_pagina:02d}" not in primera
-    assert f"Trabajo {por_pagina:02d}" in segunda
+    # El que se cae a la pagina 2 es el PRIMERO que se cargo: desde el rediseño
+    # la busqueda ordena por fecha descendente (reglas.Ordenes.RECIENTE), asi
+    # que el mas viejo queda ultimo. Antes ordenaba por titulo y el que sobraba
+    # era "Trabajo 09"; lo que este test cuida no es el orden sino que la
+    # consulta pagine en vez de traer todo con .all().
+    assert "Trabajo 00" not in primera
+    assert "Trabajo 00" in segunda
 
 
 def test_la_paginacion_no_pierde_los_filtros(
@@ -774,11 +782,16 @@ def test_el_filtro_de_verificados_no_pisa_el_de_disponible(
     assert "Apagado pero verificado" not in html
 
 
-def test_el_checkbox_de_verificados_queda_tildado_al_repintar(
+def test_el_interruptor_de_verificados_queda_prendido_al_repintar(
     client, crear_usuario, crear_post, crear_servicio
 ):
-    """Igual que el <select> del rubro y el input de zona: el formulario se
-    repinta con lo que el usuario tenia puesto."""
+    """Igual que la lista de rubros y el input de zona: la columna de filtros se
+    repinta con lo que el usuario tenia puesto.
+
+    Desde el rediseño el control no es un checkbox sino un enlace que alterna el
+    parametro (asi la busqueda entera se puede compartir y anda sin JavaScript),
+    con lo cual lo que dice si esta puesto es aria-pressed y no "checked".
+    """
     autor = crear_usuario(username="autor")
     post = crear_post(autor.id)
     crear_servicio(post.id, titulo="Destapaciones", verificado=True)
@@ -786,10 +799,9 @@ def test_el_checkbox_de_verificados_queda_tildado_al_repintar(
     con = client.get("/servicios/buscar?verificados=on").get_data(as_text=True)
     sin = client.get("/servicios/buscar").get_data(as_text=True)
 
-    assert 'name="verificados"' in con and "checked" in con
-    assert 'name="verificados"' in sin
-    # Sin el filtro, el unico checkbox de la pagina no puede venir tildado.
-    assert "checked" not in sin
+    assert 'aria-pressed="true"' in con
+    assert 'aria-pressed="true"' not in sin
+    assert 'aria-pressed="false"' in sin
 
 
 def test_la_paginacion_no_pierde_el_filtro_de_verificados(
@@ -1327,7 +1339,12 @@ def test_responder_y_cerrar_no_se_disparan_con_un_get(
 def test_el_panel_muestra_las_recibidas_y_las_enviadas(
     client, crear_usuario, crear_post, crear_servicio, crear_solicitud, login
 ):
-    """Un usuario puede ser las dos cosas: presta un servicio y pide otro."""
+    """Un usuario puede ser las dos cosas: presta un servicio y pide otro.
+
+    Desde el rediseño los dos lados estan en solapas y se pinta uno por vez,
+    asi que se piden los dos. Lo que no cambio es lo de siempre: las dos listas
+    salen de la misma pagina y ninguna se pierde.
+    """
     yo = crear_usuario(username="yo")
     mi_servicio = crear_servicio(crear_post(yo.id, title="Lo mío").id, titulo="Lo que hago")
     otro = crear_usuario(username="otro")
@@ -1338,10 +1355,40 @@ def test_el_panel_muestra_las_recibidas_y_las_enviadas(
     crear_solicitud(servicio_ajeno.id, yo.id, descripcion="Pedido que hice")
     login(yo.id)
 
+    recibidas = client.get("/servicios/solicitudes").get_data(as_text=True)
+    enviadas = client.get("/servicios/solicitudes?lado=enviadas").get_data(as_text=True)
+
+    # Sin ?lado, la solapa que abre es la de las recibidas.
+    assert "Pedido que recibí" in recibidas
+    assert "Pedido que hice" not in recibidas
+
+    assert "Pedido que hice" in enviadas
+    assert "Pedido que recibí" not in enviadas
+
+
+def test_las_solapas_cuentan_los_dos_lados_desde_cualquiera_de_los_dos(
+    client, crear_usuario, crear_post, crear_servicio, crear_solicitud, login
+):
+    """El numero del otro lado se ve sin ir hasta el.
+
+    Es la razon por la que la vista sigue trayendo las dos consultas aunque
+    pinte una sola lista: si la solapa que no se muestra no dijera cuantas
+    tiene, no habria forma de saber que hay algo del otro lado.
+    """
+    yo = crear_usuario(username="yo")
+    otro = crear_usuario(username="otro")
+    servicio_ajeno = crear_servicio(
+        crear_post(otro.id, title="Lo de otro").id, titulo="Lo que hace el otro"
+    )
+    crear_solicitud(servicio_ajeno.id, yo.id, descripcion="Pedido que hice")
+    login(yo.id)
+
     html = client.get("/servicios/solicitudes").get_data(as_text=True)
 
-    assert "Pedido que recibí" in html
-    assert "Pedido que hice" in html
+    # Estando parado en "Recibidas" (que esta vacia), la solapa de al lado
+    # tiene que decir que hay una.
+    assert "?lado=enviadas" in html
+    assert "Todavía no te pidieron ningún presupuesto." in html
 
 
 def test_el_panel_no_muestra_solicitudes_de_terceros(
@@ -1355,6 +1402,83 @@ def test_el_panel_no_muestra_solicitudes_de_terceros(
     html = client.get("/servicios/solicitudes").get_data(as_text=True)
 
     assert "Pedido ajeno" not in html
+
+
+# --- resumen del panel ("Cómo vas")
+
+class _SolicitudFalsa:
+    """Lo minimo que mira resumen_de_solicitudes: estado y las dos fechas.
+
+    Sin base de por medio a proposito: la funcion no consulta nada, deriva de
+    la lista que ya le pasan, y probarla con filas reales solo agregaria setup
+    que no aporta al caso.
+    """
+
+    def __init__(self, estado, created_at=None, responded_at=None):
+        self.estado = estado
+        self.created_at = created_at
+        self.responded_at = responded_at
+
+
+def test_el_resumen_cuenta_pendientes_y_respondidas_del_mes():
+    ahora = datetime(2026, 8, 26, 12, 0)
+    recibidas = [
+        _SolicitudFalsa(EstadosSolicitud.PENDIENTE),
+        _SolicitudFalsa(EstadosSolicitud.PENDIENTE),
+        _SolicitudFalsa(
+            EstadosSolicitud.RESPONDIDA,
+            created_at=datetime(2026, 8, 20, 10, 0),
+            responded_at=datetime(2026, 8, 20, 13, 0),
+        ),
+        # Del mes pasado: cuenta para el promedio, no para "este mes".
+        _SolicitudFalsa(
+            EstadosSolicitud.CERRADA,
+            created_at=datetime(2026, 7, 10, 10, 0),
+            responded_at=datetime(2026, 7, 10, 15, 0),
+        ),
+    ]
+
+    resumen = reglas.resumen_de_solicitudes(recibidas, ahora)
+
+    assert resumen["pendientes"] == 2
+    assert resumen["respondidas_del_mes"] == 1
+    # (3 h + 5 h) / 2
+    assert resumen["promedio"] == "4 h"
+
+
+def test_sin_respuestas_el_promedio_no_es_cero():
+    """Un "0 min" diria que contesta al toque, y lo que pasa es lo contrario."""
+    recibidas = [_SolicitudFalsa(EstadosSolicitud.PENDIENTE)]
+
+    resumen = reglas.resumen_de_solicitudes(recibidas, datetime(2026, 8, 26))
+
+    assert resumen["pendientes"] == 1
+    assert resumen["respondidas_del_mes"] == 0
+    assert resumen["promedio"] is None
+
+
+@pytest.mark.parametrize(
+    "minutos, esperado",
+    [
+        (0.5, "1 min"),   # menos de un minuto igual se cuenta como uno
+        (45, "45 min"),
+        (90, "1 h"),
+        (60 * 47, "47 h"),
+        (60 * 49, "2 d"),  # a partir de dos dias se cuenta en dias
+    ],
+)
+def test_el_promedio_se_escribe_en_la_unidad_que_corresponde(minutos, esperado):
+    recibidas = [
+        _SolicitudFalsa(
+            EstadosSolicitud.RESPONDIDA,
+            created_at=datetime(2026, 8, 1, 0, 0),
+            responded_at=datetime(2026, 8, 1, 0, 0) + timedelta(minutes=minutos),
+        )
+    ]
+
+    resumen = reglas.resumen_de_solicitudes(recibidas, datetime(2026, 8, 26))
+
+    assert resumen["promedio"] == esperado
 
 
 # --- badge del navbar
@@ -1845,7 +1969,9 @@ def test_el_dashboard_cuenta_las_verificaciones_pendientes(
 
     html = client.get("/admin/").get_data(as_text=True)
 
-    assert "Verificaciones pendientes" in html
+    # El rediseño cambio el tile "Verificaciones pendientes" por la cola con
+    # su contador arriba. Lo que se fija es el numero, no el rotulo.
+    assert "1 sin revisar" in html
     assert "/admin/verificaciones" in html
 
 
@@ -2197,3 +2323,231 @@ def test_el_upload_publico_si_se_sigue_bajando_por_static(client):
     respuesta = client.get("/static/css/styles.css")
 
     assert respuesta.status_code == 200
+
+
+# --- los CHECK de precios de la base
+
+def test_la_base_rechaza_un_precio_estimado_de_cero(
+    db, crear_usuario, crear_post
+):
+    """ck_services_precio_estimado_positivo: "sin cargo" en un servicio no se
+    escribe con un cero sino dejando la columna en NULL, que es "a
+    presupuestar". Un 0 seria un precio cerrado de cero pesos."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    db.session.add(Service(
+        post_id=post.id, titulo="Destapaciones", rubro=Rubros.PLOMERIA,
+        precio_estimado=Decimal("0.00"),
+    ))
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()
+
+
+def test_la_base_sigue_aceptando_un_servicio_a_presupuestar(
+    db, crear_usuario, crear_post
+):
+    """El control del anterior: el NULL es parte de la regla, no un descuido."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    db.session.add(Service(
+        post_id=post.id, titulo="Destapaciones", rubro=Rubros.PLOMERIA,
+        precio_estimado=None,
+    ))
+    db.session.commit()
+
+    assert Service.query.one().precio_estimado is None
+
+
+def test_la_base_rechaza_una_respuesta_con_precio_negativo(
+    db, servicio_y_cliente, crear_solicitud
+):
+    """ck_service_requests_respuesta_precio_positivo, la misma red que en el
+    servicio: la respuesta puede no traer precio, pero no uno negativo."""
+    _prestador, servicio, cliente = servicio_y_cliente()
+    solicitud = crear_solicitud(servicio.id, cliente.id)
+
+    solicitud.respuesta_precio = Decimal("-100.00")
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()
+
+
+# --- lo que suma el rediseño: filtro de precio, orden, conteos e interruptor
+
+def test_el_filtro_de_precio_separa_los_que_tienen_precio_de_los_que_se_cotizan(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """precio_estimado en NULL no es cero: es "a presupuestar", y es lo que
+    distingue esta tabla de products. Por eso el filtro es por presencia y no
+    por un rango de plata."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", precio_estimado="12500.00")
+    crear_servicio(post.id, titulo="Cambio de tablero")
+
+    con = client.get("/servicios/buscar?precio=cerrado").get_data(as_text=True)
+    sin = client.get("/servicios/buscar?precio=presupuestar").get_data(as_text=True)
+
+    assert "Destapaciones" in con and "Cambio de tablero" not in con
+    assert "Cambio de tablero" in sin and "Destapaciones" not in sin
+
+
+def test_un_precio_que_no_existe_no_filtra_en_vez_de_romper(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """Mismo criterio permisivo que el rubro: la URL se escribe a mano."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones")
+
+    respuesta = client.get("/servicios/buscar?precio=inventado")
+
+    assert respuesta.status_code == 200
+    assert "Destapaciones" in respuesta.get_data(as_text=True)
+
+
+def test_el_orden_por_nombre_pone_primero_el_alfabetico(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """El default es por fecha (lo ultimo cargado es lo que nadie vio todavia),
+    y este es el otro orden que la consulta sabe hacer."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Zapateria a domicilio")
+    crear_servicio(post.id, titulo="Aberturas de aluminio")
+
+    html = client.get("/servicios/buscar?orden=nombre").get_data(as_text=True)
+
+    assert html.index("Aberturas de aluminio") < html.index("Zapateria a domicilio")
+
+
+def test_el_conteo_de_un_rubro_no_se_filtra_a_si_mismo(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """El numerito al lado de cada rubro tiene que decir cuantos hay ahi
+    MIENTRAS estas parado en otro: si se filtrara tambien por el rubro actual,
+    todos los demas dirian cero y no servirian para elegir a donde ir."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="Destapaciones", rubro=Rubros.PLOMERIA)
+    crear_servicio(post.id, titulo="Cambio de tablero", rubro=Rubros.ELECTRICIDAD)
+
+    html = client.get(f"/servicios/buscar?rubro={Rubros.PLOMERIA}").get_data(as_text=True)
+
+    # Los dos rubros muestran su propio 1 aunque el filtro activo sea plomeria.
+    assert html.count('class="oficio__cuantos">1<') == 2
+
+
+def test_el_conteo_si_respeta_los_otros_filtros(
+    client, crear_usuario, crear_post, crear_servicio
+):
+    """La otra mitad: con la zona puesta, el numero de cada rubro cuenta solo
+    los de esa zona. Si contara todo, prometeria resultados que el filtro
+    combinado no va a devolver."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+    crear_servicio(post.id, titulo="En Maipu", rubro=Rubros.PLOMERIA,
+                   zona_cobertura="Maipu")
+    crear_servicio(post.id, titulo="En Lujan", rubro=Rubros.PLOMERIA,
+                   zona_cobertura="Lujan")
+
+    sin_zona = client.get("/servicios/buscar").get_data(as_text=True)
+    con_zona = client.get("/servicios/buscar?zona=maipu").get_data(as_text=True)
+
+    assert 'class="oficio__cuantos">2<' in sin_zona
+    assert 'class="oficio__cuantos">2<' not in con_zona
+    assert 'class="oficio__cuantos">1<' in con_zona
+
+
+def test_el_panel_muestra_el_estado_del_ultimo_pedido_de_verificacion(
+    client, emprendedor_con_post, crear_servicio, crear_verificacion
+):
+    """Antes la fila sabia decir "Verificado" (una columna de Service) o nada:
+    un pedido rechazado hace tres semanas no se veia en ningun lado."""
+    _usuario, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id, titulo="Instalación de gas")
+    crear_verificacion(
+        servicio.id, estado=EstadosVerificacion.RECHAZADA,
+        motivo_rechazo="No se lee el numero",
+    )
+
+    html = client.get("/servicios/").get_data(as_text=True)
+
+    assert "No aprobado" in html
+
+
+def test_el_sello_le_gana_al_ultimo_pedido_en_el_panel(
+    db, client, emprendedor_con_post, crear_servicio, crear_verificacion
+):
+    """Si el admin ya lo aprobo, lo que diga el ultimo pedido es historia: el
+    que manda es Service.verificado, que es la columna que mira la busqueda."""
+    _usuario, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id, titulo="Instalación de gas")
+    crear_verificacion(servicio.id, estado=EstadosVerificacion.RECHAZADA)
+    servicio.verificado = True
+    db.session.commit()
+
+    html = client.get("/servicios/").get_data(as_text=True)
+
+    assert "Verificado" in html
+    assert "No aprobado" not in html
+
+
+def test_el_interruptor_apaga_y_prende_el_servicio(
+    db, client, emprendedor_con_post, crear_servicio
+):
+    """El unico camino para apagar un servicio era abrir el formulario de ocho
+    campos y volver a guardarlos todos."""
+    _usuario, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id, titulo="Destapaciones")
+
+    client.post(f"/servicios/{servicio.id}/disponible")
+    assert Service.query.get(servicio.id).disponible is False
+
+    client.post(f"/servicios/{servicio.id}/disponible")
+    assert Service.query.get(servicio.id).disponible is True
+
+
+def test_el_interruptor_no_acepta_get(client, emprendedor_con_post, crear_servicio):
+    """Cambia una fila y ademas la saca de la busqueda publica: con GET lo
+    dispararia cualquier cosa que precargue enlaces."""
+    _usuario, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id)
+
+    respuesta = client.get(f"/servicios/{servicio.id}/disponible")
+
+    assert respuesta.status_code == 405
+    assert Service.query.get(servicio.id).disponible is True
+
+
+def test_no_se_puede_apagar_un_servicio_ajeno(
+    client, crear_usuario, crear_post, crear_servicio, login
+):
+    """Mismo permiso que editar y eliminar: esconder el boton no es un permiso."""
+    autor = crear_usuario(username="autor")
+    servicio = crear_servicio(crear_post(autor.id).id)
+    intruso = crear_usuario(username="intruso")
+    login(intruso.id)
+
+    client.post(f"/servicios/{servicio.id}/disponible")
+
+    assert Service.query.get(servicio.id).disponible is True
+
+
+def test_un_servicio_apagado_desde_el_panel_desaparece_de_la_busqueda(
+    client, emprendedor_con_post, crear_servicio
+):
+    """El ida y vuelta completo: el interruptor escribe la misma columna que la
+    busqueda ya filtraba."""
+    _usuario, post = emprendedor_con_post()
+    servicio = crear_servicio(post.id, titulo="Destapaciones")
+
+    # follow_redirects para que el flash (que nombra al servicio) se consuma
+    # en el panel y no aparezca despues en la busqueda.
+    client.post(f"/servicios/{servicio.id}/disponible", follow_redirects=True)
+    html = client.get("/servicios/buscar").get_data(as_text=True)
+
+    assert "Destapaciones" not in html

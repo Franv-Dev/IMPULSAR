@@ -1,0 +1,426 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input, select { font-family: inherit; }
+    input { outline: none; }
+    .u-campo:focus-within { border-color: #3E2F94; background: #FFFFFF; box-shadow: 0 0 0 3px #ECEAF7; }
+    .u-btn-primario:hover { background: #483BA1; }
+    .u-btn-borde:hover { background: #ECEAF7; border-color: #ECEAF7; }
+    .u-opcion:hover { background: #EEF1F7; }
+    .u-tarjeta:hover { border-color: #ECEAF7; box-shadow: 0 10px 30px rgba(15,23,42,.10); }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <!-- ===================== BARRA ===================== -->
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; min-height: 68px; display: flex; align-items: center; gap: 26px">
+      <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      <nav style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #4A5666">
+        <a href="#" style="color: #4A5666">Inicio</a>
+        <a href="#" style="color: #4A5666">Emprendimientos</a>
+        <a href="#" style="color: #4A5666">Eventos</a>
+        <a href="#" style="color: #3E2F94; font-weight: 600">Servicios</a>
+      </nav>
+      <span style="flex: 1"></span>
+      <div style="{{ barraSesion }}">
+        <a href="#" style="font-size: 14px; color: #4A5666">Acceder</a>
+        <a href="#" class="u-btn-primario" style="display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 14px; font-weight: 600">Registrarse</a>
+      </div>
+      <div style="{{ barraUsuario }}">
+        <button type="button" style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 5px; border: 1px solid #ECEAF7; border-radius: 999px; background: #ECEAF7; cursor: pointer">
+          <span style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700">TG</span>
+          <span style="font-size: 13.5px; font-weight: 600; color: #33267C">Tomas</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 26px 24px 60px; display: flex; flex-direction: column; gap: 20px">
+
+    <div style="max-width: 640px">
+      <h1 style="font-size: 26px; letter-spacing: -.015em">Servicios cerca tuyo</h1>
+      <p style="margin: 6px 0 0; font-size: 14.5px; line-height: 1.6; color: #5F6B7C">
+        Oficios de emprendimientos de Mendoza. Elegí el rubro, decí en qué zona lo
+        necesitás y pedí presupuesto sin llamar a nadie.
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 276px minmax(0, 1fr); gap: 28px; align-items: start">
+
+      <!-- ===================== FILTROS ===================== -->
+      <aside style="padding: 22px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px">
+          <h2 style="font-size: 16px; font-weight: 600">Filtros</h2>
+          <button type="button" onClick="{{ limpiar }}" style="{{ limpiarEstilo }}">Limpiar</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 20px">
+
+          <fieldset style="display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; border: 0">
+            <legend style="padding: 0 0 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #5F6B7C">Rubro</legend>
+            <sc-for list="{{ rubros }}" as="r" hint-placeholder-count="7">
+              <button type="button" class="u-opcion" onClick="{{ r.elegir }}" style="{{ r.estilo }}">
+                <span style="{{ r.puntoEstilo }}"></span>
+                <span style="flex: 1; text-align: left">{{ r.etiqueta }}</span>
+                <span style="{{ r.contadorEstilo }}">{{ r.cuantos }}</span>
+              </button>
+            </sc-for>
+            <button type="button" onClick="{{ verTodos }}" style="align-self: flex-start; margin-top: 6px; padding: 0 10px; border: 0; background: none; color: #3E2F94; font-size: 13px; font-weight: 600; cursor: pointer">{{ textoVerTodos }}</button>
+          </fieldset>
+
+          <div style="height: 1px; background: #E2E6EE"></div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <label for="zona" style="font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #5F6B7C">Zona</label>
+            <div class="u-campo" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid #E2E6EE; border-radius: 8px; background: #F5F7FA; transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10.5c0 5.5-8 11-8 11s-8-5.5-8-11a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10.3" r="2.7"/></svg>
+              <input id="zona" type="text" value="{{ zona }}" onInput="{{ escribirZona }}" placeholder="Maipú, Godoy Cruz…" style="flex: 1; min-width: 0; border: 0; background: none; font-size: 13.6px; color: #1B2430">
+            </div>
+            <p style="margin: 0; font-size: 12px; line-height: 1.45; color: #5F6B7C">
+              Se compara con la zona que cada uno declara atender. Es texto libre: escribila como la diría un vecino.
+            </p>
+          </div>
+
+          <div style="height: 1px; background: #E2E6EE"></div>
+
+          <fieldset style="display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; border: 0">
+            <legend style="padding: 0 0 2px; font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #5F6B7C">Precio</legend>
+            <div style="display: flex; gap: 6px">
+              <sc-for list="{{ preciosFiltro }}" as="p" hint-placeholder-count="3">
+                <button type="button" onClick="{{ p.elegir }}" style="{{ p.estilo }}">{{ p.etiqueta }}</button>
+              </sc-for>
+            </div>
+          </fieldset>
+
+          <div style="height: 1px; background: #E2E6EE"></div>
+
+          <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer">
+            <span style="{{ pistaVerificados }}">
+              <span style="{{ perillaVerificados }}"></span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span style="font-size: 13.8px; font-weight: 600">Solo verificados</span>
+              <span style="font-size: 12px; line-height: 1.45; color: #5F6B7C">Un administrador miró la matrícula o el certificado.</span>
+            </span>
+            <input type="checkbox" onChange="{{ alternarVerificados }}" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none">
+          </label>
+
+        </div>
+      </aside>
+
+      <!-- ===================== RESULTADOS ===================== -->
+      <div style="display: flex; flex-direction: column; gap: 18px; min-width: 0">
+
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px">
+          <div>
+            <h2 style="font-size: 21px; letter-spacing: -.01em">{{ titulo }}</h2>
+            <p style="margin: 5px 0 0; font-size: 13.5px; color: #5F6B7C">{{ bajada }}</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="font-size: 13px; color: #5F6B7C">Ordenar por</span>
+            <sc-for list="{{ ordenes }}" as="o" hint-placeholder-count="2">
+              <button type="button" onClick="{{ o.elegir }}" style="{{ o.estilo }}">{{ o.etiqueta }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="{{ chipsEstilo }}">
+          <sc-for list="{{ chips }}" as="c" hint-placeholder-count="2">
+            <span style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px 6px 12px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12.8px; font-weight: 500">
+              {{ c.etiqueta }}
+              <button type="button" aria-label="Quitar filtro" onClick="{{ c.quitar }}" style="display: inline-flex; border: 0; padding: 0; background: none; color: inherit; cursor: pointer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+              </button>
+            </span>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px">
+          <sc-for list="{{ items }}" as="s" hint-placeholder-count="5">
+            <article class="u-tarjeta" style="display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 18px; padding: 18px 20px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF; transition: border-color .18s ease, box-shadow .18s ease">
+
+              <div style="width: 84px; height: 84px; display: flex; align-items: center; justify-content: center; border-radius: 14px; background: #ECEAF7; color: #3E2F94">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{ s.icono }}"/></svg>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 18px">
+                  <div style="min-width: 0">
+                    <h3 style="font-size: 17.5px; line-height: 1.25; letter-spacing: -.015em">
+                      <a href="#" style="color: #1B2430">{{ s.titulo }}</a>
+                    </h3>
+                    <p style="margin: 5px 0 0; display: flex; align-items: center; gap: 8px; font-size: 13.2px; color: #5F6B7C">
+                      <span style="width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 11px; font-weight: 700">{{ s.inicial }}</span>
+                      <a href="#" style="color: #4A5666; font-weight: 500">{{ s.emprendimiento }}</a>
+                      <span aria-hidden="true">·</span>
+                      <span style="display: inline-flex; align-items: center; gap: 3px">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8A33D" stroke="none"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
+                        {{ s.rating }}
+                      </span>
+                      <span style="color: #5F6B7C">({{ s.resenias }})</span>
+                    </p>
+                  </div>
+                  <div style="text-align: right; flex-shrink: 0">
+                    <p style="{{ s.precioEstilo }}">{{ s.precio }}</p>
+                    <p style="margin: 3px 0 0; font-size: 12px; color: #5F6B7C">{{ s.precioNota }}</p>
+                  </div>
+                </div>
+
+                <p style="margin: 0; font-size: 13.6px; line-height: 1.55; color: #4A5666">{{ s.descripcion }}</p>
+
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.4px; font-weight: 600">{{ s.rubroLabel }}</span>
+                  <span style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12.4px; font-weight: 600">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10.5c0 5.5-8 11-8 11s-8-5.5-8-11a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10.3" r="2.7"/></svg>
+                    {{ s.zona }}
+                  </span>
+                  <span style="{{ s.selloEstilo }}">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                    Verificado
+                  </span>
+                  <span style="{{ s.turnosEstilo }}">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+                    Toma turnos
+                  </span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 12px; padding-top: 2px">
+                  <a href="#" class="{{ s.claseCta }}" style="{{ s.ctaEstilo }}">Pedir presupuesto</a>
+                  <span style="{{ s.avisoEstilo }}">Tenés que <a href="#">iniciar sesión</a> para pedir un presupuesto.</span>
+                  <a href="#" class="u-btn-borde" style="{{ s.verEstilo }}">Ver el emprendimiento</a>
+                </div>
+
+              </div>
+            </article>
+          </sc-for>
+        </div>
+
+        <!-- VACIO: en el mismo lugar que la lista, cuando los filtros no dejan nada. -->
+        <div style="{{ vacioEstilo }}">
+          <span style="width: 52px; height: 52px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #EEF1F7; color: #5F6B7C">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4.3 4.3"/></svg>
+          </span>
+          <h3 style="margin-top: 14px; font-size: 17px">No hay servicios con esos filtros</h3>
+          <p style="margin: 6px 0 0; max-width: 430px; font-size: 13.6px; line-height: 1.6; color: #5F6B7C">
+            Probá sacando la zona, o mirá los rubros que sí tienen a alguien: la zona
+            es texto libre y no todos la escriben igual.
+          </p>
+          <button type="button" onClick="{{ limpiar }}" class="u-btn-borde" style="margin-top: 16px; height: 38px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #1B2430; font-size: 13.6px; font-weight: 600; cursor: pointer">Limpiar los filtros</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"sesion":{"editor":"enum","options":["con sesion","sin sesion"],"default":"con sesion","section":"Contenido"},"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { rubro: null, zona: "", verificados: false, precio: "todos", orden: "recientes", todos: false };
+  }
+
+  datos() {
+    return [
+      { titulo: "Destapación de cañerías", rubro: "plomeria", rubroLabel: "Plomería",
+        emprendimiento: "Plomería Sánchez", zona: "Maipú y alrededores", precio: null,
+        verificado: true, turnos: true, rating: "4.8", resenias: 32,
+        descripcion: "Destapamos piletas, inodoros y cañerías principales con máquina. Vamos el mismo día si es urgencia.",
+        icono: "M14.7 6.3a4 4 0 0 1-5.4 5.4L4.5 16.5V20H8l4.8-4.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.5-2.5 2.6-2.6Z" },
+      { titulo: "Instalación de aire acondicionado split", rubro: "refrigeracion", rubroLabel: "Refrigeración",
+        emprendimiento: "Clima Sur", zona: "Godoy Cruz y Luján", precio: 85000,
+        verificado: true, turnos: true, rating: "4.6", resenias: 18,
+        descripcion: "Colocación completa hasta 3 metros de cañería, con vacío de bomba y prueba de funcionamiento.",
+        icono: "M12 3v18M4.5 7.5 19.5 16.5M19.5 7.5 4.5 16.5M12 6.8 9.6 4.4M12 6.8l2.4-2.4M12 17.2l-2.4 2.4M12 17.2l2.4 2.4" },
+      { titulo: "Cambio de tablero eléctrico", rubro: "electricidad", rubroLabel: "Electricidad",
+        emprendimiento: "Electricidad Nadal", zona: "Toda la ciudad", precio: null,
+        verificado: false, turnos: false, rating: "4.9", resenias: 7,
+        descripcion: "Tablero nuevo con disyuntor y térmicas, según la carga que tenga la casa. Incluye el certificado.",
+        icono: "M13.5 2.5 5 13.5h5.5L9.5 21.5 18.5 10h-5.6l.6-7.5Z" },
+      { titulo: "Flete y mudanza chica", rubro: "fletes", rubroLabel: "Fletes y mudanzas",
+        emprendimiento: "Fletes Don Beto", zona: "Gran Mendoza", precio: 30000,
+        verificado: false, turnos: false, rating: "4.7", resenias: 25,
+        descripcion: "Camioneta con ayudante, por viaje dentro del Gran Mendoza. Frazadas y sogas las ponemos nosotros.",
+        icono: "M3 7.5h11v9H3zM14 10.5h3.6l3.4 3.4v2.6h-7zM7.3 19.5a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6ZM17.6 19.5a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6Z" },
+      { titulo: "Pintura de interiores por m2", rubro: "pintura", rubroLabel: "Pintura",
+        emprendimiento: "Pintor Ríos", zona: "Guaymallén", precio: 12500,
+        verificado: false, turnos: false, rating: "4.4", resenias: 11,
+        descripcion: "Dos manos de látex, con la pared preparada y enduido donde haga falta. El precio es por metro cuadrado.",
+        icono: "M4 5.5h10v5H4zM14 8h3.8a1.7 1.7 0 0 1 1.7 1.7v2a1.7 1.7 0 0 1-1.7 1.7H12.5v2.1M10.4 15.5h4.2v6h-4.2z" },
+      { titulo: "Corte de pasto y poda", rubro: "jardineria", rubroLabel: "Jardinería",
+        emprendimiento: "Verde Vivo", zona: "Chacras de Coria", precio: 18000,
+        verificado: false, turnos: true, rating: "5.0", resenias: 4,
+        descripcion: "Corte, orillado y poda de arbustos. Nos llevamos los restos, que es lo que a nadie le gusta hacer.",
+        icono: "M20 3.5C10 3.5 4 8.5 4 15.5c0 2 1 4.5 1 4.5s6.5-.5 10.5-4.5c3-3 4.5-8 4.5-12ZM8.5 19c1-5 4-8.5 8-10.5" },
+      { titulo: "Reparación de notebooks", rubro: "informatica", rubroLabel: "Informática",
+        emprendimiento: "TecnoMza", zona: "Ciudad, con retiro a domicilio", precio: null,
+        verificado: true, turnos: false, rating: "4.5", resenias: 14,
+        descripcion: "Diagnóstico sin cargo, cambio de pantalla, teclado o disco. Presupuesto antes de tocar nada.",
+        icono: "M3.5 5.5h17v10h-17zM2 19.5h20M9.5 15.5h5" },
+    ];
+  }
+
+  renderVals() {
+    const sinSesion = (this.props.sesion ?? "con sesion") === "sin sesion";
+    const st = this.state;
+    const todos = this.datos();
+
+    // Sin acentos ni mayúsculas: "maipu" tiene que encontrar "Maipú".
+    const norm = (t) => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const zona = st.zona.trim();
+    const items = todos.filter((s) => {
+      if (st.rubro && s.rubro !== st.rubro) return false;
+      if (st.verificados && !s.verificado) return false;
+      if (st.precio === "cerrado" && s.precio === null) return false;
+      if (st.precio === "presupuestar" && s.precio !== null) return false;
+      if (zona && !norm(s.zona).includes(norm(zona))) return false;
+      return true;
+    });
+    if (st.orden === "puntuados") items.sort((a, b) => Number(b.rating) - Number(a.rating));
+
+    const plata = (n) => "$ " + n.toLocaleString("es-AR");
+
+    // Los 13 rubros del catálogo (Rubros.ETIQUETAS en app/servicios/modelo.py).
+    // Se listan los que tienen a alguien y el resto se despliega: trece
+    // renglones en una columna de 276 px son más lista que filtro.
+    const catalogo = [
+      ["plomeria", "Plomería"], ["electricidad", "Electricidad"], ["gas", "Gas"],
+      ["albanileria", "Albañilería"], ["pintura", "Pintura"], ["carpinteria", "Carpintería"],
+      ["herreria", "Herrería"], ["refrigeracion", "Refrigeración"], ["jardineria", "Jardinería"],
+      ["limpieza", "Limpieza"], ["fletes", "Fletes y mudanzas"], ["informatica", "Informática"],
+      ["otros", "Otros"],
+    ];
+    const cuantos = (clave) => todos.filter((s) => s.rubro === clave).length;
+    const visibles = st.todos ? catalogo : catalogo.filter((par) => cuantos(par[0]) > 0);
+
+    const opcionBase = "display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: #4A5666; font-size: 13.6px; cursor: pointer; text-align: left";
+    const opcionActiva = "display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: #ECEAF7; color: #3E2F94; font-size: 13.6px; font-weight: 600; cursor: pointer; text-align: left";
+
+    const rubros = [{ clave: null, etiqueta: "Todos los rubros", cuantos: todos.length }]
+      .concat(visibles.map((par) => ({ clave: par[0], etiqueta: par[1], cuantos: cuantos(par[0]) })))
+      .map((r) => ({
+        etiqueta: r.etiqueta,
+        cuantos: r.cuantos,
+        estilo: st.rubro === r.clave ? opcionActiva : opcionBase,
+        puntoEstilo: "width: 8px; height: 8px; flex-shrink: 0; border-radius: 999px; background: " + (st.rubro === r.clave ? "#3E2F94" : "#C9CFDB"),
+        contadorEstilo: "font-size: 12.2px; font-weight: 600; color: " + (r.cuantos ? "#5F6B7C" : "#9AA3B2"),
+        elegir: () => this.setState({ rubro: r.clave }),
+      }));
+
+    const chipBase = "flex: 1; padding: 7px 4px; border: 1px solid #E2E6EE; border-radius: 8px; background: #FFFFFF; color: #4A5666; font-size: 12.4px; cursor: pointer";
+    const chipActivo = "flex: 1; padding: 7px 4px; border: 1px solid #3E2F94; border-radius: 8px; background: #ECEAF7; color: #3E2F94; font-size: 12.4px; font-weight: 600; cursor: pointer";
+    const preciosFiltro = [
+      { clave: "todos", etiqueta: "Todos" },
+      { clave: "cerrado", etiqueta: "Con precio" },
+      { clave: "presupuestar", etiqueta: "A presupuestar" },
+    ].map((p) => ({
+      etiqueta: p.etiqueta,
+      estilo: st.precio === p.clave ? chipActivo : chipBase,
+      elegir: () => this.setState({ precio: p.clave }),
+    }));
+
+    const ordenBase = "height: 32px; padding: 0 12px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #4A5666; font-size: 12.8px; cursor: pointer";
+    const ordenActivo = "height: 32px; padding: 0 12px; border: 1px solid #3E2F94; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12.8px; font-weight: 600; cursor: pointer";
+    const ordenes = [
+      { clave: "recientes", etiqueta: "Más recientes" },
+      { clave: "puntuados", etiqueta: "Mejor puntuados" },
+    ].map((o) => ({
+      etiqueta: o.etiqueta,
+      estilo: st.orden === o.clave ? ordenActivo : ordenBase,
+      elegir: () => this.setState({ orden: o.clave }),
+    }));
+
+    const chips = [];
+    if (st.rubro) {
+      const par = catalogo.filter((c) => c[0] === st.rubro)[0];
+      chips.push({ etiqueta: par ? par[1] : st.rubro, quitar: () => this.setState({ rubro: null }) });
+    }
+    if (zona) chips.push({ etiqueta: "Zona: " + zona, quitar: () => this.setState({ zona: "" }) });
+    if (st.verificados) chips.push({ etiqueta: "Solo verificados", quitar: () => this.setState({ verificados: false }) });
+    if (st.precio !== "todos") {
+      chips.push({
+        etiqueta: st.precio === "cerrado" ? "Con precio" : "A presupuestar",
+        quitar: () => this.setState({ precio: "todos" }),
+      });
+    }
+
+    return {
+      barraSesion: sinSesion ? "display: flex; align-items: center; gap: 16px" : "display: none",
+      barraUsuario: sinSesion ? "display: none" : "display: block",
+
+      rubros: rubros,
+      preciosFiltro: preciosFiltro,
+      ordenes: ordenes,
+      chips: chips,
+      chipsEstilo: chips.length ? "display: flex; flex-wrap: wrap; align-items: center; gap: 8px" : "display: none",
+      zona: st.zona,
+      escribirZona: (e) => this.setState({ zona: e.target.value }),
+      alternarVerificados: () => this.setState({ verificados: !st.verificados }),
+      verTodos: () => this.setState({ todos: !st.todos }),
+      textoVerTodos: st.todos ? "Ver solo los que tienen a alguien" : "Ver los 13 rubros",
+      limpiar: () => this.setState({ rubro: null, zona: "", verificados: false, precio: "todos" }),
+      limpiarEstilo: chips.length
+        ? "padding: 0; border: 0; background: none; color: #3E2F94; font-size: 12.8px; font-weight: 500; cursor: pointer"
+        : "padding: 0; border: 0; background: none; color: #9AA3B2; font-size: 12.8px; font-weight: 500; cursor: default",
+
+      pistaVerificados: "position: relative; width: 40px; height: 24px; flex-shrink: 0; border-radius: 999px; transition: background-color .15s ease; background: " + (st.verificados ? "#3E2F94" : "#C9CFDB"),
+      perillaVerificados: "position: absolute; top: 3px; left: " + (st.verificados ? "19px" : "3px") + "; width: 18px; height: 18px; border-radius: 999px; background: #FFFFFF; transition: left .15s ease; box-shadow: 0 1px 3px rgba(15,23,42,.25)",
+
+      titulo: items.length === 1 ? "1 servicio" : items.length + " servicios",
+      bajada: chips.length ? "Con los filtros que pusiste." : "Todo lo que se ofrece hoy en IMPULSAR.",
+
+      items: items.map((s) => ({
+        titulo: s.titulo,
+        descripcion: s.descripcion,
+        emprendimiento: s.emprendimiento,
+        inicial: s.emprendimiento.charAt(0).toUpperCase(),
+        zona: s.zona,
+        rubroLabel: s.rubroLabel,
+        rating: s.rating,
+        resenias: s.resenias,
+        icono: s.icono,
+        precio: s.precio === null ? "A presupuestar" : plata(s.precio),
+        precioEstilo: s.precio === null
+          ? "margin: 0; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; color: #4A5666"
+          : "margin: 0; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1B2430",
+        precioNota: s.precio === null ? "Te cotiza tu caso" : "Precio estimado",
+        selloEstilo: s.verificado
+          ? "display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: #E6F4EC; color: #1F7A4D; font-size: 12.4px; font-weight: 600"
+          : "display: none",
+        turnosEstilo: s.turnos
+          ? "display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12.4px; font-weight: 600"
+          : "display: none",
+        claseCta: sinSesion ? "" : "u-btn-primario",
+        ctaEstilo: sinSesion
+          ? "display: none"
+          : "display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 13.6px; font-weight: 600; box-shadow: 0 4px 12px rgba(15,23,42,.08)",
+        avisoEstilo: sinSesion ? "font-size: 13.2px; color: #5F6B7C" : "display: none",
+        verEstilo: "display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #1B2430; font-size: 13.6px; font-weight: 600",
+      })),
+
+      vacioEstilo: items.length
+        ? "display: none"
+        : "display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 24px; border: 1px dashed #E2E6EE; border-radius: 18px; background: #FFFFFF",
+    };
+  }
+}
+</script>
+</body>
+</html>

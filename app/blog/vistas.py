@@ -34,8 +34,16 @@ from app.blog.modelo_imagen import PostImage
 from app.blog.modelo_post import MAX_IMAGENES_POR_POST, Categorias, Post
 from app.blog.modelo_reporte import Report
 from app.blog.modelo_resenia import Review
+from app.panel.consultas import contadores_de as contadores_del_panel
 from db import utcnow
+from services.eventos import hoy_en_argentina
 from services.geocoding import get_coordinates_from_address
+from services.horarios import (
+    ETIQUETAS_DIAS,
+    esta_abierto,
+    hora_de_cierre,
+    ventana_actual,
+)
 from services.ratings import serializar_con_rating
 from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
 from views.auth import login_required
@@ -117,7 +125,9 @@ def index():
     """Lista pública de emprendimientos, paginada, con busqueda y filtro por categoria."""
     busqueda = formulario.leer_busqueda()
     categoria = formulario.leer_categoria_de_filtro()
-    cerca_de, lat, lon = formulario.leer_cercania()
+    cerca_de, lat, lon, radio_km = formulario.leer_cercania()
+    con_resenias = formulario.leer_con_resenias()
+    abierto_ahora = formulario.leer_abierto_ahora()
 
     # Geocodificar es una llamada a MapTiler: se hace solo si el usuario mando
     # una direccion en texto y no las coordenadas ya resueltas.
@@ -135,6 +145,9 @@ def index():
         categoria=categoria if reglas.categoria_valida(categoria) else None,
         lat=lat,
         lon=lon,
+        radio_km=radio_km,
+        con_resenias=con_resenias,
+        abierto_ahora=abierto_ahora,
         pagina=formulario.leer_pagina(),
         por_pagina=current_app.config["POSTS_POR_PAGINA"],
     )
@@ -165,6 +178,17 @@ def index():
         busqueda_actual=busqueda,
         cerca_de_actual=cerca_de,
         ordenado_por_distancia=ordenado_por_distancia,
+        # Ya validado: es uno de reglas.RADIOS_KM o None ("Toda"). El template
+        # lo usa solo para marcar el chip que corresponde.
+        radio_actual=radio_km,
+        radios_km=reglas.RADIOS_KM,
+        con_resenias_actual=con_resenias,
+        abierto_ahora_actual=abierto_ahora,
+        # Los numeros que van al lado de cada rubro en la columna de filtros.
+        # Son de toda la plataforma y no de la busqueda actual, a proposito:
+        # dicen cuanto hay si te movés a ese rubro, que es para lo que se
+        # miran.
+        conteo_por_categoria=consultas.conteo_por_categoria(),
     )
 
 
@@ -176,8 +200,7 @@ def detail(id):
 
     # No cuenta las vistas del propio dueño revisando su publicacion.
     if not es_dueño:
-        post.views_count += 1
-        consultas.guardar()
+        consultas.sumar_una_vista(post)
 
     return render_template(
         "blog/detail.html",
@@ -196,6 +219,26 @@ def detail(id):
         productos=consultas.productos_de(id, solo_disponibles=not es_dueño),
         servicios=consultas.servicios_de(id, solo_disponibles=not es_dueño),
         es_dueño=es_dueño,
+        # Los horarios son del emprendedor, no del emprendimiento (viven en
+        # User): la columna lateral del rediseño los muestra junto con si esta
+        # abierto ahora, que lo calcula services/horarios con el reloj de
+        # Argentina y no con el del visitante.
+        horarios=sorted(post.author_user.horarios, key=lambda h: h.dia_semana),
+        abierto=esta_abierto(post.author_user.horarios),
+        # Hasta que hora sigue abierto, para decir "Abierto ahora - cierra
+        # 19:00" en vez de un si/no pelado: con el si/no hay que bajar hasta la
+        # tabla de horarios para saber si conviene salir ahora. None cuando
+        # esta cerrado, que es lo mismo que dice `abierto`.
+        cierra=hora_de_cierre(post.author_user.horarios),
+        etiquetas_dias=ETIQUETAS_DIAS,
+        # Que dia es hoy, para marcar su fila en la tabla de horarios. Sale de
+        # ventana_actual() y no de datetime.today() por lo mismo que
+        # esta_abierto: la referencia es el reloj de Argentina, no el del
+        # servidor ni el del visitante.
+        hoy_semana=ventana_actual()[0],
+        # Las ferias del emprendimiento que todavia no pasaron. Post.eventos
+        # existe desde la tanda de eventos y la ficha no lo mostraba.
+        ferias=consultas.ferias_de(id),
         MAPTILER_KEY=current_app.config["MAPTILER_KEY"],
     )
 
@@ -211,9 +254,49 @@ def my_posts():
         pagina=formulario.leer_pagina(),
         por_pagina=current_app.config["POSTS_POR_PAGINA"],
     )
+
+    # Las tres metricas que el rediseño muestra en cada fila. Se arman aca y no
+    # en el template para que la plantilla no dispare consultas mientras
+    # renderiza: son las relaciones del post, una pagina por vez.
+    #
+    # Se piden de una sola vez para TODA la pagina (una consulta agrupada, no
+    # una por fila): leerlas de cada post en el bucle -- post.reviews.count(),
+    # len(post.productos), len(post.servicios) -- eran cuatro consultas por
+    # emprendimiento. Las vistas no salen de ahi porque views_count es una
+    # columna del propio post, que ya vino en el listado.
+    metricas = consultas.metricas_de_posts([post.id for post in paginacion.items])
+    posts = [
+        {
+            "post": post,
+            "vistas": post.views_count,
+            **metricas[post.id],
+        }
+        for post in paginacion.items
+    ]
+
     return render_template(
-        "blog/my_posts.html", posts=paginacion.items, paginacion=paginacion
+        "blog/my_posts.html", posts=posts, paginacion=paginacion,
+        contadores=contadores_del_panel(g.user.id, hoy_en_argentina()),
     )
+
+
+def _contexto_del_formulario(post=None):
+    """Lo que el formulario de emprendimiento necesita, sea alta o edicion.
+
+    Las dos pantallas comparten el mismo parcial, asi que comparten tambien lo
+    que hay que pasarle. `post` es None en el alta.
+    """
+    return {
+        "post": post,
+        "categorias": Categorias.ETIQUETAS,
+        "maximo_fotos": MAX_IMAGENES_POR_POST,
+        "checklist": reglas.checklist_de_publicacion(
+            post, consultas.tiene_horarios_cargados(g.user.id)
+        ),
+        # Cada foto con el orden que resultaria de cada movimiento, ya
+        # calculado. Vacio en el alta: todavia no hay fotos que mover.
+        "fotos": reglas.fotos_para_reordenar(post) if post else [],
+    }
 
 
 @blog.route("/create", methods=("GET", "POST"))
@@ -261,13 +344,13 @@ def create():
                 # escribio antes y se queda sin post que la referencie.
                 borrar_de_disco(upload_dir, [filename])
                 flash(galeria_error)
-                return render_template("blog/create.html", categorias=Categorias.ETIQUETAS)
+                return render_template("blog/create.html", **_contexto_del_formulario())
 
             consultas.guardar(post)
             flash("Emprendimiento registrado correctamente.")
             return redirect(url_for("blog.my_posts"))
 
-    return render_template("blog/create.html", categorias=Categorias.ETIQUETAS)
+    return render_template("blog/create.html", **_contexto_del_formulario())
 
 
 def _geocodificar(direccion):
@@ -353,7 +436,39 @@ def update(id):
             flash("Emprendimiento actualizado correctamente.")
             return redirect(url_for("blog.my_posts"))
 
-    return render_template("blog/update.html", post=post, categorias=Categorias.ETIQUETAS)
+    return render_template("blog/update.html", **_contexto_del_formulario(post))
+
+
+@blog.route("/<int:id>/fotos/reordenar", methods=("POST",))
+@login_required
+def reordenar_fotos(id):
+    """Cambia el orden de las fotos y cual es la principal.
+
+    Recibe `orden`: los tokens de TODAS las fotos del post separados por coma,
+    en el orden deseado, y el primero es la principal (ver
+    reglas.tokens_de_fotos). Los mandan tanto los botones "Subir"/"Bajar" --
+    cada uno lleva el resultado ya calculado, asi que andan sin JavaScript --
+    como el drag and drop, que escribe en el mismo campo oculto.
+
+    Solo POST y con el chequeo de dueño de siempre: esto escribe datos del
+    usuario, y un GET reordenable desde un <img src> ajeno seria un CSRF con
+    forma de bug cosmetico.
+    """
+    post, denegado = _post_propio(id, "reordenar las fotos de")
+    if denegado:
+        return denegado
+
+    tokens = [t for t in (request.form.get("orden") or "").split(",") if t]
+    if not reglas.orden_de_fotos_valido(post, tokens):
+        # Un orden que no cuadra casi siempre es una pantalla vieja: el usuario
+        # tenia el formulario abierto y las fotos cambiaron en otra pestaña. No
+        # se aplica nada, ni siquiera la parte que si cerraba.
+        flash("No pudimos reordenar las fotos: volvé a intentarlo con la página actualizada.")
+        return redirect(url_for("blog.update", id=id))
+
+    consultas.reordenar_fotos(post, tokens)
+    flash("Listo, cambiamos el orden de las fotos.")
+    return redirect(url_for("blog.update", id=id))
 
 
 @blog.route("/delete/<int:id>", methods=("POST",))
@@ -493,16 +608,46 @@ def toggle_favorite(id):
 @blog.route("/favoritos")
 @login_required
 def my_favorites():
-    """Emprendimientos que el usuario marco como favoritos."""
+    """Emprendimientos que el usuario marco como favoritos.
+
+    Los dos filtros se leen y se validan con las mismas piezas que el listado
+    publico: leer_categoria_de_filtro/categoria_valida son literalmente las de
+    index(), y el catalogo de rubros que se le pasa al template es el mismo
+    Categorias.ETIQUETAS. No hay una lista de rubros propia de esta pantalla.
+    """
+    categoria = formulario.leer_categoria_de_filtro()
+    orden = formulario.leer_orden_de_favoritos()
+
     paginacion = consultas.favoritos_de(
         g.user.id,
+        # Igual que en index(): la que no existe no filtra nada, pero se le
+        # devuelve al template tal cual para repintar el <select> con lo que
+        # el usuario tenia en la URL.
+        categoria=categoria if reglas.categoria_valida(categoria) else None,
+        # Un orden que no existe cae al default en vez de vaciar la pantalla o
+        # tirar un error: no es un filtro, es una preferencia de como mirar lo
+        # mismo, y no hay nada que avisarle a nadie.
+        orden=orden if reglas.orden_de_favoritos_valido(orden) else None,
         pagina=formulario.leer_pagina(),
         por_pagina=current_app.config["POSTS_POR_PAGINA"],
     )
     posts = serializar_con_rating(
         paginacion.items, favoritos=consultas.ids_favoritos(g.user.id)
     )
-    return render_template("blog/favorites.html", posts=posts, paginacion=paginacion)
+    return render_template(
+        "blog/favorites.html",
+        posts=posts,
+        paginacion=paginacion,
+        categorias=Categorias.ETIQUETAS,
+        categoria_actual=categoria,
+        ordenes=reglas.OrdenesFavoritos.ETIQUETAS,
+        # Ya normalizado a uno valido, para que el <select> siempre tenga una
+        # opcion marcada aunque la URL traiga cualquier cosa.
+        orden_actual=(
+            orden if reglas.orden_de_favoritos_valido(orden)
+            else reglas.OrdenesFavoritos.RECIENTE
+        ),
+    )
 
 
 # ------------------------------------------------------------------ reportes

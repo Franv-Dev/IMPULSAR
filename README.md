@@ -4,6 +4,8 @@
 **IMPULSAR** es una aplicación web desarrollada con **Flask (Python)** y **MySQL**, diseñada para fortalecer el ecosistema emprendedor local.  
 El sistema permite a los usuarios **crear, administrar y difundir emprendimientos**, gestionando imágenes, ubicaciones, eventos y datos de contacto de forma simple, moderna y escalable.
 
+> **Antes de tocar código, leer `docs/CONTEXTO.md`** — ahí está el estado actual del proyecto, qué falta y cómo se viene trabajando.
+
 ---
 
 ## 🧭 Descripción general

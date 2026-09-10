@@ -4,8 +4,11 @@ import os
 from decimal import Decimal
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
-from models.product import MAX_PRODUCTOS_POR_POST, Product
+from models.product import (
+    MAX_PRODUCTOS_POR_POST, UMBRAL_AVISO_LIMITE, Product,
+)
 from services.precios import formatear, parsear_precio, texto_para_formulario
 
 
@@ -271,7 +274,7 @@ def test_sin_emprendimientos_no_se_puede_cargar_un_producto(client, crear_usuari
 
 
 def test_el_abm_requiere_estar_logueado(client):
-    for url in ("/productos/", "/productos/nuevo"):
+    for url in ("/productos/mios", "/productos/nuevo"):
         assert client.get(url).status_code == 302
 
 
@@ -446,7 +449,7 @@ def test_el_panel_muestra_solo_los_productos_propios(
     crear_producto(crear_post(ajeno.id).id, nombre="Pan ajeno")
     login(dueno.id)
 
-    html = client.get("/productos/").get_data(as_text=True)
+    html = client.get("/productos/mios").get_data(as_text=True)
 
     assert "Pan propio" in html
     assert "Pan ajeno" not in html
@@ -458,9 +461,77 @@ def test_el_panel_muestra_el_precio_formateado(
     _usuario, post = emprendedor_con_post()
     crear_producto(post.id, precio="1500.50")
 
-    html = client.get("/productos/").get_data(as_text=True)
+    html = client.get("/productos/mios").get_data(as_text=True)
 
     assert "$ 1.500,50" in html
+
+
+def test_el_panel_no_ofrece_planes(client, emprendedor_con_post, crear_producto):
+    """No hay planes en IMPULSAR: ni tabla, ni concepto, ni link.
+
+    El diseño ponia "Ver el límite por plan" al lado del contador. El tope es
+    MAX_PRODUCTOS_POR_POST, un numero fijo en el codigo.
+    """
+    _usuario, post = emprendedor_con_post()
+    crear_producto(post.id)
+
+    html = client.get("/productos/mios").get_data(as_text=True)
+
+    assert "plan" not in html.lower()
+
+
+def test_con_pocos_productos_el_panel_no_muestra_el_limite(
+    client, emprendedor_con_post, crear_producto
+):
+    """El contador va siempre; el tope, no.
+
+    "1 de 50" desde el primer producto anuncia un techo que un emprendimiento
+    de barrio no roza nunca y le da cara de gate de plan a algo que no lo es.
+    """
+    _usuario, post = emprendedor_con_post()
+    crear_producto(post.id, nombre="Pan de campo")
+
+    html = client.get("/productos/mios").get_data(as_text=True)
+
+    assert "1 producto" in html
+    assert f"de {MAX_PRODUCTOS_POR_POST} productos" not in html
+
+
+def test_cerca_del_tope_el_panel_si_muestra_el_limite(
+    client, emprendedor_con_post, crear_producto
+):
+    """Al que si lo choca hay que avisarle antes, no en el error del alta."""
+    _usuario, post = emprendedor_con_post()
+    for numero in range(UMBRAL_AVISO_LIMITE):
+        crear_producto(post.id, nombre=f"Pan {numero:02d}")
+
+    html = client.get("/productos/mios").get_data(as_text=True)
+
+    assert f"{UMBRAL_AVISO_LIMITE} de {MAX_PRODUCTOS_POR_POST} productos" in html
+    assert f"te quedan {MAX_PRODUCTOS_POR_POST - UMBRAL_AVISO_LIMITE}" in html
+
+
+def test_el_conteo_es_por_emprendimiento_y_no_global(
+    client, crear_usuario, crear_post, crear_producto, login
+):
+    """El tope es por emprendimiento, asi que el contador tambien.
+
+    Un contador global no diria nada sobre el limite que se puede chocar.
+    """
+    dueno = crear_usuario(username="dueno")
+    una = crear_post(dueno.id, title="Panadería")
+    otra = crear_post(dueno.id, title="Huerta")
+    crear_producto(una.id, nombre="Pan de campo")
+    crear_producto(otra.id, nombre="Lechuga")
+    crear_producto(otra.id, nombre="Tomate")
+    login(dueno.id)
+
+    html = client.get("/productos/mios").get_data(as_text=True)
+
+    # Uno en la panaderia y dos en la huerta, no "3 productos" en ningun lado.
+    assert "1 producto" in html
+    assert "2 productos" in html
+    assert "3 producto" not in html
 
 
 # --- catalogo publico
@@ -556,7 +627,10 @@ def test_sin_productos_el_dueno_ve_la_invitacion_a_cargar(
 
     html = client.get(f"/blog/{post.id}").get_data(as_text=True)
 
-    assert "Qué vende" in html
+    # El rediseño de la ficha renombro la seccion: "Lo que vende", al lado de
+    # "Lo que hace por encargo". Lo que se fija sigue siendo lo mismo: que al
+    # dueño se le dibuje el bloque aunque este vacio, con el link para cargar.
+    assert "Lo que vende" in html
     assert "/productos/nuevo" in html
 
 
@@ -610,3 +684,35 @@ def test_el_catalogo_no_dispara_una_consulta_por_producto(
         event.remove(db.engine, "before_cursor_execute", contar)
 
     assert len(consultas) == 1
+
+
+# --- el CHECK de la base
+
+def test_la_base_rechaza_un_producto_con_precio_negativo(
+    db, crear_usuario, crear_post
+):
+    """La red de abajo de parsear_precio (ck_products_precio_no_negativo).
+
+    El formulario ya corta el negativo con un mensaje, pero no es el unico
+    camino a la tabla: estan el seed, un script suelto y la consola de la base.
+    """
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    db.session.add(Product(post_id=post.id, nombre="Pan", precio=Decimal("-500.00")))
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()
+
+
+def test_la_base_acepta_un_producto_gratis(db, crear_usuario, crear_post):
+    """Es >= 0 y no > 0 a proposito: "primera consulta sin cargo" es una oferta
+    real. Que el formulario no acepte el cero lo decide parsear_precio, que se
+    puede cambiar sin migracion."""
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)
+
+    db.session.add(Product(post_id=post.id, nombre="Muestra", precio=Decimal("0.00")))
+    db.session.commit()
+
+    assert Product.query.filter_by(nombre="Muestra").one().precio == Decimal("0.00")

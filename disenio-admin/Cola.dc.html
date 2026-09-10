@@ -1,0 +1,255 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button, input { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-lat { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 13px;
+             border-radius: 11px; color: #4A5666; font-family: "Poppins", sans-serif;
+             font-size: 14px; font-weight: 500; }
+    .u-lat:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-lat--on { background: #ECEAF7; color: #33267C; font-weight: 600; }
+    .u-lat--on:hover { background: #ECEAF7; color: #33267C; }
+    .u-btn:hover { background: #483BA1; }
+    .u-sec { border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+             color: #4A5666; font-family: "Poppins", sans-serif; font-weight: 600;
+             cursor: pointer; }
+    .u-sec:hover { border-color: #C9D0E0; color: #3E2F94; }
+    .u-peligro { border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+                 color: #4A5666; font-family: "Poppins", sans-serif; font-weight: 600;
+                 cursor: pointer; }
+    .u-peligro:hover { border-color: #B91C1C; color: #B91C1C; background: #FEE2E2; }
+    .u-motivo { flex: 1; min-width: 0; height: 38px; padding: 0 14px; border: 1px solid #E2E6EE;
+                border-radius: 999px; background: #FFFFFF; font-size: 13.5px; color: #1B2430; }
+    .u-motivo::placeholder { color: #9AA5B5; }
+    .u-motivo:hover { border-color: #C9D0E0; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: #4A5666">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">T</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 26px 24px 56px">
+    <div style="display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 28px; align-items: start">
+
+      <aside style="position: sticky; top: 24px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 0 4px 14px; border-bottom: 1px solid #EEF1F7">
+          <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: #ECEAF7; color: #33267C">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 4.5 6.1v5.4c0 4.4 3.1 8.2 7.5 9.3 4.4-1.1 7.5-4.9 7.5-9.3V6.1Z"/><path d="m9.2 12 2 2 3.6-3.8"/></svg>
+          </span>
+          <span style="min-width: 0; display: flex; flex-direction: column; gap: 1px">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; color: #1B2430">Administración</span>
+            <span style="font-size: 12.5px; color: #5F6B7C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Tomás</span>
+          </span>
+        </div>
+
+        <nav style="display: flex; flex-direction: column; gap: 2px; margin-top: 10px">
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/></svg>
+            <span style="flex: 1">Resumen</span>
+          </a>
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.8 21 19.5H3Z"/><path d="M12 10v3.6M12 16.6h.01"/></svg>
+            <span style="flex: 1">Reportes</span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #FBEDE4; color: #8C4A22; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">2</span>
+          </a>
+          <a href="#" class="u-lat u-lat--on">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 4.5 6.1v5.4c0 4.4 3.1 8.2 7.5 9.3 4.4-1.1 7.5-4.9 7.5-9.3V6.1Z"/><path d="m9.2 12 2 2 3.6-3.8"/></svg>
+            <span style="flex: 1">Verificaciones</span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #FFFFFF; color: #8C4A22; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">3</span>
+          </a>
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 11.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8M2.6 20.2a6.6 6.6 0 0 1 13.2 0M16.8 5.6a3.4 3.4 0 0 1 0 6M18.6 20.2a6.8 6.8 0 0 0-1.8-4.6"/></svg>
+            <span style="flex: 1">Usuarios</span>
+          </a>
+          <a href="#" class="u-lat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16l1.6 5.2H2.4ZM5 9.2V20h14V9.2M10 20v-6.2h4V20"/></svg>
+            <span style="flex: 1">Emprendimientos</span>
+          </a>
+        </nav>
+      </aside>
+
+      <div style="min-width: 0; display: flex; flex-direction: column; gap: 18px">
+
+        <!-- LA COLA ES UNA PANTALLA, NO UNA TABLA. Una verificación se resuelve
+             mirando un documento y escribiendo un motivo: eso no entra en una celda
+             de una fila de seis columnas, que es lo que hay hoy (y con estilos
+             sueltos, sin el menú del panel). Ficha por ítem, acciones abajo. -->
+        <div>
+          <h1 style="font-size: 25px; letter-spacing: -.02em">Verificaciones</h1>
+          <p style="margin: 8px 0 0; font-size: 14.2px; line-height: 1.6; color: #5F6B7C; max-width: 660px">
+            3 pedidos sin revisar, los más viejos primero. Aprobar pone el sello en la ficha
+            del servicio; rechazar le avisa al prestador con el motivo que escribas.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px">
+
+          <article style="padding: 18px 20px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px">
+              <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">Electricidad</span>
+              <h2 style="font-size: 16.5px; font-weight: 600">Instalaciones eléctricas domiciliarias</h2>
+              <span style="flex: 1"></span>
+              <span style="display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #8C4A22">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l3 1.8"/></svg>
+                Esperando hace 5 días
+              </span>
+            </div>
+            <p style="margin: 10px 0 0; font-size: 13.5px; color: #5F6B7C">
+              <a href="#">Servicios del Oeste</a> · Godoy Cruz · pedido el <span style="font-variant-numeric: tabular-nums">01/09/2026</span>
+            </p>
+
+            <div style="display: flex; align-items: center; gap: 13px; margin-top: 14px; padding: 12px 14px; border: 1px solid #E2E6EE; border-radius: 14px; background: #F5F7FA">
+              <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E2E6EE; color: #5F6B7C">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4.5 4.5V21H6Z"/><path d="M14 3v5h4.5"/></svg>
+              </span>
+              <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+                <span style="font-size: 13.5px; font-weight: 500">Matrícula profesional</span>
+                <span style="font-size: 12.5px; color: #5F6B7C">Tiene nombre y número reales: se abre por la ruta con permiso, nunca desde /static.</span>
+              </span>
+              <button type="button" class="u-sec" style="flex-shrink: 0; height: 36px; padding: 0 15px; font-size: 13px">Ver documento</button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 15px; border-top: 1px solid #EEF1F7">
+              <button type="button" class="u-btn" style="height: 40px; padding: 0 20px; display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                Aprobar
+              </button>
+              <input type="text" class="u-motivo" placeholder="Motivo del rechazo (opcional)">
+              <button type="button" class="u-peligro" style="flex-shrink: 0; height: 38px; padding: 0 17px; font-size: 13.5px">Rechazar</button>
+            </div>
+          </article>
+
+          <article style="padding: 18px 20px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px">
+              <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">Gas</span>
+              <h2 style="font-size: 16.5px; font-weight: 600">Instalación y service de calefactores</h2>
+              <span style="flex: 1"></span>
+              <span style="display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #5F6B7C">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l3 1.8"/></svg>
+                Esperando hace 2 días
+              </span>
+            </div>
+            <p style="margin: 10px 0 0; font-size: 13.5px; color: #5F6B7C">
+              <a href="#">Gasista Matriculado Rivas</a> · Las Heras · pedido el <span style="font-variant-numeric: tabular-nums">04/09/2026</span>
+            </p>
+
+            <div style="display: flex; align-items: center; gap: 13px; margin-top: 14px; padding: 12px 14px; border: 1px solid #E2E6EE; border-radius: 14px; background: #F5F7FA">
+              <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E2E6EE; color: #5F6B7C">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4.5 4.5V21H6Z"/><path d="M14 3v5h4.5"/></svg>
+              </span>
+              <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+                <span style="font-size: 13.5px; font-weight: 500">Matrícula profesional</span>
+                <span style="font-size: 12.5px; color: #5F6B7C">Tiene nombre y número reales: se abre por la ruta con permiso, nunca desde /static.</span>
+              </span>
+              <button type="button" class="u-sec" style="flex-shrink: 0; height: 36px; padding: 0 15px; font-size: 13px">Ver documento</button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 15px; border-top: 1px solid #EEF1F7">
+              <button type="button" class="u-btn" style="height: 40px; padding: 0 20px; display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                Aprobar
+              </button>
+              <input type="text" class="u-motivo" value="La foto está cortada, no se lee el número de matrícula." style="color: #1B2430">
+              <button type="button" class="u-peligro" style="flex-shrink: 0; height: 38px; padding: 0 17px; font-size: 13.5px">Rechazar</button>
+            </div>
+          </article>
+
+          <!-- SIN FOTO ES UN ESTADO, NO UN HUECO. El modelo la deja nullable, y una
+               celda que dice "Sin foto" en gris no explica que no hay nada que
+               mirar: el botón de aprobar se apaga y el rechazo trae el motivo ya
+               escrito, que es la única salida sensata. -->
+          <article style="padding: 18px 20px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px">
+              <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600">Plomería</span>
+              <h2 style="font-size: 16.5px; font-weight: 600">Destapaciones y arreglos de cañerías</h2>
+              <span style="flex: 1"></span>
+              <span style="display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #5F6B7C">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l3 1.8"/></svg>
+                Esperando hace 1 día
+              </span>
+            </div>
+            <p style="margin: 10px 0 0; font-size: 13.5px; color: #5F6B7C">
+              <a href="#">Plomería Suárez</a> · Maipú · pedido el <span style="font-variant-numeric: tabular-nums">05/09/2026</span>
+            </p>
+
+            <div style="display: flex; align-items: center; gap: 13px; margin-top: 14px; padding: 12px 14px; border: 1px dashed #E2E6EE; border-radius: 14px; background: #F5F7FA">
+              <span style="flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 10px; background: #FFFFFF; border: 1px dashed #E2E6EE; color: #9AA5B5">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4.5 4.5V21H6Z"/><path d="M14 3v5h4.5"/><path d="m8 8 8 10"/></svg>
+              </span>
+              <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+                <span style="font-size: 13.5px; font-weight: 500; color: #4A5666">No adjuntó documento</span>
+                <span style="font-size: 12.5px; color: #5F6B7C">No hay nada que mirar, así que no hay nada que aprobar.</span>
+              </span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 15px; border-top: 1px solid #EEF1F7">
+              <button type="button" disabled style="height: 40px; padding: 0 20px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #E2E6EE; border-radius: 999px; background: #F5F7FA; color: #9AA5B5; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; cursor: not-allowed">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                Aprobar
+              </button>
+              <input type="text" class="u-motivo" value="Falta la foto de la matrícula." style="color: #1B2430">
+              <button type="button" class="u-peligro" style="flex-shrink: 0; height: 38px; padding: 0 17px; font-size: 13.5px">Rechazar</button>
+            </div>
+          </article>
+        </div>
+
+        <p style="margin: 4px 0 0; display: flex; align-items: center; gap: 9px; font-size: 13px; color: #5F6B7C">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.4M12 7.8h.01"/></svg>
+          Las resueltas no se listan: la cola muestra sólo lo pendiente, más viejo primero.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

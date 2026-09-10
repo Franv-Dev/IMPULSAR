@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-tab { flex: 1; display: flex; flex-direction: column; align-items: center;
+             justify-content: center; gap: 4px; height: 62px; color: #5F6B7C;
+             font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 10.5px; }
+    .u-tab--on { color: #3E2F94; font-weight: 600; }
+    .u-chip { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 13px;
+              flex-shrink: 0; border-radius: 999px; background: #FFFFFF; border: 1px solid #E2E6EE;
+              color: #4A5666; font-size: 13.5px; font-weight: 500; }
+    .u-chip--on { background: #ECEAF7; border-color: #5248AE; color: #33267C; font-weight: 600; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; max-width: 100%; height: 844px; overflow: hidden; background: #F5F7FA">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE">
+    <div style="height: 56px; padding: 0 16px; display: flex; align-items: center; gap: 12px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 26px; width: auto; display: block">
+      </a>
+      <div style="flex: 1"></div>
+      <button type="button" style="height: 34px; max-width: 190px; padding: 0 11px; display: flex; align-items: center; gap: 5px; border: 0; border-radius: 999px; background: #EEF1F7; color: #1B2430; cursor: pointer; font-size: 13px; font-weight: 500">
+        <span style="color: #3E2F94; display: flex">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/></svg>
+        </span>
+        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Mendoza Capital</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+
+    <div style="padding: 0 16px 12px">
+      <div style="height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 14px; background: #F5F7FA; border: 1px solid #E2E6EE; border-radius: 999px">
+        <span style="color: #5F6B7C; flex-shrink: 0; display: flex">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+        </span>
+        <span style="flex: 1; font-size: 14.5px; font-weight: 500; color: #1B2430">dulce de leche</span>
+        <span style="flex-shrink: 0; color: #5F6B7C; display: flex">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <div style="padding: 12px 0 0">
+
+    <!-- Los filtros no son una barra que se desliza: son dos fichas y un botón
+         que abre la hoja con todos. En 390 px una tira de seis chips vuelve a
+         cortar contra el borde. -->
+    <div style="display: flex; gap: 8px; padding: 0 16px 12px">
+      <button type="button" class="u-chip" style="flex: 1; justify-content: center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6h17M6.5 12h11M10 18h4"/></svg>
+        Filtros
+        <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 10.5px; font-weight: 700">2</span>
+      </button>
+      <button type="button" class="u-chip" style="flex: 1; justify-content: center">
+        Más nuevos
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 16px 12px">
+      <h1 style="font-size: 17px; letter-spacing: -.02em">18 productos</h1>
+      <span style="font-size: 12.5px; color: #5F6B7C">de 11 emprendimientos</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 0 16px">
+      <sc-for list="{{ productos }}" as="p" hint-placeholder-count="4">
+        <article style="display: flex; flex-direction: column; min-width: 0; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; overflow: hidden">
+          <div style="position: relative; aspect-ratio: 1 / 1; background: {{ p.foto }}">
+            <span style="{{ p.agotado }}">Sin stock</span>
+            <button type="button" aria-label="Guardar" style="position: absolute; right: 8px; top: 8px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: rgba(255,255,255,.92); color: #4A5666; cursor: pointer; padding: 0; box-shadow: 0 2px 8px rgba(23,20,71,.14)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.2-4.5-7.2-9.4A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.9C19.2 15.5 12 20 12 20Z"/></svg>
+            </button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 11px 12px 13px; min-width: 0">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -.02em">{{ p.precio }}</span>
+            <span style="font-size: 13px; line-height: 1.3; color: #1B2430">{{ p.nombre }}</span>
+            <span style="display: flex; align-items: center; gap: 6px; margin-top: 3px; min-width: 0">
+              <span style="{{ p.rubroPunto }}"></span>
+              <span style="flex: 1; min-width: 0; font-size: 11.5px; color: #5F6B7C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ p.negocio }}</span>
+            </span>
+            <span style="font-size: 11.5px; color: #5F6B7C">{{ p.donde }}</span>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+  </div>
+
+  <nav style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-top: 1px solid #E2E6EE; box-shadow: 0 -2px 12px rgba(15,23,42,.05); padding-bottom: 18px">
+    <div style="display: flex; align-items: stretch">
+      <a href="#" class="u-tab">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.6 12 4.2l8 6.4V19a1.4 1.4 0 0 1-1.4 1.4h-3.3v-5.6H8.7v5.6H5.4A1.4 1.4 0 0 1 4 19Z"/></svg>
+        Inicio
+      </a>
+      <a href="#" class="u-tab u-tab--on">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="m15.3 8.7-1.9 4.6-4.6 1.9 1.9-4.6Z"/></svg>
+        Explorar
+      </a>
+      <a href="#" class="u-tab">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        Favoritos
+      </a>
+      <a href="#" class="u-tab" style="position: relative">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        <span style="position: absolute; top: 6px; left: 50%; margin-left: 4px; min-width: 18px; height: 18px; padding: 0 4px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; border: 2px solid #FFFFFF">3</span>
+        Mensajes
+      </a>
+      <a href="#" class="u-tab">
+        <span style="width: 23px; height: 23px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11px">L</span>
+        Perfil
+      </a>
+    </div>
+  </nav>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const datos = [
+      { nombre: "Dulce de leche repostero, 1 kg", precio: "$ 8.400", negocio: "Conservas del Challao", tinta: "#9A5230", donde: "El Challao · a 4,2 km", foto: "linear-gradient(150deg, #EEE0D6, #C9AE99)", hay: true },
+      { nombre: "Alfajores de maicena x 12",      precio: "$ 6.200", negocio: "Panadería La Cuadra",   tinta: "#9A5230", donde: "Godoy Cruz · a 1,2 km", foto: "linear-gradient(150deg, #F3E4D6, #D9B79A)", hay: true },
+      { nombre: "Frasco artesanal, 500 g",        precio: "$ 5.900", negocio: "Tambo Los Álamos",      tinta: "#9A5230", donde: "Maipú · a 9,8 km",      foto: "linear-gradient(150deg, #E4EADD, #B3C3A2)", hay: false },
+      { nombre: "Tarro de cerámica para dulce",   precio: "$ 14.000", negocio: "Estudio Verde Cerámica", tinta: "#635EA3", donde: "Ciudad · a 400 m",     foto: "linear-gradient(150deg, #E7E2F3, #B9AEDC)", hay: true }
+    ];
+
+    const productos = datos.map((p) => Object.assign({}, p, {
+      rubroPunto: "flex-shrink: 0; width: 8px; height: 8px; border-radius: 999px; background: " + p.tinta,
+      agotado: p.hay
+        ? "display: none"
+        : "position: absolute; left: 8px; top: 8px; display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 999px; background: rgba(10,8,28,.62); color: rgba(255,255,255,.94); font-size: 10.5px; font-weight: 700"
+    }));
+
+    return { productos: productos };
+  }
+}
+</script>
+</body>
+</html>

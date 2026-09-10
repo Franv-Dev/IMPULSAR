@@ -1,0 +1,392 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-card { transition: border-color .18s ease, box-shadow .18s ease; }
+    .u-card:hover { border-color: #C9D0E0; box-shadow: 0 18px 40px rgba(23,20,71,.12); }
+    .u-btn-primario:hover { background: #483BA1; color: #FFFFFF; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-nav--on { color: #3E2F94; font-weight: 600; border-bottom-color: #3E2F94; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-campo:hover { background: #EEF1F7; }
+    .u-ancla { display: inline-flex; align-items: center; height: 38px; padding: 0 16px;
+               border-radius: 999px; font-family: "Poppins", system-ui, sans-serif;
+               font-weight: 600; font-size: 14px; color: #4A5666; }
+    .u-ancla:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-ancla--on { background: #ECEAF7; color: #33267C; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 3; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav u-nav--on">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+          <span style="position: absolute; top: 3px; right: 3px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; border: 2px solid #FFFFFF">3</span>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: #4A5666">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">L</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid #EEF1F7">
+      <div style="max-width: 1160px; margin: 0 auto; padding: 14px 24px; display: flex; justify-content: center">
+        <div style="width: 100%; max-width: 720px; height: 52px; display: flex; align-items: center; padding: 0 6px 0 0; background: #F5F7FA; border: 1px solid #E2E6EE; border-radius: 999px; box-sizing: border-box">
+          <div class="u-campo" style="flex: 1.8; min-width: 0; height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-radius: 999px 0 0 999px">
+            <span style="color: #5F6B7C; flex-shrink: 0; display: flex">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 15px; color: #5F6B7C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Pan de masa madre, plomero, cerámica…</span>
+          </div>
+          <span style="width: 1px; height: 26px; background: #E2E6EE; flex-shrink: 0"></span>
+          <div class="u-campo" style="flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 9px; padding: 0 14px">
+            <span style="color: #3E2F94; flex-shrink: 0; display: flex">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 15px; font-weight: 500; color: #1B2430; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Mendoza Capital</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m6 9.5 6 6 6-6"/></svg>
+          </div>
+          <button type="button" class="u-btn-primario" style="flex-shrink: 0; height: 40px; padding: 0 24px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14.5px">Buscar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 20px 24px 56px; display: flex; flex-direction: column; gap: 22px">
+
+    <nav style="display: flex; align-items: center; gap: 9px; font-size: 13px; color: #5F6B7C">
+      <a href="#" style="color: #5F6B7C">Emprendimientos</a>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg>
+      <a href="#" style="color: #5F6B7C">Artesanías</a>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg>
+      <span style="color: #1B2430">Estudio Verde Cerámica</span>
+    </nav>
+
+    <!-- GALERÍA: una grande y tres chicas, el mismo patrón que el anuncio pago,
+         para que el sistema sea uno solo. -->
+    <div style="display: grid; grid-template-columns: 1.62fr 1fr; gap: 10px; height: 400px">
+      <div style="position: relative; border-radius: 20px; overflow: hidden; background: linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)">
+        <span style="position: absolute; left: 18px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: rgba(10,8,28,.5); color: rgba(255,255,255,.92); font-size: 12px; font-weight: 600">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+          Ver las 8 fotos
+        </span>
+      </div>
+      <div style="display: grid; grid-template-rows: repeat(3, 1fr); gap: 10px">
+        <sc-for list="{{ galeria }}" as="g" hint-placeholder-count="3">
+          <div style="{{ g.estilo }}"></div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 372px; gap: 28px; align-items: start">
+
+      <!-- COLUMNA IZQUIERDA -->
+      <div style="display: flex; flex-direction: column; gap: 20px">
+
+        <div style="display: flex; flex-direction: column; gap: 13px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span style="display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px; background: #EEEFFE; color: #635EA3; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase">Artesanías</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 12px; font-weight: 600">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #1C7B53"></span>Abierto ahora · cierra 19:00
+            </span>
+          </div>
+
+          <h1 style="font-size: 36px; line-height: 1.1; letter-spacing: -.03em">Estudio Verde Cerámica</h1>
+
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 16px; font-size: 14px; color: #4A5666">
+            <span style="display: inline-flex; align-items: center; gap: 7px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#E8A33D"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+              <strong style="color: #1B2430">4,6</strong> · 23 reseñas
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 7px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5248AE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+              Güemes 1480 · <strong style="color: #1B2430">a 400 m tuyo</strong>
+            </span>
+          </div>
+
+          <p style="margin: 4px 0 0; max-width: 62ch; font-size: 15px; line-height: 1.7; color: #4A5666">Hacemos vajilla de gres a torno para casas y restaurantes de la ciudad. Todo sale del taller de Güemes: el torno, el esmalte y los dos hornos. Si querés algo puntual —una bajada de platos para tu restaurante, un juego de mates— se puede encargar y lo vas viendo mientras se hace.</p>
+        </div>
+
+        <!-- ANCLAS: no son pestañas. Nada se esconde detrás de un click; la
+             barra se pega arriba al scrollear y marca en qué bloque estás.
+             Con tabs, un emprendimiento con dos productos se ve vacío en tres
+             de las cuatro solapas. -->
+        <div style="position: sticky; top: 12px; z-index: 2; display: flex; align-items: center; gap: 4px; padding: 8px; border: 1px solid #E2E6EE; border-radius: 999px; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(23,20,71,.06)">
+          <a href="#" class="u-ancla u-ancla--on">Lo que vende</a>
+          <a href="#" class="u-ancla">Por encargo</a>
+          <a href="#" class="u-ancla">Reseñas <span style="margin-left: 6px; font-weight: 500; color: #5F6B7C">23</span></a>
+          <a href="#" class="u-ancla">Información</a>
+          <span style="flex: 1"></span>
+          <a href="#" style="display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 999px; color: #5F6B7C; font-size: 13px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            1.204 visitas
+          </a>
+        </div>
+
+        <!-- PRODUCTOS: existen en el modelo, con precio, foto y disponible. -->
+        <div style="display: flex; flex-direction: column; gap: 14px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+            <h2 style="font-size: 20px; letter-spacing: -.02em">Lo que vende</h2>
+            <span style="font-size: 13px; color: #5F6B7C">Precios de referencia, se acuerdan por mensaje</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px">
+            <sc-for list="{{ productos }}" as="p" hint-placeholder-count="3">
+              <article class="u-card" style="display: flex; flex-direction: column; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF; overflow: hidden">
+                <div style="position: relative; height: 124px; background: {{ p.foto }}">
+                  <span style="{{ p.agotado }}">Sin stock</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px; padding: 13px 14px 15px">
+                  <span style="font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600; letter-spacing: -.01em">{{ p.nombre }}</span>
+                  <span style="font-size: 12.5px; line-height: 1.5; color: #5F6B7C">{{ p.detalle }}</span>
+                  <span style="margin-top: 3px; font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -.02em; color: #1B2430">{{ p.precio }}</span>
+                </div>
+              </article>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- SERVICIOS: rubro, zona de cobertura, precio estimado y turnos, que
+             es lo que trae app/servicios/modelo.py. -->
+        <div style="display: flex; flex-direction: column; gap: 14px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <h2 style="font-size: 20px; letter-spacing: -.02em">Lo que hace por encargo</h2>
+          <sc-for list="{{ servicios }}" as="s" hint-placeholder-count="2">
+            <div class="u-card" style="display: flex; align-items: center; gap: 16px; padding: 16px 18px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+              <span style="flex-shrink: 0; width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: #EEEFFE; color: #635EA3">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6.5a3.5 3.5 0 0 1 4.8-3.2l-2.5 2.5 1.4 1.4 2.5-2.5a3.5 3.5 0 0 1-4.6 4.7L6.8 18.7a1.9 1.9 0 1 1-2.7-2.7l9.3-9.3Z"/></svg>
+              </span>
+              <span style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+                <span style="display: flex; align-items: center; gap: 9px">
+                  <span style="font-family: 'Poppins', sans-serif; font-size: 15.5px; font-weight: 600; letter-spacing: -.01em">{{ s.titulo }}</span>
+                  <span style="{{ s.verificado }}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                    Verificado
+                  </span>
+                </span>
+                <span style="font-size: 13px; line-height: 1.5; color: #5F6B7C">{{ s.detalle }}</span>
+                <span style="display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 3px">
+                  <span style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12px; font-weight: 600">{{ s.zona }}</span>
+                  <span style="{{ s.turnoChip }}">{{ s.turno }}</span>
+                </span>
+              </span>
+              <span style="flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 8px">
+                <span style="font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 700; color: #1B2430">{{ s.precio }}</span>
+                <button type="button" class="u-btn-primario" style="display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 13.5px; font-weight: 600; cursor: pointer">Pedir presupuesto</button>
+              </span>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- RESEÑAS -->
+        <div style="display: flex; flex-direction: column; gap: 16px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+            <h2 style="font-size: 20px; letter-spacing: -.02em">Reseñas</h2>
+            <a href="#" style="font-size: 13.5px; font-weight: 600">Ver las 23</a>
+          </div>
+          <sc-for list="{{ resenias }}" as="r" hint-placeholder-count="2">
+            <div style="display: flex; gap: 14px; padding-bottom: 16px; border-bottom: 1px solid #E2E6EE">
+              <span style="flex-shrink: 0; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700">{{ r.iniciales }}</span>
+              <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+                <span style="display: flex; align-items: center; gap: 10px">
+                  <span style="font-size: 14px; font-weight: 600">{{ r.nombre }}</span>
+                  <span style="font-size: 12.5px; color: #5F6B7C">{{ r.cuando }}</span>
+                </span>
+                <span style="display: flex; gap: 2px">
+                  <sc-for list="{{ r.estrellas }}" as="e" hint-placeholder-count="5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="{{ e.color }}"><path d="m12 3.6 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.8L12 3.6Z"/></svg>
+                  </sc-for>
+                </span>
+                <span style="font-size: 14px; line-height: 1.6; color: #4A5666">{{ r.texto }}</span>
+              </span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: contacto y todo lo que la competencia no tiene. -->
+      <aside style="position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px">
+
+        <div style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(23,20,71,.08)">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span style="flex-shrink: 0; width: 52px; height: 52px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #33267C; font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 700">VR</span>
+            <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: -.01em">Valentina Ruiz</span>
+              <span style="font-size: 13px; color: #5F6B7C">Publica en IMPULSAR desde 2024</span>
+            </span>
+          </div>
+
+          <button type="button" class="u-btn-primario" style="display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 50px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/></svg>
+            Enviar un mensaje
+          </button>
+          <button type="button" style="display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 50px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-size: 15px; font-weight: 600; cursor: pointer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.2-4.5-7.2-9.4A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.9C19.2 15.5 12 20 12 20Z"/></svg>
+            Guardar
+          </button>
+          <p style="margin: 0; font-size: 12px; line-height: 1.55; color: #5F6B7C">Hablás directo con Valentina. IMPULSAR no cobra comisión ni se mete en el trato.</p>
+        </div>
+
+        <!-- HORARIOS: existen en app/perfil/modelo_horario.py y son el filtro
+             "abierto ahora". Se muestran enteros, con hoy marcado. -->
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+            <h3 style="font-size: 15.5px; letter-spacing: -.01em">Horarios</h3>
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 11.5px; font-weight: 700">
+              <span style="width: 6px; height: 6px; border-radius: 999px; background: #1C7B53"></span>Abierto
+            </span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <sc-for list="{{ horarios }}" as="h" hint-placeholder-count="7">
+              <span style="{{ h.fila }}">
+                <span>{{ h.dia }}</span>
+                <span style="{{ h.horaEstilo }}">{{ h.hora }}</span>
+              </span>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- FERIAS: el gancho que ni Mercado Libre ni Marketplace pueden copiar. -->
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+          <h3 style="font-size: 15.5px; letter-spacing: -.01em">Dónde encontrarla</h3>
+          <div style="display: flex; gap: 13px; padding: 14px; border-radius: 14px; background: #EEF1F7">
+            <span style="flex-shrink: 0; width: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 11px; background: #FFFFFF; border: 1px solid #E2E6EE">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 700; line-height: 1; color: #33267C">6</span>
+              <span style="font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #5F6B7C">Sep</span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span style="font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600">Feria de Plaza Mitre</span>
+              <span style="font-size: 12.5px; line-height: 1.5; color: #5F6B7C">Sábado y domingo, de 10 a 19. Puesto 14.</span>
+            </span>
+          </div>
+          <a href="#" style="display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600">
+            Ver todas sus ferias
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+          </a>
+        </div>
+
+        <div style="border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; overflow: hidden">
+          <div style="position: relative; height: 172px; background: linear-gradient(160deg, #EEF1F7 0%, #E2E6EE 100%)">
+            <span style="position: absolute; inset: 0; background-image: linear-gradient(rgba(94,106,122,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(94,106,122,.13) 1px, transparent 1px); background-size: 30px 30px"></span>
+            <span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 15px; height: 15px; border-radius: 999px; background: #5248AE; border: 3px solid #FFFFFF; box-shadow: 0 2px 8px rgba(23,20,71,.3)"></span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px">
+            <span style="font-size: 13px; color: #5F6B7C">Güemes 1480</span>
+            <a href="#" style="font-size: 13px; font-weight: 600">Cómo llegar</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":2360}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const PLANCHA = "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)";
+
+    const galeria = ["0% 0%", "50% 50%", "100% 100%"].map((pos) => ({
+      estilo: "border-radius: 16px; background-image: " + PLANCHA
+        + "; background-size: 220% 220%; background-position: " + pos
+    }));
+
+    const productos = [
+      { nombre: "Juego de 4 tazas", detalle: "Gres esmaltado, 250 ml", precio: "$ 38.000", hay: true },
+      { nombre: "Bowl hondo", detalle: "Para ensalada, 22 cm", precio: "$ 21.500", hay: true },
+      { nombre: "Set de mate", detalle: "Mate, bombilla y plato", precio: "$ 44.000", hay: false }
+    ].map((p, n) => Object.assign({}, p, {
+      foto: "linear-gradient(150deg, #4A3AA8 0%, #33267C 55%, #635EA3 150%)",
+      agotado: p.hay
+        ? "display: none"
+        : "position: absolute; left: 9px; top: 9px; display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 999px; background: rgba(10,8,28,.6); color: rgba(255,255,255,.9); font-size: 10.5px; font-weight: 700"
+    }));
+
+    const servicios = [
+      { titulo: "Vajilla por encargo para restaurantes", detalle: "Se acuerda modelo y cantidad, con muestra antes de la tanda.",
+        zona: "Toda la ciudad", precio: "Desde $ 90.000", turno: "Responde en 24 h", conTurno: false, esVerificado: true },
+      { titulo: "Taller de torno y esmaltado", detalle: "Cuatro clases, materiales incluidos. Grupos de hasta 6.",
+        zona: "En el taller", precio: "$ 62.000", turno: "Con turno online", conTurno: true, esVerificado: false }
+    ].map((s) => Object.assign({}, s, {
+      verificado: s.esVerificado
+        ? "display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; background: #E6F4EC; color: #1C7B53; font-size: 10.5px; font-weight: 700"
+        : "display: none",
+      turnoChip: "display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; "
+        + (s.conTurno ? "background: #ECEAF7; color: #33267C" : "background: #EEF1F7; color: #4A5666")
+    }));
+
+    const estrellas = (n) => {
+      const salida = [];
+      for (let k = 0; k < 5; k++) salida.push({ color: k < n ? "#E8A33D" : "#E2E6EE" });
+      return salida;
+    };
+
+    const resenias = [
+      { nombre: "Camila Suárez", iniciales: "CS", cuando: "hace 2 semanas", puntos: 5,
+        texto: "Encargué una bajada de platos para el restaurante y salió mejor de lo que esperaba. Fue mandando fotos del proceso, así que no hubo sorpresas." },
+      { nombre: "Julián Ortiz", iniciales: "JO", cuando: "hace 1 mes", puntos: 4,
+        texto: "Las tazas son hermosas y aguantan el lavavajillas. Tardó una semana más de lo hablado, pero avisó." }
+    ].map((r) => Object.assign({}, r, { estrellas: estrellas(r.puntos) }));
+
+    const HOY = 3; // jueves
+    const horarios = [
+      { dia: "Lunes", hora: "Cerrado", abre: false },
+      { dia: "Martes", hora: "10:00 – 19:00", abre: true },
+      { dia: "Miércoles", hora: "10:00 – 19:00", abre: true },
+      { dia: "Jueves", hora: "10:00 – 19:00", abre: true },
+      { dia: "Viernes", hora: "10:00 – 19:00", abre: true },
+      { dia: "Sábado", hora: "10:00 – 14:00", abre: true },
+      { dia: "Domingo", hora: "Cerrado", abre: false }
+    ].map((h, n) => Object.assign({}, h, {
+      fila: "display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 30px; padding: 0 10px; border-radius: 8px; font-size: 13.5px; "
+        + (n === HOY ? "background: #ECEAF7; color: #1B2430; font-weight: 600" : "color: #4A5666"),
+      horaEstilo: h.abre ? "color: inherit" : "color: #5F6B7C"
+    }));
+
+    return {
+      galeria: galeria,
+      productos: productos,
+      servicios: servicios,
+      resenias: resenias,
+      horarios: horarios
+    };
+  }
+}
+</script>
+</body>
+</html>

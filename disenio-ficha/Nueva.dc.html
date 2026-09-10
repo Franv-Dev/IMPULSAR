@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-nav--on { color: #3E2F94; font-weight: 600; border-bottom-color: #3E2F94; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-btn-primario:hover { background: #483BA1; color: #FFFFFF; }
+    .u-vacio { display: flex; flex-direction: column; align-items: center; gap: 10px;
+               padding: 30px 24px; border: 1.5px dashed #D7DDEA; border-radius: 16px;
+               background: #FAFBFD; text-align: center; }
+    .u-tarea:hover { background: #EEF1F7; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 3; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav u-nav--on">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        </a>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: #4A5666">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">M</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- BARRA DE DUEÑA: la app nunca dice que estás parada en tu propia ficha. -->
+  <div style="background: #ECEAF7; border-bottom: 1px solid #D9D4EE">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; gap: 12px">
+      <span style="display: flex; color: #3E2F94">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></svg>
+      </span>
+      <span style="flex: 1; font-size: 14px; color: #33267C">Ésta es tu ficha, tal como la ve cualquiera que entre.</span>
+      <a href="#" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; border: 1px solid #D9D4EE; color: #33267C; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 13.5px">Editar los datos</a>
+    </div>
+  </div>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 22px 24px 56px; display: grid; grid-template-columns: 1fr 372px; gap: 28px; align-items: start">
+
+    <div style="display: flex; flex-direction: column; gap: 20px">
+
+      <!-- GALERÍA VACÍA: no un rectángulo gris con un iconito, que se lee como
+           carga rota, sino la invitación con el motivo. -->
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; height: 300px; border: 1.5px dashed #D7DDEA; border-radius: 20px; background: #FAFBFD">
+        <span style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #ECEAF7; color: #3E2F94">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="10" r="1.7"/><path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/></svg>
+        </span>
+        <h2 style="font-size: 19px; letter-spacing: -.02em">Todavía no subiste ninguna foto</h2>
+        <p style="margin: 0; max-width: 46ch; text-align: center; font-size: 14px; line-height: 1.6; color: #5F6B7C">La foto es lo primero que se ve en el listado y en el buscador. Sin ella tu emprendimiento aparece como un recuadro vacío al lado de los que sí tienen.</p>
+        <button type="button" class="u-btn-primario" style="height: 44px; padding: 0 22px; margin-top: 4px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14.5px">Subir fotos</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 13px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px; background: #FDECE5; color: #9A5230; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase">Alimentos</span>
+          <a href="#" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #EEF1F7; color: #4A5666; font-size: 12px; font-weight: 600">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+            Sin horarios · cargalos
+          </a>
+        </div>
+
+        <h1 style="font-size: 36px; line-height: 1.1; letter-spacing: -.03em">Conservas del Challao</h1>
+
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 16px; font-size: 14px; color: #5F6B7C">
+          <span>Todavía nadie dejó una reseña</span>
+          <span style="display: inline-flex; align-items: center; gap: 7px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5248AE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            Las Heras 220, El Challao
+          </span>
+        </div>
+
+        <p style="margin: 4px 0 0; max-width: 62ch; font-size: 15px; line-height: 1.7; color: #4A5666">Dulces, escabeches y conservas de temporada, hechos en casa con fruta y verdura de la zona. Se entrega en el Challao y alrededores.</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+        <h2 style="font-size: 20px; letter-spacing: -.02em">Lo que vende</h2>
+        <div class="u-vacio">
+          <h3 style="font-size: 16px; letter-spacing: -.01em">Todavía no cargaste productos</h3>
+          <p style="margin: 0; max-width: 48ch; font-size: 13.5px; line-height: 1.6; color: #5F6B7C">Cada producto con foto y precio es una razón más para que te escriban. Podés empezar con uno.</p>
+          <a href="#" style="display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 18px; margin-top: 2px; border: 1px solid #D9D4EE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 13.5px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Agregar un producto
+          </a>
+        </div>
+      </div>
+
+      <!-- SERVICIOS: el otro lado. Un emprendimiento puede vender cosas,
+           hacer trabajos, o las dos. Para la dueña los dos bloques se ven
+           siempre —si no, no se entera de que puede cargar servicios—; para
+           un visitante sólo se dibuja el bloque que tiene algo adentro. -->
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+          <h2 style="font-size: 20px; letter-spacing: -.02em">Lo que hace por encargo</h2>
+          <span style="font-size: 13px; color: #5F6B7C">Trabajos a pedido, con presupuesto o turno</span>
+        </div>
+        <div class="u-vacio">
+          <h3 style="font-size: 16px; letter-spacing: -.01em">Todavía no cargaste servicios</h3>
+          <p style="margin: 0; max-width: 52ch; font-size: 13.5px; line-height: 1.6; color: #5F6B7C">Un <strong style="color: #4A5666">producto</strong> tiene precio y se compra tal cual está. Un <strong style="color: #4A5666">servicio</strong> es un trabajo a pedido: podés dejar el precio abierto y que te pidan presupuesto, o dar turno online.</p>
+          <p style="margin: 0; max-width: 52ch; font-size: 13.5px; line-height: 1.6; color: #5F6B7C">Si tu emprendimiento es sólo de servicios, este bloque va a ser el principal de tu ficha y el de productos no se le muestra a nadie.</p>
+          <a href="#" style="display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 18px; margin-top: 2px; border: 1px solid #D9D4EE; border-radius: 999px; background: #FFFFFF; color: #33267C; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 13.5px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Agregar un servicio
+          </a>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 26px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+        <h2 style="font-size: 20px; letter-spacing: -.02em">Reseñas</h2>
+        <div class="u-vacio">
+          <h3 style="font-size: 16px; letter-spacing: -.01em">Todavía nadie te reseñó</h3>
+          <p style="margin: 0; max-width: 48ch; font-size: 13.5px; line-height: 1.6; color: #5F6B7C">Las reseñas las escribe quien te compró. No se piden desde acá ni se pueden cargar a mano: aparecen solas cuando alguien deja la suya.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: en una ficha nueva, lo que falta ES la acción. -->
+    <aside style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF; box-shadow: 0 16px 40px rgba(23,20,71,.08)">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+          <h3 style="font-size: 15.5px; letter-spacing: -.01em">Completá tu ficha</h3>
+          <span style="font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #5F6B7C">2 de 5</span>
+        </div>
+
+        <div style="height: 6px; border-radius: 999px; background: #EEF1F7; overflow: hidden">
+          <div style="width: 40%; height: 100%; border-radius: 999px; background: #5248AE"></div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border-radius: 10px; font-size: 13.5px; color: #5F6B7C">
+            <span style="width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #E6F4EC; color: #1F7A4D">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            </span>
+            <span style="flex: 1; text-decoration: line-through">Nombre y descripción</span>
+          </span>
+          <span style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border-radius: 10px; font-size: 13.5px; color: #5F6B7C">
+            <span style="width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #E6F4EC; color: #1F7A4D">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            </span>
+            <span style="flex: 1; text-decoration: line-through">Dirección en el mapa</span>
+          </span>
+          <a href="#" class="u-tarea" style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border-radius: 10px; font-size: 13.5px; font-weight: 500; color: #1B2430">
+            <span style="width: 20px; height: 20px; flex-shrink: 0; border-radius: 999px; border: 1.8px solid #C9D0E0"></span>
+            <span style="flex: 1">Subir las fotos</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+          <a href="#" class="u-tarea" style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border-radius: 10px; font-size: 13.5px; font-weight: 500; color: #1B2430">
+            <span style="width: 20px; height: 20px; flex-shrink: 0; border-radius: 999px; border: 1.8px solid #C9D0E0"></span>
+            <span style="flex: 1">Cargar los horarios</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+          <a href="#" class="u-tarea" style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border-radius: 10px; font-size: 13.5px; font-weight: 500; color: #1B2430">
+            <span style="width: 20px; height: 20px; flex-shrink: 0; border-radius: 999px; border: 1.8px solid #C9D0E0"></span>
+            <span style="flex: 1">Cargar un producto o un servicio</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+          </a>
+        </div>
+
+        <p style="margin: 2px 0 0; font-size: 12px; line-height: 1.55; color: #5F6B7C">Sin horarios cargados tu ficha no aparece cuando alguien filtra por «abierto ahora».</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border: 1px solid #E2E6EE; border-radius: 20px; background: #FFFFFF">
+        <h3 style="font-size: 15.5px; letter-spacing: -.01em">Dónde encontrarte</h3>
+        <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: #5F6B7C">Si vas a una feria, cargala: es lo único que ni Mercado Libre ni Marketplace muestran, y es por donde te encuentran en persona.</p>
+        <a href="#" style="display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600">
+          Cargar una feria o evento
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+        </a>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

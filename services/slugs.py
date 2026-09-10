@@ -33,14 +33,14 @@ SLUGS_RESERVADOS = frozenset({
     # rutas reales bajo /perfil/ (ver app/perfil/vistas.py). Cada vez que se suma
     # una ruta estatica ahi hay que sumarla aca: Werkzeug le da prioridad sobre
     # /perfil/<slug>, asi que el usuario que se llame igual queda sin perfil.
-    "edit", "create_bio", "horarios",
+    "edit", "create_bio", "horarios", "mi-cuenta",
     # sub-rutas de /perfil/<slug>/: no tapan un slug, se reservan por prolijidad
     "resenias", "seguir",
     # prefijos de blueprint y rutas de primer nivel de la app
     "admin", "api", "static", "auth", "blog", "mensajes", "perfil",
     "login", "logout", "register", "registro", "me",
     "sobre", "contacto", "terminos", "privacidad",
-    "favoritos", "mis-emprendimientos", "eventos", "servicios",
+    "favoritos", "mis-emprendimientos", "eventos", "servicios", "turnos",
     # nombres institucionales, para que no se los pueda usurpar
     "impulsar", "soporte", "ayuda", "root", "administrador",
 })

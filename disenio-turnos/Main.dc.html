@@ -1,0 +1,392 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-nav--on { color: #33267C; font-weight: 600; border-bottom-color: #3E2F94; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-btn:hover { background: #483BA1; }
+    .u-dia--libre:hover { border-color: #3E2F94; background: #FFFFFF; }
+    .u-slot--libre:hover { border-color: #3E2F94; background: #ECEAF7; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav">Emprendimientos</a>
+        <a href="#" class="u-nav u-nav--on">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: #4A5666">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">L</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 18px 24px 56px">
+
+    <p style="margin: 0 0 14px; font-size: 13.5px">
+      <a href="#" style="color: #5F6B7C">&lsaquo; Volver a Estudio Verde Cerámica</a>
+    </p>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 28px; align-items: start">
+
+      <div style="display: flex; flex-direction: column; gap: 18px; min-width: 0">
+
+        <div>
+          <h1 style="font-size: 26px; letter-spacing: -.02em">Reservar un turno</h1>
+          <p style="margin: 7px 0 0; font-size: 14.2px; line-height: 1.6; color: #5F6B7C">
+            Elegí el día y la hora. El horario que reserves queda tomado en el momento:
+            nadie tiene que confirmártelo después.
+          </p>
+        </div>
+
+        <!-- LA TIRA DE DÍAS REEMPLAZA AL <input type="date">.
+             Hoy la pantalla pide una fecha a ciegas y recién después dice si ese
+             día había algo. La tira muestra la semana entera y marca cuáles
+             están cerrados y cuáles completos antes de tocar nada. -->
+        <section style="padding: 18px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px">
+            <h2 style="flex: 1; font-size: 16px">Septiembre de 2026</h2>
+            <button type="button" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 10px; background: #FFFFFF; color: #C9D0E0; cursor: not-allowed">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6-6 6 6 6"/></svg>
+            </button>
+            <button type="button" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E2E6EE; border-radius: 10px; background: #FFFFFF; color: #4A5666; cursor: pointer">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6"/></svg>
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px">
+            <sc-for list="{{ dias }}" as="dia" hint-placeholder-count="7">
+              <button type="button" onClick="{{ dia.elegir }}" class="{{ dia.clase }}" style="{{ dia.estilo }}">
+                <span style="{{ dia.estiloNombre }}">{{ dia.nombre }}</span>
+                <span style="{{ dia.estiloNumero }}">{{ dia.numero }}</span>
+                <span style="{{ dia.estiloPie }}">{{ dia.pie }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </section>
+
+        <!-- LOS HORARIOS DEL DÍA ELEGIDO, partidos en mañana y tarde.
+             Los ocupados se dibujan apagados en vez de desaparecer: una tira con
+             cuatro horas sueltas y sin explicación se lee como que el negocio
+             casi no atiende. -->
+        <section style="padding: 20px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+            <h2 style="font-size: 16px">{{ tituloDia }}</h2>
+            <span style="font-size: 13px; color: #5F6B7C">{{ atencionDia }}</span>
+          </div>
+
+          <sc-if value="{{ hayHorarios }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 16px">
+              <sc-for list="{{ franjas }}" as="franja" hint-placeholder-count="2">
+                <div>
+                  <p style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: #5F6B7C">{{ franja.titulo }}</p>
+                  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+                    <sc-for list="{{ franja.slots }}" as="slot" hint-placeholder-count="4">
+                      <button type="button" onClick="{{ slot.elegir }}" class="{{ slot.clase }}" style="{{ slot.estilo }}">
+                        <span style="{{ slot.estiloHora }}">{{ slot.hora }}</span>
+                        <span style="{{ slot.estiloPie }}">{{ slot.pie }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ diaVacio }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; align-items: flex-start; gap: 14px; margin-top: 16px; padding: 18px; border-radius: 14px; background: #F5F7FA">
+              <span style="flex-shrink: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #EEF1F7; color: #5F6B7C">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/><path d="m9.5 15 5 0"/></svg>
+              </span>
+              <div style="min-width: 0">
+                <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 600">{{ vacioTitulo }}</p>
+                <p style="margin: 5px 0 0; font-size: 13.4px; line-height: 1.6; color: #5F6B7C">{{ vacioTexto }}</p>
+              </div>
+            </div>
+          </sc-if>
+        </section>
+
+        <!-- LO QUE HOY NO SE DICE EN NINGÚN LADO: qué pasa después de reservar. -->
+        <section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+            <span style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #E6F4EC; color: #1F7A4D">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            </span>
+            <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600">Queda tomado al instante</p>
+            <p style="margin: 0; font-size: 13px; line-height: 1.55; color: #5F6B7C">No hay una espera a que te lo aprueben: el horario sale de la lista apenas lo reservás.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+            <span style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #ECEAF7; color: #33267C">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6.5 18 18M18 6.5 6 18"/></svg>
+            </span>
+            <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600">Lo cancelás cuando quieras</p>
+            <p style="margin: 0; font-size: 13px; line-height: 1.55; color: #5F6B7C">Desde Mis turnos, hasta la hora del turno. A Valentina le llega un aviso por mail.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid #E2E6EE; border-radius: 16px; background: #FFFFFF">
+            <span style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #FBEDE4; color: #8C4A22">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v17M8 7.5h6.2a2.6 2.6 0 0 1 0 5.2H9.8a2.6 2.6 0 0 0 0 5.3H16"/></svg>
+            </span>
+            <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600">Se paga en el lugar</p>
+            <p style="margin: 0; font-size: 13px; line-height: 1.55; color: #5F6B7C">IMPULSAR no cobra el turno ni se queda una comisión: arreglás directo con quien te atiende.</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- COLUMNA DERECHA: qué estás reservando, y el paso de confirmación. -->
+      <aside style="position: sticky; top: 20px; display: flex; flex-direction: column; gap: 14px">
+
+        <section style="padding: 20px; border: 1px solid #E2E6EE; border-radius: 18px; background: #FFFFFF">
+          <div style="display: flex; gap: 14px">
+            <span style="flex-shrink: 0; width: 62px; height: 62px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: #ECEAF7; color: #33267C">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 3.5h7l-.9 4.4a4.4 4.4 0 0 1-1.2 2.2l-.6.6v3.1h2.1l1.6 6.7H7.5l1.6-6.7h2.1v-3.1l-.6-.6a4.4 4.4 0 0 1-1.2-2.2Z"/></svg>
+            </span>
+            <div style="min-width: 0">
+              <h2 style="font-size: 17px; letter-spacing: -.01em">Taller de torno inicial</h2>
+              <p style="margin: 5px 0 0; font-size: 13.4px; color: #5F6B7C">
+                <a href="#">Estudio Verde Cerámica</a> · Godoy Cruz
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; margin: 16px 0 0; padding-top: 16px; border-top: 1px solid #EEF1F7">
+            <div style="display: flex; align-items: center; gap: 10px; font-size: 13.6px">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+              <span style="color: #4A5666">Dura <strong style="font-weight: 600; color: #1B2430">90 minutos</strong></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; font-size: 13.6px">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v17M8 7.5h6.2a2.6 2.6 0 0 1 0 5.2H9.8a2.6 2.6 0 0 0 0 5.3H16"/></svg>
+              <span style="color: #4A5666">Desde <strong style="font-weight: 600; color: #1B2430">$12.000</strong> por persona</span>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 10px; font-size: 13.6px">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px"><path d="M20 10.5c0 5.5-8 11-8 11s-8-5.5-8-11a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10.3" r="2.7"/></svg>
+              <span style="color: #4A5666">En el taller: <strong style="font-weight: 600; color: #1B2430">Rodríguez Peña 1240</strong>, Godoy Cruz</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- EL PASO DE CONFIRMACIÓN QUE HOY NO EXISTE: en la pantalla vieja cada
+             horario es un submit, así que un click de más ya reserva. -->
+        <section style="{{ resumenEstilo }}">
+          <p style="margin: 0; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: #5F6B7C">Tu turno</p>
+          <p style="margin: 10px 0 0; font-family: 'Poppins', sans-serif; font-size: 19px; font-weight: 600; letter-spacing: -.01em; line-height: 1.35">{{ resumenFecha }}</p>
+          <p style="margin: 4px 0 0; font-size: 14px; line-height: 1.5; color: #4A5666">{{ resumenHora }}</p>
+          <button type="button" class="u-btn" style="{{ botonEstilo }}">{{ botonTexto }}</button>
+          <p style="margin: 10px 0 0; font-size: 12.4px; line-height: 1.55; color: #5F6B7C">{{ resumenPie }}</p>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script>
+class Component extends DCLogic {
+
+  /* Los siete días de la tira. Cada uno trae su horario de atención tal como lo
+     guarda Horario (abre / cierra / cerrado), en minutos desde medianoche, y
+     las horas ya tomadas de ESE servicio, que es lo que devuelve
+     consultas.horas_tomadas(). Los slots se cortan acá con el mismo criterio
+     que reglas.cortar_en_slots: tramos pegados y el sobrante se descarta. */
+  dias() {
+    return [
+      { nombre: 'dom', numero: 6, hoy: true, cerrado: true, motivo: 'cerrado' },
+      { nombre: 'lun', numero: 7, abre: 600, cierra: 1140, tomados: [600, 960] },
+      { nombre: 'mar', numero: 8, abre: 600, cierra: 1140, tomados: [960] },
+      { nombre: 'mié', numero: 9, abre: 600, cierra: 1140, tomados: [780] },
+      { nombre: 'jue', numero: 10, cerrado: true, motivo: 'sin-horario' },
+      { nombre: 'vie', numero: 11, abre: 600, cierra: 1140,
+        tomados: [600, 690, 780, 870, 960, 1050] },
+      { nombre: 'sáb', numero: 12, abre: 540, cierra: 780, tomados: [540] },
+    ];
+  }
+
+  duracion() { return 90; }
+
+  nombreLargo(dia) {
+    const largos = {
+      dom: 'domingo', lun: 'lunes', mar: 'martes', 'mié': 'miércoles',
+      jue: 'jueves', vie: 'viernes', 'sáb': 'sábado',
+    };
+    return largos[dia.nombre] + ' ' + dia.numero + ' de septiembre';
+  }
+
+  hhmm(minutos) {
+    const h = Math.floor(minutos / 60);
+    const m = minutos % 60;
+    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+  }
+
+  /* El corte de reglas.cortar_en_slots, con el estado de cada tramo encima. */
+  slotsDe(dia) {
+    if (dia.cerrado) { return []; }
+    const tomados = dia.tomados || [];
+    const slots = [];
+    let actual = dia.abre;
+    while (actual + this.duracion() <= dia.cierra) {
+      slots.push({
+        inicio: actual,
+        fin: actual + this.duracion(),
+        estado: tomados.indexOf(actual) >= 0 ? 'ocupado' : 'libre',
+      });
+      actual += this.duracion();
+    }
+    return slots;
+  }
+
+  renderVals() {
+    const estado = this.state || {};
+    const elegido = estado.dia === undefined ? 2 : estado.dia;
+    const slotElegido = estado.slot === undefined ? null : estado.slot;
+    const dias = this.dias();
+    const dia = dias[elegido];
+    const slots = this.slotsDe(dia);
+    const libres = slots.filter(function (s) { return s.estado === 'libre'; });
+
+    const baseDia = 'display: flex; flex-direction: column; align-items: center; gap: 3px; ' +
+                    'height: 88px; padding: 10px 4px; border-radius: 14px; background: #FFFFFF; ';
+    const self = this;
+
+    const tiraDias = dias.map(function (d, i) {
+      const libresDe = self.slotsDe(d).filter(function (s) { return s.estado === 'libre'; }).length;
+      const apagado = d.cerrado || libresDe === 0;
+      const activo = i === elegido;
+      let pie = libresDe + ' libres';
+      if (libresDe === 1) { pie = '1 libre'; }
+      if (libresDe === 0 && !d.cerrado) { pie = 'completo'; }
+      if (d.cerrado) { pie = 'cerrado'; }
+      return {
+        nombre: d.hoy ? 'hoy' : d.nombre,
+        numero: d.numero,
+        pie: pie,
+        clase: apagado ? '' : 'u-dia--libre',
+        estilo: baseDia + (activo
+          ? 'border: 2px solid #3E2F94; box-shadow: 0 0 0 3px #ECEAF7; cursor: pointer;'
+          : (apagado
+            ? 'border: 1px solid #E2E6EE; background: #F5F7FA; cursor: not-allowed;'
+            : 'border: 1px solid #E2E6EE; cursor: pointer;')),
+        estiloNombre: 'font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: ' +
+                      (activo ? '#33267C' : '#5F6B7C'),
+        estiloNumero: "font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 21px; line-height: 1.1; color: " +
+                      (apagado ? '#5F6B7C' : (activo ? '#33267C' : '#1B2430')),
+        estiloPie: 'font-size: 11.5px; color: ' + (apagado ? '#5F6B7C' : '#1F7A4D'),
+        elegir: apagado
+          ? function () {}
+          : function () { self.setState({ dia: i, slot: null }); },
+      };
+    });
+
+    const baseSlot = 'display: flex; flex-direction: column; align-items: center; justify-content: center; ' +
+                     'gap: 2px; height: 58px; border-radius: 12px; background: #FFFFFF; ';
+
+    function pintar(s) {
+      const libre = s.estado === 'libre';
+      const activo = libre && s.inicio === slotElegido;
+      return {
+        hora: self.hhmm(s.inicio),
+        pie: libre ? ('a ' + self.hhmm(s.fin)) : 'ocupado',
+        clase: libre ? 'u-slot--libre' : '',
+        estilo: baseSlot + (activo
+          ? 'border: 2px solid #3E2F94; background: #ECEAF7; cursor: pointer;'
+          : (libre
+            ? 'border: 1px solid #E2E6EE; cursor: pointer;'
+            : 'border: 1px dashed #E2E6EE; background: #F5F7FA; cursor: not-allowed;')),
+        estiloHora: "font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 15.5px; color: " +
+                    (libre ? (activo ? '#33267C' : '#1B2430') : '#5F6B7C'),
+        estiloPie: 'font-size: 11.5px; color: #5F6B7C',
+        elegir: libre
+          ? function () { self.setState({ slot: s.inicio }); }
+          : function () {},
+      };
+    }
+
+    const manana = slots.filter(function (s) { return s.inicio < 720; }).map(pintar);
+    const tarde = slots.filter(function (s) { return s.inicio >= 720; }).map(pintar);
+    const franjas = [];
+    if (libres.length > 0 && manana.length > 0) { franjas.push({ titulo: 'Mañana', slots: manana }); }
+    if (libres.length > 0 && tarde.length > 0) { franjas.push({ titulo: 'Tarde', slots: tarde }); }
+
+    /* Los cuatro vacíos de consultas.slots_disponibles se ven distintos para
+       quien mira: cerrado ese día, sin horario cargado, y todo tomado. */
+    let vacioTitulo = 'Ese día no atiende';
+    let vacioTexto = 'El taller está cerrado los domingos. El lunes 7 tiene cuatro horarios libres.';
+    if (dia.motivo === 'sin-horario') {
+      vacioTexto = 'Valentina no cargó horario para los jueves. Los días con lugar están marcados arriba.';
+    }
+    if (!dia.cerrado && libres.length === 0) {
+      vacioTitulo = 'No queda ningún horario';
+      vacioTexto = 'Los seis turnos del viernes ya están tomados. El próximo libre es el sábado 12 a las 10:30.';
+    }
+
+    const elegidoSlot = slots.filter(function (s) { return s.inicio === slotElegido; })[0];
+    const hayElegido = elegidoSlot !== undefined && elegidoSlot.estado === 'libre';
+
+    return {
+      dias: tiraDias,
+      tituloDia: 'Horarios del ' + this.nombreLargo(dia),
+      atencionDia: dia.cerrado
+        ? 'Cerrado'
+        : ('Atiende de ' + this.hhmm(dia.abre) + ' a ' + this.hhmm(dia.cierra)),
+      hayHorarios: franjas.length > 0,
+      diaVacio: franjas.length === 0,
+      franjas: franjas,
+      vacioTitulo: vacioTitulo,
+      vacioTexto: vacioTexto,
+
+      resumenEstilo: 'padding: 20px; border-radius: 18px; background: #FFFFFF; border: 1px solid ' +
+                     (hayElegido ? '#3E2F94' : '#E2E6EE'),
+      resumenFecha: hayElegido ? ('El ' + this.nombreLargo(dia)) : 'Todavía no elegiste horario',
+      resumenHora: hayElegido
+        ? ('De ' + this.hhmm(elegidoSlot.inicio) + ' a ' + this.hhmm(elegidoSlot.fin) + ' · 90 minutos')
+        : 'Tocá uno de los horarios libres para verlo acá.',
+      botonTexto: hayElegido ? 'Confirmar el turno' : 'Elegí un horario',
+      botonEstilo: 'width: 100%; height: 48px; margin-top: 16px; border: 0; border-radius: 999px; ' +
+                   "font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 15px; " +
+                   (hayElegido
+                     ? 'background: #5248AE; color: #FFFFFF; cursor: pointer;'
+                     : 'background: #EEF1F7; color: #5F6B7C; cursor: not-allowed;'),
+      resumenPie: hayElegido
+        ? 'Al confirmar, el horario queda tomado y le avisamos a Valentina.'
+        : 'Reservar no cuesta nada y se puede cancelar.',
+    };
+  }
+}
+</script>
+</body>
+</html>

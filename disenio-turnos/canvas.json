@@ -1,0 +1,48 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Reservar un turno", "x": 0, "y": 0, "w": 1440, "h": 980, "is_interactive": true },
+    { "file": "Mios.dc.html", "title": "Mis turnos — cliente", "x": 1560, "y": 0, "w": 1440, "h": 1120 },
+    { "file": "Agenda.dc.html", "title": "Agenda del vendedor — dentro del panel", "x": 3120, "y": 0, "w": 1440, "h": 1180 },
+    { "file": "Movil.dc.html", "title": "Reservar — teléfono", "x": 0, "y": 1420, "w": 390, "h": 844 },
+    { "file": "MiosMovil.dc.html", "title": "Mis turnos — teléfono", "x": 510, "y": 1420, "w": 390, "h": 844 },
+    { "file": "AgendaMovil.dc.html", "title": "Agenda — teléfono", "x": 1020, "y": 1420, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    {
+      "id": "nota-reservar",
+      "x": 0,
+      "y": -380,
+      "w": 680,
+      "text": "RESERVAR DEJA DE SER UN CAMPO DE FECHA A CIEGAS.\nHoy la pantalla es un <input type=\"date\"> con un botón «Ver ese día» y, abajo, una fila de botones sueltos: hay que adivinar qué día tiene lugar, y cada botón es un submit, así que un click de más ya reserva.\n\nLA TIRA DE SIETE DÍAS dice de una cuáles están cerrados, cuáles completos y cuántos horarios libres tiene cada uno. Es lo único de la tanda que necesita backend: hoy slots_disponibles() calcula UN día, y la tira pide los siete (el corte ya es una función pura y las horas tomadas salen de una sola consulta por rango).\n\nLOS OCUPADOS SE DIBUJAN APAGADOS en vez de desaparecer. Hoy el slot tomado directamente no está, y cuatro horas sueltas y sin explicación se leen como que el negocio casi no atiende.\n\nY HAY UN PASO DE CONFIRMACIÓN: elegir el horario lo muestra en la columna derecha, y recién ahí se confirma."
+    },
+    {
+      "id": "nota-estados",
+      "x": 740,
+      "y": -380,
+      "w": 620,
+      "text": "LOS VACÍOS SON DISTINTOS Y SE DICEN DISTINTO.\nslots_disponibles() devuelve lista vacía por seis motivos: el servicio no toma turnos, no hay horario ese día, el día está marcado cerrado, el horario cruza medianoche (excluido en v1), la duración no entra ni una vez en el rango, o todo está reservado. Para quien mira son tres mensajes: «ese día no atiende», «no queda ningún horario» y «este servicio no toma turnos».\n\nEL TURNO QUEDA CONFIRMADO AL RESERVARSE. EstadosTurno tiene sólo ACTIVO y CANCELADO: no hay pendiente ni confirmado, y el diseño no dibuja una confirmación que nadie da. Eso se dice en la pantalla, porque es lo primero que se pregunta quien reserva.\n\nNO HAY ANTELACIÓN MÍNIMA: descartar_pasados corta por hora de inicio, así que el turno de las 15:00 se puede reservar a las 14:59. El diseño no promete otra cosa. Si alguna vez se quiere «reservá con dos horas», es una regla nueva, no un texto."
+    },
+    {
+      "id": "nota-mios",
+      "x": 1560,
+      "y": -380,
+      "w": 660,
+      "text": "MIS TURNOS SE PARTE EN PRÓXIMOS Y PASADOS.\nHoy turnos_de_cliente() ordena por fecha DESC y mezcla todo, así que lo primero que se ve es el turno más viejo del historial y el de mañana queda al final. El corte es contra hoy, y los próximos van en orden creciente.\n\nCANCELAR PIDE CONFIRMACIÓN, Y EN LA MISMA FILA. Hoy es un botón que hace el POST de una: un click de más deja a alguien sin turno y sin deshacer, porque cancelado no se revierte (hay que volver a reservar, y el slot puede estar tomado). La confirmación dice las dos consecuencias reales: se libera el horario y sale un mail (notificar_turno_cancelado).\n\nEL CANCELADO DICE DE QUÉ LADO SALIÓ, que es lo que guarda la columna cancelado_por: «lo cancelaste vos» contra «lo canceló el prestador».\n\nSE VA EL BOTÓN CRUZADO «Turnos que recibí»: la agenda del vendedor ahora vive en el panel, y son dos cabezas distintas (a dónde tengo que ir contra qué tengo mañana)."
+    },
+    {
+      "id": "nota-agenda",
+      "x": 3120,
+      "y": -380,
+      "w": 660,
+      "text": "LA AGENDA ES UN DÍA, NO UNA LISTA DE TARJETAS.\nHoy /turnos/agenda es la misma lista que «mis turnos» —mismo macro, mismas tarjetas— ordenada por fecha DESC. De una agenda se necesita «qué tengo mañana», así que se elige el día en la semana de arriba y abajo va ese día completo.\n\nLOS HUECOS SE DIBUJAN. Son la mitad de la información: lo que todavía se puede reservar. Y la grilla no puede ser de slots fijos, porque cada servicio tiene su propia duración y todos se cortan del mismo horario de la persona (el horario es del dueño, no del servicio): los turnos se apoyan sobre el rango de atención, no sobre una cuadrícula.\n\nCANCELAR DEL LADO DEL VENDEDOR es lo mismo que del lado del cliente y manda el mail a la otra parte. No hay «marcar como cumplido» ni «ausente»: esos estados no existen en EstadosTurno, y dibujarlos sería inventar una columna.\n\nEL FILTRO POR EMPRENDIMIENTO es un parámetro de la URL sobre la misma consulta, como los filtros de servicios: turnos_recibidos_por() ya trae los de todos los emprendimientos de la persona."
+    },
+    {
+      "id": "nota-movil",
+      "x": 0,
+      "y": 2300,
+      "w": 700,
+      "text": "EN TELÉFONO, NADA SE DESLIZA DE COSTADO. La semana entra como grilla de siete (46 px por día) y los horarios en grilla de tres; los controles no bajan de 44 px.\n\nRESERVAR pone la confirmación en la barra fija de abajo, como el contacto de la ficha: es la acción de la pantalla y no puede vivir al final del scroll.\n\nMIS TURNOS arranca por el turno más próximo en grande, con la dirección y «Cómo llegar» a un toque: es la tarjeta que se mira parada en la calle. El resto es lista.\n\nLA AGENDA vive adentro de la pestaña Perfil, como el resto del panel, y muestra el día abierto con sus huecos. En 390 px no entra el menú lateral del panel."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

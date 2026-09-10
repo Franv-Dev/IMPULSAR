@@ -1,0 +1,197 @@
+{#  Los iconos de la navegacion, por clave.
+
+    Mismo criterio que partials/_icono_rubro.html y _icono_oficio.html: es un
+    if-chain en la plantilla y no un dict en Python porque son SVG, o sea
+    marcado, y el marcado vive en las plantillas.
+
+    Los trazos salen tal cual de los artboards de disenio-navegacion/ (grilla de
+    24, sin relleno, trazo redondeado) para que el color lo ponga el contenedor
+    con currentColor. Nunca emoji: escalan mal, cambian de dibujo segun el
+    sistema y no se pueden recolorear.
+
+    Quien lo incluya pasa `clave`, y opcionalmente `tamanio` (px, por defecto
+    20) y `trazo` (por defecto 1.7). Los tamanios del diseno: 22 en los botones
+    de la barra, 23 en las pestanas del telefono, 19 en el menu de la cuenta,
+    20 en las filas de Mi cuenta. #}
+<svg class="ico" width="{{ tamanio|default(20) }}" height="{{ tamanio|default(20) }}"
+     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="{{ trazo|default(1.7) }}" stroke-linecap="round"
+     stroke-linejoin="round" aria-hidden="true" focusable="false">
+    {% if clave == 'favoritos' %}
+        {# Un corazon de una linea. #}
+        <path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/>
+    {% elif clave == 'mensajes' %}
+        {# Un sobre con la solapa marcada. #}
+        <rect x="3" y="5.5" width="18" height="13" rx="2.5"/>
+        <path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/>
+    {% elif clave == 'presupuestos' %}
+        {# Una hoja con la esquina doblada y dos renglones. #}
+        <path d="M6 3h9l4 4v14H6z"/>
+        <path d="M14 3v5h5"/>
+        <path d="M9.5 13h5M9.5 16.5h3"/>
+    {% elif clave == 'turnos' %}
+        {# Un almanaque. #}
+        <rect x="3.5" y="5" width="17" height="15" rx="2.5"/>
+        <path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/>
+    {% elif clave == 'agenda' %}
+        {# El mismo almanaque, con un renglon adentro: es la agenda del dueno,
+           no los turnos propios. #}
+        <rect x="3.5" y="5" width="17" height="15" rx="2.5"/>
+        <path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/>
+        <path d="M10 13.5h5"/>
+    {% elif clave == 'emprendimientos' %}
+        {# Un local con techo a dos aguas y su puerta. #}
+        <path d="M4 9.5 12 4l8 5.5"/>
+        <path d="M6 10.5V20h12v-9.5"/>
+        <path d="M10 20v-5h4v5"/>
+    {% elif clave == 'catalogo' %}
+        {# Cuatro fichas: la grilla del catalogo. #}
+        <rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/>
+        <rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/>
+        <rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/>
+        <rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/>
+    {% elif clave == 'servicios' %}
+        {# Una llave inglesa en diagonal. #}
+        <path d="M14.5 6.5a3.5 3.5 0 0 1 4.6 4.6l-7.3 7.3-4.6-4.6Z"/>
+        <path d="M5.5 18.5h2.5"/>
+    {% elif clave == 'resenias' %}
+        {# Una estrella de cinco puntas, sin relleno. #}
+        <path d="m12 4 2.5 5.1 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8Z"/>
+    {% elif clave == 'ajustes' %}
+        {# El engranaje. #}
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.2 14.4a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7h-.3a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.8l-.1-.1A2 2 0 1 1 6.9 3.8l.1.1a1.6 1.6 0 0 0 2.7-1.1v-.3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.8 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7h.3a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.5 1Z"/>
+    {% elif clave == 'salir' %}
+        {# La puerta con la flecha saliendo. #}
+        <path d="M14 20H6a1.5 1.5 0 0 1-1.5-1.5v-13A1.5 1.5 0 0 1 6 4h8"/>
+        <path d="m17 15 3.5-3-3.5-3"/>
+        <path d="M20 12h-9.5"/>
+    {% elif clave == 'entrar' %}
+        {# La misma puerta que 'salir' pero con la flecha entrando: es la
+           pestana Entrar del telefono, no el logout. #}
+        <path d="M10 4h8a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-8"/>
+        <path d="m7 15-3.5-3L7 9"/>
+        <path d="M4 12h9.5"/>
+    {% elif clave == 'publicar' %}
+        {# Una cruz. #}
+        <path d="M12 5v14M5 12h14"/>
+    {% elif clave == 'buscar' %}
+        {# La lupa. #}
+        <circle cx="11" cy="11" r="7"/>
+        <path d="m20 20-3.4-3.4"/>
+    {% elif clave == 'ubicacion' %}
+        {# El pin del mapa. #}
+        <circle cx="12" cy="10" r="3"/>
+        <path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/>
+    {% elif clave == 'cerca' %}
+        {# La mira de "cerca de mi": el mismo dibujo que usa el listado. #}
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3"/>
+        <circle cx="12" cy="12" r="7.5"/>
+    {% elif clave == 'inicio' %}
+        {# Una casa con la puerta abierta: la pestana Inicio del telefono. #}
+        <path d="M4 10.6 12 4.2l8 6.4V19a1.4 1.4 0 0 1-1.4 1.4h-3.3v-5.6H8.7v5.6H5.4A1.4 1.4 0 0 1 4 19Z"/>
+    {% elif clave == 'explorar' %}
+        {# La brujula. #}
+        <circle cx="12" cy="12" r="8.4"/>
+        <path d="m15.3 8.7-1.9 4.6-4.6 1.9 1.9-4.6Z"/>
+    {% elif clave == 'tema-oscuro' %}
+        {# La luna: pasar a modo oscuro. #}
+        <path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/>
+    {% elif clave == 'tema-claro' %}
+        {# El sol: volver a modo claro. #}
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2.5v2.2M12 19.3v2.2M21.5 12h-2.2M4.7 12H2.5M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6M18.7 18.7l-1.6-1.6M6.9 6.9 5.3 5.3"/>
+    {% elif clave == 'fotos' %}
+        {# Una foto con su sol y su montana: la galeria. #}
+        <rect x="3" y="4.5" width="18" height="15" rx="2.5"/>
+        <circle cx="8.6" cy="10" r="1.7"/>
+        <path d="m3.6 17.4 4.9-4.6 3.4 3.2 3.6-3.6 4.9 5"/>
+    {% elif clave == 'reloj' %}
+        <circle cx="12" cy="12" r="8.5"/>
+        <path d="M12 7.5V12l3 2"/>
+    {% elif clave == 'check' %}
+        <path d="m5 12.5 4.5 4.5L19 7.5"/>
+    {% elif clave == 'mensaje' %}
+        {# El globo de conversacion. #}
+        <path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/>
+    {% elif clave == 'ojo' %}
+        {# Las visitas. #}
+        <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/>
+        <circle cx="12" cy="12" r="3"/>
+    {% elif clave == 'info' %}
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 11v5.5M12 7.6v.1"/>
+    {% elif clave == 'cerrar' %}
+        <path d="m6 6 12 12M18 6 6 18"/>
+    {% elif clave == 'volver' %}
+        <path d="m14.5 5-7 7 7 7"/>
+    {% elif clave == 'flecha' %}
+        {# Flecha larga a la derecha: "ver todas". #}
+        <path d="M5 12h13m-5-6 6 6-6 6"/>
+    {% elif clave == 'chevron-abajo' %}
+        <path d="m6 9.5 6 6 6-6"/>
+    {% elif clave == 'chevron-arriba' %}
+        <path d="m6 14.5 6-6 6 6"/>
+    {% elif clave == 'chevron-derecha' %}
+        <path d="m9.5 6 6 6-6 6"/>
+    {% elif clave == 'admin' %}
+        {# Un escudo: el panel de administracion. #}
+        <path d="M12 3.5 19 6v5.5c0 4.3-2.9 7.4-7 9-4.1-1.6-7-4.7-7-9V6Z"/>
+        <path d="m9.2 12.2 2 2 3.6-3.8"/>
+    {# Los cuatro del menu lateral del panel de administracion
+       (disenio-admin/). El escudo de 'admin' se reusa para Verificaciones, que
+       es de lo que habla, y 'resumen' para "Inicio del panel" del panel del
+       vendedor: es el mismo dibujo en los dos artboards. #}
+    {% elif clave == 'resumen' %}
+        <rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/>
+        <rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/>
+        <rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/>
+        <rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/>
+    {% elif clave == 'reportes' %}
+        {# El triangulo de aviso, el mismo con el que se reporta contenido. #}
+        <path d="M12 3.8 21 19.5H3Z"/>
+        <path d="M12 10v3.6M12 16.6h.01"/>
+    {% elif clave == 'usuarios' %}
+        <path d="M9.2 11.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8M2.6 20.2a6.6 6.6 0 0 1 13.2 0M16.8 5.6a3.4 3.4 0 0 1 0 6M18.6 20.2a6.8 6.8 0 0 0-1.8-4.6"/>
+    {% elif clave == 'documento' %}
+        {# Una hoja: el documento de una verificacion. #}
+        <path d="M6 3h8l4.5 4.5V21H6Z"/>
+        <path d="M14 3v5h4.5"/>
+    {% elif clave == 'sin-documento' %}
+        {# La misma hoja, tachada: no adjunto nada. #}
+        <path d="M6 3h8l4.5 4.5V21H6Z"/>
+        <path d="M14 3v5h4.5"/>
+        <path d="m8 8 8 10"/>
+    {# Los dos del catalogo del panel (disenio-panel/Catalogo.dc.html), en los
+       botones cuadrados de cada fila. #}
+    {# Los cinco de la tanda de eventos (disenio-eventos/). Los CUATRO TIPOS se
+       distinguen POR EL DIBUJO Y NO POR EL COLOR: los cuatro van en indigo
+       lavado, igual que los 13 rubros de servicio. Una taxonomia nueva no se
+       gana una paleta categorica -- con cuatro colores mas, el chip de tipo
+       competiria con el verde de "entrada libre", que si tiene que saltar. #}
+    {% elif clave == 'eventos' %}
+        {# Un almanaque con una banderita: es la cartelera, no la agenda. #}
+        <path d="M4 8.5h16M6.5 4.5h11a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17V7a2.5 2.5 0 0 1 2.5-2.5Z"/>
+        <path d="M9 12.5h6"/>
+    {% elif clave == 'tipo-feria' %}
+        {# Un puesto con su toldo: la feria. #}
+        <path d="M3.5 9.5 6 4.5h12l2.5 5M3.5 9.5h17M5.5 9.5V20h13V9.5M9.5 20v-5.5h5V20"/>
+    {% elif clave == 'tipo-taller' %}
+        {# Una herramienta: se hace algo con las manos. #}
+        <path d="M14.4 4.6a3.6 3.6 0 0 1 5 5l-8.2 8.2-5-5ZM6.2 12.8 3.5 20.5l7.7-2.7"/>
+    {% elif clave == 'tipo-popup' %}
+        {# La misma casilla, mas baja y sin toldo: esta un rato y se va. #}
+        <path d="M4 4h16l1.6 5.2H2.4ZM5 9.2V20h14V9.2M10 20v-6.2h4V20"/>
+    {% elif clave == 'tipo-encuentro' %}
+        {# Dos personas: el encuentro es la gente, no el lugar. #}
+        <path d="M9 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4M2.6 20.2a6.4 6.4 0 0 1 12.8 0M16.6 6.4a3.2 3.2 0 0 1 0 5.6M18.4 20.2a6.6 6.6 0 0 0-1.7-4.4"/>
+    {% elif clave == 'editar' %}
+        {# Un lapiz sobre su trazo. #}
+        <path d="M15.5 4.5a2.1 2.1 0 0 1 3 3L9 17l-4 1 1-4Z"/>
+    {% elif clave == 'eliminar' %}
+        {# Un tacho con la tapa y el asa. #}
+        <path d="M4.5 6.5h15M9.5 6.5V4.8a1.3 1.3 0 0 1 1.3-1.3h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7"/>
+        <path d="M6.5 6.5 7.4 19a1.5 1.5 0 0 0 1.5 1.4h6.2a1.5 1.5 0 0 0 1.5-1.4l.9-12.5"/>
+    {% endif %}
+</svg>

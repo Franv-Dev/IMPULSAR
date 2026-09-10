@@ -1,0 +1,215 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #1B2430; background: #F5F7FA; -webkit-font-smoothing: antialiased; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    h1, h2, h3 { font-family: "Poppins", system-ui, sans-serif; margin: 0; text-wrap: pretty; }
+    button { font-family: inherit; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-nav--on { color: #3E2F94; font-weight: 600; border-bottom-color: #3E2F94; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-campo:hover { background: #EEF1F7; }
+    .u-btn:hover { background: #483BA1; }
+    .u-ficha { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 15px;
+               border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF;
+               color: #4A5666; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+    .u-ficha:hover { border-color: #C9D0E0; color: #3E2F94; }
+    .u-ficha--on { background: #ECEAF7; border-color: #5248AE; color: #33267C; font-weight: 600; }
+    .u-tarjeta { display: flex; flex-direction: column; min-width: 0; border: 1px solid #E2E6EE;
+                 border-radius: 18px; background: #FFFFFF; overflow: hidden;
+                 transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+    .u-tarjeta:hover { border-color: #C9D0E0; box-shadow: 0 18px 40px rgba(23,20,71,.12); transform: translateY(-2px); }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #F5F7FA">
+
+  <header style="position: relative; z-index: 4; background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06)">
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px">
+      <a href="#" style="display: flex; align-items: center">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto; display: block">
+      </a>
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px">
+        <a href="#" class="u-nav u-nav--on">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" class="u-ico" title="Favoritos" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20Z"/></svg>
+        </a>
+        <a href="#" class="u-ico" title="Mensajes" style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #4A5666">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4.4 7.2 6.7 4.9a1.5 1.5 0 0 0 1.8 0l6.7-4.9"/></svg>
+          <span style="position: absolute; top: 3px; right: 3px; min-width: 18px; height: 18px; padding: 0 4px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #D97544; color: #FFFFFF; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 10.5px; border: 2px solid #FFFFFF">3</span>
+        </a>
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+        <span style="width: 1px; height: 26px; background: #E2E6EE; margin: 0 2px"></span>
+        <button type="button" style="height: 40px; padding: 0 8px 0 4px; display: flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: #4A5666">
+          <span style="width: 32px; height: 32px; border-radius: 999px; background: #3E2F94; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px">L</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid #EEF1F7">
+      <div style="max-width: 1160px; margin: 0 auto; padding: 14px 24px; display: flex; justify-content: center">
+        <div style="width: 100%; max-width: 720px; height: 52px; display: flex; align-items: center; padding: 0 6px 0 0; background: #F5F7FA; border: 1px solid #E2E6EE; border-radius: 999px">
+          <div class="u-campo" style="flex: 1.8; min-width: 0; height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-radius: 999px 0 0 999px">
+            <span style="color: #5F6B7C; flex-shrink: 0; display: flex">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 15px; font-weight: 500; color: #1B2430">dulce de leche</span>
+          </div>
+          <span style="width: 1px; height: 26px; background: #E2E6EE; flex-shrink: 0"></span>
+          <div class="u-campo" style="flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 9px; padding: 0 14px">
+            <span style="color: #3E2F94; flex-shrink: 0; display: flex">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 15px; font-weight: 500; color: #1B2430; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Mendoza Capital</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5F6B7C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="m6 9.5 6 6 6-6"/></svg>
+          </div>
+          <button type="button" class="u-btn" style="flex-shrink: 0; height: 40px; padding: 0 24px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14.5px">Buscar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 26px 24px 56px; display: flex; flex-direction: column; gap: 18px">
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <h1 style="font-size: 26px; letter-spacing: -.02em">«dulce de leche» en Mendoza Capital</h1>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 13px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-weight: 600; font-size: 13.5px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/></svg>
+          Mendoza Capital
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+        </span>
+        <span style="font-size: 13.5px; color: #5F6B7C">18 productos de 11 emprendimientos</span>
+      </div>
+    </div>
+
+    <!-- BARRA DE FILTROS: la misma forma que la del listado de emprendimientos.
+         Son cinco enlaces que cambian un parámetro de la URL, no un formulario:
+         la búsqueda se comparte, vuelve con el botón de atrás y anda sin JS. -->
+    <div style="position: sticky; top: 12px; z-index: 3; display: flex; align-items: center; flex-wrap: wrap; gap: 9px; padding: 12px; border: 1px solid #E2E6EE; border-radius: 18px; background: rgba(255,255,255,.94); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(23,20,71,.06)">
+
+      <button type="button" class="u-ficha">
+        Todos los rubros
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+
+      <div style="display: flex; align-items: center; height: 40px; padding: 0 6px 0 14px; gap: 8px; border: 1px solid #E2E6EE; border-radius: 999px; background: #FFFFFF">
+        <span style="font-size: 13.5px; color: #5F6B7C">Precio</span>
+        <span style="display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 999px; background: #F5F7FA; font-size: 13px; color: #1B2430">desde $</span>
+        <span style="display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 999px; background: #F5F7FA; font-size: 13px; color: #1B2430">hasta $</span>
+      </div>
+
+      <button type="button" class="u-ficha u-ficha--on">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+        Disponibles
+      </button>
+
+      <button type="button" class="u-ficha">
+        <span style="width: 7px; height: 7px; border-radius: 999px; background: #1F7A4D"></span>
+        Abierto ahora
+      </button>
+
+      <button type="button" class="u-ficha">
+        Hasta 10 km
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+
+      <span style="flex: 1"></span>
+
+      <button type="button" class="u-ficha" style="border: 0; background: transparent">
+        Ordenar por: <strong style="color: #1B2430; font-weight: 600">Más nuevos</strong>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg>
+      </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px">
+      <sc-for list="{{ productos }}" as="p" hint-placeholder-count="8">
+        <article class="u-tarjeta">
+          <div style="position: relative; aspect-ratio: 1 / 1; background: {{ p.foto }}">
+            <span style="{{ p.agotado }}">Sin stock por ahora</span>
+            <button type="button" aria-label="Guardar" style="position: absolute; right: 10px; top: 10px; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: rgba(255,255,255,.92); color: #4A5666; cursor: pointer; padding: 0; box-shadow: 0 2px 8px rgba(23,20,71,.14)">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.2-4.5-7.2-9.4A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7.2 2.9C19.2 15.5 12 20 12 20Z"/></svg>
+            </button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 15px 16px; min-width: 0">
+            <span style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -.02em; color: #1B2430">{{ p.precio }}</span>
+            <span style="font-size: 14px; line-height: 1.35; color: #1B2430; font-weight: 500">{{ p.nombre }}</span>
+            <span style="display: flex; align-items: center; gap: 7px; margin-top: 4px; padding-top: 10px; border-top: 1px solid #EEF1F7; min-width: 0">
+              <span style="{{ p.rubroPunto }}"></span>
+              <span style="flex: 1; min-width: 0; font-size: 12.5px; color: #4A5666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ p.negocio }}</span>
+            </span>
+            <span style="font-size: 12.5px; color: #5F6B7C">{{ p.donde }}</span>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+
+    <p style="margin: 6px 0 0; text-align: center; font-size: 13px; color: #5F6B7C">Los precios los pone cada emprendimiento. IMPULSAR no cobra comisión ni procesa pagos: la compra se acuerda directo con quien vende.</p>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1420}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const RUBROS = {
+      Alimentos:     ["#FDECE5", "#9A5230"],
+      Hogar:         ["#E5F5EC", "#1C7B53"],
+      Artesanías:    ["#EEEFFE", "#635EA3"],
+      Indumentaria:  ["#FBEBF2", "#954D71"]
+    };
+    const PLANCHAS = [
+      "linear-gradient(150deg, #EEE0D6, #C9AE99)",
+      "linear-gradient(150deg, #E7E2F3, #B9AEDC)",
+      "linear-gradient(150deg, #DCE9E1, #A9C6B6)",
+      "linear-gradient(150deg, #F3E4EA, #D6AEC0)"
+    ];
+
+    const datos = [
+      { nombre: "Dulce de leche repostero, 1 kg",        precio: "$ 8.400",  negocio: "Conservas del Challao",  rubro: "Alimentos",    donde: "El Challao · a 4,2 km",  hay: true },
+      { nombre: "Alfajores de maicena x 12",             precio: "$ 6.200",  negocio: "Panadería La Cuadra",    rubro: "Alimentos",    donde: "Godoy Cruz · a 1,2 km",  hay: true },
+      { nombre: "Frasco de dulce de leche artesanal",    precio: "$ 5.900",  negocio: "Tambo Los Álamos",       rubro: "Alimentos",    donde: "Maipú · a 9,8 km",       hay: false },
+      { nombre: "Bombones rellenos, caja de 9",          precio: "$ 11.500", negocio: "Cacao del Oeste",        rubro: "Alimentos",    donde: "Ciudad · a 2,1 km",      hay: true },
+      { nombre: "Tarro de cerámica para dulce",          precio: "$ 14.000", negocio: "Estudio Verde Cerámica", rubro: "Artesanías",   donde: "Ciudad · a 400 m",       hay: true },
+      { nombre: "Torta de dulce de leche, 20 cm",        precio: "$ 22.000", negocio: "Dulces de Ana",          rubro: "Alimentos",    donde: "Las Heras · a 6,4 km",   hay: true },
+      { nombre: "Cuchara de madera de algarrobo",        precio: "$ 4.800",  negocio: "Taller Rueda Libre",     rubro: "Hogar",        donde: "Ciudad · a 2,8 km",      hay: true },
+      { nombre: "Delantal de lino con bolsillo",         precio: "$ 19.900", negocio: "Telar de Uco",           rubro: "Indumentaria", donde: "Tunuyán · a 74 km",      hay: true }
+    ];
+
+    const productos = datos.map((p, n) => {
+      const par = RUBROS[p.rubro] || ["#EEF1F7", "#5F6B7C"];
+      return Object.assign({}, p, {
+        foto: PLANCHAS[n % PLANCHAS.length],
+        rubroPunto: "flex-shrink: 0; width: 9px; height: 9px; border-radius: 999px; background: " + par[1],
+        agotado: p.hay
+          ? "display: none"
+          : "position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px; background: rgba(10,8,28,.62); color: rgba(255,255,255,.94); font-size: 11px; font-weight: 700"
+      });
+    });
+
+    return { productos: productos };
+  }
+}
+</script>
+</body>
+</html>

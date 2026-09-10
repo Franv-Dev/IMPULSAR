@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Agenda de turnos – IMPULSAR{% endblock %}
+
+{#  La agenda del vendedor (disenio-turnos/Agenda.dc.html y AgendaMovil.dc.html).
+
+    LA AGENDA ES UN DIA, NO UNA LISTA DE TARJETAS. La pantalla vieja usaba el
+    mismo macro que "mis turnos", ordenado por fecha DESC, asi que lo primero
+    que se veia era el turno mas viejo. Lo que se le pide a una agenda es "qué
+    tengo mañana": se elige el dia en la tira de la semana y abajo va ese dia
+    completo, en orden de reloj.
+
+    LOS HUECOS SE DIBUJAN. Son lo que todavia se puede reservar, o sea la mitad
+    de la informacion de una agenda, y una lista que solo muestra lo tomado no
+    deja verlos. No se cortan en tramos porque cada servicio tiene su propia
+    duracion y todos salen del mismo horario de la persona: un hueco de 13:45 a
+    16:00 puede recibir un turno de 45 minutos o uno de 90 (ver
+    reglas.huecos_entre).
+
+    NO HAY "cumplido" ni "ausente": esos estados no existen en EstadosTurno y
+    dibujarlos seria inventar una columna.
+
+    El marco (menu lateral y cabecera de las pantallas del panel) ya habia
+    entrado con la tanda del panel; lo que cambia aca es todo lo de adentro. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Agenda de turnos" %}
+                {% include "partials/_menu_panel.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Agenda de turnos</h1>
+                        <p class="cuenta__bajada">
+                            Los que te sacaron en tus servicios, ordenados por día.
+                        </p>
+                    </div>
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {# --- La semana, con el conteo por dia -------------------- #}
+                <section class="tira">
+                    <div class="tira__cabecera">
+                        <h2 class="tira__titulo">
+                            Semana del {{ lunes.day }} al {{ domingo | fecha_evento }}
+                        </h2>
+                        <a class="tira__flecha"
+                           href="{{ url_for('turnos.agenda', desde=semana_anterior.isoformat(),
+                                            fecha=semana_anterior.isoformat()) }}"
+                           aria-label="Semana anterior">
+                            {% with clave = 'volver', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </a>
+                        <a class="btn btn--borde" href="{{ url_for('turnos.agenda') }}">Hoy</a>
+                        <a class="tira__flecha"
+                           href="{{ url_for('turnos.agenda', desde=semana_siguiente.isoformat(),
+                                            fecha=semana_siguiente.isoformat()) }}"
+                           aria-label="Semana siguiente">
+                            {% with clave = 'chevron-derecha', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                        </a>
+                    </div>
+
+                    <div class="tira__dias">
+                        {% for uno in semana %}
+                            {% set horario_dia = horarios.get(uno.weekday()) %}
+                            {% set cerrado = not horario_dia or horario_dia.cerrado %}
+                            {% set cuantos = por_dia.get(uno, 0) %}
+                            <a class="dia {% if uno == fecha %}dia--activo{% endif %}
+                                      {% if cerrado and not cuantos %}dia--apagado{% endif %}"
+                               href="{{ url_for('turnos.agenda', desde=lunes.isoformat(),
+                                                fecha=uno.isoformat()) }}"
+                               {% if uno == fecha %}aria-current="date"{% endif %}>
+                                <span class="dia__nombre">
+                                    {% if uno == ahora.date() %}hoy{% else %}{{ uno | dia_semana_corto }}{% endif %}
+                                </span>
+                                <span class="dia__numero">{{ uno.day }}</span>
+                                <span class="dia__pie">
+                                    {% if cuantos == 1 %}1 turno
+                                    {% elif cuantos %}{{ cuantos }} turnos
+                                    {% elif cerrado %}cerrado
+                                    {% else %}libre{% endif %}
+                                </span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                {# --- El dia, sobre el horario de atencion ---------------- #}
+                <section class="dia-agenda">
+                    <div class="dia-agenda__cabecera">
+                        <div>
+                            <h2 class="dia-agenda__titulo">{{ fecha | fecha_evento }}</h2>
+                            <p class="dia-agenda__bajada">
+                                {% if horario and not horario.cerrado %}
+                                    Atendés de {{ horario.abre | hora }} a {{ horario.cierra | hora }}
+                                    {% if activos|length == 1 %}· 1 turno tomado
+                                    {% elif activos %}· {{ activos|length }} turnos tomados
+                                    {% else %}· sin turnos tomados{% endif %}
+                                {% elif horario %}
+                                    Ese día lo tenés marcado como cerrado.
+                                {% else %}
+                                    No tenés horario de atención cargado para ese día.
+                                {% endif %}
+                            </p>
+                        </div>
+                        <a class="btn btn--borde" href="{{ url_for('profile.horarios') }}">
+                            {% with clave = 'turnos', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                            Cambiar mis horarios
+                        </a>
+                    </div>
+
+                    <div class="dia-agenda__cuerpo">
+                        {% if not turnos and not huecos %}
+                            <p class="dia-agenda__vacio">
+                                Ese día no tenés nada agendado y tampoco estás
+                                atendiendo. Los días con turnos están marcados arriba.
+                            </p>
+                        {% endif %}
+
+                        {#  Turnos y huecos son dos listas separadas y se
+                            intercalan aca por hora de inicio: los huecos salen
+                            del horario de atencion y los turnos de la base, y
+                            mezclarlos en la consulta obligaria a inventar filas
+                            que no existen. #}
+                        {% set filas = [] %}
+                        {% for turno in activos %}
+                            {% if filas.append((turno.hora_inicio, 'turno', turno)) %}{% endif %}
+                        {% endfor %}
+                        {% for inicio, fin in huecos %}
+                            {% if filas.append((inicio, 'hueco', (inicio, fin))) %}{% endif %}
+                        {% endfor %}
+
+                        {% for _hora, tipo, dato in filas|sort(attribute='0') %}
+                            {% if tipo == 'hueco' %}
+                                {% set inicio, fin = dato %}
+                                <div class="hueco">
+                                    <span class="hueco__hora">{{ inicio | hora }} a {{ fin | hora }}</span>
+                                    <span class="hueco__texto">Libre · lo puede reservar alguien</span>
+                                </div>
+                            {% else %}
+                                {% set turno = dato %}
+                                <article class="fila-turno">
+                                    <div class="fila-turno__hora">
+                                        <p class="fila-turno__inicio">{{ turno.hora_inicio | hora }}</p>
+                                        <p class="fila-turno__fin">a {{ turno.hora_fin | hora }}</p>
+                                    </div>
+                                    <div class="fila-turno__cuerpo">
+                                        <p class="fila-turno__cliente">
+                                            <span class="fila-turno__avatar" aria-hidden="true">
+                                                {{ turno.cliente.username[0]|upper }}
+                                            </span>
+                                            {{ turno.cliente.username }}
+                                        </p>
+                                        <p class="fila-turno__que">
+                                            {{ turno.servicio.titulo }}
+                                            <span class="fila-turno__donde">· {{ turno.servicio.post.title }}</span>
+                                        </p>
+                                    </div>
+                                    <div class="fila-turno__acciones">
+                                        <a class="btn btn--borde"
+                                           href="{{ url_for('messages.conversation',
+                                                            post_id=turno.servicio.post_id,
+                                                            client_id=turno.cliente_id) }}">
+                                            {% with clave = 'mensajes', tamanio = 15 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                            Escribirle
+                                        </a>
+                                        {# Cancelar del lado del vendedor tambien
+                                           pide confirmacion: libera el horario y
+                                           le manda un mail al cliente. #}
+                                        <details class="cancelar">
+                                            <summary class="cancelar__abrir">Cancelar</summary>
+                                            <div class="cancelar__aviso">
+                                                <div class="cancelar__cuerpo">
+                                                    <p class="cancelar__titulo">¿Cancelás este turno?</p>
+                                                    <p class="cancelar__texto">
+                                                        El horario vuelve a quedar libre y a
+                                                        {{ turno.cliente.username }} le llega un
+                                                        aviso por mail.
+                                                    </p>
+                                                    <div class="cancelar__acciones">
+                                                        <form method="post"
+                                                              action="{{ url_for('turnos.cancelar', id=turno.id) }}">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                            <button type="submit" class="btn btn--peligro">Sí, cancelar</button>
+                                                        </form>
+                                                        <p class="cancelar__salir">o cerrá este aviso para dejarlo como está</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </details>
+                                    </div>
+                                </article>
+                            {% endif %}
+                        {% endfor %}
+
+                        {#  Los cancelados del dia, abajo y aparte: su horario ya
+                            no esta tomado -- volvio a los huecos de arriba --,
+                            pero el vendedor tiene que ver que alguien se dio de
+                            baja del dia que esta mirando. #}
+                        {% for turno in turnos if turno.estado == estados.CANCELADO %}
+                            <div class="fila-cancelada">
+                                <span class="fila-cancelada__hora">
+                                    {{ turno.hora_inicio | hora }} a {{ turno.hora_fin | hora }}
+                                </span>
+                                <span class="fila-cancelada__texto">
+                                    <strong>
+                                        {% if turno.cancelado_por == quien.VENDEDOR %}
+                                            Lo cancelaste vos
+                                        {% else %}
+                                            Cancelado por {{ turno.cliente.username }}
+                                        {% endif %}
+                                    </strong>
+                                    · {{ turno.servicio.titulo }}. Ese horario volvió
+                                    a quedar libre.
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

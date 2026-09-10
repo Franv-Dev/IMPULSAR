@@ -2,110 +2,231 @@
 
 {% block title %}Mis servicios – IMPULSAR{% endblock %}
 
+{#  El panel del prestador, rediseñado: los servicios agrupados por
+    emprendimiento y cada uno en una fila, no en una tarjeta.
+
+    Antes era una grilla donde los servicios de los dos emprendimientos se
+    mezclaban y el nombre del emprendimiento era un chip mas entre los chips.
+    Como los servicios ya vienen ordenados por emprendimiento desde la vista,
+    agruparlos es un groupby del template y no otra consulta.
+
+    Dos cosas que la fila dice ahora y antes no se veian en ningun lado:
+
+    - El estado del ULTIMO pedido de verificacion. La fila sabia decir
+      "Verificado" (que es una columna de Service) y nada mas: un pedido en
+      revision o rechazado solo se veia entrando de a uno a /verificar.
+    - El cupo por emprendimiento (X de MAX_SERVICIOS_POR_POST), que antes se
+      conocia recien cuando el alta lo rechazaba.
+
+    El interruptor de "Disponible" es un form POST de un solo boton y no un
+    checkbox con JavaScript: sin JS un checkbox suelto no manda nada, y esto
+    tiene que funcionar igual. #}
+
+{% macro estado_verificacion(servicio) %}
+    {# El sello real manda sobre el pedido: si el admin ya lo aprobo, lo que
+       diga el ultimo pedido es historia. #}
+    {% if servicio.verificado %}
+        <span class="sello sello--ok">
+            <span class="sello__punto" aria-hidden="true"></span>Verificado
+        </span>
+    {% else %}
+        {% set estado = verificaciones.get(servicio.id) %}
+        {% if estado == estados_verificacion.PENDIENTE %}
+            <a href="{{ url_for('servicios.verificar', id=servicio.id) }}" class="sello sello--espera">
+                <span class="sello__punto" aria-hidden="true"></span>En revisión
+            </a>
+        {% elif estado == estados_verificacion.RECHAZADA %}
+            <a href="{{ url_for('servicios.verificar', id=servicio.id) }}" class="sello sello--no">
+                <span class="sello__punto" aria-hidden="true"></span>No aprobado
+            </a>
+        {% else %}
+            <a href="{{ url_for('servicios.verificar', id=servicio.id) }}" class="sello sello--sin">
+                <span class="sello__punto" aria-hidden="true"></span>Pedir verificación
+            </a>
+        {% endif %}
+    {% endif %}
+{% endmacro %}
+
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Mis servicios</h2>
-                <p class="section__subtitle">
-                    Los trabajos que ofrecés en cada uno de tus emprendimientos.
-                    Hasta {{ maximo }} servicios por emprendimiento.
-                </p>
-            </div>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                <a href="{{ url_for('servicios.solicitudes') }}" class="btn btn--secondary">
-                    Solicitudes
-                </a>
-                {% if posts %}
-                    <a href="{{ url_for('servicios.nuevo') }}" class="btn btn--primary">
-                        + Agregar servicio
-                    </a>
+        <div class="cuenta">
+            {% with seccion = "Servicios" %}
+                {% include "partials/_menu_panel.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Mis servicios</h1>
+                        <p class="cuenta__bajada">
+                            Los trabajos que ofrecés en cada emprendimiento. Se muestran
+                            en la búsqueda de servicios y en la página del emprendimiento.
+                        </p>
+                    </div>
+                    {% if posts %}
+                        <a href="{{ url_for('servicios.nuevo') }}" class="btn btn--primary">
+                            + Agregar servicio
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% if servicios %}
+                    {# La linea de contexto: en vez de tres cajas con numeros,
+                       un renglon con lo unico accionable. El aviso de
+                       presupuestos solo aparece si hay alguno esperando: un
+                       cero permanente es ruido. #}
+                    <div class="resumen-linea">
+                        <span class="resumen-linea__texto">
+                            {{ servicios | length }} servicio{{ '' if servicios | length == 1 else 's' }}
+                            en {{ servicios | map(attribute='post_id') | unique | list | length }}
+                            emprendimiento{{ '' if servicios | map(attribute='post_id') | unique | list | length == 1 else 's' }}
+                            · {{ servicios | selectattr('verificado') | list | length }} verificado{{ '' if servicios | selectattr('verificado') | list | length == 1 else 's' }}
+                        </span>
+                        {% if pendientes %}
+                            <a href="{{ url_for('servicios.solicitudes') }}" class="resumen-linea__aviso">
+                                <span class="resumen-linea__globo">{{ pendientes }}</span>
+                                presupuesto{{ '' if pendientes == 1 else 's' }} esperando tu respuesta
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    <div class="grupos-servicio">
+                        {% for post_id, del_post in servicios | groupby('post_id') %}
+                            {% set post = del_post[0].post %}
+                            <section class="grupo-servicio">
+                                <div class="grupo-servicio__head">
+                                    <span class="grupo-servicio__inicial" aria-hidden="true">
+                                        {{ post.title[0] | upper }}
+                                    </span>
+                                    <h2 class="grupo-servicio__titulo">{{ post.title }}</h2>
+                                    <span class="grupo-servicio__cupo">
+                                        {{ del_post | length }} de {{ maximo }}
+                                    </span>
+                                    <span class="grupo-servicio__linea" aria-hidden="true"></span>
+                                    <a href="{{ url_for('blog.detail', id=post.id) }}"
+                                       class="grupo-servicio__link">Ver el emprendimiento</a>
+                                </div>
+
+                                <div class="grupo-servicio__lista">
+                                    {% for servicio in del_post %}
+                                        <article class="fila-servicio {{ 'fila-servicio--apagada' if not servicio.disponible }}">
+                                            <span class="fila-servicio__emblema" aria-hidden="true">
+                                                {% with clave = servicio.rubro, medida = 24 %}
+                                                    {% include "partials/_icono_oficio.html" %}
+                                                {% endwith %}
+                                            </span>
+
+                                            <div class="fila-servicio__cuerpo">
+                                                <h3 class="fila-servicio__titulo">{{ servicio.titulo }}</h3>
+                                                <div class="fila-servicio__datos">
+                                                    <span class="dato">{{ servicio.rubro_label }}</span>
+                                                    {% if servicio.zona_cobertura %}
+                                                        <span class="fila-servicio__zona">{{ servicio.zona_cobertura }}</span>
+                                                    {% endif %}
+                                                    {% if servicio.turnos_habilitados %}
+                                                        <span class="dato dato--turnos">
+                                                            Turnos de {{ servicio.duracion_turno_minutos }} min
+                                                        </span>
+                                                    {% endif %}
+                                                    {{ estado_verificacion(servicio) }}
+                                                </div>
+                                            </div>
+
+                                            <div class="fila-servicio__precio">
+                                                {# None no es cero: un servicio sin precio se cotiza. #}
+                                                {% if servicio.precio_estimado %}
+                                                    <p class="fila-servicio__plata">{{ servicio.precio_estimado | precio }}</p>
+                                                    <p class="fila-servicio__nota">Estimado</p>
+                                                {% else %}
+                                                    <p class="fila-servicio__plata fila-servicio__plata--abierta">A presupuestar</p>
+                                                    <p class="fila-servicio__nota">Se cotiza</p>
+                                                {% endif %}
+                                            </div>
+
+                                            {# Un form y no un checkbox: cambia una fila de la
+                                               base y tiene que andar sin JavaScript. #}
+                                            <form method="post"
+                                                  action="{{ url_for('servicios.alternar_disponible', id=servicio.id) }}"
+                                                  class="fila-servicio__interruptor">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="interruptor-boton"
+                                                        aria-pressed="{{ 'true' if servicio.disponible else 'false' }}">
+                                                    <span class="interruptor-enlace__pista" aria-hidden="true"></span>
+                                                    <span class="interruptor-boton__texto">
+                                                        {{ "Disponible" if servicio.disponible else "Oculto" }}
+                                                    </span>
+                                                </button>
+                                            </form>
+
+                                            <div class="fila-servicio__acciones">
+                                                <a href="{{ url_for('servicios.editar', id=servicio.id) }}"
+                                                   class="btn btn--secondary btn--chico">Editar</a>
+                                                <form method="post"
+                                                      action="{{ url_for('servicios.eliminar', id=servicio.id) }}"
+                                                      class="form-inline"
+                                                      data-confirm="¿Seguro que querés eliminar este servicio?">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn--ghost btn--chico">
+                                                        Eliminar
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </article>
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% endfor %}
+                    </div>
+                {% elif posts %}
+                    <div class="vacio">
+                        <span class="vacio__icono" aria-hidden="true">
+                            {% with clave = 'plomeria', medida = 25 %}
+                                {% include "partials/_icono_oficio.html" %}
+                            {% endwith %}
+                        </span>
+                        <h2 class="vacio__titulo">Todavía no cargaste ningún servicio</h2>
+                        <p class="vacio__texto">
+                            Un servicio es un trabajo que hacés a pedido: "destapación de
+                            cañerías", "corte de pasto". Si lo que vendés tiene precio fijo
+                            y se lleva puesto, eso va en
+                            <a href="{{ url_for('products.mios') }}">tu catálogo</a>.
+                        </p>
+                        <a href="{{ url_for('servicios.nuevo') }}" class="btn btn--primary">
+                            Agregá el primero acá
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="vacio">
+                        <span class="vacio__icono vacio__icono--aviso" aria-hidden="true">
+                            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 20V9.5L12 4l8 5.5V20z"/><path d="M9.5 20v-6h5v6"/>
+                            </svg>
+                        </span>
+                        <h2 class="vacio__titulo">Primero necesitás un emprendimiento</h2>
+                        <p class="vacio__texto">
+                            Todavía no registraste ningún emprendimiento. Los servicios cuelgan
+                            de uno y no de tu usuario: así una misma persona puede tener una
+                            gasista y una electricista con servicios distintos.
+                        </p>
+                        <a href="{{ url_for('blog.create') }}" class="btn btn--primary">
+                            Creá el primero acá
+                        </a>
+                    </div>
                 {% endif %}
             </div>
         </div>
-
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="auth__messages" style="margin-bottom:1rem;">
-                    {% for message in messages %}
-                        <div class="auth__alert">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        {% if not posts %}
-            <div class="emprendimientos__empty" style="margin-top:1rem;">
-                <p>
-                    Todavía no registraste ningún emprendimiento.
-                    <a href="{{ url_for('blog.create') }}">Creá el primero acá</a>
-                    y después vas a poder cargarle servicios.
-                </p>
-            </div>
-        {% elif servicios %}
-            <div class="cards-grid">
-                {# Ya vienen ordenados por emprendimiento y titulo desde la vista. #}
-                {% for servicio in servicios %}
-                    <article class="card">
-                        <div class="card__body">
-                            <div class="card__tags">
-                                <span class="badge badge--category">{{ servicio.post.title }}</span>
-                                <span class="badge">{{ servicio.rubro_label }}</span>
-                                {% if servicio.verificado %}
-                                    <span class="badge badge--verificado">✓ Verificado</span>
-                                {% endif %}
-                                {% if not servicio.disponible %}
-                                    <span class="badge">No disponible</span>
-                                {% endif %}
-                            </div>
-                            <h3 class="card__title">{{ servicio.titulo }}</h3>
-                            <p class="card__price" style="font-weight:600;">
-                                {# None no es cero: un servicio sin precio se cotiza. #}
-                                {{ servicio.precio_estimado | precio if servicio.precio_estimado else "A presupuestar" }}
-                            </p>
-                            {% if servicio.zona_cobertura %}
-                                <p class="card__description">📍 {{ servicio.zona_cobertura }}</p>
-                            {% endif %}
-                            {% if servicio.descripcion %}
-                                <p class="card__description">{{ servicio.descripcion }}</p>
-                            {% endif %}
-
-                            <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                <a href="{{ url_for('servicios.editar', id=servicio.id) }}"
-                                   class="btn btn--secondary"
-                                   style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                    Editar
-                                </a>
-                                <a href="{{ url_for('servicios.verificar', id=servicio.id) }}"
-                                   class="btn btn--secondary"
-                                   style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                    {{ "Ver verificación" if servicio.verificado else "Pedir verificación" }}
-                                </a>
-                                <form method="post"
-                                      action="{{ url_for('servicios.eliminar', id=servicio.id) }}"
-                                      class="form-inline"
-                                      onsubmit="return confirm('¿Seguro que querés eliminar este servicio?');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit"
-                                            class="btn btn--ghost"
-                                            style="font-size:0.8rem; padding:0.3rem 0.8rem;">
-                                        Eliminar
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </article>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="emprendimientos__empty" style="margin-top:1rem;">
-                <p>
-                    Todavía no cargaste ningún servicio.
-                    <a href="{{ url_for('servicios.nuevo') }}">Agregá el primero acá.</a>
-                </p>
-            </div>
-        {% endif %}
     </div>
 </section>
 {% endblock %}

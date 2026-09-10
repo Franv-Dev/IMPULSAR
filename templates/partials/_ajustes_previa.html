@@ -1,0 +1,67 @@
+{# "Así te ven": el perfil en chico, al costado del formulario.
+
+   Existe porque editar el perfil era escribir a ciegas y salir a mirar: la
+   pantalla de ajustes no mostraba en ningún lado qué estaba cambiando.
+
+   Se pinta desde `campos` (no desde `user`) para que al volver por un error
+   muestre lo que la persona escribió, y main.js le va cambiando la biografía
+   mientras se escribe. Sin JS sigue estando, con lo guardado. #}
+<aside class="ajustes-previa">
+    <div class="ajustes-previa__head">
+        <span class="ajustes-previa__titulo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            Así te ven
+        </span>
+        <a href="{{ url_for('profile.view_profile', slug=user.slug) }}" class="ajustes-previa__link">Abrir mi perfil</a>
+    </div>
+
+    <div class="ajustes-previa__tarjeta">
+        <div class="ajustes-previa__portada">
+            {% if user.cover_image %}
+                <img src="{{ url_for('static', filename='uploads/covers/' ~ user.cover_image) }}" alt="">
+            {% else %}
+                <img src="{{ url_for('static', filename='icons/portada.jpg') }}" alt="">
+            {% endif %}
+        </div>
+
+        <div class="ajustes-previa__cuerpo">
+            <div class="ajustes-previa__avatar">
+                {% if user.avatar %}
+                    <img src="{{ url_for('static', filename='uploads/avatars/' ~ user.avatar) }}" alt="">
+                {% else %}
+                    <img src="{{ url_for('static', filename='icons/logo_perfil.png') }}" alt="">
+                {% endif %}
+            </div>
+
+            <p class="ajustes-previa__nombre">{{ user.username }}</p>
+            <p class="ajustes-previa__rol">{{ user.rol or 'Miembro de IMPULSAR' }}</p>
+
+            {# El chip se dibuja siempre y se esconde vacío, para que main.js
+               pueda encenderlo mientras se escribe la ciudad. #}
+            <span class="perfil-chip" data-previa-ubicacion {% if not campos.location %}hidden{% endif %}>
+                <svg class="perfil-chip__icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-5.6-7-11a7 7 0 0 1 14 0c0 5.4-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                <span data-previa-ubicacion-texto>{{ campos.location }}</span>
+            </span>
+
+            {% if campos.biography %}
+                <p class="ajustes-previa__bio" data-previa-bio>{{ campos.biography | render_bio }}</p>
+            {% else %}
+                <p class="ajustes-previa__bio ajustes-previa__bio--vacia" data-previa-bio>
+                    Todavía no escribiste tu biografía.
+                </p>
+            {% endif %}
+
+            {% if campos.phone or campos.whatsapp or campos.instagram_url or campos.facebook_url or campos.twitter_url %}
+                <div class="ajustes-previa__canales">
+                    {% if campos.whatsapp %}<span class="ajustes-previa__canal ajustes-previa__canal--wpp">WhatsApp</span>{% endif %}
+                    {% if campos.phone %}<span class="ajustes-previa__canal">Teléfono</span>{% endif %}
+                    {% if campos.instagram_url %}<span class="ajustes-previa__canal">Instagram</span>{% endif %}
+                    {% if campos.facebook_url %}<span class="ajustes-previa__canal">Facebook</span>{% endif %}
+                    {% if campos.twitter_url %}<span class="ajustes-previa__canal">Twitter</span>{% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <p class="ajustes-previa__pie">Lo que ves acá es lo que se publica al guardar.</p>
+</aside>

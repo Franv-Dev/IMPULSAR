@@ -60,6 +60,15 @@ def _sin_foreign_keys_en_sqlite():
     b30b4ba8d199) no se toparon con esto porque tocan tablas que no referencia
     nadie.
 
+    EL ERROR RUIDOSO LO APORTA UNA SOLA DE LAS SEIS. En este punto de la cadena
+    events, post_images, favorites, messages y reports ya estan en ON DELETE
+    CASCADE, y una hija que cascadea no hace fallar nada: el DROP TABLE la vacia
+    en silencio. La que rompe fuerte es reviews.post_id, que todavia esta en NO
+    ACTION (recien la arregla c1f4a90b6e35). O sea que la excepcion aparece
+    porque hay reseñas cargadas; en una base sin reseñas esta misma migracion no
+    fallaria, se llevaria puestas las otras cinco sin decir nada. En los dos
+    casos la solucion es la misma y es esta: apagar las FK.
+
     En MySQL no hace falta: ahi el batch es un ALTER TABLE comun, sin recrear.
 
     Al salir se hace detach de la conexion en vez de volver a prender el

@@ -1,51 +1,170 @@
 {% extends "base.html" %}
-{% block title %}Horarios de atención{% endblock %}
+{% block title %}Horarios – IMPULSAR{% endblock %}
+
+{#  Ajustes › Horarios.
+
+    Era una tarjeta suelta de 640 px, fuera del menú de cuenta y sin las
+    solapas: se llegaba desde el perfil y se volvía al perfil. Ahora es una
+    solapa más de Ajustes, como corresponde a algo que se edita junto con el
+    resto.
+
+    Dos cambios además de la mudanza:
+    - el checkbox "Cerrado" del final es un interruptor, y apaga la fila entera;
+    - al costado se ve el cartel que estas siete filas encienden en el perfil,
+      que es lo único que ve un visitante y hasta ahora se cargaba a ciegas. #}
 
 {% block content %}
 <section class="section">
-    <div class="container" style="max-width: 640px;">
-        <div class="auth__card">
-            <h1 class="auth__title">Horarios de atención</h1>
-            <p class="auth__subtitle">
-                Un rango por día. Marcá "Cerrado" en los días que no atendés.
-                Las horas son de Argentina.
-            </p>
-
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="auth__messages">
-                        {% for message in messages %}
-                            <div class="auth__alert">{{ message }}</div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Ajustes" %}
+                {% include "partials/_menu_cuenta.html" with context %}
             {% endwith %}
 
-            <form method="post" class="auth__form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                {% for fila in filas %}
-                    <div class="horario-fila">
-                        <span class="horario-fila__dia">{{ fila.etiqueta }}</span>
-                        <input type="time" name="abre_{{ fila.dia }}" value="{{ fila.abre }}"
-                               class="auth__input horario-fila__hora" aria-label="Abre el {{ fila.etiqueta }}">
-                        <span class="horario-fila__separador">a</span>
-                        <input type="time" name="cierra_{{ fila.dia }}" value="{{ fila.cierra }}"
-                               class="auth__input horario-fila__hora" aria-label="Cierra el {{ fila.etiqueta }}">
-                        <label class="horario-fila__cerrado">
-                            <input type="checkbox" name="cerrado_{{ fila.dia }}"
-                                   {% if fila.cerrado %}checked{% endif %}>
-                            Cerrado
-                        </label>
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Ajustes de mi cuenta</h1>
+                        <p class="cuenta__bajada">
+                            Cuándo atendés. Es lo que decide el cartel de "abierto ahora" en tu perfil.
+                        </p>
                     </div>
-                {% endfor %}
+                </div>
 
-                <button type="submit" class="btn btn--primary auth__submit">Guardar horarios</button>
-            </form>
+                {% with activa = "Horarios" %}
+                    {% include "partials/_ajustes_nav.html" with context %}
+                {% endwith %}
 
-            <p class="auth__footer">
-                Volver a <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}">mi perfil</a>.
-            </p>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <form method="post" class="ajustes-grid" data-ajustes-form>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="ajustes-col">
+                        <section class="ajustes-caja">
+                            <div class="ajustes-caja__head">
+                                <h2 class="ajustes-caja__titulo">Horarios de atención</h2>
+                                <span class="ajustes-caja__nota">Hora de Argentina</span>
+                            </div>
+                            <p class="ajustes-ayuda">
+                                Un rango por día. Los días cerrados se marcan con el interruptor.
+                            </p>
+
+                            {# Los dos atajos los enciende main.js: sin JS no
+                               hacen nada, y un botón muerto es peor que ninguno.
+                               Lo que resuelven es el trabajo repetido de cargar
+                               siete filas iguales a mano. #}
+                            <div class="ajustes-atajos" data-horarios-atajos hidden>
+                                <button type="button" class="btn btn--secondary" data-copiar-lunes>
+                                    Copiar el lunes a toda la semana
+                                </button>
+                                <button type="button" class="btn btn--secondary" data-cerrar-finde>
+                                    Cerrar sábado y domingo
+                                </button>
+                            </div>
+
+                            <div class="horarios-editor">
+                                {% for fila in filas %}
+                                    <div class="horario-fila {{ 'horario-fila--cerrada' if fila.cerrado }}" data-horario-fila>
+                                        <span class="horario-fila__dia">{{ fila.etiqueta }}</span>
+
+                                        <div class="horario-fila__horas">
+                                            <input type="time" name="abre_{{ fila.dia }}" value="{{ fila.abre }}"
+                                                   class="horario-fila__hora" aria-label="Abre el {{ fila.etiqueta }}"
+                                                   data-hora="abre">
+                                            <span class="horario-fila__separador">a</span>
+                                            <input type="time" name="cierra_{{ fila.dia }}" value="{{ fila.cierra }}"
+                                                   class="horario-fila__hora" aria-label="Cierra el {{ fila.etiqueta }}"
+                                                   data-hora="cierra">
+                                        </div>
+
+                                        {# El interruptor ES el checkbox de antes
+                                           (mismo name, mismo backend). Lo que se
+                                           invierte es el color: encendido =
+                                           abierto, que es como se lee un
+                                           interruptor. La etiqueta accesible
+                                           sigue diciendo lo que el control hace
+                                           cuando se marca. #}
+                                        <label class="interruptor">
+                                            <input type="checkbox" name="cerrado_{{ fila.dia }}"
+                                                   class="interruptor__input" data-cerrado
+                                                   {% if fila.cerrado %}checked{% endif %}>
+                                            <span class="sr-only">Cerrado el {{ fila.etiqueta }}</span>
+                                            <span class="interruptor__pista" aria-hidden="true"></span>
+                                            <span class="interruptor__texto" aria-hidden="true">
+                                                <span class="interruptor__abierto">Abierto</span>
+                                                <span class="interruptor__cerrado">Cerrado</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </section>
+
+                        <div class="ajustes-guardar" data-ajustes-barra>
+                            <span class="ajustes-guardar__estado">
+                                <strong class="ajustes-guardar__titulo" data-barra-titulo>Todo guardado</strong>
+                                <span class="ajustes-guardar__detalle" data-barra-detalle>
+                                    El cartel de tu perfil cambia cuando guardes.
+                                </span>
+                            </span>
+                            <a href="{{ url_for('profile.view_profile', slug=g.user.slug) }}" class="btn btn--secondary">
+                                Volver a mi perfil
+                            </a>
+                            <button type="submit" class="btn btn--primary">Guardar horarios</button>
+                        </div>
+                    </div>
+
+                    <aside class="ajustes-previa">
+                        <div class="ajustes-previa__head">
+                            <span class="ajustes-previa__titulo">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                Así te ven
+                            </span>
+                        </div>
+
+                        <div class="ajustes-previa__tarjeta ajustes-previa__tarjeta--simple">
+                            <p class="ajustes-ayuda">En tu perfil, ahora mismo:</p>
+
+                            {% if abierto_ahora is none %}
+                                <span class="perfil-chip">Todavía no cargaste horarios</span>
+                            {% else %}
+                                <span class="perfil-chip {{ 'perfil-chip--abierto' if abierto_ahora else 'perfil-chip--cerrado' }}">
+                                    <span class="perfil-chip__punto" aria-hidden="true"></span>
+                                    {{ "Abierto ahora" if abierto_ahora else "Cerrado ahora" }}
+                                </span>
+                            {% endif %}
+
+                            <ul class="ajustes-previa__semana">
+                                {% for fila in filas %}
+                                    <li class="{{ 'ajustes-previa__dia--hoy' if fila.dia == dia_hoy }}">
+                                        <span>{{ fila.etiqueta }}</span>
+                                        <span>
+                                            {% if fila.cerrado or not fila.abre %}
+                                                Cerrado
+                                            {% else %}
+                                                {{ fila.abre }} a {{ fila.cierra }}
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <p class="ajustes-previa__pie">
+                            El cartel es lo único de esta pantalla que ve un visitante. Se actualiza al guardar.
+                        </p>
+                    </aside>
+                </form>
+            </div>
         </div>
     </div>
 </section>

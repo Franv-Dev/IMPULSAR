@@ -16,6 +16,33 @@ class Horario(db.Model):
     # cual gana dependeria del orden en que los devuelva la base.
     __table_args__ = (
         db.UniqueConstraint("user_id", "dia_semana", name="uq_horario_user_dia"),
+        # NO dice "abre < cierra", y no es un olvido: un bar de 20:00 a 02:00
+        # cierra al dia siguiente, y ese cruce de medianoche lo contemplan tanto
+        # services/horarios.esta_abierto como el filtro "Abierto ahora" del
+        # listado. Pedir abre < cierra rechazaria todos los horarios nocturnos.
+        #
+        # Lo que si vale siempre, cruce o no, es que las dos horas no sean la
+        # misma: "de 09:00 a 09:00" no se puede leer (¿cerrado siempre o
+        # abierto las 24 horas?) y los dos lectores del horario lo toman como
+        # cerrado, sin avisar. El formulario ya lo rechaza con un mensaje; esto
+        # es la red de abajo, igual que ck_review_rating.
+        #
+        # Con una de las dos horas en NULL la comparacion da desconocido y el
+        # CHECK pasa, que es lo correcto: ese es el dia cerrado, y de que las
+        # dos esten cargadas o ninguna se ocupa el CHECK de abajo.
+        db.CheckConstraint("abre <> cierra", name="ck_horarios_abre_distinto_de_cierra"),
+        # Un dia abierto tiene las dos horas. Lo garantiza en cada escritura
+        # reglas.horario_del_dia (un dia sin horas se guarda como cerrado), asi
+        # que una fila con cerrado=0 y las horas en NULL no sale de la app: es
+        # un dia a medio cargar, que esta_abierto() saltea en silencio y que la
+        # pagina muestra como si no hubiera horario.
+        #
+        # Ojo que es un CHECK con condicion, y MySQL recien los valida desde
+        # 8.0.16 (mismo limite que anota Service.duracion_turno_minutos).
+        db.CheckConstraint(
+            "cerrado <> 0 OR (abre IS NOT NULL AND cierra IS NOT NULL)",
+            name="ck_horarios_dia_abierto_con_horas",
+        ),
     )
 
     id = db.Column(db.Integer, primary_key=True)

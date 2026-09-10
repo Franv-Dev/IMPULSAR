@@ -2,38 +2,103 @@
 
 {% block title %}Mensajes – IMPULSAR{% endblock %}
 
+{#  La bandeja de mensajes, rediseñada: entra al layout de cuenta como el resto
+    de la sección, y cada conversación pasa a ser una fila con el avatar de la
+    otra parte, de qué emprendimiento se está hablando y de qué lado estás vos.
+
+    Antes eran tarjetas de 700 px centradas, sin avatar, sin fecha y sin marca
+    de sin leer: la única forma de saber si te habían contestado era abrir una
+    por una.
+
+    Los tres datos que se agregan salen todos de lo que la consulta ya trae
+    (views/messages.py:inbox), así que no hay ninguna consulta nueva:
+
+    - de qué lado estás (cliente o emprendedor), que es lo que decide con quién
+      estás hablando,
+    - cuándo fue el último mensaje,
+    - si ese último mensaje es de la otra parte y todavía no lo leíste. #}
+
 {% block content %}
 <section class="section">
-    <div class="container" style="max-width: 700px;">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Mensajes</h2>
-                <p class="section__subtitle">
-                    Conversaciones sobre emprendimientos, como cliente o como emprendedor.
-                </p>
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Mensajes" %}
+                {% include "partials/_menu_cuenta.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Mensajes</h1>
+                        <p class="cuenta__bajada">
+                            Conversaciones sobre emprendimientos, como cliente o como
+                            emprendedor. Las últimas primero.
+                        </p>
+                    </div>
+                </div>
+
+                {% if conversaciones %}
+                    <div class="chat-inbox">
+                        {% for m in conversaciones %}
+                            {% set soy_cliente = g.user.id == m.client_id %}
+                            {% set otra_parte = m.post.author_user if soy_cliente else m.client %}
+                            {# Sin leer solo si el último lo mandó la otra parte: los
+                               propios nacen sin read_at y marcarlos diría que tenés
+                               algo pendiente con vos mismo. #}
+                            {% set sin_leer = m.sender_id != g.user.id and not m.read_at %}
+                            <a class="chat-inbox__item {{ 'chat-inbox__item--nuevo' if sin_leer }}"
+                               href="{{ url_for('messages.conversation', post_id=m.post_id, client_id=m.client_id) }}">
+                                <span class="chat-inbox__avatar" aria-hidden="true">
+                                    {{ otra_parte.username[:2] | upper }}
+                                </span>
+
+                                <span class="chat-inbox__cuerpo">
+                                    <span class="chat-inbox__info">
+                                        <span class="chat-inbox__nombre">{{ otra_parte.username }}</span>
+                                        <span class="chat-inbox__fecha">
+                                            {{ m.created.strftime('%d/%m') }}
+                                        </span>
+                                    </span>
+
+                                    <span class="chat-inbox__with">
+                                        {{ m.post.title }} ·
+                                        {{ 'le escribís como cliente' if soy_cliente else 'te escribieron a tu emprendimiento' }}
+                                    </span>
+
+                                    <span class="chat-inbox__preview">
+                                        {% if m.sender_id == g.user.id %}
+                                            <span class="chat-inbox__vos">Vos:</span>
+                                        {% endif %}
+                                        {{ m.body[:90] }}{% if m.body|length > 90 %}…{% endif %}
+                                    </span>
+                                </span>
+
+                                {% if sin_leer %}
+                                    <span class="chat-inbox__punto" aria-label="Sin leer"></span>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="vacio">
+                        <span class="vacio__icono" aria-hidden="true">
+                            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 11.5a7.5 8.5 0 0 1-11 7.4L4 20.5l1.7-4.4A8.5 8.5 0 1 1 20 11.5Z"/>
+                            </svg>
+                        </span>
+                        <h2 class="vacio__titulo">Todavía no tenés conversaciones</h2>
+                        <p class="vacio__texto">
+                            Cuando le escribas a un emprendimiento —o cuando alguien te
+                            escriba al tuyo— la conversación va a quedar acá.
+                        </p>
+                        <a href="{{ url_for('blog.index') }}" class="btn btn--secondary">
+                            Explorar emprendimientos
+                        </a>
+                    </div>
+                {% endif %}
             </div>
         </div>
-
-        {% if conversaciones %}
-            <div class="chat-inbox">
-                {% for m in conversaciones %}
-                    {% set soy_cliente = g.user.id == m.client_id %}
-                    {% set otra_parte = m.post.author_user if soy_cliente else m.client %}
-                    <a class="chat-inbox__item"
-                        href="{{ url_for('messages.conversation', post_id=m.post_id, client_id=m.client_id) }}">
-                        <div class="chat-inbox__info">
-                            <strong>{{ m.post.title }}</strong>
-                            <span class="chat-inbox__with">con {{ otra_parte.username }}</span>
-                        </div>
-                        <p class="chat-inbox__preview">
-                            {{ m.body[:80] }}{% if m.body|length > 80 %}...{% endif %}
-                        </p>
-                    </a>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="reviews-empty">Todavía no tenés conversaciones.</p>
-        {% endif %}
     </div>
 </section>
 {% endblock %}

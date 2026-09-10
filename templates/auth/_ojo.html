@@ -1,0 +1,36 @@
+{#  El botón que muestra la contraseña.
+
+    Es el ojo solo, sin la palabra "Mostrar": el ícono ya lo dice y la palabra
+    al lado era ruido. Pero el aria-label SÍ la lleva, porque para un lector de
+    pantalla un ojo suelto no dice nada.
+
+    Va con type="button" a propósito: adentro de un <form>, un <button> sin
+    type manda el formulario, y apretar "ver la contraseña" haría un intento de
+    login. Lo mismo con el data-ojo: es el gancho que busca main.js.
+
+    Sin JavaScript el botón no hace nada, y por eso está escondido hasta que el
+    JS lo enciende (ver .auth__ojo[hidden] en el CSS): un botón dibujado que no
+    responde es peor que no tenerlo. #}
+<button type="button"
+        class="auth__ojo"
+        data-ojo="password"
+        aria-label="Mostrar la contraseña"
+        aria-pressed="false"
+        title="Mostrar la contraseña"
+        hidden>
+    <svg class="auth__ojo-abierto" width="17" height="17" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+         stroke-linejoin="round" aria-hidden="true">
+        <path d="M2.6 12S6.4 5.8 12 5.8 21.4 12 21.4 12 17.6 18.2 12 18.2 2.6 12 2.6 12Z"/>
+        <circle cx="12" cy="12" r="2.7"/>
+    </svg>
+    {# El ojo tachado aparece cuando la contraseña YA se está viendo: el ícono
+       muestra qué va a pasar si se aprieta, no en qué estado está. #}
+    <svg class="auth__ojo-cerrado" width="17" height="17" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+         stroke-linejoin="round" aria-hidden="true">
+        <path d="M2.6 12S6.4 5.8 12 5.8c1.5 0 2.9.45 4.1 1.1M21.4 12s-1.4 2.3-3.7 4"/>
+        <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+        <path d="M4.2 4.2 19.8 19.8"/>
+    </svg>
+</button>

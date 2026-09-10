@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Productos guardados – IMPULSAR{% endblock %}
+
+{#  La segunda solapa de «Mis favoritos»: los productos que el usuario marcó.
+
+    Entra al mismo layout de cuenta que blog/favorites.html, con el menú a la
+    izquierda, y las tarjetas son las mismas .producto-tarjeta del catálogo: es
+    lo mismo que guardó, así que tiene que verse igual.
+
+    No tiene filtros propios. En «Mis favoritos» de emprendimientos hay rubro y
+    orden porque la lista crece con los años; acá todavía no hay con qué
+    filtrar que valga la pena — el rubro es del emprendimiento y no del
+    producto, y ordenar por precio una lista de guardados no contesta ninguna
+    pregunta. Cuando la lista sea larga de verdad va a saberse cuál falta. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Favoritos" %}
+                {% include "partials/_menu_cuenta.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Mis favoritos</h1>
+                        <p class="cuenta__bajada">
+                            {{ paginacion.total }} producto{{ '' if paginacion.total == 1 else 's' }}
+                            guardado{{ '' if paginacion.total == 1 else 's' }}.
+                        </p>
+                    </div>
+                    <a href="{{ url_for('products.catalogo') }}" class="btn btn--secondary">
+                        Explorar el catálogo
+                    </a>
+                </div>
+
+                {% with activa = 'productos' %}
+                    {% include "partials/_solapas_favoritos.html" %}
+                {% endwith %}
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% if productos %}
+                    <div class="catalogo__grilla">
+                        {% for producto in productos %}
+                            {% set negocio = producto.post %}
+                            <article class="producto-tarjeta">
+                                <a href="{{ url_for('products.detalle', id=producto.id) }}"
+                                   class="producto-tarjeta__foto">
+                                    {% if producto.foto %}
+                                        <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
+                                             alt="Foto de {{ producto.nombre }}" loading="lazy">
+                                    {% endif %}
+                                    {% if not producto.disponible %}
+                                        <span class="producto-tarjeta__agotado">Sin stock por ahora</span>
+                                    {% endif %}
+                                </a>
+
+                                {# El corazón siempre lleno acá: esta pantalla son
+                                   justamente los que están marcados, y tocarlo lo
+                                   saca de la lista. #}
+                                <form method="post" class="producto-tarjeta__guardar"
+                                      action="{{ url_for('products.toggle_favorito', id=producto.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="favorite-btn favorite-btn--active"
+                                            aria-pressed="true"
+                                            aria-label="Quitar de tus productos guardados"
+                                            title="Quitar de guardados">♥</button>
+                                </form>
+
+                                <div class="producto-tarjeta__cuerpo">
+                                    <span class="producto-tarjeta__precio">{{ producto.precio | precio }}</span>
+                                    <h2 class="producto-tarjeta__nombre">
+                                        <a href="{{ url_for('products.detalle', id=producto.id) }}">{{ producto.nombre }}</a>
+                                    </h2>
+                                    <span class="producto-tarjeta__negocio">
+                                        <span class="punto-rubro punto-rubro--{{ negocio.category }}" aria-hidden="true"></span>
+                                        <a href="{{ url_for('blog.detail', id=negocio.id) }}">{{ negocio.title }}</a>
+                                    </span>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+
+                    {% include "partials/_paginacion.html" %}
+                {% else %}
+                    <div class="vacio">
+                        <span class="vacio__icono" aria-hidden="true">
+                            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 7.5a4 4 0 0 1 7-.9c0 4.8-7 13.4-7 13.4Z"/>
+                            </svg>
+                        </span>
+                        <h2 class="vacio__titulo">Todavía no guardaste ningún producto</h2>
+                        <p class="vacio__texto">
+                            Tocá el corazón de un producto y va a quedar acá, con su precio,
+                            para no volver a buscarlo.
+                        </p>
+                        <a href="{{ url_for('products.catalogo') }}" class="btn btn--primary">
+                            Explorá el catálogo
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

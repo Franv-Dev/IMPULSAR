@@ -1,35 +1,197 @@
 {% extends "base.html" %}
 
 {% block title %}Sobre IMPULSAR{% endblock %}
+{% block meta_description %}IMPULSAR no es una tienda: es la guía de quién hace qué cerca tuyo, con horarios, distancia y quién está atrás de cada emprendimiento.{% endblock %}
+
+{#  Sobre IMPULSAR (disenio-paginas/Main.dc.html).
+
+    LA PÁGINA LA LEE UN VISITANTE, NO EL EQUIPO QUE LA HIZO. El texto anterior
+    contaba que la plataforma «fue desarrollada por un equipo académico
+    utilizando Flask (Python) y MySQL, siguiendo buenas prácticas de diseño y
+    una estética moderna en tonos pastel»: tres datos que no le sirven a nadie
+    que entre a buscar un emprendimiento, y el último además hace rato que es
+    falso — la paleta es el índigo del logo.
+
+    Lo que va en su lugar es el posicionamiento que la guía ya decidió (ver
+    DISENIO.md, «Posicionamiento: contra Mercado Libre y Marketplace»): los
+    cinco datos que Mercado Libre no tiene, y LOS CINCO SALEN DE UNA TABLA QUE
+    EXISTE — horarios, latitude/longitude, el autor con antigüedad y reseñas,
+    los eventos, y el chat interno. Ninguno es una promesa a futuro.
+
+    NO HAY NI UN NÚMERO EN ESTA PÁGINA: cuántos emprendimientos, desde cuándo o
+    cuánta gente son datos que no existen y no se inventan. #}
 
 {% block content %}
 <section class="section">
     <div class="container">
-        <div class="section__header">
-            <div>
-                <h2 class="section__title">Sobre IMPULSAR</h2>
-                <p class="section__subtitle">Una plataforma para potenciar el ecosistema emprendedor local</p>
-            </div>
+        <div class="pagina__intro">
+            <h1 class="pagina__titulo">
+                Los emprendimientos de Mendoza, con nombre, horario y dirección
+            </h1>
+            <p class="pagina__bajada">
+                IMPULSAR no es una tienda: es la guía de quién hace qué cerca tuyo. Ves si
+                está abierto ahora, a cuántas cuadras queda, quién está atrás y dónde lo
+                encontrás en persona este fin de semana. Después arreglás con esa persona,
+                directo.
+            </p>
         </div>
 
-        <div class="about">
-            <p class="about__text">
-                <strong>IMPULSAR</strong> es una plataforma web creada con el propósito de conectar
-                y fortalecer a los emprendedores locales. Nuestro objetivo es centralizar la
-                información de cada proyecto, mejorar su visibilidad y facilitar el contacto
-                con clientes, proveedores y organizaciones.
-            </p>
-            <p class="about__text">
-                La aplicación fue desarrollada por un equipo académico utilizando
-                <strong>Flask (Python)</strong> y <strong>MySQL</strong> como base tecnológica,
-                siguiendo buenas prácticas de diseño y una estética moderna en tonos pastel.
-            </p>
-            <p class="about__text">
-                Este proyecto es parte del esfuerzo por promover el desarrollo económico local,
-                brindar herramientas digitales accesibles y acompañar a cada emprendedor en el
-                crecimiento de su negocio.
-            </p>
+        {# Los cinco datos del posicionamiento, más la tarjeta de publicar. Cada
+           uno se corresponde con algo que la base ya sabe contestar; el orden es
+           el del canvas. #}
+        <div class="sobre__grilla">
+            <article class="sobre__tarjeta">
+                <span class="sobre__icono sobre__icono--verde" aria-hidden="true">
+                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.2 1.9"/>
+                    </svg>
+                </span>
+                <h2 class="sobre__titulo">Abierto ahora, no «consultar»</h2>
+                <p class="sobre__texto">
+                    Cada emprendimiento carga sus horarios reales, y podés filtrar por los
+                    que están atendiendo en este momento.
+                </p>
+            </article>
+
+            <article class="sobre__tarjeta">
+                <span class="sobre__icono sobre__icono--indigo" aria-hidden="true">
+                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="10" r="3"/>
+                        <path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/>
+                    </svg>
+                </span>
+                <h2 class="sobre__titulo">A cuántas cuadras</h2>
+                <p class="sobre__texto">
+                    Distancia de verdad desde donde estás, con un radio en kilómetros. No
+                    «envío a todo el país»: el de la vuelta de tu casa.
+                </p>
+            </article>
+
+            <article class="sobre__tarjeta">
+                <span class="sobre__icono sobre__icono--terracota" aria-hidden="true">
+                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9.2 11.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8M2.6 20.2a6.6 6.6 0 0 1 13.2 0M16.8 5.6a3.4 3.4 0 0 1 0 6M18.6 20.2a6.8 6.8 0 0 0-1.8-4.6"/>
+                    </svg>
+                </span>
+                <h2 class="sobre__titulo">La persona, no el vendedor 4.8★</h2>
+                <p class="sobre__texto">
+                    Quién está atrás, desde cuándo, y las reseñas de quienes ya le
+                    compraron. Con nombre y cara, no un alias.
+                </p>
+            </article>
+
+            <article class="sobre__tarjeta">
+                <span class="sobre__icono sobre__icono--gris" aria-hidden="true">
+                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3.5 9.5 6 4.5h12l2.5 5M3.5 9.5h17M5.5 9.5V20h13V9.5M9.5 20v-5.5h5V20"/>
+                    </svg>
+                </span>
+                <h2 class="sobre__titulo">Dónde los encontrás en persona</h2>
+                <p class="sobre__texto">
+                    Las ferias, pop-ups y talleres de este mes, con fecha y lugar. Es lo que
+                    ninguna plataforma grande te va a decir.
+                </p>
+            </article>
+
+            <article class="sobre__tarjeta">
+                <span class="sobre__icono sobre__icono--verde" aria-hidden="true">
+                    {% with clave = 'mensajes', tamanio = 23, trazo = 1.8 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </span>
+                <h2 class="sobre__titulo">Le escribís y arreglan</h2>
+                <p class="sobre__texto">
+                    El contacto es directo por el chat de la plataforma. Cómo se paga y cómo
+                    se entrega lo arreglan ustedes dos.
+                </p>
+            </article>
+
+            {# La única tarjeta de marca: es la que pide algo. Va última porque es
+               la acción, no un argumento más. #}
+            <article class="sobre__tarjeta sobre__tarjeta--marca">
+                <span class="sobre__icono sobre__icono--sobre-marca" aria-hidden="true">
+                    {% with clave = 'publicar', tamanio = 23, trazo = 1.9 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                </span>
+                <h2 class="sobre__titulo">Publicar es gratis</h2>
+                <p class="sobre__texto">
+                    No cobramos comisión por lo que vendas, ni ahora ni después. Con la
+                    cuenta que ya tenés.
+                </p>
+                <a href="{% if g.user %}{{ url_for('blog.create') }}{% else %}{{ url_for('auth.register') }}{% endif %}"
+                   class="sobre__accion">Publicar mi emprendimiento</a>
+            </article>
         </div>
+
+        {# DECIR QUÉ NO HACE ES PARTE DEL ARGUMENTO, no una disculpa: la
+           plataforma no tiene pagos ni envíos ni protección al comprador, y
+           esconderlo hasta el final del chat es lo que hace que alguien se
+           sienta estafado. Es también por qué la ficha muestra tan adelante
+           quién vende. #}
+        <section class="sobre__bloque">
+            <h2 class="sobre__bloque-titulo">Lo que IMPULSAR no hace</h2>
+            <p class="sobre__bloque-bajada">Preferimos decirlo acá y no cuando ya estás por comprar.</p>
+
+            <ul class="sobre__nohace">
+                <li>
+                    <span class="sobre__cruz" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="8.6"/><path d="m6.5 6.5 11 11"/>
+                        </svg>
+                    </span>
+                    <span><strong>No procesamos pagos.</strong> No hay carrito ni cuotas: el
+                    precio lo pone cada emprendimiento y se arregla afuera.</span>
+                </li>
+                <li>
+                    <span class="sobre__cruz" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="8.6"/><path d="m6.5 6.5 11 11"/>
+                        </svg>
+                    </span>
+                    <span><strong>No hacemos envíos.</strong> Si el emprendimiento entrega, lo
+                    dice él; nosotros no tenemos logística.</span>
+                </li>
+                <li>
+                    <span class="sobre__cruz" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="8.6"/><path d="m6.5 6.5 11 11"/>
+                        </svg>
+                    </span>
+                    <span><strong>No hay protección al comprador.</strong> Por eso mostramos
+                    tan adelante quién vende, desde cuándo y qué dijeron los demás.</span>
+                </li>
+            </ul>
+
+            <p class="sobre__moderamos">
+                <span class="sobre__escudo" aria-hidden="true">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3.2 4.5 6.1v5.4c0 4.4 3.1 8.2 7.5 9.3 4.4-1.1 7.5-4.9 7.5-9.3V6.1Z"/>
+                        <path d="m9.2 12 2 2 3.6-3.8"/>
+                    </svg>
+                </span>
+                <span>
+                    Lo que sí hacemos: moderamos. Si algo no cierra, cualquiera puede
+                    reportarlo desde la ficha y lo revisamos a mano. Los servicios que
+                    necesitan matrícula la presentan antes de mostrar el sello.
+                </span>
+            </p>
+        </section>
+
+        <section class="sobre__cierre">
+            <div>
+                <h2 class="sobre__bloque-titulo">¿Tenés una duda o querés contarnos algo?</h2>
+                <p class="sobre__bloque-bajada">Hay una sola casilla y la leemos nosotros.</p>
+            </div>
+            <a href="{{ url_for('pages.contact') }}" class="btn btn--secondary sobre__cierre-accion">
+                {% with clave = 'mensajes', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                Ir a Contacto
+            </a>
+        </section>
     </div>
 </section>
 {% endblock %}

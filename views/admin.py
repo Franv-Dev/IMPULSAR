@@ -4,11 +4,14 @@ Vista simple pensada para el rol admin: no hay nada de esto en la API JSON,
 solo paginas HTML protegidas con @admin_required (ver views/auth.py).
 """
 
+from datetime import timedelta
+
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+import sqlalchemy as sa
 from sqlalchemy import func
 
 from db import db, utcnow
-from app.blog.modelo_post import Post
+from app.blog.modelo_post import Categorias, Post
 from app.blog.modelo_reporte import Report
 from app.blog.modelo_resenia import Review
 # Las verificaciones son del dominio de servicios: las consultas salen de su
@@ -23,30 +26,201 @@ from views.auth import admin_required
 admin = Blueprint("admin", __name__, url_prefix="/admin")
 
 
+# La ventana de los "ultimos 30 dias" de las metricas del panel.
+DIAS_DE_LA_VENTANA = 30
+
+# Cuantos elementos de cada cola se muestran en el resumen. El panel es para
+# ver de un vistazo que hay pendiente, no para atender todo desde ahi: cada
+# cola tiene su pantalla, con la lista entera.
+COLA_EN_EL_RESUMEN = 3
+
+
+@admin.context_processor
+def _badges_del_menu():
+    """Los pendientes de cada cola, para el menu lateral del panel.
+
+    Va como context processor del blueprint y no como argumento de cada vista
+    porque el menu esta en las cinco pantallas: pasarlo a mano seria repetir lo
+    mismo cinco veces y olvidarselo en la sexta. Solo corre para las plantillas
+    que renderiza este blueprint.
+
+    Son dos COUNT por pagina del panel. Es el precio de que los numeros del
+    menu sean los de ahora y no los de cuando se cargo otra pantalla.
+    """
+    return {
+        "badge_reportes": (
+            db.session.query(func.count(Report.id))
+            .filter(Report.resolved.is_(False))
+            .scalar() or 0
+        ),
+        "badge_verificaciones": consultas_servicios.cuantas_verificaciones_pendientes(),
+    }
+
+
+def _cuantos(modelo, columna_fecha):
+    """(total, altas en la ventana) para un modelo con fecha de creacion.
+
+    Los dos son COUNT con WHERE, no una serie temporal: no hace falta una tabla
+    de historico para responder "cuantos se sumaron este mes", alcanza con la
+    fecha de alta que las filas ya tienen.
+    """
+    desde = utcnow() - timedelta(days=DIAS_DE_LA_VENTANA)
+    total = db.session.query(func.count(modelo.id)).scalar() or 0
+    nuevos = (
+        db.session.query(func.count(modelo.id))
+        .filter(columna_fecha >= desde)
+        .scalar() or 0
+    )
+    return total, nuevos
+
+
 @admin.route("/")
 @admin_required
 def dashboard():
-    """Metricas basicas de la plataforma."""
+    """Las colas pendientes primero, y abajo las metricas de la plataforma.
+
+    Las tres metricas llevan su delta de los ultimos 30 dias porque los tres
+    modelos guardan cuando se creo cada fila (User.created_at, Post.created,
+    Review.created). No hay un cuarto tile de "emprendimientos sin actividad":
+    "actividad" no esta definida en el modelo -- Post no tiene updated_at, y
+    habria que elegir entre su ultimo evento, su ultimo producto o su ultima
+    resenia -- asi que seria una metrica inventada.
+
+    Las dos colas se muestran recortadas (COLA_EN_EL_RESUMEN) y con las
+    acciones que ya existen, que son las mismas de sus pantallas propias. El
+    link "Ver todos" lleva a la lista entera.
+    """
+    usuarios_total, usuarios_nuevos = _cuantos(User, User.created_at)
+    posts_total, posts_nuevos = _cuantos(Post, Post.created)
+    resenias_total, resenias_nuevas = _cuantos(Review, Review.created)
+
+    reportes_pendientes = (
+        db.session.query(func.count(Report.id)).filter(Report.resolved.is_(False)).scalar() or 0
+    )
+    verificaciones_pendientes = consultas_servicios.cuantas_verificaciones_pendientes()
+
     metricas = {
-        "usuarios": db.session.query(func.count(User.id)).scalar() or 0,
-        "posts": db.session.query(func.count(Post.id)).scalar() or 0,
-        "resenias": db.session.query(func.count(Review.id)).scalar() or 0,
-        "reportes_pendientes": (
-            db.session.query(func.count(Report.id)).filter(Report.resolved.is_(False)).scalar() or 0
-        ),
-        "verificaciones_pendientes": (
-            consultas_servicios.cuantas_verificaciones_pendientes()
-        ),
+        "usuarios": usuarios_total,
+        "posts": posts_total,
+        "resenias": resenias_total,
+        "usuarios_nuevos": usuarios_nuevos,
+        "posts_nuevos": posts_nuevos,
+        "resenias_nuevas": resenias_nuevas,
+        "reportes_pendientes": reportes_pendientes,
+        "verificaciones_pendientes": verificaciones_pendientes,
     }
-    return render_template("admin/dashboard.html", metricas=metricas)
+
+    return render_template(
+        "admin/dashboard.html",
+        metricas=metricas,
+        dias_ventana=DIAS_DE_LA_VENTANA,
+        pendientes=reportes_pendientes + verificaciones_pendientes,
+        reportes=(
+            Report.query
+            .filter_by(resolved=False)
+            .order_by(Report.created.desc())
+            .limit(COLA_EN_EL_RESUMEN)
+            .all()
+        ),
+        # El slice es en memoria y no un LIMIT: verificaciones_pendientes()
+        # devuelve la lista entera, que es lo que ya hace la pantalla de la
+        # cola y por el mismo motivo (esa cola no deberia crecer).
+        verificaciones=(
+            consultas_servicios.verificaciones_pendientes()[:COLA_EN_EL_RESUMEN]
+        ),
+    )
+
+
+# Los filtros de la pantalla de usuarios. La clave es lo que viaja en ?filtro=
+# y el valor, como se recorta la consulta. "baneados" no es un rol: es un
+# estado, y por eso no sale de Roles.
+FILTROS_DE_USUARIO = {
+    "todos": ("Todos", None),
+    "emprendedores": ("Emprendedores", Roles.EMPRENDEDOR),
+    "usuarios": ("Usuarios", Roles.USUARIO),
+    "administradores": ("Administradores", Roles.ADMIN),
+    "baneados": ("Baneados", None),
+}
+
+
+def _conteos_de_usuarios():
+    """Cuantos usuarios cae en cada filtro, para los chips de la pantalla.
+
+    Un GROUP BY y no un COUNT por chip: cinco consultas para cinco numeros de
+    la misma tabla es justamente el N+1 que ya se corrigio en otras pantallas.
+    Los baneados van aparte porque son un estado y no un rol, asi que no salen
+    del mismo agrupado.
+    """
+    por_rol = dict(
+        db.session.query(User.rol, func.count(User.id)).group_by(User.rol).all()
+    )
+    baneados = (
+        db.session.query(func.count(User.id)).filter(User.is_banned.is_(True)).scalar() or 0
+    )
+    return {
+        "todos": sum(por_rol.values()),
+        "emprendedores": por_rol.get(Roles.EMPRENDEDOR, 0),
+        "usuarios": por_rol.get(Roles.USUARIO, 0),
+        "administradores": por_rol.get(Roles.ADMIN, 0),
+        "baneados": baneados,
+    }
 
 
 @admin.route("/usuarios")
 @admin_required
 def usuarios():
-    """Listado de usuarios, con accion para banear/desbanear."""
-    lista = User.query.order_by(User.username.asc()).all()
-    return render_template("admin/usuarios.html", usuarios=lista, Roles=Roles)
+    """Listado de usuarios, con buscador, filtros y accion de banear/desbanear.
+
+    Pagina, a diferencia de antes: la version anterior hacia .all() y traia la
+    tabla entera a memoria y al HTML. Con una plataforma chica eso no se nota;
+    con mil usuarios es toda la base en cada carga del panel.
+
+    El buscador y los filtros son de verdad y no adorno: si la pantalla los
+    muestra, tienen que recortar la consulta. Los dos se combinan (se puede
+    buscar dentro de un rol) y los dos viajan en la URL, asi que la paginacion
+    los conserva.
+    """
+    filtro = request.args.get("filtro", "todos")
+    if filtro not in FILTROS_DE_USUARIO:
+        filtro = "todos"
+    busqueda = (request.args.get("q") or "").strip()
+
+    query = User.query
+
+    if filtro == "baneados":
+        query = query.filter(User.is_banned.is_(True))
+    else:
+        _etiqueta, rol = FILTROS_DE_USUARIO[filtro]
+        if rol is not None:
+            query = query.filter(User.rol == rol)
+
+    if busqueda:
+        # Por nombre o por mail, que son los dos datos con los que un admin
+        # llega a un usuario cuando alguien le reporta algo.
+        patron = f"%{busqueda}%"
+        query = query.filter(
+            db.or_(User.username.ilike(patron), User.email.ilike(patron))
+        )
+
+    paginacion = query.order_by(User.username.asc()).paginate(
+        page=request.args.get("page", 1, type=int),
+        per_page=20,
+        error_out=False,
+    )
+
+    return render_template(
+        "admin/usuarios.html",
+        paginacion=paginacion,
+        conteos=_conteos_de_usuarios(),
+        filtros=FILTROS_DE_USUARIO,
+        filtro_actual=filtro,
+        busqueda=busqueda,
+        Roles=Roles,
+        # La columna "Rol" mostraba el valor crudo de la base ("emprendedor")
+        # al lado de un filtro que dice "Emprendedores". Las etiquetas viven en
+        # Roles, no en la plantilla, por lo mismo que las de Categorias.
+        etiquetas_de_rol=Roles.ETIQUETAS,
+    )
 
 
 @admin.route("/usuarios/<int:user_id>/ban", methods=["POST"])
@@ -65,20 +239,108 @@ def toggle_ban(user_id):
     return redirect(url_for("admin.usuarios"))
 
 
+def _conteos_de_la_pagina(ids):
+    """Reportes sin resolver y reseñas de cada emprendimiento de esta pagina.
+
+    Dos consultas AGRUPADAS acotadas a los ids que se van a dibujar, no un
+    COUNT por fila: contar dentro del for serian dos consultas por
+    emprendimiento, que es el mismo N+1 que ya se corrigio en "Mis
+    emprendimientos". Asi la pagina cuesta lo mismo con 3 filas que con 20.
+
+    Devuelve un dict por id con los dos numeros ya en cero cuando no hay nada,
+    para que la plantilla no tenga que preguntar.
+    """
+    if not ids:
+        return {}
+
+    reportes = dict(
+        db.session.query(Report.post_id, func.count(Report.id))
+        .filter(
+            Report.resolved.is_(False),
+            Report.post_id.in_(ids),
+        )
+        .group_by(Report.post_id)
+        .all()
+    )
+    resenias = dict(
+        db.session.query(Review.post_id, func.count(Review.id))
+        .filter(Review.post_id.in_(ids))
+        .group_by(Review.post_id)
+        .all()
+    )
+
+    return {
+        id_: {"reportes": reportes.get(id_, 0), "resenias": resenias.get(id_, 0)}
+        for id_ in ids
+    }
+
+
 @admin.route("/emprendimientos")
 @admin_required
 def emprendimientos():
-    """Listado de todos los emprendimientos, para moderacion."""
-    paginacion = (
-        Post.query
-        .order_by(Post.created.desc())
-        .paginate(
-            page=request.args.get("page", 1, type=int),
-            per_page=20,
-            error_out=False,
-        )
+    """Listado de emprendimientos para moderacion, los reportados primero.
+
+    Cada fila muestra cuantos reportes sin resolver tiene y cuantas reseñas
+    recibio. Los dos numeros salen de subconsultas AGRUPADAS que se unen a la
+    consulta principal, no de un COUNT por fila: contar dentro del for seria
+    dos consultas por emprendimiento, que es el mismo N+1 que ya se corrigio
+    en "Mis emprendimientos".
+
+    Que los reportados salgan primero es la razon de que el conteo entre en la
+    consulta y no se resuelva despues sobre la pagina ya paginada: para poder
+    ordenar por el, el motor tiene que conocerlo antes del LIMIT.
+
+    Se usa db.paginate() sobre un select() y no Post.query.paginate() porque
+    la consulta tiene que unirse a la subconsulta de reportes para poder
+    ORDENAR por ella: sin eso, "los reportados primero" solo valdria dentro de
+    la pagina que ya toco, no sobre el listado entero.
+    """
+    reportes_por_post = (
+        sa.select(Report.post_id, func.count(Report.id).label("total"))
+        .where(Report.resolved.is_(False), Report.post_id.isnot(None))
+        .group_by(Report.post_id)
+        .subquery()
     )
-    return render_template("admin/emprendimientos.html", paginacion=paginacion)
+
+    # coalesce porque el LEFT JOIN devuelve NULL para el emprendimiento que no
+    # tiene ninguno, y a la hora de ordenar eso es un cero.
+    reportes = func.coalesce(reportes_por_post.c.total, 0)
+
+    consulta = (
+        sa.select(Post)
+        .outerjoin(reportes_por_post, reportes_por_post.c.post_id == Post.id)
+    )
+
+    busqueda = (request.args.get("q") or "").strip()
+    if busqueda:
+        # Por titulo o por autor: son las dos formas de llegar a un
+        # emprendimiento cuando alguien lo reporta por afuera del panel.
+        patron = f"%{busqueda}%"
+        consulta = consulta.join(User, User.id == Post.author).where(
+            db.or_(Post.title.ilike(patron), User.username.ilike(patron))
+        )
+
+    categoria = request.args.get("categoria") or ""
+    if categoria in Categorias.TODAS:
+        consulta = consulta.where(Post.category == categoria)
+    else:
+        categoria = ""
+
+    paginacion = db.paginate(
+        consulta.order_by(reportes.desc(), Post.created.desc()),
+        page=request.args.get("page", 1, type=int),
+        per_page=20,
+        error_out=False,
+    )
+
+    return render_template(
+        "admin/emprendimientos.html",
+        paginacion=paginacion,
+        conteos=_conteos_de_la_pagina([post.id for post in paginacion.items]),
+        busqueda=busqueda,
+        categoria_actual=categoria,
+        categorias=Categorias.ETIQUETAS,
+    )
 
 
 @admin.route("/emprendimientos/<int:post_id>/eliminar", methods=["POST"])
@@ -98,6 +360,41 @@ def delete_post(post_id):
         flash("Error al eliminar el emprendimiento.")
 
     return redirect(url_for("admin.emprendimientos"))
+
+
+@admin.route("/resenias/<int:review_id>/eliminar", methods=["POST"])
+@admin_required
+def delete_review(review_id):
+    """Eliminar cualquier resenia (moderacion), sin importar quien la escribio.
+
+    Hasta ahora el unico borrado de resenia era blog.delete_review, que exige
+    ser SU autor (reglas.es_el_autor_de_la_resenia). O sea que un reporte de
+    tipo "Resena" se podia marcar resuelto pero no se podia actuar sobre el:
+    la unica salida era borrar el emprendimiento entero, que es de otro.
+
+    Es el espejo de delete_post y por eso repite su forma, incluido el
+    try/except: un borrado que falla tiene que dejar la sesion limpia y
+    avisar, no tumbar el panel.
+
+    El reporte no se marca resuelto a mano: reports.review_id es ON DELETE
+    CASCADE, asi que se va con la resenia y sale solo de la cola. Igual que
+    cuando se borra un emprendimiento reportado.
+    """
+    review = Review.query.get_or_404(review_id)
+    autor = review.user.username if review.user else "usuario borrado"
+
+    try:
+        db.session.delete(review)
+        db.session.commit()
+        flash(f"Se eliminó la reseña de «{autor}».")
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Error al eliminar la resenia %s desde el panel de admin", review_id
+        )
+        flash("Error al eliminar la reseña.")
+
+    return redirect(url_for("admin.reportes"))
 
 
 @admin.route("/reportes")

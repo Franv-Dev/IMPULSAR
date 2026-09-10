@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Eventos y ferias – IMPULSAR{% endblock %}
+
+{#  Los eventos propios, dentro del panel del vendedor.
+
+    ES LA PANTALLA QUE LE FALTABA AL MENÚ. En la tanda del panel, «Eventos y
+    ferias» quedó fuera de partials/_menu_panel.html porque no había adónde
+    llevar: un evento se cargaba y se editaba desde la ficha de cada
+    emprendimiento, y /eventos es la cartelera pública de todos. Quien tiene
+    tres emprendimientos no tenía ningún lado donde ver sus fechas juntas.
+
+    Próximos y pasados, como «mis turnos» y por lo mismo: lo que hay que mirar
+    es lo que viene; el historial se repasa. El orden ya lo resuelven
+    services.eventos.proximos() y pasados(), creciente uno y decreciente el
+    otro.
+
+    Editar y borrar viven acá y no en la cartelera pública: son del dueño. El
+    borrar pide confirmación con el mismo <details> de la tanda de turnos —
+    borrar un evento no se revierte. #}
+
+{% macro fila(evento, pasado) %}
+    <article class="evento-propio {% if pasado %}evento-propio--pasado{% endif %}">
+        <div class="evento-propio__fecha" aria-hidden="true">
+            <span class="evento__diasem">{{ evento.fecha | dia_semana_corto }}</span>
+            <span class="evento__dia">{{ evento.fecha.day }}</span>
+            <span class="evento__mes">{{ evento.fecha | mes_corto }}</span>
+        </div>
+
+        <div class="evento-propio__cuerpo">
+            {% if evento.tipo or evento.entrada_libre %}
+                <div class="evento__chips">
+                    {% if evento.tipo %}
+                        <span class="chip-tipo">
+                            {% with clave = 'tipo-' ~ evento.tipo, tamanio = 14 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                            {{ evento.tipo_label }}
+                        </span>
+                    {% endif %}
+                    {% if evento.entrada_libre %}
+                        <span class="chip-libre">Entrada libre</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <h3 class="evento-propio__titulo">{{ evento.titulo }}</h3>
+
+            <p class="evento-propio__datos">
+                {{ evento.fecha | fecha_evento }}{% if evento.hora %} · {{ evento.hora | hora }}{% endif %}{% if evento.lugar %} · {{ evento.lugar }}{% endif %}
+            </p>
+            <p class="evento-propio__post">{{ evento.post.title }}</p>
+        </div>
+
+        <div class="evento-propio__acciones">
+            <a class="btn btn--borde" href="{{ url_for('eventos.editar', id=evento.id) }}">
+                {% with clave = 'editar', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                Editar
+            </a>
+            <details class="cancelar">
+                <summary class="cancelar__abrir">
+                    {% with clave = 'eliminar', tamanio = 16 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                    Borrar
+                </summary>
+                <div class="cancelar__aviso">
+                    <div class="cancelar__cuerpo">
+                        <p class="cancelar__titulo">¿Borrás este evento?</p>
+                        <p class="cancelar__texto">
+                            Desaparece de la cartelera, del calendario y de la ficha
+                            del emprendimiento. No se puede deshacer: para volver a
+                            anunciarlo hay que cargarlo de nuevo.
+                        </p>
+                        <div class="cancelar__acciones">
+                            <form method="post"
+                                  action="{{ url_for('eventos.eliminar', id=evento.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn--peligro">Sí, borrar</button>
+                            </form>
+                            <p class="cancelar__salir">o cerrá este aviso para dejarlo</p>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </article>
+{% endmacro %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Eventos y ferias" %}
+                {% include "partials/_menu_panel.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Eventos y ferias</h1>
+                        <p class="cuenta__bajada">
+                            Las fechas de todos tus emprendimientos, juntas.
+                            Se ven en <a href="{{ url_for('eventos.index') }}">la cartelera</a>
+                            y en el calendario del inicio.
+                        </p>
+                    </div>
+                    <a href="{{ url_for('eventos.nuevo') }}" class="btn btn--primary">
+                        Publicar un evento
+                    </a>
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% if not proximos and not pasados %}
+                    <p class="cuenta__bajada">
+                        Todavía no anunciaste ninguna fecha. Una feria, una pop-up
+                        o un taller: se carga en un minuto y cuando pasa se archiva
+                        solo.
+                    </p>
+                {% endif %}
+
+                {% if proximos %}
+                    <section class="mis-eventos">
+                        <h2 class="mis-eventos__titulo">Próximos</h2>
+                        {% for evento in proximos %}
+                            {{ fila(evento, false) }}
+                        {% endfor %}
+                    </section>
+                {% endif %}
+
+                {% if pasados %}
+                    <section class="mis-eventos">
+                        <h2 class="mis-eventos__titulo">Ya pasaron</h2>
+                        {# No se borran solos: quedan por si sirve repetir el
+                           anuncio del año que viene, y para que el emprendedor
+                           vea qué hizo. La cartelera pública sí los esconde. #}
+                        {% for evento in pasados %}
+                            {{ fila(evento, true) }}
+                        {% endfor %}
+                    </section>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

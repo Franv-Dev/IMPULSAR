@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #F5F7FA; color: #1B2430;
+           font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; }
+    a { color: #3E2F94; text-decoration: none; }
+    a:hover { color: #33267C; }
+    svg { display: block; }
+    .u-nav { font-family: "Poppins", system-ui, sans-serif; font-weight: 500; font-size: 15px;
+             color: #4A5666; height: 68px; display: flex; align-items: center;
+             border-bottom: 2px solid transparent; }
+    .u-nav:hover { color: #3E2F94; border-bottom-color: #E2E6EE; }
+    .u-nav--on { color: #3E2F94; font-weight: 600; border-bottom-color: #3E2F94; }
+    .u-ico:hover { background: #EEF1F7; color: #3E2F94; }
+    .u-pill:hover { background: #E2E6EE; }
+    .u-btn:hover { background: #483BA1; }
+    .u-ghost:hover { background: #ECEAF7; }
+    .u-campo:hover { background: #EEF1F7; }
+  </style>
+</helmet>
+
+<div style="min-height: 340px; background: #F5F7FA;">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E2E6EE; box-shadow: 0 1px 4px rgba(15,23,42,.06);">
+
+    <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; height: 68px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+
+      <a href="#" style="display: flex; align-items: center;">
+        <img src="logo-impulsar.png" alt="IMPULSAR" style="height: 32px; width: auto;">
+      </a>
+
+      <nav style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px;">
+        <a href="#" class="u-nav u-nav--on">Emprendimientos</a>
+        <a href="#" class="u-nav">Servicios</a>
+        <a href="#" class="u-nav">Eventos y ferias</a>
+      </nav>
+
+      <div style="display: flex; align-items: center; gap: 14px;">
+
+        <button type="button" class="u-ico" title="Cambiar a modo oscuro" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #4A5666; cursor: pointer;">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.2 8.2 0 0 1 9.7 4 8 8 0 1 0 20 14.3Z"/></svg>
+        </button>
+
+        <a href="#" style="display: flex; align-items: center; color: #3E2F94; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 14.5px;">Acceder</a>
+
+        <a href="#" class="u-btn" style="height: 42px; padding: 0 24px; display: flex; align-items: center; border-radius: 999px; background: #5248AE; color: #FFFFFF; box-shadow: 0 4px 12px rgba(62,47,148,.24); font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 14.5px;">Crear cuenta</a>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid #EEF1F7;">
+      <div style="max-width: 1160px; margin: 0 auto; padding: 14px 24px; display: flex; justify-content: center;">
+
+        <div style="width: 100%; max-width: 720px; height: 52px; display: flex; align-items: center; padding: 0 6px 0 0; background: #F5F7FA; border: 1px solid #E2E6EE; border-radius: 999px; box-sizing: border-box;">
+
+          <div class="u-campo" style="flex: 1.8; min-width: 0; height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-radius: 999px 0 0 999px;">
+            <span style="color: #5F6B7C; flex-shrink: 0; display: flex;">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 15px; color: #5F6B7C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Pan de masa madre, plomero, cerámica…</span>
+          </div>
+
+          <span style="width: 1px; height: 26px; background: #E2E6EE; flex-shrink: 0;"></span>
+
+          <div class="u-campo" style="flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 9px; padding: 0 14px;">
+            <span style="color: #5F6B7C; flex-shrink: 0; display: flex;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"/></svg>
+            </span>
+            <span style="flex: 1; font-size: 15px; color: #5F6B7C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tu barrio o ciudad</span>
+            <span style="flex-shrink: 0; display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px; border-radius: 999px; background: #ECEAF7; color: #3E2F94; font-size: 12.5px; font-weight: 600;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3"/><circle cx="12" cy="12" r="7.5"/></svg>
+              Cerca de mí
+            </span>
+          </div>
+
+          <button type="button" class="u-btn" style="flex-shrink: 0; height: 40px; padding: 0 24px; border: 0; border-radius: 999px; background: #5248AE; color: #FFFFFF; cursor: pointer; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 14.5px;">Buscar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width: 1160px; margin: 0 auto; padding: 26px 24px 0; display: flex; flex-direction: column; gap: 12px;">
+    <h1 style="margin: 0; font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 26px; letter-spacing: -.02em; color: #1B2430; text-wrap: pretty;">Emprendimientos de Mendoza</h1>
+
+    <span style="font-size: 14px; color: #5F6B7C;">Todos los rubros · lo último publicado primero</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
