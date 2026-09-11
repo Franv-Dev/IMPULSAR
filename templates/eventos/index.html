@@ -116,7 +116,9 @@
                                 <h3 class="cartelera__mes-titulo">{{ mes.nombre }}</h3>
                                 <span class="cartelera__mes-linea" aria-hidden="true"></span>
                                 <span class="cartelera__mes-total">
-                                    {{ mes.eventos|length }} evento{{ '' if mes.eventos|length == 1 else 's' }}
+                                    {# mes.total y no mes.eventos|length: la lista es la de esta
+                                       pagina, el numero es el del mes entero (ver total_por_mes). #}
+                                    {{ mes.total }} evento{{ '' if mes.total == 1 else 's' }}
                                 </span>
                             </div>
 

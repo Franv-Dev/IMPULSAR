@@ -117,7 +117,12 @@
                <script> que lo maneja tampoco se carga (ver el bloque scripts,
                que pregunta lo mismo). #}
             {% if galeria|length > 1 %}
-            <div class="visor" id="visor" hidden>
+            {# role/aria-modal/aria-label: sin los tres, para un lector de pantalla
+               esto es un <div> sin nombre ni rol, y el resto de la pagina sigue
+               existiendo detras. El foco lo encierra visor.js. #}
+            <div class="visor" id="visor" hidden
+                 role="dialog" aria-modal="true"
+                 aria-label="Fotos de {{ post.title }}">
                 <div class="visor__fondo" data-visor-cerrar></div>
                 <button type="button" class="visor__cerrar" data-visor-cerrar aria-label="Cerrar el visor">
                     {% with clave = 'cerrar', tamanio = 22, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}
@@ -256,16 +261,22 @@
                                    está el botón de consultar por ese producto. #}
                                 {% for producto in productos %}
                                     <article class="producto-ficha">
+                                        {# Mismo criterio que el catalogo: el enlace de la foto
+                                           duplica al del nombre, y el cartel de stock sale del
+                                           enlace para que se siga anunciando (ver la nota de
+                                           .producto-ficha en el CSS, que gano su position:relative
+                                           justamente por esto). #}
                                         <a href="{{ url_for('products.detalle', id=producto.id) }}"
-                                           class="producto-ficha__foto">
+                                           class="producto-ficha__foto" tabindex="-1" aria-hidden="true">
                                             {% if producto.foto %}
                                                 <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
                                                      alt="Foto de {{ producto.nombre }}" loading="lazy">
                                             {% endif %}
-                                            {% if not producto.disponible %}
-                                                <span class="producto-ficha__agotado">Sin stock</span>
-                                            {% endif %}
                                         </a>
+
+                                        {% if not producto.disponible %}
+                                            <span class="producto-ficha__agotado">Sin stock</span>
+                                        {% endif %}
                                         <div class="producto-ficha__cuerpo">
                                             <h3 class="producto-ficha__nombre">
                                                 <a href="{{ url_for('products.detalle', id=producto.id) }}">{{ producto.nombre }}</a>
@@ -752,7 +763,7 @@
    consola. Para subir a la 6 hay que pasar este bloque a type="module" e
    importar el .mjs; mientras tanto, 5.x sigue teniendo UMD. #}
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script>
+<script nonce="{{ csp_nonce() }}">
 document.addEventListener("DOMContentLoaded", () => {
     const contenedor = document.getElementById("map");
     if (!contenedor) return;

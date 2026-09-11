@@ -15,8 +15,26 @@ from werkzeug.security import generate_password_hash
 from config import TestingConfig
 from db import db as _db
 from main import create_app
+from services import rate_limit
 from app.blog.modelo_post import Post
 from models.user import Roles, User
+
+
+@pytest.fixture(autouse=True)
+def limite_de_login_limpio():
+    """Borra el contador de logins fallidos antes de cada test.
+
+    El freno a la fuerza bruta (services/rate_limit.py) guarda su estado en un
+    diccionario de modulo, que sobrevive a la app y a la base en memoria. Sin
+    esto, los fallos de un test se le suman al siguiente y el primero que haga
+    seis logins errados deja bloqueados a los que vengan atras, con un error
+    que ademas cambia segun el orden en que corran.
+
+    Autouse: no es algo que un test tenga que acordarse de pedir.
+    """
+    rate_limit.reiniciar()
+    yield
+    rate_limit.reiniciar()
 
 
 @pytest.fixture

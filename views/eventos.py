@@ -19,12 +19,19 @@ from models.event import Event, TiposEvento
 from app.blog.modelo_post import Post
 from services.eventos import (
     agrupar_por_mes, del_dia, filtrar, hoy_en_argentina, parsear_fecha,
-    pasados, proximos, tipo_valido,
+    pasados, proximos, tipo_valido, total_por_mes,
 )
 from services.horarios import formatear as formatear_hora, parsear_hora
+from services.validation import largo_de, validar_largo
 from views.auth import login_required
 
 eventos = Blueprint("eventos", __name__, url_prefix="/eventos")
+
+# Los largos salen de las columnas (ver services/validation.py): el maxlength
+# del HTML no valida nada, se saltea mandando el POST a mano.
+MAX_TITULO = largo_de(Event.titulo)
+MAX_DESCRIPCION = largo_de(Event.descripcion)
+MAX_LUGAR = largo_de(Event.lugar)
 
 
 @eventos.route("/")
@@ -51,12 +58,13 @@ def index():
     tipo = tipo_valido(request.args.get("tipo"))
     solo_libres = request.args.get("libre") == "1"
 
-    query = filtrar(
-        Event.query.options(joinedload(Event.post)), tipo, solo_libres
-    )
+    # El joinedload se agrega recien al paginar y no aca: `query` tambien
+    # alimenta el COUNT agrupado de abajo, y ahi traer el emprendimiento de
+    # cada evento no sirve para nada.
+    query = filtrar(Event.query, tipo, solo_libres)
     query = del_dia(query, dia) if dia else proximos(query)
 
-    paginacion = query.paginate(
+    paginacion = query.options(joinedload(Event.post)).paginate(
         page=request.args.get("page", 1, type=int),
         per_page=current_app.config["POSTS_POR_PAGINA"],
         error_out=False,
@@ -89,14 +97,17 @@ def index():
         else True
     )
 
-    # Agrupados por mes para los encabezados de la cartelera. Se agrupa la
-    # pagina y no el total: un mes puede quedar partido entre dos paginas, que
-    # es lo mismo que ya pasa con cualquier corte por fecha.
+    # Agrupados por mes para los encabezados de la cartelera. La LISTA de cada
+    # grupo es la de esta pagina (un mes puede quedar partido entre dos, que es
+    # lo mismo que ya pasa con cualquier corte por fecha), pero el NUMERO que
+    # se muestra al lado del nombre del mes es el del mes entero: contar la
+    # pagina hacia que octubre partido en dos apareciera dos veces, con dos
+    # numeros y ninguno el suyo.
     return render_template(
         "eventos/index.html",
         enlace_dia=enlace_dia,
         paginacion=paginacion,
-        meses=agrupar_por_mes(paginacion.items),
+        meses=agrupar_por_mes(paginacion.items, total_por_mes(query)),
         dia=dia,
         tipo=tipo,
         solo_libres=solo_libres,
@@ -172,9 +183,18 @@ def _leer_formulario():
     hora = parsear_hora(hora_texto)
     tipo = tipo_valido(tipo_texto)
 
+    # El primero de los tres textos que no entra en su columna, si hay alguno.
+    muy_largo = (
+        validar_largo(titulo, MAX_TITULO, "El título")
+        or validar_largo(descripcion, MAX_DESCRIPCION, "La descripción")
+        or validar_largo(lugar, MAX_LUGAR, "El lugar")
+    )
+
     error = None
     if not titulo:
         error = "Se requiere un título para el evento."
+    elif muy_largo:
+        error = muy_largo
     # EL TIPO SE EXIGE EN EL FORMULARIO aunque la columna sea nullable, y las
     # dos cosas son ciertas a la vez: NULL existe para los eventos que se
     # cargaron antes de que la columna existiera, no para los nuevos. Si no se

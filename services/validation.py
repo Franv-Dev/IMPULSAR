@@ -59,6 +59,44 @@ CONTRASENIAS_OBVIAS = {
 }
 
 
+def largo_de(columna):
+    """El largo maximo de una columna de texto, para validar contra el.
+
+    Se lee de la columna y no se escribe a mano en ningun lado: son el mismo
+    limite, y dos copias se despegan la primera vez que alguien agranda la
+    columna. Es lo mismo que hace MAX_TITULO en app/blog/reglas.py, puesto en
+    una funcion porque ahora lo necesitan cuatro dominios.
+
+    Se usa asi, al lado de donde se valida:
+
+        MAX_TITULO = largo_de(Event.titulo)
+    """
+    return columna.type.length
+
+
+def validar_largo(valor, maximo, etiqueta):
+    """Devuelve el mensaje de error si `valor` no entra en la columna, o None.
+
+    HACE FALTA ANTES DEL INSERT y no alcanza con el maxlength del HTML (que se
+    saltea mandando el POST a mano) ni con confiar en que la base corte: MySQL
+    trunca o falla segun el sql_mode con el que este levantado, asi que sin
+    esto un texto largo o se guarda cortado a la mitad sin avisar, o muere con
+    un DataError que nadie atrapa y el usuario ve como un 500 en vez de como
+    un error del formulario. SQLite no hace ninguna de las dos cosas -- guarda
+    el texto entero, se pase o no --, que es por lo que esto se puede colar sin
+    que los tests digan nada.
+
+    La etiqueta va como la nombra el formulario ("El título", "La zona de
+    cobertura"), porque el mensaje se le muestra al usuario al lado del campo.
+    """
+    if valor and len(valor) > maximo:
+        return (
+            f"{etiqueta} no puede tener más de {maximo} caracteres "
+            f"(escribiste {len(valor)})."
+        )
+    return None
+
+
 def normalizar_username(username):
     """Forma canonica para comparar dos usernames como los compara la base.
 

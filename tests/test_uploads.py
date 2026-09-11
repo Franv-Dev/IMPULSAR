@@ -55,6 +55,100 @@ def test_el_nombre_se_hace_unico(upload_dir):
     assert len(os.listdir(upload_dir)) == 2
 
 
+# --- largo del nombre generado
+#
+# El nombre es el unico texto que se guarda sin que el usuario lo tipee en un
+# campo, asi que quedo afuera de la tanda de largos de los formularios: el uuid
+# y el guion bajo suman 9 caracteres fijos y el original no se recortaba nunca,
+# con lo cual un nombre de archivo de 100 caracteres daba 109 en una columna de
+# 100. En MySQL estricto eso es un DataError 1406 (o sea un 500); en SQLite
+# entra y quedan 109 caracteres guardados.
+
+# Largo pero perfectamente legal: es lo que sale de guardar desde el celular y
+# renombrar el archivo a mano.
+NOMBRE_LARGO = (
+    "Bolson semanal chico - foto del producto para el catalogo de la "
+    "huerta - septiembre 2026 - final.png"
+)
+
+
+def test_el_tope_coincide_con_las_columnas():
+    """Las siete columnas que guardan un nombre de archivo, una por una.
+
+    Es lo que hace que MAX_NOMBRE_ARCHIVO pueda ser un numero escrito a mano
+    sin despegarse: si alguna columna cambia de largo, esto se cae y dice cual.
+    """
+    from app.blog.modelo_imagen import PostImage
+    from app.blog.modelo_post import Post
+    from app.servicios.modelo_solicitud import ServiceRequest
+    from app.servicios.modelo_verificacion import VerificationRequest
+    from models.product import Product
+    from models.user import User
+
+    columnas = {
+        "User.avatar": User.avatar,
+        "User.cover_image": User.cover_image,
+        "Post.image": Post.image,
+        "PostImage.filename": PostImage.filename,
+        "Product.foto": Product.foto,
+        "ServiceRequest.foto": ServiceRequest.foto,
+        "VerificationRequest.foto": VerificationRequest.foto,
+    }
+
+    for nombre, columna in columnas.items():
+        assert columna.type.length == uploads.MAX_NOMBRE_ARCHIVO, nombre
+
+
+def test_un_nombre_largo_no_se_pasa_de_la_columna(upload_dir):
+    filename, error = save_post_image(_imagen_real(nombre=NOMBRE_LARGO), upload_dir)
+
+    assert error is None
+    assert len(filename) <= uploads.MAX_NOMBRE_ARCHIVO
+    assert os.path.exists(os.path.join(upload_dir, filename))
+
+
+def test_al_recortar_se_conserva_la_extension(upload_dir):
+    """Sin esto, cortar por el final se lleva el ".png".
+
+    De la extension dependen allowed_file() y el Content-Type que adivina el
+    navegador: un recorte ciego convierte una foto valida en un archivo sin
+    tipo.
+    """
+    filename, _ = save_post_image(_imagen_real(nombre=NOMBRE_LARGO), upload_dir)
+
+    assert filename.endswith(".png")
+    assert allowed_file(filename)
+
+
+def test_un_nombre_largo_sigue_siendo_unico(upload_dir):
+    """Recortar no puede hacer que dos subidas colisionen: el uuid va adelante."""
+    primero, _ = save_post_image(_imagen_real(nombre=NOMBRE_LARGO), upload_dir)
+    segundo, _ = save_post_image(_imagen_real(nombre=NOMBRE_LARGO), upload_dir)
+
+    assert primero != segundo
+    assert len(os.listdir(upload_dir)) == 2
+
+
+def test_un_nombre_corto_no_se_toca(upload_dir):
+    """El recorte solo actua cuando hace falta."""
+    filename, _ = save_post_image(_imagen_real(nombre="foto.png"), upload_dir)
+
+    assert filename.endswith("_foto.png")
+
+
+@pytest.mark.parametrize("nombre", [
+    "a" * 300 + ".png",          # muchisimo mas largo que la columna
+    "sin_punto_" + "b" * 200,    # sin extension que preservar
+    "x" * 90 + "." + "y" * 90,   # "extension" mas larga que el espacio libre
+    "..png",                     # base vacia
+])
+def test_ningun_nombre_raro_se_pasa_del_tope(nombre):
+    """El recorte no depende de que el nombre tenga una forma razonable."""
+    generado = uploads._nombre_unico(nombre)
+
+    assert len(generado) <= uploads.MAX_NOMBRE_ARCHIVO
+
+
 def test_rechaza_un_archivo_que_no_es_imagen_aunque_tenga_extension_valida(upload_dir):
     """La extension se falsifica facil: hay que mirar el contenido real."""
     falso = FileStorage(

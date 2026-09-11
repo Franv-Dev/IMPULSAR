@@ -53,9 +53,15 @@ from services.geocoding import get_coordinates_from_address
 from services.horarios import esta_abierto, hora_de_cierre
 from services.precios import parsear_precio, texto_para_formulario
 from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
+from services.validation import largo_de, validar_largo
 from views.auth import login_required
 
 products = Blueprint("products", __name__, url_prefix="/productos")
+
+# Los largos salen de las columnas (ver services/validation.py): el maxlength
+# del HTML no valida nada, se saltea mandando el POST a mano.
+MAX_NOMBRE = largo_de(Product.nombre)
+MAX_DESCRIPCION = largo_de(Product.descripcion)
 
 
 class Ordenes:
@@ -142,9 +148,17 @@ def _leer_formulario():
 
     precio, error_precio = parsear_precio(precio_texto)
 
+    # El primero de los dos textos que no entra en su columna, si hay alguno.
+    muy_largo = (
+        validar_largo(nombre, MAX_NOMBRE, "El nombre")
+        or validar_largo(descripcion, MAX_DESCRIPCION, "La descripción")
+    )
+
     error = None
     if not nombre:
         error = "Se requiere un nombre para el producto."
+    elif muy_largo:
+        error = muy_largo
     elif error_precio:
         error = error_precio
 

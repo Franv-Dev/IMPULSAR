@@ -1315,10 +1315,13 @@ main {
 /* La octava ficha: la salida al listado sin filtrar. Va en el bloque de marca
    (los mismos tokens del panel del CTA) para que se lea como el cierre de la
    grilla y no como un rubro mas. */
+/* Blanco fijo y no --color-on-primary, por lo mismo que el CTA de la cartelera
+   (ver el comentario alla): el gradiente no sigue al tema, y la tinta del
+   primario si, asi que en oscuro quedaba texto casi negro sobre indigo. */
 .rubro--todos {
     border-color: transparent;
     background-image: linear-gradient(135deg, var(--color-panel-mid) 0%, var(--color-primary-deep) 100%);
-    color: var(--color-on-primary);
+    color: #fff;
     box-shadow: var(--shadow-card);
 }
 
@@ -1340,7 +1343,7 @@ main {
 
 .rubro--todos .rubro__tono {
     background-color: rgba(255, 255, 255, 0.16);
-    color: var(--color-on-primary);
+    color: #fff;
 }
 
 /* EXPLORAR (listado publico)
@@ -11282,6 +11285,11 @@ body.con-visor {
 }
 
 .producto-ficha {
+    /* position:relative para el cartel de "Sin stock", que se posiciona absoluto
+       contra la tarjeta. Antes vivia adentro del enlace de la foto (que ya era
+       relative), pero ese enlace paso a aria-hidden por duplicar al del nombre,
+       y adentro de un aria-hidden el cartel no lo anuncia nadie. */
+    position: relative;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -16380,19 +16388,29 @@ body.con-visor {
 
 /* Indigo profundo con texto blanco fijo, como el panel de las pantallas de
    auth: es un bloque de marca y no una superficie que siga al tema, asi que
-   usa --color-primary-deep, que vale lo mismo en claro y en oscuro. Pisa al
-   .cartelera__cta de la version de agosto, que era indigo lavado. */
+   usa --color-primary-deep, que vale lo mismo en claro y en oscuro.
+
+   LA TINTA ES #fff LITERAL Y NO --color-on-primary, aunque el fondo si sea un
+   token. El comentario de antes decia "vale lo mismo en claro y en oscuro", y
+   eso es cierto del FONDO y falso de la tinta que tenia al lado:
+   --color-on-primary es la tinta del PRIMARIO, que si cambia con el tema
+   (#FFFFFF en claro, #16132A en oscuro, porque ahi el primario pasa a ser el
+   lila claro). Sobre este indigo fijo daba 1.30:1 en oscuro, texto casi negro
+   sobre indigo. Blanco fijo sobre #2A2068 da 13.9:1 en los dos temas, que es
+   lo que ya hacen .perfil-vender, .perfil-panel y .bloque-marca.
+
+   Pisa al .cartelera__cta de la version de agosto, que era indigo lavado. */
 .cartelera__cta {
     gap: 0;
     padding: 22px;
     background-color: var(--color-primary-deep);
-    color: var(--color-on-primary);
+    color: #fff;
 }
 
 .cartelera__cta-titulo {
     font-size: 1.0625rem;
     line-height: 1.35;
-    color: var(--color-on-primary);
+    color: #fff;
 }
 
 .cartelera__cta-texto {

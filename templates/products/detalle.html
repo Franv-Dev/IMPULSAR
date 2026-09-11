@@ -185,8 +185,9 @@
                 <div class="catalogo__grilla catalogo__grilla--chica">
                     {% for otro in hermanos %}
                         <article class="producto-tarjeta">
+                            {# Mismo criterio que el catalogo: duplica al enlace del nombre. #}
                             <a href="{{ url_for('products.detalle', id=otro.id) }}"
-                               class="producto-tarjeta__foto">
+                               class="producto-tarjeta__foto" tabindex="-1" aria-hidden="true">
                                 {% if otro.foto %}
                                     <img src="{{ url_for('static', filename='uploads/' ~ otro.foto) }}"
                                          alt="Foto de {{ otro.nombre }}" loading="lazy">
@@ -209,7 +210,11 @@
        estando arriba, sólo que no se agranda. Sin flechas ni pie: hay una sola
        foto, así que no hay nada que recorrer ni que contar. #}
     {% if producto.foto %}
-        <div class="visor" id="visor" hidden>
+        {# Mismo trio que el visor de la ficha: sin el, es un <div> sin nombre ni
+           rol y la pagina de atras sigue siendo tabulable. #}
+        <div class="visor" id="visor" hidden
+             role="dialog" aria-modal="true"
+             aria-label="Foto de {{ producto.nombre }}">
             <div class="visor__fondo" data-visor-cerrar></div>
             <button type="button" class="visor__cerrar" data-visor-cerrar aria-label="Cerrar el visor">
                 {% with clave = 'cerrar', tamanio = 22, trazo = 2 %}{% include "partials/_icono_nav.html" %}{% endwith %}

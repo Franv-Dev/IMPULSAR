@@ -6,9 +6,16 @@ separacion es la que hace que las reglas se puedan leer (y probar) sin levantar
 un request.
 """
 
-from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros
+from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
 from app.servicios.modelo_solicitud import EstadosSolicitud
 from app.servicios.modelo_verificacion import EstadosVerificacion
+from services.validation import largo_de
+
+# Los largos salen de las columnas (ver services/validation.py): el maxlength
+# del HTML no valida nada, se saltea mandando el POST a mano.
+MAX_TITULO = largo_de(Service.titulo)
+MAX_DESCRIPCION = largo_de(Service.descripcion)
+MAX_ZONA_COBERTURA = largo_de(Service.zona_cobertura)
 
 
 def es_de(servicio, user_id):

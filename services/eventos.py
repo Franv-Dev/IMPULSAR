@@ -13,6 +13,8 @@ pantalla y vigente en la otra.
 from calendar import monthrange
 from datetime import date, datetime
 
+from sqlalchemy import extract, func
+
 from models.event import Event, TiposEvento
 from app.blog.modelo_post import Post
 from services.horarios import ZONA_ARGENTINA
@@ -81,14 +83,23 @@ def mes_y_anio(fecha):
     return f"{MESES[fecha.month - 1]} {fecha.year}" if fecha else ""
 
 
-def agrupar_por_mes(eventos):
+def agrupar_por_mes(eventos, totales=None):
     """Los eventos en grupos consecutivos de mes, conservando el orden.
 
-    Devuelve [{"nombre": "agosto 2026", "eventos": [...]}, ...]. Se apoya en
-    que la lista YA viene ordenada por fecha (proximos()): agrupa cortando
-    cuando cambia el mes, no juntando por clave, asi que dos tramos del mismo
-    mes separados en la lista serian dos grupos -- y con la lista ordenada eso
-    no puede pasar.
+    Devuelve [{"nombre": "agosto 2026", "eventos": [...], "total": 13}, ...].
+    Se apoya en que la lista YA viene ordenada por fecha (proximos()): agrupa
+    cortando cuando cambia el mes, no juntando por clave, asi que dos tramos
+    del mismo mes separados en la lista serian dos grupos -- y con la lista
+    ordenada eso no puede pasar.
+
+    `total` NO ES len(eventos) cuando se pasan `totales`, y esa es toda la
+    razon de que exista el parametro: la cartelera esta paginada, asi que
+    `eventos` es un recorte y un mes partido entre dos paginas mostraba dos
+    numeros, ninguno de los cuales era el del mes. Los totales de verdad los
+    cuenta la base (ver total_por_mes) sobre el mismo filtro y sin el LIMIT.
+
+    Sin `totales` el total es el largo del grupo, que es lo correcto cuando la
+    lista que se pasa ya es completa.
     """
     grupos = []
     for evento in eventos:
@@ -100,7 +111,46 @@ def agrupar_por_mes(eventos):
                 "eventos": [],
             })
         grupos[-1]["eventos"].append(evento)
+
+    for grupo in grupos:
+        if totales is None:
+            grupo["total"] = len(grupo["eventos"])
+        else:
+            # .get con fallback y no [clave]: si por lo que sea el conteo no
+            # trajo ese mes, mostrar lo que hay en la pagina es mejor que
+            # reventar la cartelera entera.
+            grupo["total"] = totales.get(grupo["clave"], len(grupo["eventos"]))
     return grupos
+
+
+def total_por_mes(query):
+    """Cuantos eventos tiene cada mes en el TOTAL del filtro, no en la pagina.
+
+    Devuelve {(anio, mes): cantidad}. Es un COUNT agrupado contra la base, que
+    es la unica forma de saberlo sin traer la cartelera entera a memoria: la
+    pantalla muestra una pagina, y el rotulo del mes habla del mes.
+
+    El order_by(None) no es decorativo, y esta medido contra MySQL 8 real: la
+    consulta llega ordenada por fecha, hora e id (ver proximos), y esas tres
+    columnas no estan en el GROUP BY. Con ONLY_FULL_GROUP_BY -- que MySQL 8
+    trae prendido por default -- eso es un OperationalError 1055 ("Expression
+    #1 of ORDER BY clause is not in GROUP BY clause"), no una consulta rara que
+    anda igual. SQLite lo acepta sin decir nada, asi que sin sacar el orden
+    esto seria otro 500 que solo aparece en produccion.
+    """
+    filas = (
+        query.order_by(None)
+        .with_entities(
+            extract("year", Event.fecha),
+            extract("month", Event.fecha),
+            func.count(Event.id),
+        )
+        .group_by(extract("year", Event.fecha), extract("month", Event.fecha))
+        .all()
+    )
+    # int() porque SQLite devuelve los extract como float y las claves tienen
+    # que ser comparables con las que arma agrupar_por_mes desde un date.
+    return {(int(anio), int(mes)): total for anio, mes, total in filas}
 
 
 def proximos(query, hoy=None):

@@ -164,7 +164,7 @@
 
                     <a href="{{ url_alternando('verificados') }}"
                        class="interruptor-enlace"
-                       aria-pressed="{{ 'true' if solo_verificados_actual else 'false' }}">
+                       {% if solo_verificados_actual %}aria-current="true"{% endif %}>
                         <span class="interruptor-enlace__pista" aria-hidden="true"></span>
                         <span class="interruptor-enlace__texto">
                             <span class="interruptor-enlace__nombre">Solo verificados</span>

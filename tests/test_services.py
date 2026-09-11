@@ -1,6 +1,7 @@
 """Servicios de un emprendimiento: trabajos a presupuestar."""
 
 import os
+import re
 import threading
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -790,7 +791,15 @@ def test_el_interruptor_de_verificados_queda_prendido_al_repintar(
 
     Desde el rediseño el control no es un checkbox sino un enlace que alterna el
     parametro (asi la busqueda entera se puede compartir y anda sin JavaScript),
-    con lo cual lo que dice si esta puesto es aria-pressed y no "checked".
+    con lo cual lo que dice si esta puesto es un atributo ARIA y no "checked".
+
+    Ese atributo es aria-current y no aria-pressed, y el cambio es de la tanda
+    de fixes de la auditoria (B6): aria-pressed solo vale sobre role="button", y
+    en un <a href> las tecnologias de asistencia lo ignoran, asi que el
+    interruptor se anunciaba igual prendido que apagado. La cartelera de eventos
+    ya usaba aria-current para lo mismo. Como solo se escribe cuando esta
+    activo, apagado no lleva ningun atributo: por eso el caso "sin" chequea que
+    NO este, en vez de buscar un "false".
     """
     autor = crear_usuario(username="autor")
     post = crear_post(autor.id)
@@ -799,9 +808,17 @@ def test_el_interruptor_de_verificados_queda_prendido_al_repintar(
     con = client.get("/servicios/buscar?verificados=on").get_data(as_text=True)
     sin = client.get("/servicios/buscar").get_data(as_text=True)
 
-    assert 'aria-pressed="true"' in con
-    assert 'aria-pressed="true"' not in sin
-    assert 'aria-pressed="false"' in sin
+    # Acotado al chip: aria-current tambien lo usa la barra de navegacion para
+    # marcar la seccion actual, asi que buscarlo suelto en el HTML no diria nada.
+    chip = re.compile(r"<a\b[^>]*interruptor-enlace[^>]*>", re.DOTALL)
+    chip_con = chip.search(con).group(0)
+    chip_sin = chip.search(sin).group(0)
+
+    assert 'aria-current="true"' in chip_con
+    assert "aria-current" not in chip_sin
+    # Y que el atributo invalido no vuelva por ninguna de las dos.
+    assert "aria-pressed" not in chip_con
+    assert "aria-pressed" not in chip_sin
 
 
 def test_la_paginacion_no_pierde_el_filtro_de_verificados(

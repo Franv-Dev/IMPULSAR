@@ -55,16 +55,20 @@
                         {% for producto in productos %}
                             {% set negocio = producto.post %}
                             <article class="producto-tarjeta">
+                                {# Mismo criterio que el catalogo: el enlace de la foto sale del
+                                   recorrido (duplica al del nombre) y el cartel de stock sale del
+                                   enlace, para que se siga anunciando. #}
                                 <a href="{{ url_for('products.detalle', id=producto.id) }}"
-                                   class="producto-tarjeta__foto">
+                                   class="producto-tarjeta__foto" tabindex="-1" aria-hidden="true">
                                     {% if producto.foto %}
                                         <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
                                              alt="Foto de {{ producto.nombre }}" loading="lazy">
                                     {% endif %}
-                                    {% if not producto.disponible %}
-                                        <span class="producto-tarjeta__agotado">Sin stock por ahora</span>
-                                    {% endif %}
                                 </a>
+
+                                {% if not producto.disponible %}
+                                    <span class="producto-tarjeta__agotado">Sin stock por ahora</span>
+                                {% endif %}
 
                                 {# El corazón siempre lleno acá: esta pantalla son
                                    justamente los que están marcados, y tocarlo lo
