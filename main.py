@@ -41,6 +41,7 @@ from app.blog import consultas as consultas_blog
 from app.blog.modelo_post import Categorias, Post
 from app.blog.vistas import blog
 from app.panel.vistas import panel
+from app.oportunidades.vistas import oportunidades
 from app.personal.vistas import personal
 from app.perfil.vistas import profile
 from app.servicios.vistas import servicios
@@ -188,6 +189,7 @@ def _registrar_blueprints(app):
     app.register_blueprint(messages)
     app.register_blueprint(panel)
     app.register_blueprint(personal)
+    app.register_blueprint(oportunidades)
     app.register_blueprint(admin)
 
 

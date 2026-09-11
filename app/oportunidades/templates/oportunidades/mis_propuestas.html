@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Propuestas enviadas{% endblock %}
+
+{#  La otra mitad del dominio: lo que ofrecieron los emprendimientos de esta
+    persona, y en qué quedó cada una.
+
+    Va con el menú del panel y no con el de la cuenta porque esto es trabajo
+    del emprendimiento, igual que Presupuestos o Agenda de turnos. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Propuestas enviadas" %}
+                {% include "partials/_menu_panel.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Propuestas enviadas</h1>
+                        <p class="cuenta__bajada">
+                            Lo que ofreciste sobre lo que la gente publicó en
+                            Oportunidades.
+                        </p>
+                    </div>
+                    <a href="{{ url_for('oportunidades.index') }}" class="btn">
+                        Ver oportunidades
+                    </a>
+                </div>
+
+                {% if propuestas %}
+                    <ul class="lista-busquedas">
+                        {% for propuesta in propuestas %}
+                            <li class="panel">
+                                <h2 class="panel__titulo">
+                                    <a href="{{ url_for('oportunidades.detalle', id=propuesta.oportunidad_id) }}">
+                                        {{ propuesta.oportunidad.titulo }}
+                                    </a>
+                                </h2>
+                                <p class="panel__bajada">
+                                    {{ propuesta.post.title }} ·
+                                    {{ propuesta.created_at|hace }} ·
+                                    {% if propuesta.aceptada %}
+                                        aceptada
+                                    {% else %}
+                                        {{ propuesta.oportunidad.estado_label|lower }}
+                                    {% endif %}
+                                </p>
+                                <p>
+                                    {{ propuesta.precio|precio }} ·
+                                    {{ propuesta.plazo_label }}
+                                </p>
+                                <p>{{ propuesta.mensaje }}</p>
+                                {% if propuesta.aceptada %}
+                                    <a class="btn"
+                                       href="{{ url_for('messages.conversation', post_id=propuesta.post_id, client_id=propuesta.oportunidad.autor_id) }}">
+                                        Abrir chat
+                                    </a>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="panel">
+                        <p class="panel__bajada">
+                            Todavía no mandaste ninguna.
+                            <a href="{{ url_for('oportunidades.index') }}">
+                                Mirá qué está necesitando la gente
+                            </a>.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

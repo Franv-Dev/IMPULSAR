@@ -219,6 +219,18 @@
                     {% endif %}
                 {% endwith %}
 
+                {# La puerta a Oportunidades, que no tiene ítem propio en la
+                   barra global (ver el comentario de la nav en base.html). Va
+                   acá por lo mismo que «Buscar en productos» va en el listado
+                   de emprendimientos: la sección secundaria se entra desde la
+                   pantalla de la que es la contracara. Quien buscó un servicio
+                   y no encontró a nadie puede darlo vuelta y que le ofrezcan. #}
+                <div class="chips">
+                    <a href="{{ url_for('oportunidades.index') }}" class="ficha-filtro">
+                        ¿No encontrás lo que necesitás? Pedilo en Oportunidades
+                    </a>
+                </div>
+
                 {% if hay_filtros %}
                     <div class="chips">
                         {% if rubro_actual %}

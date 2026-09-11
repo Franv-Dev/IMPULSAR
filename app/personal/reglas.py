@@ -7,6 +7,7 @@ las vistas queden siendo HTTP y nada mas.
 
 from app.personal.modelo_busqueda import BusquedaPersonal, Modalidades
 from app.personal.modelo_postulacion import Postulacion
+from services.perfiles import falta_de_perfil, perfil_completo
 from services.validation import largo_de
 
 # Los topes salen de las columnas y no se escriben a mano en ningun lado: son
@@ -47,35 +48,13 @@ def modalidad_valida(modalidad):
     return modalidad in Modalidades.TODAS
 
 
-# Que significa "perfil completo" para poder postularse. Telefono y ubicacion,
-# y no el perfil entero: son los dos datos sin los cuales el emprendedor no
-# puede contestarle a nadie ni saber si le sirve por distancia. Pedir mas
-# (bio, avatar, redes) seria un peaje que no ayuda a la decision.
-CAMPOS_DE_PERFIL_COMPLETO = ("phone", "location")
-
-
-def perfil_completo(user):
-    """Si esa persona tiene lo minimo cargado para postularse.
-
-    Vacio y NULL cuentan igual: un telefono que es "   " no es un telefono. Por
-    eso se compara el strip() y no la presencia de la columna.
-    """
-    if user is None:
-        return False
-    return all(
-        (getattr(user, campo, None) or "").strip()
-        for campo in CAMPOS_DE_PERFIL_COMPLETO
-    )
-
-
-def falta_para_postularse(user):
-    """Que campos le faltan, para poder decirselo con nombre y no en general."""
-    etiquetas = {"phone": "el teléfono", "location": "la ubicación"}
-    return [
-        etiquetas[campo]
-        for campo in CAMPOS_DE_PERFIL_COMPLETO
-        if not (getattr(user, campo, None) or "").strip()
-    ]
+# perfil_completo y falta_de_perfil se importan arriba, de services/perfiles.py,
+# y se reexportan a proposito: la regla la pregunta tambien app/oportunidades/
+# (ahi es el permiso para publicar), asi que una sola definicion y no una copia
+# por dominio -- si no, alcanza con que alguien sume un campo en un lado para
+# que los dos flujos pidan cosas distintas por el mismo motivo, y el que pide de
+# menos no avisa nunca. Se reexportan y no se importan derecho en la vista para
+# que las vistas de este dominio le sigan preguntando a sus reglas.
 
 
 def puede_postularse(busqueda, user_id):

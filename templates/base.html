@@ -108,10 +108,20 @@
                 {# Solo la busqueda publica se marca activa, y no todo el
                    blueprint: el resto de /servicios es privado (el panel del
                    dueno y sus solicitudes) y se entra desde el menu de la
-                   cuenta, no desde aca. #}
+                   cuenta, no desde aca.
+
+                   Oportunidades marca esta misma seccion, igual que Turnos:
+                   tampoco tiene item propio (ver el comentario de Productos
+                   arriba), y pedir un servicio es la contracara de ofrecerlo.
+                   Se nombran las dos publicas de a una y no el prefijo del
+                   blueprint, porque /oportunidades/mias y mis-propuestas son
+                   pantallas del panel y se entran desde su menu. #}
+                {% set en_servicios = request.endpoint in (
+                    'servicios.buscar', 'oportunidades.index', 'oportunidades.detalle'
+                ) %}
                 <a href="{{ url_for('servicios.buscar') }}"
-                   class="navbar__seccion {% if request.endpoint == 'servicios.buscar' %}navbar__seccion--activa{% endif %}"
-                   {% if request.endpoint == 'servicios.buscar' %}aria-current="page"{% endif %}>
+                   class="navbar__seccion {% if en_servicios %}navbar__seccion--activa{% endif %}"
+                   {% if en_servicios %}aria-current="page"{% endif %}>
                     Servicios
                 </a>
                 <a href="{{ url_for('eventos.index') }}"
@@ -272,6 +282,14 @@
                    de la nav), asi que el pie es una de sus dos puertas fijas.
                    La otra es el enlace del listado. #}
                 <a href="{{ url_for('products.catalogo') }}" class="footer__link">Productos</a>
+                {# Oportunidades va acá, al lado de Productos y por lo mismo:
+                   las dos son secciones secundarias que NO entran en la barra
+                   global de tres (ver DISENIO.md, «Productos NO entra en la
+                   barra global» y «Oportunidades tampoco»). Un cuarto ítem
+                   arriba monta la nav sobre el bloque de acciones, y en el
+                   teléfono las solapas fijas empezarían a pedir scroll
+                   horizontal, que es lo que no se hace. #}
+                <a href="{{ url_for('oportunidades.index') }}" class="footer__link">Oportunidades</a>
                 <a href="{{ url_for('eventos.index') }}" class="footer__link">Eventos y ferias</a>
                 <a href="{{ url_for('servicios.buscar') }}" class="footer__link">Servicios</a>
             </div>

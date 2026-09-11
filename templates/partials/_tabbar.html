@@ -33,12 +33,19 @@
     {# El catalogo y el detalle de un producto son "Explorar" tanto como el
        listado: se entra desde ahi y se vuelve ahi. El resto de /productos es
        del dueño (su panel y el ABM) y vive en la pestaña Perfil, asi que se
-       nombran de a uno en vez de mirar el prefijo del blueprint. #}
+       nombran de a uno en vez de mirar el prefijo del blueprint.
+
+       Oportunidades entra por lo mismo y de la misma forma: sus dos pantallas
+       publicas son mirar lo que hay, y las otras dos (/oportunidades/mias y
+       mis-propuestas) son del dueño y viven en Perfil. Sin esto, en el
+       telefono las paginas de oportunidades dejarian las cinco pestañas
+       apagadas, que se lee como "no estoy en ningun lado". #}
     {% set explorando = request.endpoint and (
         request.endpoint.startswith('blog.')
         or request.endpoint.startswith('eventos.')
         or request.endpoint == 'servicios.buscar'
         or request.endpoint in ('products.catalogo', 'products.detalle')
+        or request.endpoint in ('oportunidades.index', 'oportunidades.detalle')
     ) and request.endpoint != 'blog.my_favorites' %}
     <a href="{{ url_for('blog.index') }}"
        class="tabbar__tab {% if explorando %}tabbar__tab--activa{% endif %}"

@@ -225,9 +225,11 @@ def test_las_pantallas_del_panel_comparten_el_menu_y_marcan_su_item(
     seccion es este menu, con SU item marcado en cada una.
 
     Eran ocho desde la tanda de eventos, que sumo "Eventos y ferias" al hacer
-    su pantalla (/eventos/mios). Son NUEVE desde la busqueda de personal, que
-    sumo "Postulantes" con la suya (/personal/postulantes). Los items entran
-    cuando existe la pantalla a la que llevan, no antes."""
+    su pantalla (/eventos/mios), y nueve desde la busqueda de personal, que
+    sumo "Postulantes" con la suya (/personal/postulantes). Son DIEZ desde las
+    oportunidades, que sumaron "Propuestas enviadas"
+    (/oportunidades/mis-propuestas). Los items entran cuando existe la pantalla
+    a la que llevan, no antes."""
     usuario = crear_usuario(username="tomy")
     crear_post(usuario.id)
     login(usuario.id)
@@ -242,13 +244,14 @@ def test_las_pantallas_del_panel_comparten_el_menu_y_marcan_su_item(
         "/eventos/mios",
         "/perfil/tomy/resenias",
         "/personal/postulantes",
+        "/oportunidades/mis-propuestas",
     )
 
     for ruta in pantallas:
         html = client.get(ruta).get_data(as_text=True)
 
         items = MENU.findall(html)
-        assert len(items) == 9, (ruta, len(items))
+        assert len(items) == 10, (ruta, len(items))
 
         activos = [
             atributos for clases, atributos in items

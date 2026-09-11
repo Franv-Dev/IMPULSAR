@@ -175,7 +175,7 @@ def postular(id):
         # No es un peaje decorativo: sin telefono ni ubicacion el emprendedor
         # no puede contestarle ni saber si le sirve por distancia. Se dice QUE
         # falta, no "completá tu perfil" a secas.
-        falta = reglas.falta_para_postularse(g.user)
+        falta = reglas.falta_de_perfil(g.user)
         flash(
             "Antes de postularte completá " + " y ".join(falta) +
             " en tu perfil, así te pueden contestar."

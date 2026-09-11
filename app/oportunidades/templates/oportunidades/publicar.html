@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Publicar lo que necesito{% endblock %}
+
+{#  El formulario de una oportunidad nueva.
+
+    Dos campos obligatorios y dos opcionales. El presupuesto y la fecha son
+    opcionales porque no saber cuánto sale ni para cuándo es parte de por qué
+    alguien pregunta; pedirlos como obligatorios no daría mejores datos, daría
+    menos oportunidades publicadas. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <p class="volver">
+            <a href="{{ url_for('oportunidades.index') }}">‹ Volver a oportunidades</a>
+        </p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="cuenta__head">
+            <div>
+                <h1 class="cuenta__titulo">Publicar lo que necesito</h1>
+                <p class="cuenta__bajada">
+                    Lo ve cualquiera que entre a Oportunidades, y los
+                    emprendimientos te mandan su propuesta con precio y plazo.
+                </p>
+            </div>
+        </div>
+
+        <form method="post" class="editor">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="editor__campos">
+                <section class="panel">
+                    <h2 class="panel__titulo">¿Qué necesitás?</h2>
+
+                    <div class="campo">
+                        <label for="titulo" class="campo__label">En una línea</label>
+                        <input type="text" name="titulo" id="titulo" class="auth__input"
+                               maxlength="120" required value="{{ datos.titulo }}"
+                               placeholder="Diseñar el logo de mi panadería">
+                    </div>
+
+                    <div class="campo">
+                        <label for="descripcion" class="campo__label">Contalo un poco más</label>
+                        <textarea name="descripcion" id="descripcion" class="auth__input"
+                                  rows="6" maxlength="800" required
+                                  placeholder="Tengo el nombre y una idea de los colores. Necesito el logo para el cartel y para las redes.">{{ datos.descripcion }}</textarea>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2 class="panel__titulo">Presupuesto y fecha</h2>
+                    <p class="panel__bajada">
+                        Los dos son opcionales. Si no tenés idea de cuánto sale,
+                        dejalos en blanco: para eso están las propuestas.
+                    </p>
+
+                    <div class="campo">
+                        <label for="presupuesto" class="campo__label">
+                            Presupuesto aproximado
+                        </label>
+                        <input type="text" name="presupuesto" id="presupuesto"
+                               class="auth__input" value="{{ datos.presupuesto }}"
+                               inputmode="decimal" placeholder="30000">
+                    </div>
+
+                    <div class="campo">
+                        <label for="fecha_limite" class="campo__label">
+                            ¿Para cuándo lo necesitás?
+                        </label>
+                        <input type="date" name="fecha_limite" id="fecha_limite"
+                               class="auth__input" value="{{ datos.fecha_limite }}">
+                    </div>
+                </section>
+
+                <div class="barra-guardar">
+                    <p class="barra-guardar__texto">
+                        Podés cerrarla cuando elijas a alguien, y volver a
+                        abrirla si hace falta.
+                    </p>
+                    <a href="{{ url_for('oportunidades.index') }}"
+                       class="barra-guardar__cancelar">Cancelar</a>
+                    <button type="submit" class="btn btn--primary">Publicar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
