@@ -261,6 +261,13 @@ Es el **único** caso que queda: se cruzaron los 22 usos de
 > concreto que lo violó. Un grep por nombre de token responde una pregunta más
 > chica que la que uno cree estar haciendo, y da una falsa sensación de
 > exhaustividad — con un número al lado («los 22 usos») que la refuerza.
+>
+> **Verificado en el navegador (11/9/2026).** Con el toggle real y el tema en
+> oscuro, los tres selectores dan lo declarado y lo mismo que en claro:
+> `.cartelera__cta-boton` 13,95:1 de superficie y 13,95:1 de tinta, su `:hover`
+> 11,75:1 y 11,75:1, `.perfil-vender .btn--primary` 13,95:1 y su `:hover`
+> 11,75:1, y `.cartelera__cta-nota .ico` 12,30:1. A ojo también: el botón blanco
+> y el tilde se ven. Los tres hallazgos quedan cerrados sin nada pendiente.
 
 **Arreglo:** `background-color: #fff` y `color: var(--color-primary-deep)` (o el
 índigo fijo), igual que hacen los demás bloques de marca.
