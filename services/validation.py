@@ -70,8 +70,23 @@ def largo_de(columna):
     Se usa asi, al lado de donde se valida:
 
         MAX_TITULO = largo_de(Event.titulo)
+
+    SOLO SIRVE PARA COLUMNAS CON LARGO, o sea String/Varchar. Una columna Text
+    no tiene tope declarado y .type.length vale None, que despues hace explotar
+    a validar_largo con un TypeError ('>' not supported between int and None).
+    El assert lo convierte en un error al importar el modulo -- o sea al
+    arrancar la app, donde se ve enseguida y dice exactamente que columna es --
+    en vez de un 500 en el primer POST que valide ese campo. Hoy los ocho campos
+    validados son String, pero ServiceRequest.descripcion es Text a proposito y
+    este docstring invita a usar la funcion con cualquier columna de texto.
     """
-    return columna.type.length
+    largo = columna.type.length
+    assert largo is not None, (
+        f"{columna} es una columna sin largo declarado (Text): no tiene tope "
+        "contra el cual validar. Si ese campo necesita un limite, ponelo en la "
+        "columna como String(n), o validalo con un numero propio y su motivo."
+    )
+    return largo
 
 
 def validar_largo(valor, maximo, etiqueta):

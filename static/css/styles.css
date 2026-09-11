@@ -5516,8 +5516,13 @@ textarea.auth__input {
     color: var(--color-primary-deep);
 }
 
+/* #ECEAF7 y no var(--color-primary-soft), por lo mismo que el boton de la
+   cartelera: el token vale #2E2950 en oscuro, asi que el boton blanco se
+   volvia invisible justo al pasarle el mouse (1.03:1 contra el panel, y la
+   tinta 1.03:1 contra su propio fondo). No estaba en el informe de H3 -- que
+   buscaba --color-on-primary -- y es el mismo bug por el otro token. */
 .perfil-vender .btn--primary:hover {
-    background-color: var(--color-primary-soft);
+    background-color: #ECEAF7;
     color: var(--color-primary-deep);
 }
 
@@ -16422,16 +16427,31 @@ body.con-visor {
     color: rgba(255, 255, 255, 0.82);
 }
 
-/* Blanco sobre el indigo: acá el boton primario indigo desapareceria. */
+/* Blanco sobre el indigo: aca el boton primario indigo desapareceria.
+   Y hasta la tanda de H3 desaparecia igual, solo que en oscuro: el fondo era
+   --color-on-primary, que es la tinta del PRIMARIO y por lo tanto cambia con el
+   tema (#16132A en oscuro), asi que el boton quedaba casi negro sobre el panel
+   indigo -- 1.30:1 de SUPERFICIE, el mismo ratio que fallaba el titulo. El
+   :hover estaba peor, 1.03:1 con --color-primary-soft (#2E2950 en oscuro).
+
+   ESTO NO LO VE UN MEDIDOR DE CONTRASTE DE TEXTO: la tinta del boton daba
+   8.84:1 contra su propio fondo. Lo que fallaba es el borde del control contra
+   lo que tiene detras, que es WCAG 1.4.11 y se mide entre superficies.
+
+   Por eso los dos colores van fijos, como en .perfil-vender .btn--primary, que
+   es el mismo boton sobre el mismo panel: blanco da 13.95:1 contra el panel y
+   la tinta --color-primary-deep otros 13.95:1 contra el blanco. El #ECEAF7 del
+   hover es el valor que --color-primary-soft tiene en claro, escrito derecho
+   porque este panel no sigue al tema: 11.75:1 contra el panel. */
 .cartelera__cta-boton {
     align-self: flex-start;
-    background-color: var(--color-on-primary);
-    color: var(--color-primary-hover);
+    background-color: #fff;
+    color: var(--color-primary-deep);
 }
 
 .cartelera__cta-boton:hover {
-    background-color: var(--color-primary-soft);
-    color: var(--color-primary-hover);
+    background-color: #ECEAF7;
+    color: var(--color-primary-deep);
 }
 
 .cartelera__cta-nota {
@@ -16443,9 +16463,14 @@ body.con-visor {
     color: rgba(255, 255, 255, 0.78);
 }
 
+/* #E6F4EC literal y no var(--color-success-bg), por lo mismo que el boton de
+   arriba: el token es un FONDO de estado y como tal se da vuelta con el tema
+   (#E6F4EC en claro, #14321F en oscuro). Sobre este panel indigo fijo, la
+   version oscura daba 1.0:1 -- el tilde directamente no se veia. El valor de
+   claro, escrito derecho, da 12.3:1 en los dos temas y conserva el verde. */
 .cartelera__cta-nota .ico {
     flex-shrink: 0;
-    color: var(--color-success-bg);
+    color: #E6F4EC;
 }
 
 /* ==========================================================================
