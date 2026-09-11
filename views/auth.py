@@ -1,12 +1,14 @@
 from flask import (
-    render_template, Blueprint, flash, request, session, url_for, redirect, g, jsonify, abort
+    render_template, Blueprint, current_app, flash, request, session, url_for,
+    redirect, g, jsonify, abort
 )
 from models.user import Roles, User
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.exc import IntegrityError
 from db import db
+from services import rate_limit
 from services.validation import (
-    validate_email, validate_password, validate_username,
+    normalizar_username, validate_email, validate_password, validate_username,
 )
 import functools
 
@@ -39,6 +41,116 @@ def _rol_pedido(valor):
     """
     normalizado = (valor or "").strip().lower()
     return normalizado if normalizado in ROLES_AL_REGISTRARSE else Roles.USUARIO
+
+
+# ------------------------------------------- freno a la fuerza bruta del login
+#
+# El escaneo de seguridad entro veinticinco contrasenias erradas seguidas sin
+# encontrar un solo freno, y la correcta paso en el intento veintiseis. Lo que
+# sigue es ese freno. Vive aca y no dentro de cada vista porque las dos puertas
+# (formulario y API) tienen que contar en el mismo lugar; los numeros salen de
+# config.py, que es donde estan explicados.
+#
+# Se cuentan DOS claves por intento, y alcanza con que una este bloqueada:
+#
+#   cuenta:<username o email>   el ataque de siempre, muchas claves contra una
+#                               persona
+#   ip:<direccion>              el rociado, una clave comun contra muchas
+#                               personas, que nunca llena el contador de
+#                               ninguna cuenta
+#
+# La clave de IP la comparten las dos rutas a proposito: si no, un atacante
+# gastaria su cupo en /auth/login y seguiria fresco en /auth/api/login.
+
+
+def _claves_del_intento(usuario, identificador):
+    """Devuelve (claves_de_cuenta, clave_de_ip) para un intento de login.
+
+    SON DOS CLAVES DE CUENTA Y NO UNA, y cada una tapa un agujero distinto que
+    la otra deja abierto. Las dos se cuentan a la vez y alcanza con que
+    cualquiera este bloqueada.
+
+      - POR ID DEL USUARIO. El formulario manda el username y la API el email:
+        con la clave sacada del texto, la misma persona tenia dos contadores y
+        alternando las dos puertas entraban diez contrasenias erradas en vez de
+        cinco (medido: el primer 429 caia en el intento 11). El id es el mismo
+        venga por donde venga. Solo existe si el usuario existe.
+
+      - POR TEXTO NORMALIZADO. Cubre al usuario que no existe -- que igual hay
+        que contar -- y ademas no depende de la collation de la base. En MySQL
+        (utf8mb4_unicode_ci) "Panaderia" y "Panadería" son el mismo usuario y
+        los dos caen en la clave de id; en SQLite el filter_by es exacto, no
+        encuentra a nadie con la variante y sin esta clave cada forma de
+        escribir el nombre regalaria otros cinco intentos. normalizar_username
+        pliega mayusculas y tildes igual que el registro.
+    """
+    claves = []
+    if usuario is not None:
+        claves.append(f"login:cuenta:{usuario.id}")
+    normalizado = normalizar_username(identificador)
+    if normalizado:
+        claves.append(f"login:cuenta:txt:{normalizado}")
+
+    ip = request.remote_addr or "sin-ip"
+    return claves, f"login:ip:{ip}"
+
+
+def _espera_del_login(usuario, identificador):
+    """Segundos que faltan para poder volver a intentar. Cero si esta libre."""
+    cfg = current_app.config
+    ventana = cfg["LOGIN_VENTANA_SEGUNDOS"]
+    bloqueo = cfg["LOGIN_BLOQUEO_SEGUNDOS"]
+    claves_cuenta, clave_ip = _claves_del_intento(usuario, identificador)
+
+    esperas = [
+        rate_limit.segundos_de_bloqueo(
+            clave, cfg["LOGIN_MAX_FALLOS_POR_CUENTA"], bloqueo, ventana
+        )
+        for clave in claves_cuenta
+    ]
+    esperas.append(
+        rate_limit.segundos_de_bloqueo(
+            clave_ip, cfg["LOGIN_MAX_FALLOS_POR_IP"], bloqueo, ventana
+        )
+    )
+    return max(esperas)
+
+
+def _anotar_login_fallido(usuario, identificador):
+    ventana = current_app.config["LOGIN_VENTANA_SEGUNDOS"]
+    claves_cuenta, clave_ip = _claves_del_intento(usuario, identificador)
+    for clave in claves_cuenta + [clave_ip]:
+        rate_limit.registrar_fallo(clave, ventana)
+
+
+def _anotar_login_exitoso(usuario, identificador):
+    """Limpia los contadores de la cuenta que acaba de entrar bien.
+
+    Los DOS de cuenta, porque los dos se ensuciaron al fallar; si quedara el de
+    texto, cuatro errores de tipeo y un acierto dejarian a esa persona a un
+    intento del bloqueo.
+
+    La clave de IP NO se limpia: si entrar borrara tambien la de la direccion,
+    un atacante con una cuenta propia se limpiaria la marca cada veinte
+    intentos y el limite por IP no existiria.
+    """
+    claves_cuenta, _ = _claves_del_intento(usuario, identificador)
+    for clave in claves_cuenta:
+        rate_limit.limpiar(clave)
+
+
+def _mensaje_de_espera(segundos):
+    """El texto que ve quien quedo bloqueado.
+
+    No dice cual de los dos limites salto ni si el usuario existe: es el mismo
+    cartel para todos, para no regalar informacion en el unico momento en que
+    el sistema le contesta distinto a un atacante.
+    """
+    minutos = max(1, -(-segundos // 60))  # hacia arriba
+    return (
+        "Demasiados intentos fallidos. Por seguridad, esperá "
+        f"{minutos} minuto{'s' if minutos != 1 else ''} y volvé a probar."
+    )
 
 # ============
 #  VISTAS HTML (sesiones tradicionales)
@@ -101,20 +213,47 @@ def login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
-        error = None
+        # El usuario se busca ANTES del chequeo porque la clave de cuenta sale
+        # de su id y no del texto que llego (ver _claves_del_intento). Lo que
+        # importa es que lo caro -- el hash -- siga estando DESPUES: al
+        # bloqueado el intento le cuesta un SELECT y nada mas.
         user = User.query.filter_by(username=username).first()
+
+        espera = _espera_del_login(user, username)
+        if espera:
+            flash(_mensaje_de_espera(espera))
+            return render_template('auth/login.html'), 429, {"Retry-After": str(espera)}
+
+        error = None
+        # Se lleva aparte del mensaje y no se deduce de el: lo que decide si el
+        # intento suma al contador es si la CREDENCIAL estaba mal, y "usuario
+        # suspendido" es el unico error que llega con la credencial bien.
+        credencial_erronea = False
 
         if user is None:
             error = "El usuario es incorrecto"
+            credencial_erronea = True
         elif not check_password_hash(user.password, password):
             error = "La contraseña es incorrecta"
+            credencial_erronea = True
         elif user.is_banned:
             error = "Esta cuenta fue suspendida. Contactate con soporte."
 
         if error is None:
+            _anotar_login_exitoso(user, username)
             session.clear()
             session["user_id"] = user.id
             return redirect(url_for('index'))
+
+        # La suspendida no suma: la contrasenia era la correcta, no hay nada
+        # que adivinar, y contarla dejaria a esa persona bloqueada ademas de
+        # suspendida por reintentar. Pero OJO con el orden del if de arriba:
+        # una cuenta suspendida CON la clave mal cae en "la contraseña es
+        # incorrecta", asi que si esto preguntara por user.is_banned en vez de
+        # por la credencial, una cuenta baneada conocida seria un blanco para
+        # probar claves sin gastar el contador de la IP.
+        if credencial_erronea:
+            _anotar_login_fallido(user, username)
 
         flash(error)
 
@@ -217,11 +356,27 @@ def api_login():
     if not email or not password:
         return jsonify({"error": "email y password requeridos"}), 400
 
+    # El mismo freno que el formulario y, desde que la clave de cuenta sale del
+    # id del usuario, EL MISMO CONTADOR: antes esta puerta contaba por email y
+    # la otra por username, asi que alternandolas entraban diez contrasenias
+    # erradas contra la misma persona en vez de cinco.
     user = User.query.filter_by(email=email).first()
+
+    espera = _espera_del_login(user, email)
+    if espera:
+        return (
+            jsonify({"error": _mensaje_de_espera(espera)}),
+            429,
+            {"Retry-After": str(espera)},
+        )
+
     if not user or not check_password_hash(user.password, password):
+        _anotar_login_fallido(user, email)
         return jsonify({"error": "credenciales inválidas"}), 401
     if user.is_banned:
         return jsonify({"error": "Esta cuenta fue suspendida."}), 403
+
+    _anotar_login_exitoso(user, email)
 
     # La duracion sale de JWT_ACCESS_TOKEN_EXPIRES en config.py, asi se puede
     # ajustar por entorno sin tocar el codigo.

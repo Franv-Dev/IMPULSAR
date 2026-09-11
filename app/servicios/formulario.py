@@ -10,11 +10,15 @@ from flask import request
 
 from app.servicios.modelo import Rubros
 from app.servicios.reglas import (
+    MAX_DESCRIPCION,
     MAX_DURACION_TURNO_MINUTOS,
+    MAX_TITULO,
+    MAX_ZONA_COBERTURA,
     MIN_DURACION_TURNO_MINUTOS,
     duracion_de_turno_valida,
 )
 from services.precios import parsear_precio
+from services.validation import validar_largo
 
 
 def leer_servicio():
@@ -51,9 +55,18 @@ def leer_servicio():
         except ValueError:
             duracion_ilegible = True
 
+    # El primero de los tres textos que no entra en su columna, si hay alguno.
+    muy_largo = (
+        validar_largo(titulo, MAX_TITULO, "El título")
+        or validar_largo(descripcion, MAX_DESCRIPCION, "La descripción")
+        or validar_largo(zona, MAX_ZONA_COBERTURA, "La zona de cobertura")
+    )
+
     error = None
     if not titulo:
         error = "Se requiere un título para el servicio."
+    elif muy_largo:
+        error = muy_largo
     elif rubro not in Rubros.TODOS:
         # El rubro llega de un <select>, pero se valida igual: el POST se puede
         # mandar a mano con cualquier cosa, y un rubro invalido dejaria la fila

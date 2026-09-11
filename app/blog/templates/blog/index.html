@@ -144,14 +144,14 @@
         <div class="fichas-filtro">
             <a href="{{ url_alternando('abierto_ahora') }}"
                class="ficha-filtro {{ 'ficha-filtro--activa' if abierto_ahora_actual }}"
-               aria-pressed="{{ 'true' if abierto_ahora_actual else 'false' }}">
+               {% if abierto_ahora_actual %}aria-current="true"{% endif %}>
                 <span class="ficha-filtro__punto" aria-hidden="true"></span>
                 Abierto ahora
             </a>
 
             <a href="{{ url_alternando('con_resenias') }}"
                class="ficha-filtro {{ 'ficha-filtro--activa' if con_resenias_actual }}"
-               aria-pressed="{{ 'true' if con_resenias_actual else 'false' }}">
+               {% if con_resenias_actual %}aria-current="true"{% endif %}>
                 Con reseñas
             </a>
 
@@ -181,7 +181,7 @@
                     <label class="sr-only" for="filtro-radio">Radio de distancia</label>
                     <select name="radio" id="filtro-radio"
                             class="ficha-filtro ficha-filtro--select {{ 'ficha-filtro--activa' if radio_actual }}"
-                            onchange="this.form.submit()">
+                            data-autoenviar>
                         <option value="" {% if not radio_actual %}selected{% endif %}>Sin límite de distancia</option>
                         {% for km in radios_km %}
                             <option value="{{ km }}" {% if km == radio_actual %}selected{% endif %}>

@@ -61,10 +61,60 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // Lo que el Tab puede alcanzar adentro del visor. Se recalcula en cada
+    // Tab y no se guarda una vez: las fotos se muestran y se esconden con
+    // `hidden` mientras el visor está abierto.
+    const FOCUSABLES =
+        'a[href], button:not([disabled]), input:not([disabled]), ' +
+        'select:not([disabled]), textarea:not([disabled]), ' +
+        '[tabindex]:not([tabindex="-1"])';
+
+    function focosDelVisor() {
+        return Array.from(visor.querySelectorAll(FOCUSABLES)).filter(
+            (elemento) => !elemento.hidden && elemento.offsetParent !== null
+        );
+    }
+
+    // El foco no se va de acá mientras el visor esté abierto.
+    //
+    // Sin esto, tabular desde la flecha «siguiente» salía del overlay y
+    // recorría la página tapada, que sigue entera y enfocable: 54 elementos
+    // alcanzables detrás de un diálogo que visualmente los cubre. aria-modal
+    // arregla la mitad del problema (lo que anuncia un lector de pantalla),
+    // pero no mueve el Tab: eso es esto.
+    function encerrarElFoco(evento) {
+        const focos = focosDelVisor();
+        if (!focos.length) {
+            evento.preventDefault();
+            return;
+        }
+
+        const primero = focos[0];
+        const ultimo = focos[focos.length - 1];
+        const activo = document.activeElement;
+
+        // Con el foco afuera (se llegó clickeando el fondo, por ejemplo) el
+        // Tab siguiente se iría a la página de atrás: se lo trae al principio.
+        if (!visor.contains(activo)) {
+            evento.preventDefault();
+            primero.focus();
+            return;
+        }
+
+        if (evento.shiftKey && activo === primero) {
+            evento.preventDefault();
+            ultimo.focus();
+        } else if (!evento.shiftKey && activo === ultimo) {
+            evento.preventDefault();
+            primero.focus();
+        }
+    }
+
     document.addEventListener("keydown", (evento) => {
         if (visor.hidden) return;
         if (evento.key === "Escape") cerrar();
         if (evento.key === "ArrowLeft") mostrar(actual - 1);
         if (evento.key === "ArrowRight") mostrar(actual + 1);
+        if (evento.key === "Tab") encerrarElFoco(evento);
     });
 });

@@ -87,7 +87,7 @@
                                 {# El mismo Categorias.ETIQUETAS que usa Explorar: si
                                    mañana se agrega un rubro, aparece en los dos. #}
                                 <select name="category" class="filtros__input"
-                                        onchange="this.form.submit()">
+                                        data-autoenviar>
                                     <option value="">Todos</option>
                                     {% for valor, etiqueta in categorias.items() %}
                                         <option value="{{ valor }}" {% if valor == categoria_actual %}selected{% endif %}>

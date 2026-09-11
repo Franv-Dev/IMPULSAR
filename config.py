@@ -47,6 +47,19 @@ def _raiz_del_proyecto():
 RAIZ_PROYECTO = os.getenv("RAIZ_PROYECTO") or _raiz_del_proyecto()
 
 
+def _entero_del_entorno(nombre, por_defecto):
+    """El entero de una variable de entorno, o el default si no se entiende.
+
+    No revienta con un valor mal escrito: estas se leen al importar el modulo,
+    y ahi un ValueError no es un error de configuracion sino una app que no
+    arranca y un traceback que no dice que variable fue.
+    """
+    try:
+        return int(os.getenv(nombre, "").strip() or por_defecto)
+    except ValueError:
+        return por_defecto
+
+
 def _build_database_uri():
     """Arma la URI de conexion a MySQL a partir de las variables de entorno.
 
@@ -142,6 +155,52 @@ class Config:
 
     # Cuanto dura el token de la API. Antes estaba hardcodeado en api_login.
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+
+    # --- Freno a la fuerza bruta en el login -------------------------------
+    #
+    # Lo cuenta services/rate_limit.py y lo aplican las dos puertas de entrada:
+    # /auth/login (formulario) y /auth/api/login (JSON). Van dos limites en
+    # paralelo, no uno:
+    #
+    #   - POR CUENTA, apretado. Cinco contrasenias erradas seguidas contra el
+    #     mismo usuario y esa cuenta descansa diez minutos. Es el limite que
+    #     corta el ataque de siempre, probar claves contra una persona.
+    #
+    #   - POR IP, flojo. Veinte fallos desde la misma direccion, sin importar a
+    #     cuantas cuentas distintas le pego. Atrapa el rociado (una sola clave
+    #     comun contra cien usuarios, que nunca llega a cinco fallos en
+    #     ninguno) sin dejar afuera a media oficina detras de un NAT en el
+    #     quinto intento, que es lo que pasaria si la IP tuviera el tope de la
+    #     cuenta.
+    #
+    # El bloqueo es temporal a proposito: un lockout que hay que ir a levantar
+    # a mano convierte a cualquiera con un formulario en alguien que te deja
+    # sin cuenta cuando quiere.
+    LOGIN_MAX_FALLOS_POR_CUENTA = 5
+    LOGIN_MAX_FALLOS_POR_IP = 20
+    LOGIN_BLOQUEO_SEGUNDOS = 10 * 60
+    # HAY QUE PONERLO EN EL DEPLOY, Y EL LIMITE POR IP DEPENDE DE ESTO.
+    #
+    # Cuantos proxies hay adelante de la app. Con la app publicada detras de
+    # nginx o de un Render, request.remote_addr NO es la direccion de quien
+    # entra: es la del proxy, la misma para todo el mundo. El limite por IP
+    # pasaria entonces a ser un limite GLOBAL, y veinte fallos de cualquiera
+    # dejarian a todos los demas diez minutos afuera. La direccion real viene
+    # en X-Forwarded-For, y ProxyFix es lo que la pone en su lugar.
+    #
+    # Cero por defecto A PROPOSITO: sin proxy adelante, confiar en
+    # X-Forwarded-For es peor que no leerlo, porque lo escribe el cliente y
+    # cualquiera se inventa una direccion nueva por intento, que es
+    # exactamente como se saltea el limite por IP. Se prende SOLO donde hay un
+    # proxy de verdad, y con la cantidad de saltos que ese deploy tenga.
+    # int() defensivo y no int(os.getenv(...)) a secas: esto corre al IMPORTAR
+    # config, asi que un valor mal escrito en el deploy ("si", "true", un
+    # espacio) no daria un error entendible sino un ValueError que se lleva
+    # puesto el arranque entero de la app. Cero es el default seguro.
+    PROXY_FIX_X_FOR = _entero_del_entorno("PROXY_FIX_X_FOR", 0)
+    # Cuanto vale un fallo antes de olvidarse. Mas larga que el bloqueo para
+    # que "cinco fallos" no se pueda estirar goteando un intento cada rato.
+    LOGIN_VENTANA_SEGUNDOS = 15 * 60
 
     # Cantidad de emprendimientos por pagina en los listados.
     POSTS_POR_PAGINA = 9

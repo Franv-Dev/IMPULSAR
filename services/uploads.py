@@ -35,6 +35,28 @@ MAX_IMAGE_BYTES = 15 * 1024 * 1024  # 15 MB
 MAX_IMAGE_WIDTH = 1200
 JPEG_QUALITY = 85
 
+# Cuanto puede medir el nombre que se guarda en la base.
+#
+# TIENE QUE COINCIDIR CON LAS SIETE COLUMNAS QUE LO GUARDAN: User.avatar,
+# User.cover_image, Post.image, PostImage.filename, Product.foto,
+# ServiceRequest.foto y VerificationRequest.foto, todas String(100). Lo ata el
+# test test_el_tope_coincide_con_las_columnas (tests/test_uploads.py), que las
+# recorre una por una: si alguna cambia de largo, ese test se cae y este numero
+# se actualiza.
+#
+# Se repite el numero en vez de leerlo de las columnas por lo mismo que
+# MAX_EMAIL_LENGTH en services/validation.py: config.py importa este modulo, asi
+# que importar los modelos desde aca es pedir un import circular.
+#
+# Sin recortar, el nombre generado se pasaba: el uuid y el guion bajo suman 9
+# caracteres fijos y el original nunca se acortaba, asi que un nombre de archivo
+# de 100 caracteres -- largo pero perfectamente legal -- daba 109. En MySQL
+# estricto eso es un DataError 1406 que el usuario ve como un 500; en SQLite
+# entra igual y quedan 109 caracteres en una columna de 100. Es el mismo caso
+# que los largos de los formularios, sobre el unico campo de texto que el
+# usuario no tipea.
+MAX_NOMBRE_ARCHIVO = 100
+
 # Cuantos pixeles puede tener una imagen, que es un limite distinto del de
 # bytes y no se deduce de el: el peso del archivo es la imagen COMPRIMIDA, y la
 # que se descomprime en RAM ocupa ancho * alto * 3 bytes sin importar cuanto
@@ -162,13 +184,41 @@ def save_post_image(file, upload_dir):
     file.stream.seek(0)
 
     os.makedirs(upload_dir, exist_ok=True)
-    # El uuid evita que dos usuarios que suben "foto.jpg" se pisen el archivo.
-    filename = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
+    filename = _nombre_unico(file.filename)
     destino = os.path.join(upload_dir, filename)
 
     _guardar_comprimida(file.stream, destino)
 
     return filename, None
+
+
+def _nombre_unico(original):
+    """El nombre con el que se guarda la imagen, garantizado <= MAX_NOMBRE_ARCHIVO.
+
+    El uuid adelante evita que dos usuarios que suben "foto.jpg" se pisen el
+    archivo, y es lo unico que no se puede recortar: es lo que hace unico al
+    nombre.
+
+    LO QUE SE RECORTA ES LA BASE, NUNCA LA EXTENSION. Cortar el nombre entero
+    por el final se lleva puesto el ".png", y de la extension dependen tanto
+    allowed_file() como el Content-Type que adivina el navegador al servir el
+    archivo: un recorte ciego convierte una foto valida en un archivo sin tipo.
+    """
+    prefijo = f"{uuid.uuid4().hex[:8]}_"
+    seguro = secure_filename(original or "")
+    disponible = MAX_NOMBRE_ARCHIVO - len(prefijo)
+
+    if len(seguro) > disponible:
+        base, punto, extension = seguro.rpartition(".")
+        # El +1 es el punto. Si la extension sola ya no entra (un nombre raro
+        # sin punto, o con una "extension" larguisima), no hay nada que
+        # preservar y se corta derecho.
+        if punto and len(extension) + 1 < disponible:
+            seguro = f"{base[: disponible - len(extension) - 1]}.{extension}"
+        else:
+            seguro = seguro[:disponible]
+
+    return prefijo + seguro
 
 
 def borrar_de_disco(upload_dir, nombres):

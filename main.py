@@ -13,14 +13,16 @@ Como correrlo:
 
 import os
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, g, redirect, render_template, request, url_for
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFError, CSRFProtect
 from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import get_config
 from db import db
+from services import seguridad
 from services.eventos import (
     dia_semana_corto, formatear_fecha, mes_corto, parsear_fecha,
 )
@@ -75,13 +77,29 @@ def create_app(config_name=None):
     app.config.from_object(config_class)
     config_class.init_app(app)
 
+    _confiar_en_el_proxy(app)
     _registrar_extensiones(app)
+    _registrar_cabeceras_de_seguridad(app)
     _registrar_blueprints(app)
     _registrar_rutas(app)
     _registrar_manejadores_de_error(app)
     _registrar_filtros_jinja(app)
 
     return app
+
+
+def _confiar_en_el_proxy(app):
+    """Hace que request.remote_addr sea la IP de quien entra y no la del proxy.
+
+    Solo si PROXY_FIX_X_FOR dice cuantos proxies hay adelante (ver config.py,
+    que explica por que el default es cero y por que el limite por IP del login
+    depende de esto). Sin proxy declarado la app queda exactamente como estaba.
+    """
+    saltos = app.config.get("PROXY_FIX_X_FOR", 0)
+    if not saltos:
+        return
+
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=saltos, x_proto=saltos)
 
 
 def _registrar_extensiones(app):
@@ -101,6 +119,58 @@ def _registrar_extensiones(app):
     csrf.exempt(posts_api)
     csrf.exempt(api_register)
     csrf.exempt(api_login)
+
+
+def _registrar_cabeceras_de_seguridad(app):
+    """CSP y companiia en toda respuesta (ver services/seguridad.py).
+
+    Va como after_request y no como middleware WSGI para que alcance tambien a
+    las paginas de error y a los archivos de static/, que son respuestas de
+    Flask igual que cualquier otra.
+    """
+
+    @app.before_request
+    def renovar_nonce():
+        """Un nonce nuevo por request, y no uno perezoso la primera vez que lo piden.
+
+        La diferencia importa porque `g` cuelga del contexto de APLICACION, no
+        del de request: si hay uno empujado desde afuera (los tests lo hacen, y
+        cualquier codigo que atienda requests con un app_context abierto
+        tambien), Flask no empuja otro por request y `g` sobrevive de una a la
+        siguiente. Con un nonce perezoso eso significa el MISMO nonce para
+        muchas respuestas, que es tanto como no tener nonce: al atacante le
+        alcanza con leerlo una vez para que su <script> inyectado pase.
+        """
+        g.csp_nonce = seguridad.nonce_nuevo()
+
+    def csp_nonce():
+        """El nonce de ESTA respuesta, para escribirlo en el <script>.
+
+        Se lee de g y no se genera aca: el template lo pide una vez por
+        <script>, y todos tienen que traer el mismo valor que la cabecera de la
+        respuesta que los lleva.
+        """
+        if not hasattr(g, "csp_nonce"):
+            # Sin request de por medio (un render suelto en un script): el
+            # nonce no sirve de nada, pero tampoco puede reventar el template.
+            g.csp_nonce = seguridad.nonce_nuevo()
+        return g.csp_nonce
+
+    # Como global de Jinja y no como variable de contexto: lo usa base.html,
+    # que renderiza en todas las pantallas, y pasarlo desde cada vista seria
+    # olvidarselo en la proxima.
+    app.jinja_env.globals["csp_nonce"] = csp_nonce
+
+    @app.after_request
+    def poner_cabeceras(respuesta):
+        # setdefault y no asignacion: si alguna vista alguna vez necesita una
+        # politica propia, la suya gana y esto no se la pisa.
+        for nombre, valor in seguridad.CABECERAS_FIJAS.items():
+            respuesta.headers.setdefault(nombre, valor)
+        respuesta.headers.setdefault(
+            "Content-Security-Policy", seguridad.politica_csp(csp_nonce())
+        )
+        return respuesta
 
 
 def _registrar_blueprints(app):

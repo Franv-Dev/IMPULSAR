@@ -752,7 +752,7 @@
    consola. Para subir a la 6 hay que pasar este bloque a type="module" e
    importar el .mjs; mientras tanto, 5.x sigue teniendo UMD. #}
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script>
+<script nonce="{{ csp_nonce() }}">
     document.addEventListener("DOMContentLoaded", () => {
         const mapContainer = document.getElementById("map");
         if (!mapContainer) {

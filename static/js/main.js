@@ -1056,3 +1056,27 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
+
+
+// Los <select> de filtro que se envían solos al cambiar.
+//
+// Antes cada uno traía onchange="this.form.submit()" escrito en el HTML. Eso
+// es un atributo inline, y la CSP (ver services/seguridad.py) no lo puede
+// permitir sin 'unsafe-inline' en script-src, que es justamente lo que dejaría
+// a la política sin valor contra XSS. Un nonce tampoco alcanza: los nonces
+// habilitan etiquetas <script>, no atributos onXXX.
+//
+// Delegado en document y no un listener por <select>: los cuatro que hay hoy
+// viven en tres pantallas distintas, y el que se agregue mañana funciona con
+// sólo escribirle data-autoenviar.
+//
+// Sin JavaScript queda exactamente como quedaba antes, ni mejor ni peor: el
+// onchange también necesitaba JS. Los filtros de favoritos igual se pueden
+// aplicar con su botón; los de radio y orden del catálogo dependen de esto,
+// como dependían del atributo.
+document.addEventListener("change", (evento) => {
+    const control = evento.target.closest("[data-autoenviar]");
+    if (control && control.form) {
+        control.form.submit();
+    }
+});

@@ -158,7 +158,7 @@
                de prender, y el parámetro que viaja es el apagado. #}
             <a href="{{ url_con('disponibles', '' if not solo_disponibles_actual else '0') }}"
                class="ficha-filtro {{ 'ficha-filtro--activa' if solo_disponibles_actual }}"
-               aria-pressed="{{ 'true' if solo_disponibles_actual else 'false' }}">
+               {% if solo_disponibles_actual %}aria-current="true"{% endif %}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="m5 12.5 4.5 4.5L19 7.5"/>
@@ -168,7 +168,7 @@
 
             <a href="{{ url_alternando('abierto_ahora') }}"
                class="ficha-filtro {{ 'ficha-filtro--activa' if abierto_ahora_actual }}"
-               aria-pressed="{{ 'true' if abierto_ahora_actual else 'false' }}">
+               {% if abierto_ahora_actual %}aria-current="true"{% endif %}>
                 <span class="ficha-filtro__punto" aria-hidden="true"></span>
                 Abierto ahora
             </a>
@@ -186,7 +186,7 @@
                     <label class="sr-only" for="filtro-radio">Radio de distancia</label>
                     <select name="radio" id="filtro-radio"
                             class="ficha-filtro ficha-filtro--select {{ 'ficha-filtro--activa' if radio_actual }}"
-                            onchange="this.form.submit()">
+                            data-autoenviar>
                         <option value="" {% if not radio_actual %}selected{% endif %}>Sin límite de distancia</option>
                         {% for km in radios_km %}
                             <option value="{{ km }}" {% if km == radio_actual %}selected{% endif %}>
@@ -219,7 +219,7 @@
                 {% endfor %}
                 <label class="sr-only" for="filtro-orden">Ordenar por</label>
                 <select name="orden" id="filtro-orden" class="ficha-filtro ficha-filtro--select"
-                        onchange="this.form.submit()">
+                        data-autoenviar>
                     {% for valor, etiqueta in ordenes.items() %}
                         {# «Cercanía» sólo cuando hay desde dónde medir. #}
                         {% if valor != orden_cercania or ordenado_por_distancia %}
@@ -310,16 +310,25 @@
                     {% set producto = fila.producto %}
                     {% set negocio = producto.post %}
                     <article class="producto-tarjeta">
+                        {# tabindex/aria-hidden como .tarjeta__foto de Explorar: lleva al
+                           mismo lado que el enlace del nombre, asi que como tab-stop es un
+                           duplicado, y sin foto queda un enlace vacio y sin nombre accesible. #}
                         <a href="{{ url_for('products.detalle', id=producto.id) }}"
-                           class="producto-tarjeta__foto">
+                           class="producto-tarjeta__foto" tabindex="-1" aria-hidden="true">
                             {% if producto.foto %}
                                 <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
                                      alt="Foto de {{ producto.nombre }}" loading="lazy">
                             {% endif %}
-                            {% if not producto.disponible %}
-                                <span class="producto-tarjeta__agotado">Sin stock por ahora</span>
-                            {% endif %}
                         </a>
+
+                        {# EL CARTEL VA AFUERA DEL ENLACE, no adentro como estaba: es el unico
+                           lugar de la tarjeta que dice que no hay stock, y adentro de un
+                           aria-hidden un lector de pantalla no lo nombra nunca. Se sigue viendo
+                           en el mismo lugar porque .producto-tarjeta ya es position:relative y
+                           la foto arranca en su esquina. #}
+                        {% if not producto.disponible %}
+                            <span class="producto-tarjeta__agotado">Sin stock por ahora</span>
+                        {% endif %}
 
                         {% if g.user %}
                             {# Sólo con sesión: sin ella el corazón no tendría

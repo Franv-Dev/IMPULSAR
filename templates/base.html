@@ -34,7 +34,7 @@
        Primera visita (nada en localStorage) => manda el sistema operativo.
        Una vez que el usuario toca el switch, esa eleccion explicita pisa al
        sistema para siempre, hasta que borre localStorage. #}
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         (function () {
             var guardado = null;
             try {
