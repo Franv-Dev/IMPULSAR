@@ -1,0 +1,66 @@
+{#  La sección "Busca personal" de la ficha del emprendimiento.
+
+    Aparece solo mientras el toggle esté prendido: la vista pasa
+    busqueda_personal en None cuando está cerrada, y este include no dibuja
+    nada. Eso NO es el permiso de nada -- postularse y contar la vista se
+    vuelven a chequear del lado del servidor.
+
+    Las dos acciones son un <form> y no un enlace porque las dos escriben:
+    una crea la postulación y la otra suma la señal débil. Un GET que cambia
+    datos lo dispara cualquier prefetch del navegador. #}
+
+{% if busqueda_personal %}
+    <section class="ficha-bloque" id="ficha-personal">
+        <div class="ficha-bloque__head">
+            <h2 class="ficha-bloque__titulo">Busca personal</h2>
+            <span class="ficha-bloque__nota">{{ busqueda_personal.modalidad_label }}</span>
+            {% if es_dueño %}
+                <a href="{{ url_for('personal.postulantes', id=busqueda_personal.id) }}"
+                   class="ficha-bloque__link">Ver postulantes</a>
+            {% endif %}
+        </div>
+
+        <h3 class="panel__titulo">{{ busqueda_personal.puesto }}</h3>
+        <p>{{ busqueda_personal.descripcion }}</p>
+
+        {% if not es_dueño %}
+            {% if ya_postulado %}
+                <p class="aviso-suave aviso-suave--neutro">
+                    Ya te postulaste. Si le interesa, te escribe por el chat.
+                </p>
+            {% else %}
+                <p>
+                    <a class="btn btn--primary"
+                       href="{{ url_for('personal.postular', id=busqueda_personal.id) }}">
+                        Postularme
+                    </a>
+                </p>
+                <form method="post"
+                      action="{{ url_for('personal.no_me_interesa', id=busqueda_personal.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn">No me interesa</button>
+                </form>
+            {% endif %}
+        {% endif %}
+    </section>
+{% elif es_dueño %}
+    {#  El toggle apagado, visto por el dueño: la unica puerta de entrada al
+        formulario. Nadie mas ve este bloque, y la vista de activar vuelve a
+        chequear que el emprendimiento sea suyo. #}
+    <section class="ficha-bloque" id="ficha-personal">
+        <div class="ficha-bloque__head">
+            <h2 class="ficha-bloque__titulo">¿Buscás personal?</h2>
+            <span class="ficha-bloque__nota">Solo lo ves vos hasta que publiques</span>
+        </div>
+        <p>
+            Si necesitás a alguien para trabajar con vos, publicalo acá y quien
+            visite tu ficha va a poder postularse con un formulario corto.
+        </p>
+        <p>
+            <a class="btn btn--primary"
+               href="{{ url_for('personal.activar', post_id=post.id) }}">
+                Buscar personal
+            </a>
+        </p>
+    </section>
+{% endif %}

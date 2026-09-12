@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Oportunidades{% endblock %}
+
+{#  El listado público: todo lo que alguien está necesitando y sigue abierto.
+
+    Sin filtro por rubro en esta versión, a propósito: es una lista única. El
+    día que haya suficientes como para que haga falta filtrar, el filtro se
+    suma sin tocar el modelo.
+
+    Las cerradas y las finalizadas no están acá. La cerrada sigue siendo
+    alcanzable por su URL, para que el que mandó una propuesta pueda ver en qué
+    quedó; la finalizada sólo la ve quien la publicó. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="cuenta__head">
+            <div>
+                <h1 class="cuenta__titulo">Oportunidades</h1>
+                <p class="cuenta__bajada">
+                    Lo que la gente está necesitando. Si tenés un emprendimiento
+                    que puede hacerlo, mandá tu propuesta.
+                </p>
+            </div>
+            {% if g.user %}
+                <a href="{{ url_for('oportunidades.publicar') }}" class="btn btn--primary">
+                    Publicar lo que necesito
+                </a>
+            {% endif %}
+        </div>
+
+        {% if oportunidades %}
+            <ul class="lista-busquedas">
+                {% for oportunidad in oportunidades %}
+                    <li class="panel">
+                        <h2 class="panel__titulo">
+                            <a href="{{ url_for('oportunidades.detalle', id=oportunidad.id) }}">
+                                {{ oportunidad.titulo }}
+                            </a>
+                        </h2>
+                        <p class="panel__bajada">
+                            {{ oportunidad.autor.username }} ·
+                            {{ oportunidad.created_at|hace }}
+                            {% if oportunidad.presupuesto %}
+                                · presupuesto aproximado {{ oportunidad.presupuesto|precio }}
+                            {% endif %}
+                            {% if oportunidad.fecha_limite %}
+                                · para el {{ oportunidad.fecha_limite|fecha_evento }}
+                            {% endif %}
+                        </p>
+                        <p>
+                            {% set total = conteo.get(oportunidad.id, 0) %}
+                            {{ total }} {{ "propuesta" if total == 1 else "propuestas" }}
+                        </p>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="panel">
+                <p class="panel__bajada">
+                    Todavía no hay nada publicado. Si necesitás algo, podés ser
+                    el primero.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

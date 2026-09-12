@@ -24,9 +24,18 @@ UMBRAL_AVISO_LIMITE = 40
 class Product(db.Model):
     """Un item con precio fijo del catalogo de un emprendimiento.
 
-    Es catalogo y no tienda: no hay stock, ni variantes, ni carrito, ni pago.
-    Es "esto vendo y a cuanto", para que el emprendedor no tenga que meter la
-    lista de precios adentro de la descripcion del emprendimiento.
+    Es catalogo y no tienda: no hay carrito ni pago. Es "esto vendo y a
+    cuanto", para que el emprendedor no tenga que meter la lista de precios
+    adentro de la descripcion del emprendimiento.
+
+    Decia tambien "no hay stock ni variantes", y desde la tanda de variantes es
+    cierto solo a medias, asi que conviene ser preciso: EL PRODUCTO SIGUE SIN
+    TENER STOCK. No se le agrego ninguna columna. Lo que puede tener son
+    variantes (combinaciones talle x color, en models/producto_variante.py), y
+    son esas las que llevan stock numerico, cada una el suyo. Un producto sin
+    variantes es exactamente el de antes: precio fijo y el booleano
+    `disponible`. Las dos ramas conviven y `tiene_variantes` es la que decide
+    cual se esta mirando.
 
     Decia "un producto o servicio", y dejo de ser cierto cuando aparecio
     app/servicios/modelo.py: un servicio es un trabajo a presupuestar, con zona de
@@ -90,6 +99,113 @@ class Product(db.Model):
     def __repr__(self):
         return f"<Product post_id={self.post_id} {self.nombre}>"
 
+    @property
+    def tiene_variantes(self):
+        """Si este producto se vende por combinacion talle+color.
+
+        Es la pregunta que parte en dos casi todo lo que sigue: con variantes
+        el precio y el stock salen de la combinacion elegida, y sin variantes
+        del producto mismo, como siempre. Se pregunta por las filas y no por un
+        flag aparte, que seria un segundo lugar donde decir lo mismo y podria
+        quedar diciendo que si con la matriz vacia.
+
+        MIRA LAS OPCIONES Y NO SOLO LAS VARIANTES, y esa segunda mitad es un
+        arreglo y no un adorno: como sacar un talle de la lista APAGA sus filas
+        en vez de borrarlas (a proposito, para no perder su historia), vaciar
+        las dos listas dejaba un producto sin ningun eje cargado pero con todas
+        sus filas apagadas todavia ahi. Preguntando solo por las filas eso daba
+        True, y el producto quedaba en el peor de los mundos: sin matriz que
+        elegir, con stock_total en cero y disponible_efectivo en False, o sea
+        muerto y sin forma de revivirlo desde la pantalla. Justo el camino de
+        "apagar las variantes".
+
+        Los tres casos que tiene que distinguir:
+
+          - hay ejes cargados            -> True (aunque todo este apagado: la
+                                           ficha dice "no queda ninguna", que es
+                                           verdad)
+          - sin ejes, alguna encendida   -> True (no deberia pasar por la
+                                           pantalla, pero si pasa hay algo que
+                                           vender y no se puede esconder)
+          - sin ejes y todas apagadas    -> False, vuelve al precio base y al
+                                           booleano de siempre, que es lo que el
+                                           mensaje de la pantalla promete
+        """
+        if self.opciones_de_variante:
+            return True
+        return any(variante.activo for variante in self.variantes)
+
+    @property
+    def variantes_comprables(self):
+        """Las combinaciones que se pueden elegir: encendidas y con stock."""
+        return [variante for variante in self.variantes if variante.comprable]
+
+    @property
+    def stock_total(self):
+        """La suma del stock de las combinaciones ACTIVAS, o None sin variantes.
+
+        None y no cero, que es la diferencia que importa: cero significa "tiene
+        variantes y no queda ninguna", y None significa "este producto no
+        maneja stock", que es el caso de siempre y el que no hay que romper.
+        Quien lo muestre tiene que preguntar por None antes de escribir un
+        numero.
+
+        Las apagadas no suman aunque tengan stock cargado: el vendedor dijo que
+        esa combinacion no existe, asi que contarla mentiria sobre lo que hay
+        para vender.
+        """
+        if not self.tiene_variantes:
+            return None
+        return sum(
+            variante.stock for variante in self.variantes if variante.activo
+        )
+
+    @property
+    def precio_desde(self):
+        """El precio mas barato que hoy se puede conseguir.
+
+        Sin variantes es el precio del producto, como siempre. Con variantes es
+        el minimo entre las COMPRABLES, porque anunciar el precio de una
+        combinacion que no se puede pedir es publicidad enganosa hacia adentro:
+        el que entra por ese numero se encuentra con que no esta.
+
+        Si no queda ninguna comprable devuelve el precio del producto: no hay
+        nada que ofrecer, y la ficha en ese caso muestra "sin stock" y no un
+        precio, pero la property no puede devolver None y hacer reventar a quien
+        la formatee.
+        """
+        comprables = self.variantes_comprables
+        if not comprables:
+            return self.precio
+        return min(variante.precio_efectivo for variante in comprables)
+
+    @property
+    def precio_es_rango(self):
+        """Si las combinaciones comprables no valen todas lo mismo.
+
+        Decide si la ficha escribe "$12.000" o "desde $12.000". Sin esto habria
+        que elegir uno de los dos siempre: "desde" con un precio unico suena a
+        que hay letra chica, y el precio pelado con tres precios distintos
+        miente sobre dos de ellos.
+        """
+        precios = {variante.precio_efectivo for variante in self.variantes_comprables}
+        return len(precios) > 1
+
+    @property
+    def disponible_efectivo(self):
+        """Si hay algo para vender, mire variantes o no.
+
+        Sin variantes es el `disponible` de siempre. Con variantes, ademas,
+        tiene que quedar al menos una combinacion comprable: un producto
+        marcado disponible cuyas diez combinaciones estan en cero no esta
+        disponible, y decir que si es mandar a la gente a preguntar por nada.
+        """
+        if not self.disponible:
+            return False
+        if not self.tiene_variantes:
+            return True
+        return any(variante.comprable for variante in self.variantes)
+
     def serialize(self):
         return {
             "id": self.id,
@@ -102,3 +218,11 @@ class Product(db.Model):
             "foto": self.foto,
             "disponible": self.disponible,
         }
+
+
+# Las variantes viven en su propio modulo, pero son parte del producto: se
+# importa al final para que el backref `variantes` exista siempre que exista
+# Product (de el dependen tiene_variantes y stock_total, aca arriba) y para que
+# Alembic vea las dos tablas. Va abajo y no arriba porque es el modulo
+# importado el que menciona a Product, y no al reves: asi no hay ciclo.
+from models import producto_variante  # noqa: E402,F401

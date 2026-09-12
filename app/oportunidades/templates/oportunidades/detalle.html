@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}{{ oportunidad.titulo }}{% endblock %}
+
+{#  La ficha de una oportunidad. Una sola plantilla con dos lecturas:
+
+      - quien la publicó ve las propuestas recibidas y los botones de decidir;
+      - cualquier otro ve la necesidad y, si tiene un emprendimiento, el
+        formulario para proponer.
+
+    Los botones se dibujan según `es_autor`, pero eso NO es el permiso: cada
+    acción vuelve a preguntar del lado del servidor (B4). Esconder el HTML es
+    decoración.
+
+    Las propuestas las ve sólo quien publicó. Un emprendedor no ve lo que
+    cotizaron los demás: si no, cotizar sería mirar el precio del otro. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <p class="volver">
+            <a href="{{ url_for('oportunidades.index') }}">‹ Volver a oportunidades</a>
+        </p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="cuenta__head">
+            <div>
+                <h1 class="cuenta__titulo">{{ oportunidad.titulo }}</h1>
+                <p class="cuenta__bajada">
+                    {{ oportunidad.autor.username }} ·
+                    {{ oportunidad.created_at|hace }} ·
+                    {{ oportunidad.estado_label }}
+                </p>
+            </div>
+        </div>
+
+        <section class="panel">
+            <p>{{ oportunidad.descripcion }}</p>
+            <p class="panel__bajada">
+                {% if oportunidad.presupuesto %}
+                    Presupuesto aproximado: {{ oportunidad.presupuesto|precio }}.
+                {% else %}
+                    Sin presupuesto de referencia.
+                {% endif %}
+                {% if oportunidad.fecha_limite %}
+                    Lo necesita para el {{ oportunidad.fecha_limite|fecha_evento }}.
+                {% endif %}
+            </p>
+        </section>
+
+        {% if es_autor %}
+            {#  ------------------------------------------------ el publicador #}
+            <div class="cuenta__head">
+                <div>
+                    <h2 class="cuenta__titulo">Propuestas recibidas</h2>
+                    <p class="cuenta__bajada">
+                        Agrupadas por emprendimiento: si alguien te mandó más de
+                        una, ves la última y podés abrir las anteriores.
+                    </p>
+                </div>
+                <div class="acciones">
+                    {% if oportunidad.estado == 'cerrada' %}
+                        <form method="post" class="form-inline"
+                              action="{{ url_for('oportunidades.reabrir', id=oportunidad.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn">Reabrir</button>
+                        </form>
+                    {% endif %}
+                    {% if not oportunidad.esta_finalizada %}
+                        <form method="post" class="form-inline"
+                              action="{{ url_for('oportunidades.finalizar', id=oportunidad.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn">Dar por terminada</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if grupos %}
+                <ul class="lista-busquedas">
+                    {% for grupo in grupos %}
+                        <li class="panel">
+                            <h3 class="panel__titulo">
+                                <a href="{{ url_for('blog.detail', id=grupo.post.id) }}">
+                                    {{ grupo.post.title }}
+                                </a>
+                                {% if grupo.aceptada %} · aceptada{% endif %}
+                            </h3>
+                            <p>
+                                {{ grupo.ultima.precio|precio }} ·
+                                {{ grupo.ultima.plazo_label }} ·
+                                {{ grupo.ultima.created_at|hace }}
+                            </p>
+                            <p>{{ grupo.ultima.mensaje }}</p>
+
+                            {% if grupo.anteriores %}
+                                <details>
+                                    <summary>
+                                        {{ grupo.anteriores|length }}
+                                        {{ "propuesta anterior" if grupo.anteriores|length == 1
+                                           else "propuestas anteriores" }}
+                                        de este emprendimiento
+                                    </summary>
+                                    <ul>
+                                        {% for anterior in grupo.anteriores %}
+                                            <li>
+                                                {{ anterior.precio|precio }} ·
+                                                {{ anterior.plazo_label }} ·
+                                                {{ anterior.created_at|hace }}
+                                                {% if anterior.aceptada %} · aceptada{% endif %}
+                                                <br>{{ anterior.mensaje }}
+                                                {% if oportunidad.esta_abierta %}
+                                                    <form method="post" class="form-inline"
+                                                          action="{{ url_for('oportunidades.aceptar', id=oportunidad.id, propuesta_id=anterior.id) }}">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <button type="submit" class="btn">Aceptar esta</button>
+                                                    </form>
+                                                {% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </details>
+                            {% endif %}
+
+                            {% if oportunidad.esta_abierta %}
+                                <form method="post" class="form-inline"
+                                      action="{{ url_for('oportunidades.aceptar', id=oportunidad.id, propuesta_id=grupo.ultima.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn--primary">Aceptar</button>
+                                </form>
+                            {% elif grupo.aceptada %}
+                                <a class="btn"
+                                   href="{{ url_for('messages.conversation', post_id=grupo.post.id, client_id=oportunidad.autor_id) }}">
+                                    Abrir chat
+                                </a>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="panel">
+                    <p class="panel__bajada">
+                        Todavía no recibiste propuestas. Cuando alguien te mande
+                        una, aparece acá.
+                    </p>
+                </div>
+            {% endif %}
+
+        {% elif oportunidad.esta_abierta and mis_posts %}
+            {#  ----------------------------------------------- el emprendedor #}
+            <form method="post" class="editor"
+                  action="{{ url_for('oportunidades.proponer', id=oportunidad.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <section class="panel">
+                    <h2 class="panel__titulo">Mandá tu propuesta</h2>
+                    <p class="panel__bajada">
+                        La ve sólo quien publicó. Si le interesa, te escribe por
+                        el chat.
+                    </p>
+
+                    <div class="campo">
+                        <label for="post_id" class="campo__label">Desde qué emprendimiento</label>
+                        <select name="post_id" id="post_id" class="auth__input" required>
+                            {% for post in mis_posts %}
+                                <option value="{{ post.id }}">{{ post.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="campo">
+                        <label for="precio" class="campo__label">Precio</label>
+                        <input type="text" name="precio" id="precio" class="auth__input"
+                               inputmode="decimal" required value="{{ datos.precio }}"
+                               placeholder="25000">
+                    </div>
+
+                    <div class="campo">
+                        <label for="plazo_dias" class="campo__label">
+                            Plazo, en días
+                        </label>
+                        <input type="number" name="plazo_dias" id="plazo_dias"
+                               class="auth__input" min="1" max="365" required
+                               value="{{ datos.plazo_dias }}" placeholder="7">
+                    </div>
+
+                    <div class="campo">
+                        <label for="mensaje" class="campo__label">¿Cómo lo harías?</label>
+                        <textarea name="mensaje" id="mensaje" class="auth__input"
+                                  rows="4" maxlength="600" required
+                                  placeholder="Te mando tres propuestas de logo y elegís una. Incluye los archivos para imprimir.">{{ datos.mensaje }}</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn--primary">Mandar la propuesta</button>
+                </section>
+            </form>
+
+        {% elif oportunidad.esta_abierta and g.user %}
+            <div class="panel">
+                <p class="panel__bajada">
+                    Para mandar una propuesta necesitás tener un emprendimiento
+                    publicado.
+                    <a href="{{ url_for('blog.create') }}">Crear el mío</a>
+                </p>
+            </div>
+
+        {% elif not oportunidad.esta_abierta %}
+            <div class="panel">
+                <p class="panel__bajada">
+                    Esta oportunidad ya no está recibiendo propuestas.
+                </p>
+            </div>
+
+        {% else %}
+            {# Sin sesión. La ficha se ve sin entrar (es pública), pero proponer
+               pide sesión, así que acá va la puerta y no el silencio. #}
+            <div class="panel">
+                <p class="panel__bajada">
+                    <a href="{{ url_for('auth.login') }}">Entrá</a>
+                    para mandar tu propuesta.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

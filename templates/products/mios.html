@@ -153,6 +153,18 @@
                                             </form>
 
                                             <div class="fila-prod__acciones">
+                                                {#  La puerta a la matriz de talles y colores. Va con
+                                                    texto y no con ícono como las otras dos: es la única
+                                                    de las tres que no se adivina, y además dice de una
+                                                    si ese producto ya tiene variantes o no. #}
+                                                <a href="{{ url_for('products.variantes', id=producto.id) }}"
+                                                   class="accion-ico accion-ico--texto">
+                                                    {% if producto.tiene_variantes %}
+                                                        {{ producto.stock_total }} en stock
+                                                    {% else %}
+                                                        Variantes
+                                                    {% endif %}
+                                                </a>
                                                 <a href="{{ url_for('products.editar', id=producto.id) }}"
                                                    class="accion-ico" aria-label="Editar {{ producto.nombre }}">
                                                     {% with clave = 'editar', tamanio = 17 %}{% include "partials/_icono_nav.html" %}{% endwith %}

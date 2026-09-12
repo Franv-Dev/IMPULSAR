@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Postulantes – {{ busqueda.puesto }}{% endblock %}
+
+{#  La bandeja de una búsqueda, con el mismo patrón visual que Solicitudes.
+
+    El chat NO se abre solo al postularse: el botón de cada fila es lo que
+    crea la conversación, y es una decisión del emprendedor. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Postulantes" %}
+                {% include "partials/_menu_panel.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+        <p class="volver">
+            <a href="{{ url_for('personal.bandeja') }}">‹ Todas mis búsquedas</a>
+        </p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="cuenta__head">
+            <div>
+                <h1 class="cuenta__titulo">{{ busqueda.puesto }}</h1>
+                <p class="cuenta__bajada">
+                    {{ busqueda.post.title }} · {{ busqueda.modalidad_label }} ·
+                    {% if busqueda.activa %}
+                        publicada, la ve cualquiera que entre a tu ficha
+                    {% else %}
+                        cerrada, ya no se muestra en tu ficha
+                    {% endif %}
+                </p>
+            </div>
+
+            {% if busqueda.activa %}
+                <form method="post" action="{{ url_for('personal.cerrar', id=busqueda.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn">Cerrar la búsqueda</button>
+                </form>
+            {% endif %}
+        </div>
+
+        <section class="panel">
+            <h2 class="panel__titulo">
+                {{ postulaciones|length }}
+                {{ "postulación" if postulaciones|length == 1 else "postulaciones" }}
+            </h2>
+            <p class="panel__bajada">
+                {{ busqueda.vistas_sin_postulacion }}
+                {{ "persona abrió" if busqueda.vistas_sin_postulacion == 1 else "personas abrieron" }}
+                el formulario y no lo mandaron. Es un número aproximado y no
+                guardamos quiénes son.
+            </p>
+
+            {% if postulaciones %}
+                <ul class="lista-postulaciones">
+                    {% for postulacion in postulaciones %}
+                        <li class="panel panel--ficha">
+                            <h3 class="panel__titulo">{{ postulacion.nombre }}</h3>
+                            <p class="campo__ayuda">
+                                {{ postulacion.contacto }} ·
+                                disponible {{ postulacion.disponibilidad }}
+                            </p>
+                            <p>{{ postulacion.experiencia }}</p>
+                            <p>
+                                <a class="btn btn--primary"
+                                   href="{{ url_for('messages.conversation',
+                                                    post_id=busqueda.post_id,
+                                                    client_id=postulacion.postulante_id) }}">
+                                    Abrir chat
+                                </a>
+                                <a class="btn"
+                                   href="{{ url_for('profile.view_profile',
+                                                    slug=postulacion.postulante.slug) }}">
+                                    Ver perfil
+                                </a>
+                            </p>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="perfil-vacio">
+                    Todavía no se postuló nadie.
+                    {% if busqueda.activa %}
+                        La búsqueda ya está publicada en tu ficha.
+                    {% endif %}
+                </p>
+            {% endif %}
+        </section>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

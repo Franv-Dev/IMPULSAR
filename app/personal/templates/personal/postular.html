@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Postularme – {{ busqueda.puesto }}{% endblock %}
+
+{#  El formulario de postulación: texto estructurado, sin adjuntos.
+
+    El nombre y el contacto vienen prellenados del perfil para ahorrar tipeo,
+    pero son editables y lo que se guarda es lo que la persona manda: la
+    postulación es una foto de ese momento y no una lectura en vivo del
+    perfil. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <p class="volver">
+            <a href="{{ url_for('blog.detail', id=busqueda.post_id) }}">
+                ‹ Volver a {{ busqueda.post.title }}
+            </a>
+        </p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="cuenta__head">
+            <div>
+                <h1 class="cuenta__titulo">Postularme a {{ busqueda.puesto }}</h1>
+                <p class="cuenta__bajada">
+                    En {{ busqueda.post.title }} · {{ busqueda.modalidad_label }}.
+                    No hace falta adjuntar nada: con lo que escribas alcanza para
+                    que decidan si te escriben.
+                </p>
+            </div>
+        </div>
+
+        <form method="post" class="editor">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="editor__campos">
+                <section class="panel">
+                    <h2 class="panel__titulo">Quién sos</h2>
+
+                    <div class="campo">
+                        <label for="nombre" class="campo__label">Nombre</label>
+                        <input type="text" name="nombre" id="nombre" class="auth__input"
+                               maxlength="100" required value="{{ datos.nombre }}">
+                    </div>
+
+                    <div class="campo">
+                        <label for="contacto" class="campo__label">Contacto</label>
+                        <input type="text" name="contacto" id="contacto" class="auth__input"
+                               maxlength="120" required value="{{ datos.contacto }}"
+                               placeholder="Teléfono o correo donde te escriben">
+                        <p class="campo__ayuda">
+                            Lo ve solamente quien publicó la búsqueda.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2 class="panel__titulo">Tu experiencia</h2>
+
+                    <div class="campo">
+                        <label for="experiencia" class="sr-only">Experiencia</label>
+                        <textarea name="experiencia" id="experiencia" class="auth__input"
+                                  rows="6" maxlength="600" required
+                                  placeholder="Dos años en un restaurante del centro, en cocina fría y limpieza de salón.">{{ datos.experiencia }}</textarea>
+                    </div>
+
+                    <div class="campo">
+                        <label for="disponibilidad" class="campo__label">Disponibilidad</label>
+                        <input type="text" name="disponibilidad" id="disponibilidad"
+                               class="auth__input" maxlength="120" required
+                               value="{{ datos.disponibilidad }}"
+                               placeholder="Mañanas de lunes a viernes">
+                    </div>
+                </section>
+
+                <div class="barra-guardar">
+                    <p class="barra-guardar__texto">
+                        Si le interesa, te escribe por el chat de IMPULSAR.
+                    </p>
+                    <a href="{{ url_for('blog.detail', id=busqueda.post_id) }}"
+                       class="barra-guardar__cancelar">Cancelar</a>
+                    <button type="submit" class="btn btn--primary">Enviar postulación</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

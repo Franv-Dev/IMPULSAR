@@ -16674,3 +16674,112 @@ body.con-visor {
         justify-content: center;
     }
 }
+
+/* ==========================================================================
+   Variantes de producto (templates/products/variantes.html)
+
+   La matriz talle x color del panel del vendedor. Es la unica tabla del lado
+   del vendedor -- las otras dos del proyecto son del panel de administracion y
+   usan .admin-table --, y no la reusa a proposito: son dos pantallas de
+   secciones distintas y compartir la clase ataria el dibujo de una al de la
+   otra.
+
+   El prefijo `variantes-` no es decorativo: styles.css es uno solo y el orden
+   del archivo decide quien gana, asi que un nombre generico como `.tabla` le
+   pisaria el dibujo a cualquier otra tanda que lo use (ver
+   tests/test_css_compartido.py).
+   ========================================================================== */
+
+.variantes-tabla-wrapper {
+    overflow-x: auto;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-light);
+}
+
+.variantes-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.variantes-tabla th,
+.variantes-tabla td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.variantes-tabla thead th {
+    color: var(--color-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.variantes-tabla tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* El encabezado del grupo de las que quedaron fuera de las listas. */
+.variantes-tabla__grupo {
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* "(del producto)" al lado de un precio heredado. */
+.variantes-tabla__nota {
+    color: var(--color-muted);
+    font-size: 0.8rem;
+}
+
+/* La combinacion apagada sigue visible pero no compite con las que se venden:
+   se baja el contraste en vez de esconderla, porque el vendedor tiene que poder
+   volver a encenderla. */
+.variantes-tabla__fila--apagada td {
+    opacity: 0.55;
+}
+
+/* El acceso a las variantes en la fila del panel: el mismo boton de icono pero
+   con texto adentro, porque "Variantes" no se adivina con un dibujo. Modifica
+   a .accion-ico en vez de ser una clase nueva, que es lo que corresponde: es el
+   mismo componente con otro contenido. */
+.accion-ico--texto {
+    width: auto;
+    padding: 0 0.7rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Los campos de una fila de la matriz. Angostos y no al 100 % como el resto de
+   los .auth__input: adentro de una celda, un input que ocupa todo el ancho
+   estira la tabla y obliga al scroll horizontal en cualquier pantalla. */
+.variantes-tabla__campo {
+    width: 7.5rem;
+    min-width: 0;
+    padding: 0.4rem 0.6rem;
+}
+
+.variantes-tabla__activo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-right: 0.6rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+/* El selector de combinacion de la ficha, arriba de las acciones. Es del bloque
+   .producto (templates/products/detalle.html), por eso el prefijo: no comparte
+   nombre con la tabla del panel aunque las dos hablen de variantes. */
+.producto__variantes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}

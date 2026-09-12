@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Postulantes{% endblock %}
+
+{#  Todas las búsquedas del usuario, abiertas y cerradas.
+
+    Las cerradas siguen listadas porque sus postulaciones siguen existiendo:
+    apagar el toggle saca el aviso de la ficha, no borra a quien ya escribió. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Postulantes" %}
+                {% include "partials/_menu_panel.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="cuenta__head">
+            <div>
+                <h1 class="cuenta__titulo">Postulantes</h1>
+                <p class="cuenta__bajada">
+                    Quiénes se postularon a cada búsqueda de tus emprendimientos.
+                </p>
+            </div>
+        </div>
+
+        {% if busquedas %}
+            <ul class="lista-busquedas">
+                {% for busqueda in busquedas %}
+                    <li class="panel">
+                        <h2 class="panel__titulo">
+                            <a href="{{ url_for('personal.postulantes', id=busqueda.id) }}">
+                                {{ busqueda.puesto }}
+                            </a>
+                        </h2>
+                        <p class="panel__bajada">
+                            {{ busqueda.post.title }} · {{ busqueda.modalidad_label }} ·
+                            {% if busqueda.activa %}publicada{% else %}cerrada{% endif %}
+                        </p>
+                        <p>
+                            {{ conteo.get(busqueda.id, 0) }}
+                            {{ "postulación" if conteo.get(busqueda.id, 0) == 1 else "postulaciones" }}
+                            · {{ busqueda.vistas_sin_postulacion }}
+                            {{ "vista" if busqueda.vistas_sin_postulacion == 1 else "vistas" }}
+                            sin postulación
+                        </p>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="perfil-vacio">
+                Todavía no publicaste ninguna búsqueda. El botón está en la ficha
+                de cada emprendimiento tuyo.
+            </p>
+        {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

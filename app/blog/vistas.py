@@ -35,6 +35,7 @@ from app.blog.modelo_post import MAX_IMAGENES_POR_POST, Categorias, Post
 from app.blog.modelo_reporte import Report
 from app.blog.modelo_resenia import Review
 from app.panel.consultas import contadores_de as contadores_del_panel
+from app.personal import consultas as consultas_personal
 from db import utcnow
 from services.eventos import hoy_en_argentina
 from services.geocoding import get_coordinates_from_address
@@ -202,9 +203,23 @@ def detail(id):
     if not es_dueño:
         consultas.sumar_una_vista(post)
 
+    # La busqueda de personal, si la hay: la seccion de la ficha aparece solo
+    # mientras el toggle este prendido. Cerrarla la saca de aca y no borra
+    # nada (ver app/personal/modelo_busqueda.py).
+    busqueda_personal = consultas_personal.busqueda_activa_de(post.id)
+    # Si el que mira ya se postulo, en vez del boton se le dice que ya lo hizo.
+    # Es cortesia, no permiso: el permiso lo vuelve a chequear personal.postular
+    # del lado del servidor, y la garantia real es el UNIQUE de la tabla.
+    ya_postulado = bool(
+        busqueda_personal and g.user
+        and consultas_personal.postulacion_de(busqueda_personal.id, g.user.id)
+    )
+
     return render_template(
         "blog/detail.html",
         post=post,
+        busqueda_personal=busqueda_personal,
+        ya_postulado=ya_postulado,
         author=post.author_user,
         reviews=consultas.resenias_de(id),
         avg_rating=consultas.promedio_de_rating(id),

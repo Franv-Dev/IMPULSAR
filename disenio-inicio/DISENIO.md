@@ -1228,6 +1228,26 @@ mismo cuarto ítem: corregidos el 2026-09-06 (Panel/Main y Panel/Catalogo;
 Turnos/Main, Turnos/Agenda y Turnos/Mios). En Turnos la sección marcada es
 "Servicios" — el turno se saca desde un servicio.
 
+**Oportunidades tampoco entra en la barra global (2026-09-11).** Misma decisión y
+mismo motivo que Productos, un año de aprendizaje después: la nav aprobada son
+**tres** ítems, y un cuarto vuelve a montarla sobre el bloque de acciones. En el
+teléfono el costo es peor y más concreto: las solapas fijas que `base.html` pinta
+arriba del contenido son tres, y una cuarta empieza a pedir scroll horizontal —
+que es justo lo que no se hace en móvil.
+
+Oportunidades queda entonces como sección secundaria, al lado de Productos y con
+las mismas dos puertas fijas: **el pie** (en la columna de secciones, pegada a
+Productos) y **un enlace desde la pantalla de la que es la contracara** — el
+catálogo se entra desde Emprendimientos, y Oportunidades desde el buscador de
+Servicios, porque pedir un servicio es ofrecerlo dado vuelta.
+
+En la barra queda marcado **"Servicios"** cuando se está en `/oportunidades` o en
+la ficha de una, igual que Turnos. Y en el teléfono cuentan como "Explorar" en la
+tabbar, para que las pantallas públicas no dejen las cinco pestañas apagadas. Las
+dos pantallas privadas (`/oportunidades/mias` y `/oportunidades/mis-propuestas`)
+no marcan nada acá: viven en sus menús, la primera en el de la cuenta (es
+actividad propia) y la segunda en el del panel (es trabajo del emprendimiento).
+
 **El filtro de precio se queda.** Se discutió sacarlo porque la venta la coordina
 el vendedor, pero cada tarjeta muestra un precio que pone el emprendimiento
 (`Product.precio`): el filtro sólo acota el rango, no fija nada.

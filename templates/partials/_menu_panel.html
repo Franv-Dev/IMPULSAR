@@ -17,6 +17,9 @@
 <aside class="panel-menu">
     <p class="panel-menu__rotulo">Mi emprendimiento</p>
 
+    {#  "Postulantes" va sin contador a proposito: el numero seria "cuantos se
+        postularon en total", que no es algo pendiente de responder como los
+        presupuestos, y pintarlo de urgente mentiria. El detalle esta adentro. #}
     <nav class="panel-menu__nav" aria-label="Panel">
         {% set items = [
             ('Inicio del panel', url_for('panel.inicio'), 'resumen', None, false),
@@ -25,6 +28,8 @@
             ('Servicios', url_for('servicios.index'), 'servicios', contadores.servicios, false),
             ('Presupuestos', url_for('servicios.solicitudes'), 'presupuestos', contadores.solicitudes, true),
             ('Agenda de turnos', url_for('turnos.agenda'), 'agenda', contadores.turnos, false),
+            ('Postulantes', url_for('personal.bandeja'), 'presupuestos', None, false),
+            ('Propuestas enviadas', url_for('oportunidades.mis_propuestas'), 'presupuestos', None, false),
             ('Eventos y ferias', url_for('eventos.mios'), 'eventos', contadores.eventos, false),
             ('Reseñas recibidas', url_for('profile.reviews', slug=g.user.slug), 'resenias', contadores.resenias, true),
         ] %}

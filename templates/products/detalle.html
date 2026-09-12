@@ -19,7 +19,11 @@
     funciona igual con una foto sola.
 
     NO HAY «COMPRAR». La acción es consultar, y termina en el chat interno con
-    el nombre del producto ya escrito (?producto=<id> en la ruta de mensajes). #}
+    el nombre del producto ya escrito (?producto=<id> en la ruta de mensajes).
+
+    SI EL PRODUCTO TIENE VARIANTES, la consulta viaja además con la combinación
+    elegida (&variante=<id>) y el precio de arriba sale de ellas. El producto sin
+    variantes no ve nada de esto: su ficha es exactamente la de antes. #}
 
 {% block content %}
 <section class="section">
@@ -76,7 +80,7 @@
             {# LA COLUMNA DE DECISIÓN. #}
             <aside class="producto__decision">
                 <div class="producto__caja">
-                    {% if producto.disponible %}
+                    {% if producto.disponible_efectivo %}
                         <span class="estado estado--si">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -89,7 +93,55 @@
                     {% endif %}
 
                     <h1 class="producto__nombre">{{ producto.nombre }}</h1>
-                    <span class="producto__precio">{{ producto.precio | precio }}</span>
+                    {#  Con variantes el precio sale de la combinación, así que
+                        acá arriba va el más barato de las que se pueden pedir, y
+                        con «desde» sólo si no valen todas lo mismo: «desde» con
+                        un precio único suena a letra chica, y el precio pelado
+                        con tres precios distintos miente sobre dos. #}
+                    <span class="producto__precio">
+                        {% if producto.tiene_variantes and producto.precio_es_rango %}
+                            desde {{ producto.precio_desde | precio }}
+                        {% elif producto.tiene_variantes %}
+                            {{ producto.precio_desde | precio }}
+                        {% else %}
+                            {{ producto.precio | precio }}
+                        {% endif %}
+                    </span>
+
+                    {#  EL SELECTOR DE COMBINACIÓN. Sólo si el producto usa
+                        variantes; el que no las usa no ve nada de esto y la
+                        pantalla le queda igual que siempre.
+
+                        Se listan sólo las combinaciones que se pueden pedir
+                        (encendidas y con stock). Eso NO es el permiso: el
+                        servidor lo vuelve a chequear cuando llega la consulta
+                        (messages._combinacion_elegida), porque la URL se escribe
+                        a mano y entre que se dibujó la página y el click el
+                        stock pudo cambiar. Acá es no ofrecer lo que no hay. #}
+                    {% if producto.tiene_variantes and combinaciones and not es_dueño and g.user %}
+                        <form method="get" class="producto__variantes"
+                              action="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id) }}">
+                            <input type="hidden" name="producto" value="{{ producto.id }}">
+                            <label for="variante" class="campo__label">Elegí la combinación</label>
+                            <select name="variante" id="variante" class="auth__input" required>
+                                {% for variante in combinaciones %}
+                                    <option value="{{ variante.id }}">
+                                        {{ variante.etiqueta }} · {{ variante.precio_efectivo | precio }}
+                                        {%- if variante.stock <= 3 %} · quedan {{ variante.stock }}{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn--primary producto__accion">
+                                {% with clave = 'mensaje', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                Consultar por esta combinación
+                            </button>
+                        </form>
+                    {% elif producto.tiene_variantes and not combinaciones and not es_dueño %}
+                        <p class="producto__nota">
+                            No queda ninguna combinación disponible. Podés
+                            escribirle igual y preguntarle cuándo repone.
+                        </p>
+                    {% endif %}
 
                     <div class="producto__acciones">
                         {% if es_dueño %}
@@ -98,11 +150,17 @@
                             <a href="{{ url_for('products.editar', id=producto.id) }}"
                                class="btn btn--primary producto__accion">Editar este producto</a>
                         {% elif g.user %}
-                            <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id, producto=producto.id) }}"
-                               class="btn btn--primary producto__accion">
-                                {% with clave = 'mensaje', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
-                                Consultar por este producto
-                            </a>
+                            {#  Con selector, el botón de consultar ya está
+                                adentro del <form> de arriba: repetirlo acá
+                                dejaría dos botones que hacen casi lo mismo y uno
+                                de los dos perdería la combinación elegida. #}
+                            {% if not (producto.tiene_variantes and combinaciones) %}
+                                <a href="{{ url_for('messages.conversation', post_id=post.id, client_id=g.user.id, producto=producto.id) }}"
+                                   class="btn btn--primary producto__accion">
+                                    {% with clave = 'mensaje', tamanio = 18 %}{% include "partials/_icono_nav.html" %}{% endwith %}
+                                    Consultar por este producto
+                                </a>
+                            {% endif %}
                             <form method="post"
                                   action="{{ url_for('products.toggle_favorito', id=producto.id) }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Mis oportunidades{% endblock %}
+
+{#  El historial de quien publica: abiertas, cerradas y finalizadas.
+
+    Las finalizadas siguen acá aunque salieron del listado público y aunque
+    nadie más puede verlas: dar por terminado algo no es borrarlo. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Mis oportunidades" %}
+                {% include "partials/_menu_cuenta.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Mis oportunidades</h1>
+                        <p class="cuenta__bajada">
+                            Lo que publicaste y en qué quedó cada cosa.
+                        </p>
+                    </div>
+                    <a href="{{ url_for('oportunidades.publicar') }}" class="btn btn--primary">
+                        Publicar otra
+                    </a>
+                </div>
+
+                {% if oportunidades %}
+                    <ul class="lista-busquedas">
+                        {% for oportunidad in oportunidades %}
+                            <li class="panel">
+                                <h2 class="panel__titulo">
+                                    <a href="{{ url_for('oportunidades.detalle', id=oportunidad.id) }}">
+                                        {{ oportunidad.titulo }}
+                                    </a>
+                                </h2>
+                                <p class="panel__bajada">
+                                    {{ oportunidad.estado_label }} ·
+                                    {{ oportunidad.created_at|hace }}
+                                </p>
+                                <p>
+                                    {% set total = conteo.get(oportunidad.id, 0) %}
+                                    {{ total }} {{ "propuesta" if total == 1 else "propuestas" }}
+                                </p>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="panel">
+                        <p class="panel__bajada">
+                            Todavía no publicaste ninguna.
+                            <a href="{{ url_for('oportunidades.publicar') }}">
+                                Contá qué necesitás
+                            </a>
+                            y los emprendimientos te mandan su propuesta.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

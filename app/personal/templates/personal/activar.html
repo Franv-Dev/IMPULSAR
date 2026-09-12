@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Buscar personal – {{ post.title }}{% endblock %}
+
+{#  El formulario corto que se completa al prender el toggle.
+
+    Tres campos y nada más: el puesto, cómo se trabaja y qué implica. Un
+    formulario largo acá no da mejores postulantes, da menos avisos
+    publicados. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <p class="volver">
+            <a href="{{ url_for('blog.detail', id=post.id) }}">‹ Volver a {{ post.title }}</a>
+        </p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="auth__messages">
+                    {% for message in messages %}
+                        <div class="auth__alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="cuenta__head">
+            <div>
+                <h1 class="cuenta__titulo">Buscar personal</h1>
+                <p class="cuenta__bajada">
+                    Se muestra en la ficha de {{ post.title }} hasta que la cierres.
+                    Podés cerrarla cuando quieras: las postulaciones que recibiste
+                    quedan igual.
+                </p>
+            </div>
+        </div>
+
+        <form method="post" class="editor">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="editor__campos">
+                <section class="panel">
+                    <h2 class="panel__titulo">¿Qué puesto buscás?</h2>
+
+                    <div class="campo">
+                        <label for="puesto" class="campo__label">Puesto</label>
+                        <input type="text" name="puesto" id="puesto" class="auth__input"
+                               maxlength="120" required value="{{ datos.puesto }}"
+                               placeholder="Ayudante de cocina">
+                    </div>
+
+                    <div class="campo">
+                        <label for="modalidad" class="campo__label">Modalidad</label>
+                        <select name="modalidad" id="modalidad" class="auth__input" required>
+                            <option value="">Elegí una</option>
+                            {% for clave in modalidades.TODAS %}
+                                <option value="{{ clave }}"
+                                        {% if datos.modalidad == clave %}selected{% endif %}>
+                                    {{ modalidades.ETIQUETAS[clave] }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2 class="panel__titulo">¿Qué implica?</h2>
+                    <p class="panel__bajada">
+                        Es lo único que lee quien decide si se postula: horarios,
+                        tareas y si pedís experiencia previa.
+                    </p>
+
+                    <div class="campo">
+                        <label for="descripcion" class="sr-only">Descripción del puesto</label>
+                        <textarea name="descripcion" id="descripcion" class="auth__input"
+                                  rows="6" maxlength="500" required
+                                  placeholder="Cuatro horas de lunes a viernes por la mañana. Tareas de preparación y limpieza. No hace falta experiencia.">{{ datos.descripcion }}</textarea>
+                    </div>
+                </section>
+
+                <div class="barra-guardar">
+                    <p class="barra-guardar__texto">
+                        Aparece en tu ficha apenas la publiques.
+                    </p>
+                    <a href="{{ url_for('blog.detail', id=post.id) }}"
+                       class="barra-guardar__cancelar">Cancelar</a>
+                    <button type="submit" class="btn btn--primary">Publicar la búsqueda</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
