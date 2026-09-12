@@ -12,6 +12,12 @@ cosa en dos lugares. Lo que si se respeta es la separacion de siempre -- las
 decisiones aca, el HTTP en la vista.
 """
 
+from collections import namedtuple
+
+from sqlalchemy import case, func
+
+from db import db
+from models.product import Product
 from models.producto_variante import (
     MAX_OPCIONES_POR_EJE,
     MAX_VALOR_OPCION,
@@ -284,3 +290,160 @@ def grilla(producto):
         filas.append({"talle": None, "variantes": sobrantes})
 
     return filas
+
+
+# --------------------------------------------------- las variantes en la grilla
+
+#: Lo que una tarjeta necesita saber de las variantes de su producto.
+#:
+#: Es el mismo trio que la ficha saca de las properties de Product
+#: (precio_desde, precio_es_rango, disponible_efectivo), pero calculado en la
+#: base para TODA la pagina de una vez. Existe como namedtuple y no como dict
+#: para que el template falle fuerte si alguien escribe mal un nombre.
+ResumenDeVariantes = namedtuple(
+    "ResumenDeVariantes",
+    "tiene_variantes precio_desde precio_es_rango disponible",
+)
+
+#: Las etiquetas de las columnas que agrega con_resumen_de_variantes(), en el
+#: orden en que se agregan. La vista no las nombra de a una: se las pasa
+#: enteras a resumen_de_fila().
+COLUMNAS_DEL_RESUMEN = (
+    "variantes_opciones",
+    "variantes_activas",
+    "variantes_precio_min",
+    "variantes_precio_max",
+    "variantes_con_stock",
+)
+
+
+def con_resumen_de_variantes(consulta):
+    """Le suma a una Query de Product las cinco columnas agregadas de sus variantes.
+
+    ESTA ES LA RAZON DE SER DE LA TANDA. La tarjeta del catalogo tiene que
+    decir el precio y la disponibilidad reales, y los dos salen de otra tabla.
+    Preguntandoselo a cada producto con las properties del modelo
+    (`precio_desde`, `disponible_efectivo`) la pantalla mas visitada del
+    proyecto haria dos consultas por tarjeta -- las variantes y las opciones
+    son dos relaciones lazy --, o sea veinticuatro consultas extra en una
+    grilla de doce. El N+1 que docs/VARIANTES.md dejo anotado como pendiente.
+
+    Dos subconsultas AGRUPADAS con outerjoin, que es el mismo idiom que
+    services.ratings.query_posts_con_rating: el GROUP BY vive adentro de cada
+    subconsulta y la consulta de afuera no se agrupa. Agrupar afuera seria mas
+    corto y esta mal por dos motivos: el joinedload del emprendimiento mete las
+    columnas de posts en el SELECT, y con MySQL en ONLY_FULL_GROUP_BY eso es el
+    error 1055 (las columnas de posts no dependen funcionalmente de
+    products.id); y el paginado cuenta con un COUNT sobre la consulta, que con
+    GROUP BY cuenta grupos y no filas.
+
+    POR QUE SON DOS Y NO UNA. La de variantes sola no alcanza para saber si el
+    producto usa variantes: un producto con toda la matriz apagada y otro que
+    nunca las uso dan los dos "ninguna activa", y el primero esta agotado
+    mientras el segundo vale su precio base. Los distingue si hay EJES
+    cargados, que es la misma pregunta que contesta Product.tiene_variantes.
+
+    El precio de cada combinacion es COALESCE(precio_override, products.precio),
+    o sea la traduccion a SQL de ProductoVariante.precio_efectivo: NULL en el
+    override significa "hereda", nunca cero.
+    """
+    precio_efectivo = func.coalesce(ProductoVariante.precio_override, Product.precio)
+
+    # Solo las ACTIVAS: una combinacion apagada no existe para el que compra,
+    # tenga el precio y el stock que tenga.
+    activas = (
+        db.session.query(
+            ProductoVariante.product_id.label("product_id"),
+            func.count(ProductoVariante.id).label("activas"),
+            func.min(precio_efectivo).label("precio_min"),
+            func.max(precio_efectivo).label("precio_max"),
+            # MAX de un 0/1 y no un EXISTS aparte: es "hay al menos una con
+            # stock" sin una segunda pasada por la tabla. La tarjeta no dice
+            # CUANTO stock hay a proposito (eso es de la ficha), asi que no se
+            # suma nada.
+            func.max(case((ProductoVariante.stock > 0, 1), else_=0)).label("con_stock"),
+        )
+        .join(Product, Product.id == ProductoVariante.product_id)
+        .filter(ProductoVariante.activo.is_(True))
+        .group_by(ProductoVariante.product_id)
+        .subquery()
+    )
+
+    ejes = (
+        db.session.query(
+            ProductoVarianteOpcion.product_id.label("product_id"),
+            func.count(ProductoVarianteOpcion.id).label("opciones"),
+        )
+        .group_by(ProductoVarianteOpcion.product_id)
+        .subquery()
+    )
+
+    return (
+        consulta
+        .outerjoin(activas, activas.c.product_id == Product.id)
+        .outerjoin(ejes, ejes.c.product_id == Product.id)
+        # Con el prefijo `variantes_` y no con el nombre pelado de la
+        # subconsulta: estas columnas viajan al lado de las del producto y de
+        # la distancia del catalogo, y un `precio_min` suelto ahi adentro se
+        # confunde con el filtro de precio de la barra de busqueda.
+        .add_columns(
+            ejes.c.opciones.label("variantes_opciones"),
+            activas.c.activas.label("variantes_activas"),
+            activas.c.precio_min.label("variantes_precio_min"),
+            activas.c.precio_max.label("variantes_precio_max"),
+            activas.c.con_stock.label("variantes_con_stock"),
+        )
+    )
+
+
+def resumen_de_fila(producto, fila):
+    """Traduce una fila de con_resumen_de_variantes() a lo que pinta la tarjeta.
+
+    `fila` es el Row que devolvio la consulta; las columnas se leen por nombre
+    (COLUMNAS_DEL_RESUMEN) y no por posicion, porque la del catalogo agrega
+    ademas la distancia y el orden de las columnas no es asunto de esta
+    funcion.
+
+    Las tres reglas, que son las mismas que ya aplica la ficha:
+
+      - SIN VARIANTES no cambia nada: el precio base y el booleano `disponible`
+        de siempre. Es la regresion que esta tanda no puede romper.
+      - CON VARIANTES el precio es el minimo entre las activas, y lleva "desde"
+        solo si no valen todas lo mismo.
+      - TODAS APAGADAS (o ninguna con stock) es agotado, no un error ni una
+        vuelta al precio base: el vendedor tiene la matriz cargada y hoy no hay
+        nada para pedir.
+
+    OJO CON UNA ASIMETRIA, anotada tambien en docs/VARIANTES.md: el minimo de
+    aca es entre las ACTIVAS (lo que se decidio para la tarjeta) y el de
+    Product.precio_desde es entre las COMPRABLES (activas Y con stock). Para un
+    producto cuya combinacion mas barata se quedo sin stock, la tarjeta dice un
+    precio mas bajo que la ficha.
+    """
+    opciones = fila.variantes_opciones or 0
+    activas = fila.variantes_activas or 0
+
+    tiene_variantes = bool(opciones) or bool(activas)
+    if not tiene_variantes:
+        return ResumenDeVariantes(
+            tiene_variantes=False,
+            precio_desde=producto.precio,
+            precio_es_rango=False,
+            disponible=bool(producto.disponible),
+        )
+
+    precio_min = fila.variantes_precio_min
+    precio_max = fila.variantes_precio_max
+    # Con la matriz entera apagada no hay minimo que mostrar y el precio base
+    # es lo unico que queda: no es lo que se cobra, pero la tarjeta ya dice
+    # agotado y un hueco donde va el precio se lee como un error de la pagina.
+    if precio_min is None:
+        precio_min = producto.precio
+
+    return ResumenDeVariantes(
+        tiene_variantes=True,
+        precio_desde=precio_min,
+        # > y no != para no depender de como vuelve el Decimal de cada motor.
+        precio_es_rango=precio_max is not None and precio_max > precio_min,
+        disponible=bool(producto.disponible) and bool(fila.variantes_con_stock),
+    )
