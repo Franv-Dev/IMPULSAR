@@ -10,6 +10,10 @@ Dos cosas, y las dos cambian el codigo que hay que escribir:
   - EL ON DELETE CASCADE de verdad: se borra con SQL crudo y no por la
     sesion del ORM, porque las relaciones tienen cascade="all, delete-orphan" y
     borrando por la sesion el que se lleva las filas es SQLAlchemy, no la base.
+  - LA DERIVA ENTRE LOS MODELOS Y LA MIGRACION: el resto de la suite arma las
+    tablas con create_all(), o sea desde los modelos, asi que una migracion que
+    se olvide de una columna pasaria la suite entera en verde y se enteraria en
+    el deploy. Un test compara los dos esquemas.
   - EL UNIQUE COMPUESTO CON EL EJE VACIO. Es la decision de guardar '' y no
     NULL, y hay que verla contra el motor real: si alguna vez alguien cambia la
     columna a nullable, este test se pone en rojo en MySQL antes de que dos
@@ -184,8 +188,11 @@ def test_en_mysql_borrar_el_producto_se_lleva_las_dos_tablas(variantes_en_mysql)
     db.session.commit()
     producto_id = producto.id
 
-    # Se saca todo de la sesion antes del DELETE crudo: si no, el identity map
-    # sigue devolviendo las filas que la base ya borro y el conteo mentiria.
+    # El expunge_all no es por el conteo -- Query.count() emite un COUNT contra
+    # la base y no mira el identity map, asi que el numero seria honesto igual
+    # (lo marco la auditoria, y tenia razon). Es para que las instancias que
+    # quedaron en la sesion no se refresquen contra filas que la base ya borro
+    # si alguien agrega un assert sobre ellas mas abajo.
     db.session.expunge_all()
     db.session.execute(
         text("DELETE FROM products WHERE id = :id"), {"id": producto_id}
@@ -212,3 +219,127 @@ def test_en_mysql_la_pantalla_de_variantes_responde(variantes_en_mysql):
     respuesta = cliente.get(f"/productos/{producto.id}/variantes")
     assert respuesta.status_code == 200
     assert "S / Negro" in respuesta.get_data(as_text=True)
+
+
+# --------------------------------------------- la migracion contra los modelos
+
+def _esquema_de(inspector, tabla):
+    """El esquema de una tabla, en una forma comparable entre dos bases.
+
+    Se queda con lo que una migracion puede equivocarse y que el motor devuelve
+    de forma estable: nombre y tipo de cada columna, si acepta NULL, su default
+    del lado del servidor, y los nombres de las constraints y de los indices.
+
+    NO se comparan cosas que dependen de como se creo la tabla y no de que
+    guarda (el orden fisico, el ROW_FORMAT, el auto_increment), porque haria
+    fallar el test por diferencias que no le importan a nadie.
+    """
+    columnas = {}
+    for columna in inspector.get_columns(tabla):
+        default = columna.get("default")
+        columnas[columna["name"]] = (
+            str(columna["type"]),
+            bool(columna["nullable"]),
+            # MySQL devuelve los defaults de texto entre comillas segun la
+            # version; se normaliza para que "''" y "" no se lean distinto.
+            (default or "").strip("'") if default is not None else None,
+        )
+
+    return {
+        "columnas": columnas,
+        "unicos": {
+            (u["name"], tuple(u["column_names"]))
+            for u in inspector.get_unique_constraints(tabla)
+        },
+        "checks": {c["name"] for c in inspector.get_check_constraints(tabla)},
+        "fks": {
+            (f["name"], tuple(f["constrained_columns"]), f["referred_table"],
+             (f.get("options") or {}).get("ondelete"))
+            for f in inspector.get_foreign_keys(tabla)
+        },
+        "indices": {i["name"] for i in inspector.get_indexes(tabla)},
+    }
+
+
+def test_en_mysql_la_migracion_deja_el_mismo_esquema_que_los_modelos():
+    """La migracion y create_all() tienen que dar la MISMA tabla.
+
+    ES EL UNICO TEST QUE MIRA LA MIGRACION. Todo el resto de la suite -- este
+    archivo incluido -- arma las tablas con create_all(), o sea desde los
+    modelos, y ahi esta el agujero: el dia que alguien agregue una columna al
+    modelo y se olvide de la migracion, create_all() la crea, la suite pasa
+    entera en verde y produccion se entera en el deploy. La deriva es el riesgo
+    real, no el de hoy -- hoy los dos esquemas son identicos y se comprobo a
+    mano dos veces.
+
+    CUESTA ~21 SEGUNDOS, o sea cerca del 4 % de la corrida, y el numero esta
+    medido y no estimado. Conviene dejar claro de donde salen los dos numeros
+    que circularon: la auditoria midio +5,5 s, que es la diferencia entre
+    create_all y upgrade sobre UNA base; este test arma las DOS (una por cada
+    camino, que es la unica forma de comparar los esquemas), asi que paga
+    ademas el segundo CREATE DATABASE y la segunda app. Tampoco eran los
+    "varios minutos" de la primera estimacion a ojo, que estaba mal y era lo
+    unico que sostenia dejar esto afuera.
+
+    Se probo que sirve y no solo que pasa: agregando una columna al modelo sin
+    tocar la migracion, el test se pone en rojo.
+
+    Arma DOS bases descartables, una por cada camino, y nunca impulsar_db.
+    """
+    from flask_migrate import upgrade
+    from sqlalchemy import inspect
+
+    try:
+        motor = create_engine(_servidor_mysql())
+        conexion = motor.connect()
+    except Exception as error:
+        pytest.skip(f"sin MySQL local: {error}")
+
+    bases = ("impulsar_test_migracion", "impulsar_test_modelos")
+    with conexion:
+        for base in bases:
+            conexion.execute(text(f"DROP DATABASE IF EXISTS {base}"))
+            conexion.execute(
+                text(
+                    f"CREATE DATABASE {base} "
+                    "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+                )
+            )
+
+    tablas = ("producto_variantes", "producto_variante_opciones")
+    esquemas = {}
+    try:
+        for base, como in zip(bases, ("migracion", "modelos")):
+            with pytest.MonkeyPatch.context() as parche:
+                parche.setattr(
+                    TestingConfig, "SQLALCHEMY_DATABASE_URI",
+                    f"{_servidor_mysql()}/{base}",
+                )
+                app = create_app("testing")
+
+            with app.app_context():
+                if como == "migracion":
+                    # La cadena entera, como en produccion.
+                    upgrade()
+                else:
+                    _db.create_all()
+
+                inspector = inspect(_db.engine)
+                esquemas[como] = {
+                    tabla: _esquema_de(inspector, tabla) for tabla in tablas
+                }
+                _db.session.remove()
+                motores = list(app.extensions["sqlalchemy"].engines.values())
+            for motor_de_la_app in motores:
+                motor_de_la_app.dispose()
+    finally:
+        with motor.connect() as conexion:
+            for base in bases:
+                conexion.execute(text(f"DROP DATABASE IF EXISTS {base}"))
+        motor.dispose()
+
+    for tabla in tablas:
+        assert esquemas["migracion"][tabla] == esquemas["modelos"][tabla], (
+            f"{tabla}: la migracion y los modelos dejan tablas distintas. "
+            "Alguien toco el modelo sin escribir la migracion (o al reves)."
+        )
