@@ -122,3 +122,18 @@ donde este proyecto sí decide algo: **el selector de la ficha**. Sólo se puede
 elegir combinaciones comprables (`activo = True` y `stock > 0`), y la consulta al
 vendedor viaja con la combinación elegida. El chequeo se rehace en el servidor
 con la fila traída de la base, porque el POST se escribe a mano.
+
+## Qué queda fuera a propósito: el catálogo
+
+La ficha del producto es consciente de las variantes. **Las tarjetas del catálogo
+no**: siguen mostrando `products.precio` y filtrando por `products.disponible`.
+
+No es un olvido. El catálogo lista decenas de productos en una consulta, y
+preguntarle a cada uno por sus variantes para pintar la tarjeta es el N+1 de la
+pantalla más visitada del proyecto —el precio "desde" y la disponibilidad real
+salen de filas de otra tabla, así que serían dos consultas por tarjeta—. Hacerlo
+bien es una agregación con `GROUP BY` y `LEFT JOIN`, con su test contra MySQL
+real: es una tanda propia, no una línea al final de ésta.
+
+Mientras tanto la tarjeta dice el precio base, que es el que el vendedor cargó, y
+la ficha —que es donde se decide— dice la verdad completa.

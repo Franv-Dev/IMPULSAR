@@ -16773,3 +16773,13 @@ body.con-visor {
     font-size: 0.85rem;
     white-space: nowrap;
 }
+
+/* El selector de combinacion de la ficha, arriba de las acciones. Es del bloque
+   .producto (templates/products/detalle.html), por eso el prefijo: no comparte
+   nombre con la tabla del panel aunque las dos hablen de variantes. */
+.producto__variantes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}

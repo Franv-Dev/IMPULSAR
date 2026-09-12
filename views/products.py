@@ -547,6 +547,18 @@ def detalle(id):
         producto=producto,
         post=post,
         autor=autor,
+        # Las combinaciones que se pueden pedir hoy. Vacio no significa lo
+        # mismo en los dos casos y la plantilla los distingue con
+        # producto.tiene_variantes: sin variantes es "este producto no se vende
+        # por talle" y con variantes es "no queda ninguna".
+        #
+        # Se dibujan SOLO las comprables. No es el permiso -- eso lo rehace el
+        # servidor cuando llega la consulta (ver messages._combinacion_elegida)
+        # --, es no ofrecer lo que no hay.
+        combinaciones=sorted(
+            producto.variantes_comprables,
+            key=lambda variante: (variante.talle, variante.color),
+        ),
         avg_rating=metricas.get("promedio"),
         review_count=metricas.get("resenias", 0),
         total_productos=metricas.get("productos", 0),

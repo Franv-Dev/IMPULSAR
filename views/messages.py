@@ -12,6 +12,7 @@ from sqlalchemy.orm import joinedload
 from db import db, utcnow
 from models.message import Message
 from models.product import Product
+from models.producto_variante import ProductoVariante
 from app.blog.modelo_post import Post
 from app.panel import consultas as consultas_panel
 from models.user import User
@@ -142,7 +143,42 @@ def _borrador_por_producto(post):
     producto = Product.query.filter_by(id=producto_id, post_id=post.id).first()
     if producto is None:
         return ""
+
+    combinacion = _combinacion_elegida(producto)
+    if combinacion:
+        return (
+            f"Hola, quería consultar por «{producto.nombre}» ({combinacion})."
+        )
     return f"Hola, quería consultar por «{producto.nombre}»."
+
+
+def _combinacion_elegida(producto):
+    """La combinacion talle+color que venia en ?variante, si se puede pedir.
+
+    Devuelve la etiqueta ("M / Negro") o "" si no hay ninguna que valga.
+
+    SE REVALIDA ACA, CONTRA LA BASE, y no alcanza con que el selector de la
+    ficha solo dibuje las comprables: la URL se escribe a mano, y entre que la
+    pagina se dibujo y el click pasaron minutos en los que esa combinacion se
+    pudo apagar o quedar en cero. Las tres condiciones son que sea de ESE
+    producto (si no, un id cualquiera pondria el talle de otro en la boca del
+    que pregunta, igual que con el producto), que este encendida y que tenga
+    stock.
+
+    Si algo no da, no se precarga la combinacion pero SI el producto: el que
+    pregunta igual quiere preguntar, y dejarlo con el campo en blanco seria
+    castigarlo por un stock que cambio.
+    """
+    variante_id = request.args.get("variante", type=int)
+    if variante_id is None:
+        return ""
+
+    variante = ProductoVariante.query.filter_by(
+        id=variante_id, product_id=producto.id
+    ).first()
+    if variante is None or not variante.comprable:
+        return ""
+    return variante.etiqueta
 
 
 @messages.route("/<int:post_id>/<int:client_id>/nuevos")

@@ -137,6 +137,37 @@ class Product(db.Model):
         )
 
     @property
+    def precio_desde(self):
+        """El precio mas barato que hoy se puede conseguir.
+
+        Sin variantes es el precio del producto, como siempre. Con variantes es
+        el minimo entre las COMPRABLES, porque anunciar el precio de una
+        combinacion que no se puede pedir es publicidad enganosa hacia adentro:
+        el que entra por ese numero se encuentra con que no esta.
+
+        Si no queda ninguna comprable devuelve el precio del producto: no hay
+        nada que ofrecer, y la ficha en ese caso muestra "sin stock" y no un
+        precio, pero la property no puede devolver None y hacer reventar a quien
+        la formatee.
+        """
+        comprables = self.variantes_comprables
+        if not comprables:
+            return self.precio
+        return min(variante.precio_efectivo for variante in comprables)
+
+    @property
+    def precio_es_rango(self):
+        """Si las combinaciones comprables no valen todas lo mismo.
+
+        Decide si la ficha escribe "$12.000" o "desde $12.000". Sin esto habria
+        que elegir uno de los dos siempre: "desde" con un precio unico suena a
+        que hay letra chica, y el precio pelado con tres precios distintos
+        miente sobre dos de ellos.
+        """
+        precios = {variante.precio_efectivo for variante in self.variantes_comprables}
+        return len(precios) > 1
+
+    @property
     def disponible_efectivo(self):
         """Si hay algo para vender, mire variantes o no.
 
