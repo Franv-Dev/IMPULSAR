@@ -48,10 +48,14 @@ from models.product import (
     MAX_PRODUCTOS_POR_POST, UMBRAL_AVISO_LIMITE, Product,
 )
 from models.product_favorite import ProductFavorite
+from models.producto_variante import (
+    MAX_OPCIONES_POR_EJE, TiposDeOpcion,
+)
 from services.eventos import hoy_en_argentina
 from services.geocoding import get_coordinates_from_address
 from services.horarios import esta_abierto, hora_de_cierre
 from services.precios import parsear_precio, texto_para_formulario
+from services import variantes as reglas_variantes
 from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
 from services.validation import largo_de, validar_largo
 from views.auth import login_required
@@ -879,6 +883,100 @@ def eliminar(id):
 
     flash("Producto eliminado correctamente.")
     return redirect(url_for("products.mios"))
+
+
+# --------------------------------------------------------------- variantes
+#
+# La matriz talle x color de un producto. Son OPCIONALES: un producto que nunca
+# entra aca se comporta exactamente como antes de esta tanda (ver
+# docs/VARIANTES.md). Todo este bloque es del dueño; lo que ve el visitante
+# vive en detalle().
+
+
+@products.route("/<int:id>/variantes")
+@login_required
+def variantes(id):
+    """La pantalla de variantes de un producto: las dos listas y la matriz."""
+    producto, rechazo = _producto_propio(id)
+    if rechazo:
+        return rechazo
+
+    return render_template(
+        "products/variantes.html",
+        producto=producto,
+        talles=reglas_variantes.opciones_de(producto, TiposDeOpcion.TALLE),
+        colores=reglas_variantes.opciones_de(producto, TiposDeOpcion.COLOR),
+        grilla=reglas_variantes.grilla(producto),
+        tipos=TiposDeOpcion,
+        max_opciones=MAX_OPCIONES_POR_EJE,
+        contadores=contadores_del_panel(g.user.id, hoy_en_argentina()),
+    )
+
+
+@products.route("/<int:id>/variantes/opciones", methods=("POST",))
+@login_required
+def guardar_opciones_de_variante(id):
+    """Guarda que talles y que colores maneja el producto, y genera la matriz.
+
+    GENERAR NO PISA LO EDITADO: las combinaciones que ya existian se quedan con
+    su stock, su precio y su `activo`: solo se agregan las que faltan. Es lo que
+    permite volver a tocar las listas sin perder el trabajo, y esta explicado en
+    services/variantes.generar_matriz.
+
+    Llamarlo dos veces con la misma lista no crea nada la segunda vez. La
+    garantia dura contra el duplicado igual no es esa (entre el chequeo y el
+    INSERT hay una ventana) sino el UNIQUE de la base, y por eso el
+    IntegrityError se atrapa en vez de subir como un 500.
+    """
+    producto, rechazo = _producto_propio(id)
+    if rechazo:
+        return rechazo
+
+    talles = reglas_variantes.normalizar_lista(request.form.get("talles"))
+    colores = reglas_variantes.normalizar_lista(request.form.get("colores"))
+
+    error = (
+        reglas_variantes.validar_lista(talles, "Talles")
+        or reglas_variantes.validar_lista(colores, "Colores")
+    )
+    if error:
+        flash(error)
+        return redirect(url_for("products.variantes", id=producto.id))
+
+    reglas_variantes.guardar_opciones(producto, talles, colores)
+    creadas, apagadas = reglas_variantes.generar_matriz(producto, talles, colores)
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        # Perdio la carrera contra otro POST identico: el UNIQUE lo rechazo y
+        # lo que el vendedor queria ya esta hecho.
+        flash("Ya habías guardado esos talles y colores.")
+        return redirect(url_for("products.variantes", id=producto.id))
+
+    if not talles and not colores:
+        flash(
+            "Sacaste todos los talles y colores: el producto vuelve a venderse "
+            "sin variantes."
+        )
+    else:
+        partes = []
+        if creadas:
+            partes.append(
+                f"{creadas} combinación nueva" if creadas == 1
+                else f"{creadas} combinaciones nuevas"
+            )
+        if apagadas:
+            partes.append(
+                f"{apagadas} quedó apagada" if apagadas == 1
+                else f"{apagadas} quedaron apagadas"
+            )
+        flash(
+            "Listo: " + " y ".join(partes) + "." if partes
+            else "Listo, no hubo cambios en la matriz."
+        )
+    return redirect(url_for("products.variantes", id=producto.id))
 
 
 def _cuantos_tiene(post_id):

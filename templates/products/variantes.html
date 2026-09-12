@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Variantes de {{ producto.nombre }}{% endblock %}
+
+{#  La matriz talle × color de un producto, para el dueño.
+
+    DOS PASOS EN UNA PANTALLA, y en este orden porque el segundo depende del
+    primero: arriba el vendedor dice qué talles y qué colores maneja, y abajo
+    aparece la matriz que sale de esas dos listas, con una fila por combinación.
+
+    Volver a guardar las listas NO pisa lo editado: las combinaciones que ya
+    existían se quedan con su stock, su precio y su interruptor. Es lo que
+    permite agregar un talle en marzo sin perder lo cargado en enero.
+
+    Las variantes son opcionales: un producto que nunca entra acá se vende como
+    siempre. Por eso la pantalla explica qué pasa si las dos listas quedan
+    vacías, en vez de hacer de cuenta que no es un caso. #}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="cuenta">
+            {% with seccion = "Catálogo" %}
+                {% include "partials/_menu_panel.html" with context %}
+            {% endwith %}
+
+            <div class="cuenta__contenido">
+                <p class="volver">
+                    <a href="{{ url_for('products.mios') }}">‹ Volver a mi catálogo</a>
+                </p>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="auth__messages">
+                            {% for message in messages %}
+                                <div class="auth__alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <div class="cuenta__head">
+                    <div>
+                        <h1 class="cuenta__titulo">Variantes de {{ producto.nombre }}</h1>
+                        <p class="cuenta__bajada">
+                            Si vendés este producto en varios talles o colores,
+                            cargá acá cada combinación con su stock. Si no,
+                            dejalo como está: el producto se sigue vendiendo con
+                            su precio y nada más.
+                        </p>
+                    </div>
+                    <a href="{{ url_for('products.detalle', id=producto.id) }}" class="btn">
+                        Ver la ficha
+                    </a>
+                </div>
+
+                {# PASO 1: las dos listas. #}
+                <form method="post" class="editor"
+                      action="{{ url_for('products.guardar_opciones_de_variante', id=producto.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <section class="panel">
+                        <h2 class="panel__titulo">¿Qué talles y qué colores manejás?</h2>
+                        <p class="panel__bajada">
+                            Separados por comas. Podés usar uno solo de los dos:
+                            si vendés sólo por talle, dejá los colores vacíos.
+                            Como máximo {{ max_opciones }} de cada uno.
+                        </p>
+
+                        <div class="campo">
+                            <label for="talles" class="campo__label">Talles</label>
+                            <input type="text" name="talles" id="talles" class="auth__input"
+                                   value="{{ talles | join(', ') }}"
+                                   placeholder="S, M, L, XL">
+                        </div>
+
+                        <div class="campo">
+                            <label for="colores" class="campo__label">Colores</label>
+                            <input type="text" name="colores" id="colores" class="auth__input"
+                                   value="{{ colores | join(', ') }}"
+                                   placeholder="Negro, Blanco, Verde militar">
+                        </div>
+
+                        <p class="panel__bajada">
+                            Guardar arma la matriz con las combinaciones que
+                            falten. Lo que ya cargaste no se pisa.
+                        </p>
+
+                        <button type="submit" class="btn btn--primary">
+                            Guardar y armar la matriz
+                        </button>
+                    </section>
+                </form>
+
+                {# PASO 2: la matriz. #}
+                {% if grilla %}
+                    <div class="cuenta__head">
+                        <div>
+                            <h2 class="cuenta__titulo">Combinaciones</h2>
+                            <p class="cuenta__bajada">
+                                Stock en {{ producto.stock_total }} unidades en total,
+                                sumando sólo las encendidas.
+                                {% if producto.precio %}
+                                    El precio en blanco usa el del producto
+                                    ({{ producto.precio | precio }}).
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    {# La tabla va en su propio contenedor con scroll: es lo
+                       único de la pantalla que puede pasarse de ancho en el
+                       teléfono, y la página entera no se desliza de costado.
+
+                       Las clases van con prefijo `variantes-` y no como `.tabla`
+                       a secas: styles.css es uno solo y compartido, y un nombre
+                       genérico le pisa el dibujo a otra pantalla sin que el HTML
+                       cambie (ver tests/test_css_compartido.py, que existe
+                       porque eso ya pasó dos veces). #}
+                    <div class="variantes-tabla-wrapper">
+                        <table class="variantes-tabla">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Combinación</th>
+                                    <th scope="col">Stock</th>
+                                    <th scope="col">Precio</th>
+                                    <th scope="col">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fila in grilla %}
+                                    {% if fila.talle is none %}
+                                        <tr>
+                                            <th colspan="4" scope="colgroup" class="variantes-tabla__grupo">
+                                                Fuera de las listas de arriba
+                                            </th>
+                                        </tr>
+                                    {% endif %}
+                                    {% for variante in fila.variantes %}
+                                        <tr {% if not variante.activo %}class="variantes-tabla__fila--apagada"{% endif %}>
+                                            <td>{{ variante.etiqueta }}</td>
+                                            <td>{{ variante.stock }}</td>
+                                            <td>
+                                                {{ variante.precio_efectivo | precio }}
+                                                {% if variante.hereda_precio %}
+                                                    <span class="variantes-tabla__nota">(del producto)</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if variante.activo %}
+                                                    {% if variante.stock > 0 %}
+                                                        <span class="estado estado--si">A la venta</span>
+                                                    {% else %}
+                                                        <span class="estado estado--no">Sin stock</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="estado estado--no">No existe</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="panel">
+                        <p class="panel__bajada">
+                            Todavía no hay combinaciones. Cargá al menos un talle
+                            o un color arriba y se arman solas.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
