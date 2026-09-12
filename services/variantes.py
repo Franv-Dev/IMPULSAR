@@ -194,6 +194,49 @@ def generar_matriz(producto, talles, colores):
     return creadas, apagadas
 
 
+def orden_de(producto):
+    """Una funcion de orden que pone las combinaciones como las escribio el vendedor.
+
+    Devuelve una clave para `sorted`: primero el lugar del talle en la lista de
+    talles y despues el del color en la de colores.
+
+    EXISTE PORQUE ORDENAR ALFABETICAMENTE ES UN BUG, no una preferencia. Con
+    "S, M, L, XL" el alfabetico da "L, M, S, XL", que no es ningun orden de
+    talles: es exactamente el caso que justifica la columna `orden` de
+    ProductoVarianteOpcion. La grilla del panel ya lo respetaba y el selector de
+    la ficha no, asi que el vendedor veia una cosa y el comprador otra.
+
+    Lo que ya no esta en las listas va al final (por eso el indice grande) y
+    entre ellos alfabetico, que para un resto sin orden propio es lo unico
+    honesto.
+    """
+    talles = opciones_de(producto, TiposDeOpcion.TALLE)
+    colores = opciones_de(producto, TiposDeOpcion.COLOR)
+
+    def clave(variante):
+        try:
+            lugar_talle = talles.index(variante.talle)
+        except ValueError:
+            lugar_talle = len(talles)
+        try:
+            lugar_color = colores.index(variante.color)
+        except ValueError:
+            lugar_color = len(colores)
+        return (lugar_talle, lugar_color, variante.talle, variante.color)
+
+    return clave
+
+
+def comprables_ordenadas(producto):
+    """Las combinaciones que se pueden pedir, en el orden en que se escribieron.
+
+    Es lo que consume el selector de la ficha. Va aca y no armado en la vista
+    para que el orden sea uno solo: el de la grilla del panel y el del selector
+    salen de la misma lista de opciones.
+    """
+    return sorted(producto.variantes_comprables, key=orden_de(producto))
+
+
 def grilla(producto):
     """La matriz ordenada como se dibuja: filas de talle, columnas de color.
 

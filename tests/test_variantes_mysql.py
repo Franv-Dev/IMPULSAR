@@ -7,6 +7,9 @@ Dos cosas, y las dos cambian el codigo que hay que escribir:
     INSERT parece cubrir el stock negativo en la suite y no lo cubre en
     produccion. Por eso el stock se valida en la vista y el CHECK es solo la
     red de abajo.
+  - EL ON DELETE CASCADE de verdad: se borra con SQL crudo y no por la
+    sesion del ORM, porque las relaciones tienen cascade="all, delete-orphan" y
+    borrando por la sesion el que se lleva las filas es SQLAlchemy, no la base.
   - EL UNIQUE COMPUESTO CON EL EJE VACIO. Es la decision de guardar '' y no
     NULL, y hay que verla contra el motor real: si alguna vez alguien cambia la
     columna a nullable, este test se pone en rojo en MySQL antes de que dos
@@ -162,8 +165,14 @@ def test_en_mysql_un_check_violado_es_operational_y_no_integrity(variantes_en_my
 def test_en_mysql_borrar_el_producto_se_lleva_las_dos_tablas(variantes_en_mysql):
     """El ON DELETE CASCADE de las dos FK, con el motor que de verdad lo aplica.
 
-    En MySQL una FK sin ondelete usa RESTRICT y el borrado falla; en SQLite el
-    PRAGMA tiene que estar prendido para que se note siquiera.
+    SE BORRA CON UN DELETE CRUDO Y NO CON db.session.delete(), que es la
+    diferencia entre probar la base y probar el ORM: las dos relaciones tienen
+    cascade="all, delete-orphan", asi que borrando por la sesion SQLAlchemy
+    emite los DELETE hijos el mismo y el test pasaria aunque la FK no cascadeara
+    -- o sea, no probaria lo que dice el nombre. Con SQL crudo el unico que
+    puede llevarse las filas es el motor.
+
+    Version corregida despues de la auditoria de la tanda, que marco justo esto.
     """
     producto = variantes_en_mysql.producto
     db = variantes_en_mysql.db
@@ -173,8 +182,14 @@ def test_en_mysql_borrar_el_producto_se_lleva_las_dos_tablas(variantes_en_mysql)
         ProductoVarianteOpcion(product_id=producto.id, tipo="talle", valor="M"),
     ])
     db.session.commit()
+    producto_id = producto.id
 
-    db.session.delete(producto)
+    # Se saca todo de la sesion antes del DELETE crudo: si no, el identity map
+    # sigue devolviendo las filas que la base ya borro y el conteo mentiria.
+    db.session.expunge_all()
+    db.session.execute(
+        text("DELETE FROM products WHERE id = :id"), {"id": producto_id}
+    )
     db.session.commit()
 
     assert ProductoVariante.query.count() == 0

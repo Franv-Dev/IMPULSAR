@@ -30,6 +30,17 @@ MAX_VALOR_OPCION = 40
 # POST armado a mano no genere cien mil filas de una.
 MAX_OPCIONES_POR_EJE = 20
 
+# El tope del stock de una combinacion. Es el maximo de un INT con signo, que es
+# lo que sa.Integer crea en MySQL: por encima de eso el INSERT muere con un
+# DataError 1264 ("Out of range value"), que nadie atrapa y que el vendedor ve
+# como un 500. No es una regla de negocio -- nadie tiene dos mil millones de
+# remeras --, es el limite de la columna dicho en voz alta para poder cortar
+# antes con un mensaje entendible, igual que MAX_TELEFONO_LENGTH en
+# services/validation.py.
+#
+# La suite en SQLite no lo mostraba: SQLite guarda enteros grandes sin chistar.
+MAX_STOCK = 2147483647
+
 # Cuando un producto usa un solo eje (talles y ningun color, o al reves), el
 # otro se guarda como cadena VACIA y nunca como NULL. Ver el docstring de
 # ProductoVariante: es lo que hace que el UNIQUE sirva.
@@ -193,6 +204,10 @@ class ProductoVariante(db.Model):
         db.UniqueConstraint(
             "product_id", "talle", "color", name="uq_producto_variantes_combinacion",
         ),
+        # Solo por abajo: el tope de arriba lo pone el tipo de la columna (un
+        # INT), y escribirlo tambien como CHECK seria decir dos veces lo mismo
+        # y obligar a una migracion el dia que la columna cambie de tipo. Quien
+        # corta con un mensaje entendible es el formulario, con MAX_STOCK.
         db.CheckConstraint("stock >= 0", name="ck_producto_variantes_stock_no_negativo"),
         # Mismo criterio y mismo signo que ck_products_precio_no_negativo: la
         # base corta lo que no tiene sentido en ningun caso, y que el

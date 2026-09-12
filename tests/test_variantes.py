@@ -20,7 +20,7 @@ from sqlalchemy.exc import IntegrityError
 
 from models.product import Product
 from models.producto_variante import (
-    ProductoVariante, ProductoVarianteOpcion, TiposDeOpcion,
+    MAX_STOCK, ProductoVariante, ProductoVarianteOpcion, TiposDeOpcion,
 )
 from services import variantes as reglas
 
@@ -564,3 +564,127 @@ def test_borrar_el_producto_se_lleva_opciones_y_variantes(
 
     assert ProductoVariante.query.count() == 0
     assert ProductoVarianteOpcion.query.count() == 0
+
+
+# ------------------------------------------------- los tres de la auditoria
+#
+# Tres bugs que encontro la auditoria de la tanda. Los tests van con nombre de
+# lo que tiene que pasar y no de "bug N": el que los lea en seis meses necesita
+# saber que se espera, no en que informe aparecio.
+
+
+def test_vaciar_las_dos_listas_devuelve_el_producto_a_como_estaba(
+    client, login, vendedor, crear_producto, db
+):
+    """Apagar las variantes tiene que DEVOLVER el producto, no matarlo.
+
+    Era el bug bloqueante: como sacar un talle apaga sus filas en vez de
+    borrarlas, vaciar las dos listas dejaba un producto sin ningun eje pero con
+    todas sus filas apagadas todavia ahi. tiene_variantes (que miraba solo las
+    filas) seguia en True, con lo cual stock_total daba 0 y disponible_efectivo
+    False: la ficha decia "sin stock" y "no queda ninguna combinacion", y no
+    habia forma desde la pantalla de volver atras. Justo el camino de apagar las
+    variantes dejaba el producto peor que antes de entrar.
+    """
+    user, post = vendedor
+    producto = crear_producto(post.id, precio="12000")
+    login(user.id)
+    _guardar_listas(client, producto, talles="S, M")
+    producto.variantes[1].stock = 5
+    db.session.commit()
+    assert producto.tiene_variantes is True
+
+    _guardar_listas(client, producto, talles="", colores="")
+
+    # Vuelve a ser un producto de los de siempre.
+    assert producto.tiene_variantes is False
+    assert producto.stock_total is None
+    assert producto.disponible_efectivo is True
+
+    html = client.get(f"/productos/{producto.id}").get_data(as_text=True)
+    assert "No queda ninguna combinación disponible" not in html
+    assert "12.000" in html
+
+    # Y las filas siguen ahi con su historia, que es la otra mitad del diseño.
+    assert ProductoVariante.query.count() == 2
+
+
+def test_con_los_ejes_cargados_y_todo_apagado_sigue_teniendo_variantes(
+    client, login, vendedor, crear_producto, db
+):
+    """La contraprueba del de arriba: apagar a mano NO es lo mismo que vaciar.
+
+    Con los ejes cargados el producto sigue siendo de variantes aunque no quede
+    ninguna encendida, y la ficha tiene que decir "no queda ninguna" -- que es
+    verdad -- en vez de volver a mostrar el precio base como si nada.
+    """
+    user, post = vendedor
+    producto = crear_producto(post.id)
+    login(user.id)
+    _guardar_listas(client, producto, talles="S, M")
+    for variante in producto.variantes:
+        variante.activo = False
+    db.session.commit()
+
+    assert producto.tiene_variantes is True
+    assert producto.stock_total == 0
+    assert producto.disponible_efectivo is False
+
+
+def test_el_selector_respeta_el_orden_que_escribio_el_vendedor(
+    client, login, vendedor, crear_producto, crear_usuario, db
+):
+    """Alfabeticamente "S, M, L, XL" es "L, M, S, XL", que no es ningun orden
+    de talles. Es el caso que justifica la columna `orden` de las opciones, y la
+    grilla del panel ya lo respetaba mientras el selector de la ficha no: el
+    vendedor veia una cosa y el comprador otra.
+    """
+    import re
+
+    user, post = vendedor
+    producto = crear_producto(post.id)
+    login(user.id)
+    _guardar_listas(client, producto, talles="S, M, L, XL")
+    for variante in producto.variantes:
+        variante.stock = 3
+    db.session.commit()
+
+    cliente = crear_usuario(username="clienta")
+    login(cliente.id)
+    html = client.get(f"/productos/{producto.id}").get_data(as_text=True)
+    bloque = html[html.index("<select"):html.index("</select>")]
+    orden = [texto.strip().split()[0] for texto in re.findall(r"<option[^>]*>([^<]+)", bloque)]
+
+    assert orden == ["S", "M", "L", "XL"]
+    # Y es el mismo orden que ve el vendedor en su grilla, que es el punto.
+    assert [fila["talle"] for fila in reglas.grilla(producto)] == ["S", "M", "L", "XL"]
+
+
+def test_un_stock_gigante_se_rechaza_antes_de_llegar_a_la_base(
+    client, login, vendedor, crear_producto
+):
+    """El tope de arriba hace falta por lo mismo que el de abajo.
+
+    Sin el, un numero mas grande que un INT llega al INSERT y MySQL corta con un
+    DataError 1264 que nadie atrapa: el vendedor ve un 500. SQLite lo guarda sin
+    chistar, que es por lo que la suite no lo mostraba.
+    """
+    user, post = vendedor
+    producto = crear_producto(post.id)
+    login(user.id)
+    _guardar_listas(client, producto, talles="S")
+    variante = producto.variantes[0]
+
+    client.post(
+        f"/productos/{producto.id}/variantes/{variante.id}",
+        data={"stock": "99999999999999", "activo": "on"},
+    )
+    assert variante.stock == 0
+
+    # La contraprueba: el tope exacto SI entra, si no seria un test que pasa
+    # aunque la validacion rechace todo.
+    client.post(
+        f"/productos/{producto.id}/variantes/{variante.id}",
+        data={"stock": str(MAX_STOCK), "activo": "on"},
+    )
+    assert variante.stock == MAX_STOCK

@@ -93,8 +93,15 @@ tenga.
 ## Precio: `precio_override` en NULL significa "hereda"
 
 NULL es "usá el precio del producto", **no** "gratis" —por eso la columna es
-nullable y el cero es un precio válido y distinto (el CHECK es `>= 0`, igual que
-el de `products.precio`: un producto gratis es una oferta real).
+nullable y el cero es un valor distinto de NULL para la base (el CHECK es `>= 0`,
+igual que el de `products.precio`).
+
+Ojo con una asimetría heredada, que no es un descuido de esta tanda: **por la
+interfaz no se puede cargar cero**, porque `services/precios.parsear_precio`
+corta en `<= 0`. O sea que la base acepta el cero y el formulario no, exactamente
+igual que ya pasaba con `products.precio`. El CHECK está en `>= 0` para no
+contradecir al de products y para que el día que el parser cambie de opinión no
+haga falta una migración; el que decide qué se puede escribir es el parser.
 
 El precio que se le cobra al cliente se lee siempre por `ProductoVariante.precio_efectivo`,
 que devuelve el override si lo hay y si no el del producto. Es una property y no
@@ -137,3 +144,15 @@ real: es una tanda propia, no una línea al final de ésta.
 
 Mientras tanto la tarjeta dice el precio base, que es el que el vendedor cargó, y
 la ficha —que es donde se decide— dice la verdad completa.
+
+Vale ser explícito sobre qué se desalinea, porque son tres cosas y no una:
+
+- **el precio de la tarjeta** es `products.precio`, aunque todas las
+  combinaciones tengan override y ninguna se venda a ese precio;
+- **`?disponibles=1`** (encendido por defecto) filtra por `products.disponible`,
+  así que devuelve productos que no tienen ninguna combinación pedible;
+- **`?precio_min` / `?precio_max`** filtran por el precio base, mientras la ficha
+  cobra el del override.
+
+Las tres se arreglan con la misma agregación, y por eso son una tanda y no tres
+parches sueltos.

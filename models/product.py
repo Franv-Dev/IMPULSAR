@@ -105,11 +105,35 @@ class Product(db.Model):
 
         Es la pregunta que parte en dos casi todo lo que sigue: con variantes
         el precio y el stock salen de la combinacion elegida, y sin variantes
-        del producto mismo, como siempre. Se pregunta por las FILAS y no por un
+        del producto mismo, como siempre. Se pregunta por las filas y no por un
         flag aparte, que seria un segundo lugar donde decir lo mismo y podria
         quedar diciendo que si con la matriz vacia.
+
+        MIRA LAS OPCIONES Y NO SOLO LAS VARIANTES, y esa segunda mitad es un
+        arreglo y no un adorno: como sacar un talle de la lista APAGA sus filas
+        en vez de borrarlas (a proposito, para no perder su historia), vaciar
+        las dos listas dejaba un producto sin ningun eje cargado pero con todas
+        sus filas apagadas todavia ahi. Preguntando solo por las filas eso daba
+        True, y el producto quedaba en el peor de los mundos: sin matriz que
+        elegir, con stock_total en cero y disponible_efectivo en False, o sea
+        muerto y sin forma de revivirlo desde la pantalla. Justo el camino de
+        "apagar las variantes".
+
+        Los tres casos que tiene que distinguir:
+
+          - hay ejes cargados            -> True (aunque todo este apagado: la
+                                           ficha dice "no queda ninguna", que es
+                                           verdad)
+          - sin ejes, alguna encendida   -> True (no deberia pasar por la
+                                           pantalla, pero si pasa hay algo que
+                                           vender y no se puede esconder)
+          - sin ejes y todas apagadas    -> False, vuelve al precio base y al
+                                           booleano de siempre, que es lo que el
+                                           mensaje de la pantalla promete
         """
-        return bool(self.variantes)
+        if self.opciones_de_variante:
+            return True
+        return any(variante.activo for variante in self.variantes)
 
     @property
     def variantes_comprables(self):
@@ -130,7 +154,7 @@ class Product(db.Model):
         esa combinacion no existe, asi que contarla mentiria sobre lo que hay
         para vender.
         """
-        if not self.variantes:
+        if not self.tiene_variantes:
             return None
         return sum(
             variante.stock for variante in self.variantes if variante.activo
@@ -178,7 +202,7 @@ class Product(db.Model):
         """
         if not self.disponible:
             return False
-        if not self.variantes:
+        if not self.tiene_variantes:
             return True
         return any(variante.comprable for variante in self.variantes)
 

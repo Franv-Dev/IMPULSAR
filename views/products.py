@@ -49,7 +49,7 @@ from models.product import (
 )
 from models.product_favorite import ProductFavorite
 from models.producto_variante import (
-    MAX_OPCIONES_POR_EJE, ProductoVariante, TiposDeOpcion,
+    MAX_OPCIONES_POR_EJE, MAX_STOCK, ProductoVariante, TiposDeOpcion,
 )
 from services.eventos import hoy_en_argentina
 from services.geocoding import get_coordinates_from_address
@@ -555,10 +555,12 @@ def detalle(id):
         # Se dibujan SOLO las comprables. No es el permiso -- eso lo rehace el
         # servidor cuando llega la consulta (ver messages._combinacion_elegida)
         # --, es no ofrecer lo que no hay.
-        combinaciones=sorted(
-            producto.variantes_comprables,
-            key=lambda variante: (variante.talle, variante.color),
-        ),
+        #
+        # EN EL ORDEN QUE ESCRIBIO EL VENDEDOR y no alfabetico: con "S, M, L,
+        # XL" el alfabetico da "L, M, S, XL", que no es ningun orden de talles.
+        # Sale de la misma lista de opciones que usa la grilla del panel, asi
+        # que el vendedor y el comprador ven la misma secuencia.
+        combinaciones=reglas_variantes.comprables_ordenadas(producto),
         avg_rating=metricas.get("promedio"),
         review_count=metricas.get("resenias", 0),
         total_productos=metricas.get("productos", 0),
@@ -1022,6 +1024,13 @@ def _leer_variante():
         else:
             if stock < 0:
                 error = "El stock no puede ser negativo."
+            elif stock > MAX_STOCK:
+                # El tope de arriba hace falta por lo mismo que el de abajo: sin
+                # el, un numero gigante llega al INSERT y MySQL corta con un
+                # DataError 1264 que nadie atrapa y que el vendedor ve como un
+                # 500. En SQLite entra sin chistar, que es por lo que no se veia
+                # en la suite.
+                error = f"El stock no puede ser mayor a {MAX_STOCK}."
 
     precio = None
     if not error and precio_texto:
