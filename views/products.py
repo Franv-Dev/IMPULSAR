@@ -23,10 +23,16 @@ permiso siempre se resuelve mirando el dueño de ese emprendimiento. El chequeo
 va en la vista y no solo en el template: esconder un boton no es un permiso,
 cualquiera puede mandar el POST a mano.
 
-NO ES UNA TIENDA, y el catalogo publico lo respeta: no hay stock, ni variantes,
-ni carrito, ni pago (ver el docstring de models/product.py). La accion de una
-tarjeta es consultar, y termina en el chat interno con el nombre del producto
-ya escrito.
+NO ES UNA TIENDA, y el catalogo publico lo respeta: no hay carrito ni pago (ver
+el docstring de models/product.py). La accion de una tarjeta es consultar, y
+termina en el chat interno con el nombre del producto ya escrito.
+
+Lo que si mira el catalogo desde la tanda de variantes en la tarjeta es el
+precio y el stock de las combinaciones: la tarjeta dice el mas barato de las
+encendidas y si queda alguna pedible. Eso NO es una tienda -- sigue sin haber
+carrito --, es no mentir sobre el precio en la pantalla desde la que se decide
+entrar a la ficha. Sale todo de la misma consulta (con_resumen_de_variantes);
+el porque esta en docs/VARIANTES.md.
 """
 
 from flask import (
