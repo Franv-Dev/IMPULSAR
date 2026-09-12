@@ -149,8 +149,24 @@ dos relaciones lazy), o sea veinticuatro extra en una grilla de doce.
 `services.variantes.con_resumen_de_variantes()` le suma a la consulta que ya
 arma el catálogo dos subconsultas **agrupadas** traídas con `outerjoin`, y
 cinco columnas: cuántos ejes tiene cargados el producto, cuántas combinaciones
-activas, el mínimo y el máximo del precio efectivo entre ellas, y si alguna
-tiene stock. Es el mismo idiom que `services.ratings.query_posts_con_rating`.
+activas, cuántas **comprables**, y el mínimo y el máximo del precio efectivo
+entre esas comprables. Es el mismo idiom que
+`services.ratings.query_posts_con_rating`.
+
+**Comprable es activa Y con stock**, que es `ProductoVariante.comprable`
+escrito en SQL, y de esa única condición salen las dos mitades de la tarjeta:
+el precio y el cartel de "sin stock". El mínimo no se calcula entre todas las
+activas: la combinación más barata que se quedó sin stock no se puede pedir,
+así que su precio no es una oferta, y anunciarlo dejaría a la tarjeta
+prometiendo un número que la ficha —a un click, y con el mismo criterio en
+`Product.precio_desde`— no puede cumplir. Escrita una sola vez, además, no hay
+forma de que la tarjeta diga "desde $9.000" y "sin stock" al mismo tiempo, cada
+mitad mirando otra cosa.
+
+Las **activas** se cuentan igual, y por separado: son lo que distingue el
+producto que tiene la matriz cargada y hoy no vende nada (agotado) del que no
+usa variantes (precio base), que es la misma pregunta que contesta
+`Product.tiene_variantes`.
 
 **El GROUP BY vive adentro de cada subconsulta y la consulta de afuera no se
 agrupa.** Agrupar afuera era más corto y está mal por dos motivos, los dos
@@ -184,12 +200,17 @@ Las tres formas posibles de la misma pantalla:
 
 | productos | vieja (precio base) | **agrupada (la elegida)** | correlacionada | lazy (N+1) |
 |---|---|---|---|---|
-| 10  | 1 consulta · 0,83 ms | **1 · 2,24 ms** | 1 · 1,75 ms | 21 · 5,57 ms |
-| 40  | 1 consulta · 0,91 ms | **1 · 2,35 ms** | 1 · 2,57 ms | 25 · 5,79 ms |
-| 80  | 1 consulta · 0,97 ms | **1 · 2,47 ms** | 1 · 5,65 ms | 25 · 5,86 ms |
-| 200 | 1 consulta · 1,22 ms | **1 · 2,88 ms** | 1 · 24,70 ms | 25 · 6,00 ms |
-| 400 | 1 consulta · 1,39 ms | **1 · 3,54 ms** | 1 · 93,07 ms | 25 · 6,37 ms |
-| 800 | 1 consulta · 1,97 ms | **1 · 4,92 ms** | 1 · 361,18 ms | 25 · 6,77 ms |
+| 10  | 1 consulta · 0,83 ms | **1 · 2,30 ms** | 1 · 1,75 ms | 21 · 5,43 ms |
+| 40  | 1 consulta · 0,85 ms | **1 · 2,45 ms** | 1 · 2,57 ms | 25 · 5,75 ms |
+| 80  | 1 consulta · 0,95 ms | **1 · 2,53 ms** | 1 · 5,65 ms | 25 · 5,75 ms |
+| 200 | 1 consulta · 1,14 ms | **1 · 2,94 ms** | 1 · 24,70 ms | 25 · 5,96 ms |
+| 400 | 1 consulta · 1,33 ms | **1 · 3,55 ms** | 1 · 93,07 ms | 25 · 6,17 ms |
+| 800 | 1 consulta · 1,83 ms | **1 · 4,84 ms** | 1 · 361,18 ms | 25 · 6,65 ms |
+
+(La columna de la correlacionada es de la misma medición hecha antes de que el
+criterio pasara de "activas" a "comprables": es la forma de la consulta lo que
+se estaba comparando, y esa no cambió. Las otras tres columnas son de la
+consulta tal como quedó.)
 
 Las tres cosas que dicen estos números:
 
@@ -228,13 +249,12 @@ Las dos se arreglan con esta misma agregación movida al WHERE, y son cambios de
 comportamiento del buscador (cuántos resultados devuelve una búsqueda), no de
 lo que una tarjeta muestra. Por eso no van de arrastre acá.
 
-**Y una asimetría que hay que tener a mano al comparar las dos pantallas:** el
-mínimo de la tarjeta es entre las combinaciones **activas**, y el de
-`Product.precio_desde` —el de la ficha— es entre las **comprables**, o sea
-activas *y con stock*. Para un producto cuya combinación más barata se quedó
-sin stock, la tarjeta anuncia un precio más bajo que la ficha. Es la regla que
-se decidió para la tarjeta (una tarjeta habla del producto, y el stock lo dice
-el cartel de al lado), no un descuido de la implementación.
+**La tarjeta y la ficha dicen el mismo precio**, y eso es deliberado: las dos
+calculan el mínimo entre las combinaciones comprables —la tarjeta en SQL, la
+ficha con `Product.precio_desde` en Python—. Un producto cuya combinación más
+barata se quedó sin stock muestra el mismo número en las dos pantallas. Si
+alguna vez hay que tocar uno de los dos criterios, hay que tocar los dos: el
+que entra por el precio de una tarjeta lo hace para llegar a esa ficha.
 
 Las otras dos pantallas que muestran tarjetas de producto —"Mis guardados" y el
 catálogo dentro de la ficha del emprendimiento— siguen mostrando el precio

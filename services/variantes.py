@@ -14,7 +14,7 @@ decisiones aca, el HTTP en la vista.
 
 from collections import namedtuple
 
-from sqlalchemy import case, func
+from sqlalchemy import and_, case, func
 
 from db import db
 from models.product import Product
@@ -333,28 +333,35 @@ def con_resumen_de_variantes(consulta):
     mientras el segundo vale su precio base. Los distingue si hay EJES
     cargados, que es la misma pregunta que contesta Product.tiene_variantes.
 
+    EL PRECIO Y LA DISPONIBILIDAD SALEN DE LA MISMA CONDICION, escrita una sola
+    vez (`comprable`): activa Y con stock, que es ProductoVariante.comprable en
+    SQL. El minimo se calcula sobre esas mismas filas y no sobre todas las
+    activas, para que la tarjeta no prometa un precio que la ficha no puede
+    cumplir -- la mas barata sin stock no se puede pedir, asi que su precio no
+    es una oferta--. Con dos condiciones separadas (una para el precio y otra
+    para el cartel) la tarjeta podria decir "desde $9.000" y "sin stock" al
+    mismo tiempo, cada mitad mirando otra cosa.
+
     El precio de cada combinacion es COALESCE(precio_override, products.precio),
     o sea la traduccion a SQL de ProductoVariante.precio_efectivo: NULL en el
     override significa "hereda", nunca cero.
     """
     precio_efectivo = func.coalesce(ProductoVariante.precio_override, Product.precio)
+    activa = ProductoVariante.activo.is_(True)
+    comprable = and_(activa, ProductoVariante.stock > 0)
 
-    # Solo las ACTIVAS: una combinacion apagada no existe para el que compra,
-    # tenga el precio y el stock que tenga.
-    activas = (
+    combinaciones = (
         db.session.query(
             ProductoVariante.product_id.label("product_id"),
-            func.count(ProductoVariante.id).label("activas"),
-            func.min(precio_efectivo).label("precio_min"),
-            func.max(precio_efectivo).label("precio_max"),
-            # MAX de un 0/1 y no un EXISTS aparte: es "hay al menos una con
-            # stock" sin una segunda pasada por la tabla. La tarjeta no dice
-            # CUANTO stock hay a proposito (eso es de la ficha), asi que no se
-            # suma nada.
-            func.max(case((ProductoVariante.stock > 0, 1), else_=0)).label("con_stock"),
+            # Las activas se cuentan igual, aunque no sean comprables: es lo
+            # que distingue "tiene la matriz cargada y hoy no hay nada" de "no
+            # usa variantes", que son dos tarjetas distintas.
+            func.sum(case((activa, 1), else_=0)).label("activas"),
+            func.sum(case((comprable, 1), else_=0)).label("comprables"),
+            func.min(case((comprable, precio_efectivo))).label("precio_min"),
+            func.max(case((comprable, precio_efectivo))).label("precio_max"),
         )
         .join(Product, Product.id == ProductoVariante.product_id)
-        .filter(ProductoVariante.activo.is_(True))
         .group_by(ProductoVariante.product_id)
         .subquery()
     )
@@ -370,7 +377,7 @@ def con_resumen_de_variantes(consulta):
 
     return (
         consulta
-        .outerjoin(activas, activas.c.product_id == Product.id)
+        .outerjoin(combinaciones, combinaciones.c.product_id == Product.id)
         .outerjoin(ejes, ejes.c.product_id == Product.id)
         # Con el prefijo `variantes_` y no con el nombre pelado de la
         # subconsulta: estas columnas viajan al lado de las del producto y de
@@ -378,10 +385,10 @@ def con_resumen_de_variantes(consulta):
         # confunde con el filtro de precio de la barra de busqueda.
         .add_columns(
             ejes.c.opciones.label("variantes_opciones"),
-            activas.c.activas.label("variantes_activas"),
-            activas.c.precio_min.label("variantes_precio_min"),
-            activas.c.precio_max.label("variantes_precio_max"),
-            activas.c.con_stock.label("variantes_con_stock"),
+            combinaciones.c.activas.label("variantes_activas"),
+            combinaciones.c.comprables.label("variantes_comprables"),
+            combinaciones.c.precio_min.label("variantes_precio_min"),
+            combinaciones.c.precio_max.label("variantes_precio_max"),
         )
     )
 
@@ -398,17 +405,15 @@ def resumen_de_fila(producto, fila):
 
       - SIN VARIANTES no cambia nada: el precio base y el booleano `disponible`
         de siempre. Es la regresion que esta tanda no puede romper.
-      - CON VARIANTES el precio es el minimo entre las activas, y lleva "desde"
-        solo si no valen todas lo mismo.
-      - TODAS APAGADAS (o ninguna con stock) es agotado, no un error ni una
-        vuelta al precio base: el vendedor tiene la matriz cargada y hoy no hay
-        nada para pedir.
+      - CON VARIANTES el precio es el minimo entre las COMPRABLES -- las
+        encendidas y con stock, igual que Product.precio_desde --, y lleva
+        "desde" solo si no valen todas lo mismo.
+      - SIN NINGUNA COMPRABLE es agotado, no un error ni una vuelta al precio
+        base: el vendedor tiene la matriz cargada y hoy no hay nada que pedir.
 
-    OJO CON UNA ASIMETRIA, anotada tambien en docs/VARIANTES.md: el minimo de
-    aca es entre las ACTIVAS (lo que se decidio para la tarjeta) y el de
-    Product.precio_desde es entre las COMPRABLES (activas Y con stock). Para un
-    producto cuya combinacion mas barata se quedo sin stock, la tarjeta dice un
-    precio mas bajo que la ficha.
+    "Hay algo comprable" se pregunta UNA vez y de ahi salen las dos mitades de
+    la tarjeta: el cartel de "sin stock" y si hay un "desde" que calcular. Son
+    la misma pregunta, asi que no pueden contestarse distinto.
     """
     opciones = fila.variantes_opciones or 0
     activas = fila.variantes_activas or 0
@@ -422,18 +427,24 @@ def resumen_de_fila(producto, fila):
             disponible=bool(producto.disponible),
         )
 
+    hay_comprables = bool(fila.variantes_comprables)
+    if not hay_comprables:
+        # No hay minimo que mostrar y el precio base es lo unico que queda: no
+        # es lo que se cobra, pero la tarjeta ya dice agotado y un hueco donde
+        # va el precio se lee como un error de la pagina.
+        return ResumenDeVariantes(
+            tiene_variantes=True,
+            precio_desde=producto.precio,
+            precio_es_rango=False,
+            disponible=False,
+        )
+
     precio_min = fila.variantes_precio_min
     precio_max = fila.variantes_precio_max
-    # Con la matriz entera apagada no hay minimo que mostrar y el precio base
-    # es lo unico que queda: no es lo que se cobra, pero la tarjeta ya dice
-    # agotado y un hueco donde va el precio se lee como un error de la pagina.
-    if precio_min is None:
-        precio_min = producto.precio
-
     return ResumenDeVariantes(
         tiene_variantes=True,
         precio_desde=precio_min,
         # > y no != para no depender de como vuelve el Decimal de cada motor.
         precio_es_rango=precio_max is not None and precio_max > precio_min,
-        disponible=bool(producto.disponible) and bool(fila.variantes_con_stock),
+        disponible=bool(producto.disponible),
     )

@@ -359,11 +359,12 @@
                                 tarjetas chicas es el dato que hace comparar.
 
                                 Con variantes es el más barato de las combinaciones
-                                encendidas, y lleva «desde» sólo si no valen todas lo
-                                mismo -- misma regla y mismas palabras que la ficha,
-                                que es la pantalla a la que lleva esta tarjeta. El
-                                producto sin variantes muestra su precio base, igual
-                                que siempre. #}
+                                que se pueden pedir --encendidas y con stock--, y lleva
+                                «desde» sólo si no valen todas lo mismo: misma regla,
+                                mismo criterio y mismas palabras que la ficha, que es
+                                la pantalla a la que lleva esta tarjeta. El producto
+                                sin variantes muestra su precio base, igual que
+                                siempre. #}
                             <span class="producto-tarjeta__precio">
                                 {% if fila.variantes.precio_es_rango %}
                                     desde {{ fila.variantes.precio_desde | precio }}

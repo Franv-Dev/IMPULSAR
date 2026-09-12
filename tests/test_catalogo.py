@@ -654,8 +654,9 @@ que se vende por combinacion, sin preguntarle a la base una vez por tarjeta.
 Son tres cosas distintas y se prueban por separado:
 
   - la REGRESION primero: el producto sin variantes no cambia en nada.
-  - el precio: el minimo entre las ACTIVAS, con "desde" solo si no valen todas
-    lo mismo, y sin mirar las apagadas aunque sean mas baratas.
+  - el precio: el minimo entre las COMPRABLES (encendidas y con stock), con
+    "desde" solo si no valen todas lo mismo, y sin mirar ni las apagadas ni las
+    que se quedaron sin stock aunque sean mas baratas.
   - el stock: alcanza con que una combinacion activa tenga, y la matriz entera
     apagada es "agotado" y no un error.
 
@@ -751,25 +752,57 @@ def test_con_todas_las_combinaciones_al_mismo_precio_no_dice_desde(
     assert _precio_de_la_tarjeta(_html(client.get("/productos/"))) == "$ 1.500,00"
 
 
-def test_con_precios_distintos_dice_desde_el_mas_barato_de_los_activos(
+def test_con_precios_distintos_dice_desde_el_mas_barato_de_los_comprables(
     client, crear_usuario, crear_post, crear_producto, con_variantes
 ):
-    """El minimo es entre las ENCENDIDAS, y la apagada mas barata no cuenta.
+    """El minimo es entre las COMPRABLES: encendidas Y con stock.
 
-    La combinacion de $900 esta apagada: el vendedor dijo que esa no existe, y
-    anunciarla seria mandar a la gente a preguntar por algo que no se puede
-    pedir.
+    Las dos combinaciones que quedan afuera son las dos formas de no ser
+    pedible, y las dos son mas baratas que la respuesta correcta a proposito:
+
+      - la de $700 esta apagada -- el vendedor dijo que esa no existe --;
+      - la de $900 esta encendida pero sin stock.
+
+    Es el mismo criterio que Product.precio_desde, que es lo que muestra la
+    ficha. Con el criterio de "solo activas" esta tarjeta diria "desde $900" y
+    la ficha, a un click, diria $1.200: la tarjeta estaria prometiendo un
+    precio que la pantalla que decide no puede cumplir.
     """
     dueno = crear_usuario(username="dueno")
     producto = crear_producto(crear_post(dueno.id).id, precio="1500.00")
     con_variantes(
         producto,
-        ("S", 1, "900.00", False),
-        ("M", 1, "1200.00", True),
+        ("XS", 4, "700.00", False),
+        ("S", 0, "900.00", True),
+        ("M", 2, "1200.00", True),
         ("L", 1, "1800.00", True),
     )
 
-    assert _precio_de_la_tarjeta(_html(client.get("/productos/"))) == "desde $ 1.200,00"
+    html = _html(client.get("/productos/"))
+
+    assert _precio_de_la_tarjeta(html) == "desde $ 1.200,00"
+    assert not _dice_sin_stock(html)
+
+
+def test_el_rango_tampoco_mira_las_que_no_se_pueden_pedir(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """Con una sola combinacion pedible no hay rango, y no lleva "desde".
+
+    Las otras dos estan a otro precio, pero una esta apagada y la otra sin
+    stock: si el maximo las contara, la tarjeta escribiria "desde" sobre un
+    precio que es el unico que hay.
+    """
+    dueno = crear_usuario(username="dueno")
+    producto = crear_producto(crear_post(dueno.id).id, precio="1500.00")
+    con_variantes(
+        producto,
+        ("S", 0, "900.00", True),
+        ("M", 3, "1200.00", True),
+        ("L", 5, "1800.00", False),
+    )
+
+    assert _precio_de_la_tarjeta(_html(client.get("/productos/"))) == "$ 1.200,00"
 
 
 def test_el_precio_heredado_entra_en_la_cuenta_del_minimo(

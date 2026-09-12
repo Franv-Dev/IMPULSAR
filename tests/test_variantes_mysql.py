@@ -362,31 +362,38 @@ def test_en_mysql_el_catalogo_pinta_el_resumen_de_variantes(variantes_en_mysql):
       - el encabezado cuenta FILAS y no grupos: con un GROUP BY afuera, el
         COUNT del paginado contaria grupos y el "1 producto" seria otra cosa.
 
-    El producto vale 12000 y tiene tres combinaciones: una a 9000 encendida y
-    con stock, una que hereda el precio (12000) sin stock, y una a 20000
-    apagada. Asi el minimo (9000), el maximo (12000, o sea "desde") y el stock
-    salen cada uno de una fila distinta, y ninguno se puede acertar por
-    casualidad.
+    El producto vale 12000 y tiene cuatro combinaciones, armadas para que cada
+    pieza de la agregacion salga de una fila distinta y ninguna se pueda
+    acertar por casualidad:
+
+      XS a 8000, apagada          -> no cuenta (la mas barata de todas)
+      S  a 9000, encendida sin stock -> no cuenta (la mas barata de las activas)
+      M  hereda el precio, con stock -> el minimo, 12000, via COALESCE
+      L  a 20000, con stock          -> el maximo, o sea que hay "desde"
     """
     producto = variantes_en_mysql.producto
     db = variantes_en_mysql.db
 
-    for orden, talle in enumerate(("S", "M", "L")):
+    for orden, talle in enumerate(("XS", "S", "M", "L")):
         db.session.add(ProductoVarianteOpcion(
             product_id=producto.id, tipo="talle", valor=talle, orden=orden,
         ))
     db.session.add_all([
         ProductoVariante(
-            product_id=producto.id, talle="S", stock=3,
+            product_id=producto.id, talle="XS", stock=5,
+            precio_override="8000", activo=False,
+        ),
+        ProductoVariante(
+            product_id=producto.id, talle="S", stock=0,
             precio_override="9000", activo=True,
         ),
         ProductoVariante(
-            product_id=producto.id, talle="M", stock=0,
+            product_id=producto.id, talle="M", stock=4,
             precio_override=None, activo=True,
         ),
         ProductoVariante(
-            product_id=producto.id, talle="L", stock=7,
-            precio_override="20000", activo=False,
+            product_id=producto.id, talle="L", stock=2,
+            precio_override="20000", activo=True,
         ),
     ])
     db.session.commit()
@@ -395,6 +402,6 @@ def test_en_mysql_el_catalogo_pinta_el_resumen_de_variantes(variantes_en_mysql):
     html = respuesta.get_data(as_text=True)
 
     assert respuesta.status_code == 200
-    assert "desde $ 9.000,00" in html
+    assert "desde $ 12.000,00" in html
     assert "1 producto" in html
     assert "producto-tarjeta__agotado" not in html

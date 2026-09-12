@@ -29,7 +29,8 @@ termina en el chat interno con el nombre del producto ya escrito.
 
 Lo que si mira el catalogo desde la tanda de variantes en la tarjeta es el
 precio y el stock de las combinaciones: la tarjeta dice el mas barato de las
-encendidas y si queda alguna pedible. Eso NO es una tienda -- sigue sin haber
+PEDIBLES (encendidas y con stock) y si queda alguna, que es el mismo criterio
+con el que la ficha arma su precio. Eso NO es una tienda -- sigue sin haber
 carrito --, es no mentir sobre el precio en la pantalla desde la que se decide
 entrar a la ficha. Sale todo de la misma consulta (con_resumen_de_variantes);
 el porque esta en docs/VARIANTES.md.
