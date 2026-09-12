@@ -298,22 +298,12 @@ def grilla(producto):
 #:
 #: Es el mismo trio que la ficha saca de las properties de Product
 #: (precio_desde, precio_es_rango, disponible_efectivo), pero calculado en la
-#: base para TODA la pagina de una vez. Existe como namedtuple y no como dict
-#: para que el template falle fuerte si alguien escribe mal un nombre.
+#: base para TODA la pagina de una vez. Es un namedtuple y no un dict porque
+#: los tres campos son fijos y se leen igual en Python y en el template
+#: (`fila.variantes.precio_desde`), sin quedar escritos como cadenas sueltas.
 ResumenDeVariantes = namedtuple(
     "ResumenDeVariantes",
     "tiene_variantes precio_desde precio_es_rango disponible",
-)
-
-#: Las etiquetas de las columnas que agrega con_resumen_de_variantes(), en el
-#: orden en que se agregan. La vista no las nombra de a una: se las pasa
-#: enteras a resumen_de_fila().
-COLUMNAS_DEL_RESUMEN = (
-    "variantes_opciones",
-    "variantes_activas",
-    "variantes_precio_min",
-    "variantes_precio_max",
-    "variantes_con_stock",
 )
 
 
@@ -399,8 +389,8 @@ def con_resumen_de_variantes(consulta):
 def resumen_de_fila(producto, fila):
     """Traduce una fila de con_resumen_de_variantes() a lo que pinta la tarjeta.
 
-    `fila` es el Row que devolvio la consulta; las columnas se leen por nombre
-    (COLUMNAS_DEL_RESUMEN) y no por posicion, porque la del catalogo agrega
+    `fila` es el Row que devolvio la consulta; sus columnas se leen por nombre
+    (`variantes_...`) y no por posicion, porque la consulta del catalogo agrega
     ademas la distancia y el orden de las columnas no es asunto de esta
     funcion.
 
