@@ -16755,3 +16755,21 @@ body.con-visor {
     font-weight: 600;
     white-space: nowrap;
 }
+
+/* Los campos de una fila de la matriz. Angostos y no al 100 % como el resto de
+   los .auth__input: adentro de una celda, un input que ocupa todo el ancho
+   estira la tabla y obliga al scroll horizontal en cualquier pantalla. */
+.variantes-tabla__campo {
+    width: 7.5rem;
+    min-width: 0;
+    padding: 0.4rem 0.6rem;
+}
+
+.variantes-tabla__activo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-right: 0.6rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}

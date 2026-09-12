@@ -49,7 +49,7 @@ from models.product import (
 )
 from models.product_favorite import ProductFavorite
 from models.producto_variante import (
-    MAX_OPCIONES_POR_EJE, TiposDeOpcion,
+    MAX_OPCIONES_POR_EJE, ProductoVariante, TiposDeOpcion,
 )
 from services.eventos import hoy_en_argentina
 from services.geocoding import get_coordinates_from_address
@@ -976,6 +976,89 @@ def guardar_opciones_de_variante(id):
             "Listo: " + " y ".join(partes) + "." if partes
             else "Listo, no hubo cambios en la matriz."
         )
+    return redirect(url_for("products.variantes", id=producto.id))
+
+
+def _leer_variante():
+    """Lo que manda el formulario de una fila de la matriz.
+
+    Devuelve (datos, error). Los tres campos se validan ACA, del lado del
+    servidor, y no solo con el `min="0"` del input ni con el CHECK de la base:
+    el atributo HTML se saltea mandando el POST a mano, y el CHECK devuelve un
+    error de motor que el vendedor veria como un 500 en vez de como un error
+    del formulario. Ademas en MySQL un CHECK violado llega como
+    OperationalError y no como IntegrityError, asi que ni siquiera se podria
+    atrapar con el mismo except que el resto.
+
+    El precio VACIO no es un error: significa "usá el del producto" y se guarda
+    como NULL (ver models/producto_variante.py). Es la unica forma de volver a
+    heredar despues de haber puesto un precio propio, asi que borrar el campo
+    tiene que funcionar.
+    """
+    stock_texto = (request.form.get("stock") or "").strip()
+    precio_texto = (request.form.get("precio") or "").strip()
+
+    stock = None
+    error = None
+    if not stock_texto:
+        error = "Poné el stock de esa combinación (0 si no te queda)."
+    else:
+        try:
+            stock = int(stock_texto)
+        except ValueError:
+            error = "El stock tiene que ser un número entero."
+        else:
+            if stock < 0:
+                error = "El stock no puede ser negativo."
+
+    precio = None
+    if not error and precio_texto:
+        # obligatorio=True porque si escribio algo, ese algo tiene que ser un
+        # precio: el "sin precio" se dice dejando el campo vacio, no con basura.
+        precio, error_precio = parsear_precio(precio_texto, obligatorio=True)
+        if error_precio:
+            error = error_precio
+
+    datos = {
+        "stock": stock,
+        "precio_override": precio,
+        # Un checkbox que no viene es un checkbox destildado: no hay forma de
+        # distinguirlo de "no lo mandaron", y no hace falta -- este formulario
+        # manda la fila entera.
+        "activo": request.form.get("activo") is not None,
+    }
+    return datos, error
+
+
+@products.route("/<int:id>/variantes/<int:variante_id>", methods=("POST",))
+@login_required
+def editar_variante(id, variante_id):
+    """Edita el stock, el precio y el interruptor de UNA combinacion.
+
+    Los dos ids llegan por la URL y nada obliga a que vayan juntos, asi que se
+    chequea que la variante sea de ESE producto. Sin eso, el dueño de un
+    producto podria editar la variante de otro escribiendo la URL: el permiso
+    de _producto_propio mira el producto, no la fila.
+    """
+    producto, rechazo = _producto_propio(id)
+    if rechazo:
+        return rechazo
+
+    variante = ProductoVariante.query.get_or_404(variante_id)
+    if variante.product_id != producto.id:
+        abort(404)
+
+    datos, error = _leer_variante()
+    if error:
+        flash(f"{variante.etiqueta}: {error}")
+        return redirect(url_for("products.variantes", id=producto.id))
+
+    variante.stock = datos["stock"]
+    variante.precio_override = datos["precio_override"]
+    variante.activo = datos["activo"]
+    db.session.commit()
+
+    flash(f"Guardado: {variante.etiqueta}.")
     return redirect(url_for("products.variantes", id=producto.id))
 
 

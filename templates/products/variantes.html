@@ -123,7 +123,7 @@
                                     <th scope="col">Combinación</th>
                                     <th scope="col">Stock</th>
                                     <th scope="col">Precio</th>
-                                    <th scope="col">Estado</th>
+                                    <th scope="col">¿Se vende?</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -136,25 +136,55 @@
                                         </tr>
                                     {% endif %}
                                     {% for variante in fila.variantes %}
+                                        {#  Un formulario por fila y no uno solo para
+                                            toda la tabla: guardar una combinación no
+                                            tiene por qué reescribir las otras
+                                            cuarenta, y así un error en una fila no se
+                                            lleva puesto lo que el vendedor escribió en
+                                            las demás. El <form> vive fuera de la
+                                            tabla (HTML no deja meterlo entre <tr>) y
+                                            los inputs lo referencian por su id. #}
                                         <tr {% if not variante.activo %}class="variantes-tabla__fila--apagada"{% endif %}>
-                                            <td>{{ variante.etiqueta }}</td>
-                                            <td>{{ variante.stock }}</td>
                                             <td>
-                                                {{ variante.precio_efectivo | precio }}
+                                                <label for="stock-{{ variante.id }}">
+                                                    {{ variante.etiqueta }}
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <input type="number" name="stock"
+                                                       id="stock-{{ variante.id }}"
+                                                       form="variante-{{ variante.id }}"
+                                                       class="auth__input variantes-tabla__campo"
+                                                       min="0" step="1" required
+                                                       value="{{ variante.stock }}">
+                                            </td>
+                                            <td>
+                                                <label class="sr-only" for="precio-{{ variante.id }}">
+                                                    Precio de {{ variante.etiqueta }}
+                                                </label>
+                                                <input type="text" name="precio"
+                                                       id="precio-{{ variante.id }}"
+                                                       form="variante-{{ variante.id }}"
+                                                       class="auth__input variantes-tabla__campo"
+                                                       inputmode="decimal"
+                                                       value="{{ variante.precio_override | precio_form if not variante.hereda_precio else '' }}"
+                                                       placeholder="{{ producto.precio | precio_form }}">
                                                 {% if variante.hereda_precio %}
                                                     <span class="variantes-tabla__nota">(del producto)</span>
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                {% if variante.activo %}
-                                                    {% if variante.stock > 0 %}
-                                                        <span class="estado estado--si">A la venta</span>
-                                                    {% else %}
-                                                        <span class="estado estado--no">Sin stock</span>
-                                                    {% endif %}
-                                                {% else %}
-                                                    <span class="estado estado--no">No existe</span>
-                                                {% endif %}
+                                                <label class="variantes-tabla__activo">
+                                                    <input type="checkbox" name="activo"
+                                                           form="variante-{{ variante.id }}"
+                                                           {% if variante.activo %}checked{% endif %}>
+                                                    Se vende
+                                                </label>
+                                                <form method="post" id="variante-{{ variante.id }}"
+                                                      action="{{ url_for('products.editar_variante', id=producto.id, variante_id=variante.id) }}">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn--secondary">Guardar</button>
+                                                </form>
                                             </td>
                                         </tr>
                                     {% endfor %}
