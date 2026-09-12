@@ -24,9 +24,18 @@ UMBRAL_AVISO_LIMITE = 40
 class Product(db.Model):
     """Un item con precio fijo del catalogo de un emprendimiento.
 
-    Es catalogo y no tienda: no hay stock, ni variantes, ni carrito, ni pago.
-    Es "esto vendo y a cuanto", para que el emprendedor no tenga que meter la
-    lista de precios adentro de la descripcion del emprendimiento.
+    Es catalogo y no tienda: no hay carrito ni pago. Es "esto vendo y a
+    cuanto", para que el emprendedor no tenga que meter la lista de precios
+    adentro de la descripcion del emprendimiento.
+
+    Decia tambien "no hay stock ni variantes", y desde la tanda de variantes es
+    cierto solo a medias, asi que conviene ser preciso: EL PRODUCTO SIGUE SIN
+    TENER STOCK. No se le agrego ninguna columna. Lo que puede tener son
+    variantes (combinaciones talle x color, en models/producto_variante.py), y
+    son esas las que llevan stock numerico, cada una el suyo. Un producto sin
+    variantes es exactamente el de antes: precio fijo y el booleano
+    `disponible`. Las dos ramas conviven y `tiene_variantes` es la que decide
+    cual se esta mirando.
 
     Decia "un producto o servicio", y dejo de ser cierto cuando aparecio
     app/servicios/modelo.py: un servicio es un trabajo a presupuestar, con zona de
@@ -90,6 +99,58 @@ class Product(db.Model):
     def __repr__(self):
         return f"<Product post_id={self.post_id} {self.nombre}>"
 
+    @property
+    def tiene_variantes(self):
+        """Si este producto se vende por combinacion talle+color.
+
+        Es la pregunta que parte en dos casi todo lo que sigue: con variantes
+        el precio y el stock salen de la combinacion elegida, y sin variantes
+        del producto mismo, como siempre. Se pregunta por las FILAS y no por un
+        flag aparte, que seria un segundo lugar donde decir lo mismo y podria
+        quedar diciendo que si con la matriz vacia.
+        """
+        return bool(self.variantes)
+
+    @property
+    def variantes_comprables(self):
+        """Las combinaciones que se pueden elegir: encendidas y con stock."""
+        return [variante for variante in self.variantes if variante.comprable]
+
+    @property
+    def stock_total(self):
+        """La suma del stock de las combinaciones ACTIVAS, o None sin variantes.
+
+        None y no cero, que es la diferencia que importa: cero significa "tiene
+        variantes y no queda ninguna", y None significa "este producto no
+        maneja stock", que es el caso de siempre y el que no hay que romper.
+        Quien lo muestre tiene que preguntar por None antes de escribir un
+        numero.
+
+        Las apagadas no suman aunque tengan stock cargado: el vendedor dijo que
+        esa combinacion no existe, asi que contarla mentiria sobre lo que hay
+        para vender.
+        """
+        if not self.variantes:
+            return None
+        return sum(
+            variante.stock for variante in self.variantes if variante.activo
+        )
+
+    @property
+    def disponible_efectivo(self):
+        """Si hay algo para vender, mire variantes o no.
+
+        Sin variantes es el `disponible` de siempre. Con variantes, ademas,
+        tiene que quedar al menos una combinacion comprable: un producto
+        marcado disponible cuyas diez combinaciones estan en cero no esta
+        disponible, y decir que si es mandar a la gente a preguntar por nada.
+        """
+        if not self.disponible:
+            return False
+        if not self.variantes:
+            return True
+        return any(variante.comprable for variante in self.variantes)
+
     def serialize(self):
         return {
             "id": self.id,
@@ -102,3 +163,11 @@ class Product(db.Model):
             "foto": self.foto,
             "disponible": self.disponible,
         }
+
+
+# Las variantes viven en su propio modulo, pero son parte del producto: se
+# importa al final para que el backref `variantes` exista siempre que exista
+# Product (de el dependen tiene_variantes y stock_total, aca arriba) y para que
+# Alembic vea las dos tablas. Va abajo y no arriba porque es el modulo
+# importado el que menciona a Product, y no al reves: asi no hay ciclo.
+from models import producto_variante  # noqa: E402,F401
