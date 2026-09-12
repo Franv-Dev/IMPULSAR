@@ -219,7 +219,10 @@ Esta tanda arregla lo que la tarjeta **dice**. No toca lo que el catálogo
   cero entra igual en la grilla —eso sí, ahora entra con el cartel de "sin
   stock" puesto, que antes tampoco tenía—;
 - **`?precio_min` / `?precio_max`** siguen filtrando por el precio base,
-  mientras la tarjeta ya muestra el "desde" de las combinaciones.
+  mientras la tarjeta ya muestra el "desde" de las combinaciones;
+- **`?orden=precio_menor` / `precio_mayor`** ordenan por el precio base por lo
+  mismo, así que una grilla ordenada por precio puede mostrar dos "desde" fuera
+  de orden entre sí.
 
 Las dos se arreglan con esta misma agregación movida al WHERE, y son cambios de
 comportamiento del buscador (cuántos resultados devuelve una búsqueda), no de
