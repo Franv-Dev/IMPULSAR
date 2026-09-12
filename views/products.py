@@ -312,6 +312,13 @@ def _buscar_en_catalogo(busqueda, categoria, precio_min, precio_max,
     tarjeta muestra de quien es el producto, y el joinedload trae esa fila en
     la misma consulta para no disparar un SELECT por tarjeta (problema N+1).
 
+    Y POR EL MISMO MOTIVO EL RESUMEN DE VARIANTES va adentro de esta consulta y
+    no en el template: el precio "desde" y la disponibilidad real salen de
+    otra tabla, y preguntarselos a cada producto seria el N+1 que la tanda de
+    variantes dejo anotado como pendiente justamente para no meterlo aca. Cada
+    fila pasa a traer cinco columnas mas (ver con_resumen_de_variantes), asi
+    que lo que devuelve la paginacion son Rows y ya no Products pelados.
+
     El desempate por id no es decorativo: sin el, dos productos con el mismo
     precio -- o cargados en el mismo segundo, que en MySQL empatan porque la
     columna es DATETIME(0) -- salen en distinto orden en cada consulta, y en
@@ -321,7 +328,7 @@ def _buscar_en_catalogo(busqueda, categoria, precio_min, precio_max,
     hay_coordenadas = lat is not None and lon is not None
     distancia = distancia_km_sql(lat, lon) if hay_coordenadas else None
 
-    consulta = _filtrar_catalogo(
+    consulta = reglas_variantes.con_resumen_de_variantes(_filtrar_catalogo(
         Product.query
         .join(Post, Post.id == Product.post_id)
         .options(joinedload(Product.post)),
@@ -329,7 +336,7 @@ def _buscar_en_catalogo(busqueda, categoria, precio_min, precio_max,
         precio_min=precio_min, precio_max=precio_max,
         solo_disponibles=solo_disponibles, abierto_ahora=abierto_ahora,
         distancia=distancia, radio_km=radio_km,
-    )
+    ))
 
     if hay_coordenadas:
         consulta = consulta.add_columns(distancia.label("distance_km"))
@@ -458,13 +465,21 @@ def catalogo():
         **lo_pedido,
     )
 
-    if ordenado_por_distancia:
-        filas = [
-            {"producto": producto, "distance_km": round(km, 1) if km is not None else None}
-            for producto, km in paginacion.items
-        ]
-    else:
-        filas = [{"producto": producto, "distance_km": None} for producto in paginacion.items]
+    # Por nombre y no por posicion: cada fila trae el producto, las cinco
+    # columnas del resumen de variantes y, solo si hay coordenadas, los km. Con
+    # desempaquetado posicional agregar una columna mas rompe este bucle.
+    filas = [
+        {
+            "producto": fila[0],
+            "distance_km": (
+                round(fila.distance_km, 1)
+                if ordenado_por_distancia and fila.distance_km is not None
+                else None
+            ),
+            "variantes": reglas_variantes.resumen_de_fila(fila[0], fila),
+        }
+        for fila in paginacion.items
+    ]
 
     favoritos = _ids_favoritos(
         g.user.id if g.user else None, [f["producto"] for f in filas]

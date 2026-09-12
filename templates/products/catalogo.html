@@ -326,7 +326,14 @@
                            aria-hidden un lector de pantalla no lo nombra nunca. Se sigue viendo
                            en el mismo lugar porque .producto-tarjeta ya es position:relative y
                            la foto arranca en su esquina. #}
-                        {% if not producto.disponible %}
+                        {#  Desde la tanda de variantes en el catálogo el cartel no
+                            mira sólo el interruptor del producto: con variantes hace
+                            falta además que quede alguna combinación encendida y con
+                            stock. Un producto marcado disponible cuyas diez
+                            combinaciones están en cero está agotado, y decir que sí
+                            es mandar a preguntar por nada. Sin variantes es el
+                            booleano de siempre. #}
+                        {% if not fila.variantes.disponible %}
                             <span class="producto-tarjeta__agotado">Sin stock por ahora</span>
                         {% endif %}
 
@@ -348,9 +355,22 @@
                         {% endif %}
 
                         <div class="producto-tarjeta__cuerpo">
-                            {# El precio va ARRIBA del nombre: en una grilla de
-                               tarjetas chicas es el dato que hace comparar. #}
-                            <span class="producto-tarjeta__precio">{{ producto.precio | precio }}</span>
+                            {#  El precio va ARRIBA del nombre: en una grilla de
+                                tarjetas chicas es el dato que hace comparar.
+
+                                Con variantes es el más barato de las combinaciones
+                                encendidas, y lleva «desde» sólo si no valen todas lo
+                                mismo -- misma regla y mismas palabras que la ficha,
+                                que es la pantalla a la que lleva esta tarjeta. El
+                                producto sin variantes muestra su precio base, igual
+                                que siempre. #}
+                            <span class="producto-tarjeta__precio">
+                                {% if fila.variantes.precio_es_rango %}
+                                    desde {{ fila.variantes.precio_desde | precio }}
+                                {% else %}
+                                    {{ fila.variantes.precio_desde | precio }}
+                                {% endif %}
+                            </span>
                             <h2 class="producto-tarjeta__nombre">
                                 <a href="{{ url_for('products.detalle', id=producto.id) }}">{{ producto.nombre }}</a>
                             </h2>
