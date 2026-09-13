@@ -281,10 +281,13 @@ def _filtrar_catalogo(consulta, busqueda, categoria, precio_min, precio_max,
 
     # Rango exacto y no aproximado: Product.precio es Numeric(10,2), asi que la
     # comparacion es sobre decimales de verdad y no sobre floats que redondean.
-    if precio_min is not None:
-        consulta = consulta.filter(Product.precio >= precio_min)
-    if precio_max is not None:
-        consulta = consulta.filter(Product.precio <= precio_max)
+    #
+    # Y consciente de las variantes: un producto con combinaciones entra si
+    # ALGUNA comprable cae en el rango, no si cae su precio base. La regla
+    # entera, con sus bordes, vive en services.variantes.filtro_de_precio.
+    rango = reglas_variantes.filtro_de_precio(precio_min, precio_max)
+    if rango is not None:
+        consulta = consulta.filter(rango)
 
     if abierto_ahora:
         consulta = consulta.filter(abierto_ahora_sql())
@@ -335,15 +338,17 @@ def _buscar_en_catalogo(busqueda, categoria, precio_min, precio_max,
     hay_coordenadas = lat is not None and lon is not None
     distancia = distancia_km_sql(lat, lon) if hay_coordenadas else None
 
-    consulta = reglas_variantes.con_resumen_de_variantes(_filtrar_catalogo(
-        Product.query
-        .join(Post, Post.id == Product.post_id)
-        .options(joinedload(Product.post)),
-        busqueda=busqueda, categoria=categoria,
-        precio_min=precio_min, precio_max=precio_max,
-        solo_disponibles=solo_disponibles, abierto_ahora=abierto_ahora,
-        distancia=distancia, radio_km=radio_km,
-    ))
+    consulta, precio_desde = reglas_variantes.con_resumen_de_variantes(
+        _filtrar_catalogo(
+            Product.query
+            .join(Post, Post.id == Product.post_id)
+            .options(joinedload(Product.post)),
+            busqueda=busqueda, categoria=categoria,
+            precio_min=precio_min, precio_max=precio_max,
+            solo_disponibles=solo_disponibles, abierto_ahora=abierto_ahora,
+            distancia=distancia, radio_km=radio_km,
+        )
+    )
 
     if hay_coordenadas:
         consulta = consulta.add_columns(distancia.label("distance_km"))
@@ -351,9 +356,14 @@ def _buscar_en_catalogo(busqueda, categoria, precio_min, precio_max,
     if orden == Ordenes.CERCANIA and hay_coordenadas:
         orden_sql = (distancia.asc(), Product.id.asc())
     elif orden == Ordenes.PRECIO_MENOR:
-        orden_sql = (Product.precio.asc(), Product.id.asc())
+        orden_sql = (precio_desde.asc(), Product.id.asc())
     elif orden == Ordenes.PRECIO_MAYOR:
-        orden_sql = (Product.precio.desc(), Product.id.desc())
+        # El mismo numero al reves y no el maximo de las combinaciones: el que
+        # ordena por precio compara lo que lee en las tarjetas, y lo que la
+        # tarjeta dice es el "desde". Ordenar de mayor a menor por el maximo
+        # pondria primero al producto con una combinacion cara suelta, que en
+        # la grilla se ve como el mas barato de la fila.
+        orden_sql = (precio_desde.desc(), Product.id.desc())
     else:
         orden_sql = (Product.created_at.desc(), Product.id.desc())
 

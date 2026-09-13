@@ -963,3 +963,156 @@ def test_el_catalogo_no_consulta_de_mas_por_cada_producto_con_variantes(
     con_veinte = contar_consultas()
 
     assert con_veinte == con_cinco
+
+
+# ------------------------------- el filtro de precio, consciente de variantes
+
+def _nombres_en(html):
+    """Los nombres de producto que quedaron en la grilla."""
+    return set(re.findall(r'producto-tarjeta__nombre">\s*<a [^>]*>([^<]+)</a>', html))
+
+
+def test_el_rango_mira_las_combinaciones_y_no_el_precio_base(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El caso que rompia: el precio base afuera del rango, una combinacion adentro.
+
+    Un producto de $50.000 con un talle a $7.000 con stock tiene que aparecer
+    en "hasta $8.000". Es lo que se puede pedir y es el numero que la tarjeta
+    muestra; filtrando por el precio base el que busca barato no lo ve nunca.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 2, "7000.00", True),
+        ("M", 2, "50000.00", True),
+    )
+
+    assert _nombres_en(_html(client.get("/productos/?precio_max=8000"))) == {"Campera"}
+
+
+def test_el_rango_no_se_conforma_con_el_minimo_ya_agregado(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """La trampa de comparar el rango contra variantes_precio_min.
+
+    El minimo ($5.000) queda por DEBAJO del borde de abajo y el maximo
+    ($50.000) por encima del de arriba, asi que mirando las columnas agregadas
+    el producto no entra por ningun lado. Pero tiene una combinacion a $7.000,
+    justo adentro de "entre $6.000 y $8.000": la pregunta es si alguna cae en
+    el rango, no cuanto sale la mas barata.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Zapatillas", precio="20000.00"),
+        ("S", 2, "5000.00", True),
+        ("M", 2, "7000.00", True),
+        ("L", 2, "50000.00", True),
+    )
+
+    html = _html(client.get("/productos/?precio_min=6000&precio_max=8000"))
+
+    assert _nombres_en(html) == {"Zapatillas"}
+
+
+def test_una_combinacion_en_el_rango_pero_sin_stock_no_alcanza(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """Mismo criterio que la tarjeta: lo que no se puede pedir no es una oferta.
+
+    La barata esta agotada y la apagada no existe; la unica comprable vale
+    $50.000. El producto no tiene que entrar en "hasta $8.000", porque si
+    entrara la tarjeta diria $50.000 en una busqueda de hasta $8.000.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 0, "7000.00", True),
+        ("M", 3, "6000.00", False),
+        ("L", 2, "50000.00", True),
+    )
+
+    assert _nombres_en(_html(client.get("/productos/?precio_max=8000"))) == set()
+
+
+def test_sin_ninguna_comprable_el_rango_cae_al_precio_base(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El agotado se filtra por lo que su tarjeta muestra, que es el precio base.
+
+    Si no, desapareceria de una busqueda con precio para reaparecer en la misma
+    busqueda sin precio, con el mismo cartel de "sin stock" puesto.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Agotada", precio="7000.00"),
+        ("S", 0, None, True),
+        ("M", 0, "50000.00", True),
+    )
+
+    adentro = _html(client.get("/productos/?precio_max=8000"))
+    afuera = _html(client.get("/productos/?precio_min=8000"))
+
+    assert _nombres_en(adentro) == {"Agotada"}
+    assert "producto-tarjeta__agotado" in adentro
+    assert _nombres_en(afuera) == set()
+
+
+def test_el_producto_sin_variantes_sigue_filtrando_por_su_precio(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """La regresion que esta tanda no puede romper, mezclada con los otros casos."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    crear_producto(post.id, nombre="Pelado barato", precio="3000.00")
+    crear_producto(post.id, nombre="Pelado caro", precio="90000.00")
+    con_variantes(
+        crear_producto(post.id, nombre="Con variantes", precio="90000.00"),
+        ("S", 2, "4000.00", True),
+    )
+
+    html = _html(client.get("/productos/?precio_min=2000&precio_max=8000"))
+
+    assert _nombres_en(html) == {"Pelado barato", "Con variantes"}
+
+
+def test_el_precio_heredado_tambien_entra_en_el_rango(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """precio_override en NULL es "hereda", no cero: la comparacion va sobre el efectivo."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Hereda", precio="7000.00"),
+        ("S", 2, None, True),
+        ("M", 2, "90000.00", True),
+    )
+
+    assert _nombres_en(_html(client.get("/productos/?precio_max=8000"))) == {"Hereda"}
+    assert _nombres_en(_html(client.get("/productos/?precio_min=8000"))) == {"Hereda"}
+
+
+def test_el_conteo_del_encabezado_cuenta_lo_mismo_que_el_rango_filtra(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El "de N emprendimientos" no puede hablar de otra busqueda que la grilla."""
+    dueno = crear_usuario(username="dueno")
+    otro = crear_usuario(username="otro")
+    con_variantes(
+        crear_producto(crear_post(dueno.id).id, nombre="Entra", precio="90000.00"),
+        ("S", 2, "4000.00", True),
+    )
+    con_variantes(
+        crear_producto(crear_post(otro.id).id, nombre="No entra", precio="4000.00"),
+        ("S", 2, "90000.00", True),
+    )
+
+    html = _html(client.get("/productos/?precio_max=8000"))
+
+    assert _nombres_en(html) == {"Entra"}
+    assert "1 producto" in html
+    assert "1 emprendimiento" in html

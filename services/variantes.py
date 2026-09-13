@@ -14,7 +14,7 @@ decisiones aca, el HTTP en la vista.
 
 from collections import namedtuple
 
-from sqlalchemy import and_, case, func
+from sqlalchemy import and_, case, func, or_
 
 from db import db
 from models.product import Product
@@ -313,6 +313,16 @@ ResumenDeVariantes = namedtuple(
 )
 
 
+#: Lo que devuelve con_resumen_de_variantes: la consulta con las columnas
+#: agregadas, y la expresion SQL del precio que muestra la tarjeta.
+#:
+#: Van juntas y no en dos funciones porque la expresion tiene que apuntar a LA
+#: MISMA subconsulta que se acaba de unir: armada aparte seria un segundo
+#: outerjoin a la misma tabla, o sea la agregacion pagada dos veces en la misma
+#: pantalla. Quien solo necesita las columnas ignora el segundo campo.
+ConsultaConVariantes = namedtuple("ConsultaConVariantes", "consulta precio_desde")
+
+
 def con_resumen_de_variantes(consulta):
     """Le suma a una Query de Product las cinco columnas agregadas de sus variantes.
 
@@ -351,6 +361,12 @@ def con_resumen_de_variantes(consulta):
     El precio de cada combinacion es COALESCE(precio_override, products.precio),
     o sea la traduccion a SQL de ProductoVariante.precio_efectivo: NULL en el
     override significa "hereda", nunca cero.
+
+    Devuelve una ConsultaConVariantes: la consulta y, al lado, la expresion del
+    PRECIO QUE MUESTRA LA TARJETA (el minimo de las comprables, o el precio
+    base cuando no hay ninguna). Es lo que el catalogo necesita para ordenar
+    por precio, y tiene que salir de aca porque apunta a la subconsulta que se
+    acaba de unir.
     """
     precio_efectivo = func.coalesce(ProductoVariante.precio_override, Product.precio)
     activa = ProductoVariante.activo.is_(True)
@@ -381,7 +397,7 @@ def con_resumen_de_variantes(consulta):
         .subquery()
     )
 
-    return (
+    consulta = (
         consulta
         .outerjoin(combinaciones, combinaciones.c.product_id == Product.id)
         .outerjoin(ejes, ejes.c.product_id == Product.id)
@@ -396,6 +412,16 @@ def con_resumen_de_variantes(consulta):
             combinaciones.c.precio_min.label("variantes_precio_min"),
             combinaciones.c.precio_max.label("variantes_precio_max"),
         )
+    )
+    # El COALESCE es la regla entera del precio que se ve en la grilla: el
+    # minimo de las comprables, y el precio base cuando la subconsulta no
+    # trajo ninguna --el producto sin variantes y el que las tiene todas
+    # agotadas, que son los dos casos en que la tarjeta muestra el base--.
+    # Ordenar por la columna pelada dejaria esos dos al final o al principio
+    # segun el motor, porque MySQL y SQLite no ponen los NULL del mismo lado.
+    return ConsultaConVariantes(
+        consulta=consulta,
+        precio_desde=func.coalesce(combinaciones.c.precio_min, Product.precio),
     )
 
 
@@ -453,4 +479,72 @@ def resumen_de_fila(producto, fila):
         # > y no != para no depender de como vuelve el Decimal de cada motor.
         precio_es_rango=precio_max is not None and precio_max > precio_min,
         disponible=bool(producto.disponible),
+    )
+
+
+def _hay_una_comprable(*condiciones):
+    """EXISTS sobre las combinaciones comprables del producto de la fila de afuera.
+
+    Correlacionada a proposito, y aca si conviene: en el WHERE un EXISTS es un
+    semi-join que el motor corta apenas encuentra la primera fila que cumple, y
+    no la subconsulta escalar por fila que se midio como la peor forma de traer
+    el precio (ver docs/VARIANTES.md). Lo que no se puede es agregar la tabla
+    entera y despues comparar el rango contra el minimo ya agregado: el minimo
+    es UN precio, y la pregunta es si ALGUNA combinacion cae adentro.
+    """
+    return db.session.query(ProductoVariante.id).filter(
+        ProductoVariante.product_id == Product.id,
+        ProductoVariante.activo.is_(True),
+        ProductoVariante.stock > 0,
+        *condiciones,
+    ).exists()
+
+
+def filtro_de_precio(precio_min, precio_max):
+    """La condicion del rango de precios del catalogo, consciente de variantes.
+
+    Devuelve None si no se pidio ningun borde, para que la vista no agregue un
+    filtro que no filtra nada.
+
+    LA REGLA ES QUE EL FILTRO COINCIDA CON LO QUE LA TARJETA DICE. La tarjeta
+    de un producto con variantes muestra el precio de sus combinaciones
+    comprables; la del que no tiene (o las tiene todas agotadas) muestra el
+    precio base. El filtro pregunta exactamente eso:
+
+      - con alguna combinacion comprable: entra si ALGUNA cae en el rango, y no
+        si su precio base cae. Un producto de $50.000 con un talle a $7.000 con
+        stock tiene que aparecer en "hasta $8.000": eso es lo que se puede
+        pedir, y es el numero que la tarjeta muestra.
+      - sin ninguna comprable: se compara el precio base, que es lo unico que
+        la tarjeta puede mostrar ahi. Asi el agotado no desaparece de una
+        busqueda por precio para reaparecer en la misma busqueda sin precio.
+
+    OJO CON LA TENTACION DE COMPARAR CONTRA EL MINIMO YA AGREGADO
+    (variantes_precio_min): da falsos negativos en cuanto el producto tiene
+    combinaciones a precios distintos. Uno con el minimo en $5.000 y el maximo
+    en $50.000 no entra en "desde $6.000 hasta $8.000" mirando el minimo --que
+    queda por debajo del borde de abajo-- aunque tenga una combinacion a $7.000
+    justo adentro. El minimo contesta "cuanto sale lo mas barato", no "hay algo
+    en este rango", que es otra pregunta.
+
+    El precio de cada combinacion es el efectivo
+    (COALESCE(precio_override, products.precio)), el mismo de todo el resto.
+    """
+    if precio_min is None and precio_max is None:
+        return None
+
+    precio_efectivo = func.coalesce(ProductoVariante.precio_override, Product.precio)
+
+    en_rango_la_combinacion = []
+    en_rango_el_base = []
+    if precio_min is not None:
+        en_rango_la_combinacion.append(precio_efectivo >= precio_min)
+        en_rango_el_base.append(Product.precio >= precio_min)
+    if precio_max is not None:
+        en_rango_la_combinacion.append(precio_efectivo <= precio_max)
+        en_rango_el_base.append(Product.precio <= precio_max)
+
+    return or_(
+        _hay_una_comprable(*en_rango_la_combinacion),
+        and_(~_hay_una_comprable(), *en_rango_el_base),
     )
