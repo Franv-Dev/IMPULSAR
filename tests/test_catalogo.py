@@ -1116,3 +1116,84 @@ def test_el_conteo_del_encabezado_cuenta_lo_mismo_que_el_rango_filtra(
     assert _nombres_en(html) == {"Entra"}
     assert "1 producto" in html
     assert "1 emprendimiento" in html
+
+
+# ---------------------------------- el orden por precio, consciente de variantes
+
+def test_el_orden_por_precio_usa_el_desde_y_no_el_precio_base(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El que ordena por precio compara los numeros que lee en las tarjetas.
+
+    La campera tiene precio base $50.000 y muestra "desde $ 1.000,00": va
+    primera. Ordenando por el precio base saldria ultima, con el numero mas
+    chico de la grilla abajo de todo.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    crear_producto(post.id, nombre="Pelado", precio="5000.00")
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 2, "1000.00", True),
+        ("M", 2, "50000.00", True),
+    )
+
+    html = _html(client.get("/productos/?orden=precio"))
+
+    assert html.index("Campera") < html.index("Pelado")
+
+
+def test_de_mayor_a_menor_es_el_mismo_desde_al_reves(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """Y no el maximo de las combinaciones.
+
+    La campera muestra "desde $ 1.000,00" aunque tenga un talle a $50.000:
+    ordenando de mayor a menor por el maximo encabezaria la grilla, o sea que
+    el numero mas chico quedaria arriba de todo en un orden descendente.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    crear_producto(post.id, nombre="Pelado", precio="5000.00")
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 2, "1000.00", True),
+        ("M", 2, "50000.00", True),
+    )
+
+    html = _html(client.get("/productos/?orden=precio_desc"))
+
+    assert html.index("Pelado") < html.index("Campera")
+
+
+def test_el_orden_por_precio_no_deja_afuera_a_los_que_no_tienen_variantes(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El COALESCE del orden: sin variantes la columna agregada viene NULL.
+
+    Ordenando por la columna pelada estos productos se irian todos juntos a una
+    punta de la grilla --y a cual depende del motor, porque MySQL y SQLite no
+    ponen los NULL del mismo lado--. Con el precio base en su lugar, los cinco
+    se intercalan por lo que cada tarjeta dice.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    crear_producto(post.id, nombre="Pelado barato", precio="1000.00")
+    crear_producto(post.id, nombre="Pelado caro", precio="9000.00")
+    con_variantes(
+        crear_producto(post.id, nombre="Variantes al medio", precio="80000.00"),
+        ("S", 2, "5000.00", True),
+    )
+    con_variantes(
+        crear_producto(post.id, nombre="Agotado", precio="3000.00"),
+        ("S", 0, "70000.00", True),
+    )
+
+    html = _html(client.get("/productos/?orden=precio"))
+
+    assert (
+        html.index("Pelado barato")
+        < html.index("Agotado")
+        < html.index("Variantes al medio")
+        < html.index("Pelado caro")
+    )
