@@ -399,6 +399,25 @@ def _cuantos_emprendimientos(busqueda, categoria, precio_min, precio_max,
     ).scalar() or 0
 
 
+def _fila_de_la_grilla(fila, distance_km=None, es_favorito=False):
+    """Lo que la tarjeta compartida espera, armado desde una fila de la consulta.
+
+    Existe para que el catalogo y "Mis guardados" no armen el diccionario cada
+    uno por su lado: son la misma tarjeta, y mientras el precio se calculaba en
+    dos lugares uno de los dos se quedo mostrando el precio base.
+
+    Se lee por nombre y no por posicion: cada fila trae el producto, las cinco
+    columnas del resumen de variantes y, solo en el catalogo con coordenadas,
+    los km. Con desempaquetado posicional una columna mas rompe el bucle.
+    """
+    return {
+        "producto": fila.Product,
+        "variantes": reglas_variantes.resumen_de_fila(fila.Product, fila),
+        "distance_km": distance_km,
+        "es_favorito": es_favorito,
+    }
+
+
 def _ids_favoritos(user_id, productos):
     """De esos productos, cuales tiene marcados ese usuario. Una sola consulta.
 
@@ -482,19 +501,15 @@ def catalogo():
         **lo_pedido,
     )
 
-    # Por nombre y no por posicion: cada fila trae el producto, las cinco
-    # columnas del resumen de variantes y, solo si hay coordenadas, los km. Con
-    # desempaquetado posicional agregar una columna mas rompe este bucle.
     filas = [
-        {
-            "producto": fila.Product,
-            "distance_km": (
+        _fila_de_la_grilla(
+            fila,
+            distance_km=(
                 round(fila.distance_km, 1)
                 if ordenado_por_distancia and fila.distance_km is not None
                 else None
             ),
-            "variantes": reglas_variantes.resumen_de_fila(fila.Product, fila),
-        }
+        )
         for fila in paginacion.items
     ]
 
@@ -659,15 +674,25 @@ def guardados():
     El joinedload trae el emprendimiento de cada producto en la misma consulta:
     la tarjeta lo nombra, y sin eso es un SELECT por fila (problema N+1).
 
+    Y el mismo con_resumen_de_variantes que el catalogo, sin tocarlo: el helper
+    le suma las columnas agregadas a cualquier consulta de Product, asi que el
+    join extra por favorito convive con el. Es lo que hace que esta pantalla
+    diga el mismo precio que la grilla de la que se guardo el producto --antes
+    mostraba el precio base y la del catalogo el "desde", con el mismo producto
+    en las dos--.
+
     El desempate por id, igual que en "Mis favoritos": en MySQL la columna es
     DATETIME(0), asi que todo lo que se marca dentro del mismo segundo empata,
     y empatado el orden es arbitrario e inestable entre consultas.
     """
-    paginacion = (
+    consulta, _ = reglas_variantes.con_resumen_de_variantes(
         Product.query
         .join(ProductFavorite, ProductFavorite.product_id == Product.id)
         .options(joinedload(Product.post))
         .filter(ProductFavorite.user_id == g.user.id)
+    )
+    paginacion = (
+        consulta
         .order_by(ProductFavorite.created.desc(), ProductFavorite.id.desc())
         .paginate(
             page=request.args.get("page", 1, type=int),
@@ -677,7 +702,8 @@ def guardados():
     )
     return render_template(
         "products/guardados.html",
-        productos=paginacion.items,
+        # El corazon siempre lleno: esta pantalla son justamente los marcados.
+        filas=[_fila_de_la_grilla(fila, es_favorito=True) for fila in paginacion.items],
         paginacion=paginacion,
     )
 

@@ -1197,3 +1197,114 @@ def test_el_orden_por_precio_no_deja_afuera_a_los_que_no_tienen_variantes(
         < html.index("Variantes al medio")
         < html.index("Pelado caro")
     )
+
+
+# ----------------------------- las variantes en "Mis guardados" y en la ficha
+
+def test_los_guardados_dicen_el_mismo_desde_que_el_catalogo(
+    client, crear_usuario, crear_post, crear_producto, con_variantes, login, db
+):
+    """Es la misma tarjeta: el que guarda un producto de la grilla ve ahi el numero que leyo."""
+    dueno = crear_usuario(username="dueno")
+    cliente = crear_usuario(username="cliente")
+    producto = con_variantes(
+        crear_producto(crear_post(dueno.id).id, nombre="Campera", precio="50000.00"),
+        ("S", 2, "1200.00", True),
+        ("M", 2, "50000.00", True),
+    )
+    db.session.add(ProductFavorite(user_id=cliente.id, product_id=producto.id))
+    db.session.commit()
+    login(cliente.id)
+
+    en_el_catalogo = _precio_de_la_tarjeta(_html(client.get("/productos/")))
+    en_guardados = _precio_de_la_tarjeta(_html(client.get("/productos/guardados")))
+
+    assert en_guardados == en_el_catalogo == "desde $ 1.200,00"
+
+
+def test_los_guardados_dicen_agotado_con_la_matriz_en_cero(
+    client, crear_usuario, crear_post, crear_producto, con_variantes, login, db
+):
+    """El producto sigue marcado disponible: el cartel sale de las combinaciones."""
+    dueno = crear_usuario(username="dueno")
+    cliente = crear_usuario(username="cliente")
+    producto = con_variantes(
+        crear_producto(crear_post(dueno.id).id, nombre="Campera", precio="50000.00"),
+        ("S", 0, None, True),
+        ("M", 0, "1200.00", True),
+    )
+    db.session.add(ProductFavorite(user_id=cliente.id, product_id=producto.id))
+    db.session.commit()
+    login(cliente.id)
+
+    html = _html(client.get("/productos/guardados"))
+
+    assert _dice_sin_stock(html)
+    assert _precio_de_la_tarjeta(html) == "$ 50.000,00"
+
+
+def test_un_guardado_sin_variantes_sigue_mostrando_su_precio_base(
+    client, crear_usuario, crear_post, crear_producto, login, db
+):
+    """La regresion de la pantalla: sin variantes no cambia nada."""
+    dueno = crear_usuario(username="dueno")
+    cliente = crear_usuario(username="cliente")
+    producto = crear_producto(
+        crear_post(dueno.id).id, nombre="Pan de campo", precio="1500.00"
+    )
+    db.session.add(ProductFavorite(user_id=cliente.id, product_id=producto.id))
+    db.session.commit()
+    login(cliente.id)
+
+    html = _html(client.get("/productos/guardados"))
+
+    assert _precio_de_la_tarjeta(html) == "$ 1.500,00"
+    assert not _dice_sin_stock(html)
+
+
+def test_los_guardados_no_consultan_de_mas_por_cada_producto(
+    client, crear_usuario, crear_post, crear_producto, con_variantes, login, db
+):
+    """Misma consulta unica que el catalogo: el resumen viaja adentro, no por tarjeta."""
+    dueno = crear_usuario(username="dueno")
+    cliente = crear_usuario(username="cliente")
+    # Los ids sueltos y no los objetos: entre una medicion y la otra hay un
+    # expunge_all(), que deja detachado todo lo que se haya traido antes.
+    post_id = crear_post(dueno.id).id
+    cliente_id = cliente.id
+
+    def guardar(desde, hasta):
+        for i in range(desde, hasta):
+            producto = con_variantes(
+                crear_producto(post_id, nombre=f"Producto {i}", precio="2000.00"),
+                ("S", 2, "1500.00", True),
+                ("M", 0, "1800.00", True),
+            )
+            db.session.add(
+                ProductFavorite(user_id=cliente_id, product_id=producto.id)
+            )
+        db.session.commit()
+
+    def contar_consultas():
+        db.session.expunge_all()
+        vistas = []
+
+        def escuchar(conn, cursor, statement, params, context, many):
+            vistas.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", escuchar)
+        try:
+            respuesta = client.get("/productos/guardados")
+        finally:
+            event.remove(db.engine, "before_cursor_execute", escuchar)
+        assert respuesta.status_code == 200
+        return len(vistas)
+
+    login(cliente_id)
+    guardar(0, 3)
+    con_tres = contar_consultas()
+
+    guardar(3, 12)
+    con_doce = contar_consultas()
+
+    assert con_doce == con_tres
