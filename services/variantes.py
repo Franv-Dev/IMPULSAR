@@ -518,13 +518,16 @@ def _productos_con_una_comprable(precio_min=None, precio_max=None):
     SIN CORRELACIONAR CON LA CONSULTA DE AFUERA, y eso es lo unico importante
     de esta funcion. La primera version era un EXISTS correlacionado por
     product_id, que se lee mejor y en MySQL tarda 789 ms con 800 productos
-    contra 12 ms de esta: el precio efectivo es
+    contra 24,8 ms de esta: el precio efectivo es
     COALESCE(precio_override, products.precio), asi que mirando el products de
     afuera la subconsulta pasa a ser DEPENDENT SUBQUERY y el motor la vuelve a
     correr por cada fila candidata, antes del LIMIT. Es el mismo desastre que
-    la forma correlacionada que se descarto para traer el precio, y en SQLite
-    casi no se nota (7,6 ms contra 4,7): otra vez el motor chico tapando el
-    problema del grande.
+    la forma correlacionada que se descarto para traer el precio.
+
+    EN SQLITE ESTA FORMA ES APENAS MAS LENTA que la correlacionada (8,8 ms
+    contra 7,6 con esos mismos 800), asi que la suite no solo no muestra el
+    problema: muestra el arreglo como si fuera un retroceso. Los dos numeros
+    que deciden son los de MySQL.
 
     Uniendo products ADENTRO se arma la lista una sola vez y el de afuera
     queda como un IN contra un conjunto ya resuelto. Ver docs/VARIANTES.md.

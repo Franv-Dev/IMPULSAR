@@ -288,9 +288,11 @@ Uniendo `products` **adentro** de la subconsulta, la lista se arma una sola vez
 y afuera queda un `IN` contra un conjunto ya resuelto: **24,8 ms con los mismos
 800 productos**, o sea treinta veces menos.
 
-En SQLite las dos formas daban 7,6 ms y 8,8 ms. El motor de la suite no mostraba
-nada, que es la misma lección que la tabla de más arriba: lo que decide es
-MySQL.
+En SQLite el correlacionado daba 7,6 ms y la forma nueva da 8,8 ms: no sólo no
+mostraba el problema, sino que **muestra el arreglo como si fuera un
+retroceso**. Es la misma lección que la tabla de más arriba, un poco más
+incómoda: lo que decide es MySQL, y una medición contra SQLite puede hacer
+descartar el cambio correcto.
 
 #### El orden por precio usa el "desde" de la tarjeta
 
