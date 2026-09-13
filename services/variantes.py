@@ -15,6 +15,7 @@ decisiones aca, el HTTP en la vista.
 from collections import namedtuple
 
 from sqlalchemy import and_, case, func, or_
+from sqlalchemy.orm import aliased
 
 from db import db
 from models.product import Product
@@ -507,22 +508,48 @@ def resumen_de_fila(producto, fila):
     )
 
 
-def _hay_una_comprable(*condiciones):
-    """EXISTS sobre las combinaciones comprables del producto de la fila de afuera.
+def _productos_con_una_comprable(precio_min=None, precio_max=None):
+    """Los ids de los productos que tienen alguna combinacion comprable.
 
-    Correlacionada a proposito, y aca si conviene: en el WHERE un EXISTS es un
-    semi-join que el motor corta apenas encuentra la primera fila que cumple, y
-    no la subconsulta escalar por fila que se midio como la peor forma de traer
-    el precio (ver docs/VARIANTES.md). Lo que no se puede es agregar la tabla
-    entera y despues comparar el rango contra el minimo ya agregado: el minimo
-    es UN precio, y la pregunta es si ALGUNA combinacion cae adentro.
+    Con el rango, los que tienen alguna comprable adentro de el; sin el, los
+    que tienen alguna, a cualquier precio. Son las dos mitades de
+    filtro_de_precio y es la misma consulta, asi que va escrita una vez.
+
+    SIN CORRELACIONAR CON LA CONSULTA DE AFUERA, y eso es lo unico importante
+    de esta funcion. La primera version era un EXISTS correlacionado por
+    product_id, que se lee mejor y en MySQL tarda 789 ms con 800 productos
+    contra 12 ms de esta: el precio efectivo es
+    COALESCE(precio_override, products.precio), asi que mirando el products de
+    afuera la subconsulta pasa a ser DEPENDENT SUBQUERY y el motor la vuelve a
+    correr por cada fila candidata, antes del LIMIT. Es el mismo desastre que
+    la forma correlacionada que se descarto para traer el precio, y en SQLite
+    casi no se nota (7,6 ms contra 4,7): otra vez el motor chico tapando el
+    problema del grande.
+
+    Uniendo products ADENTRO se arma la lista una sola vez y el de afuera
+    queda como un IN contra un conjunto ya resuelto. Ver docs/VARIANTES.md.
+
+    Lo que no se puede es comparar el rango contra el minimo ya agregado: el
+    minimo es UN precio, y la pregunta es si ALGUNA combinacion cae adentro.
     """
-    return db.session.query(ProductoVariante.id).filter(
-        ProductoVariante.product_id == Product.id,
-        ProductoVariante.activo.is_(True),
-        ProductoVariante.stock > 0,
-        *condiciones,
-    ).exists()
+    duenio = aliased(Product)
+    precio_efectivo = func.coalesce(ProductoVariante.precio_override, duenio.precio)
+
+    acotado = []
+    if precio_min is not None:
+        acotado.append(precio_efectivo >= precio_min)
+    if precio_max is not None:
+        acotado.append(precio_efectivo <= precio_max)
+
+    return (
+        db.session.query(ProductoVariante.product_id)
+        .join(duenio, duenio.id == ProductoVariante.product_id)
+        .filter(
+            ProductoVariante.activo.is_(True),
+            ProductoVariante.stock > 0,
+            *acotado,
+        )
+    )
 
 
 def filtro_de_precio(precio_min, precio_max):
@@ -558,18 +585,16 @@ def filtro_de_precio(precio_min, precio_max):
     if precio_min is None and precio_max is None:
         return None
 
-    precio_efectivo = func.coalesce(ProductoVariante.precio_override, Product.precio)
-
-    en_rango_la_combinacion = []
     en_rango_el_base = []
     if precio_min is not None:
-        en_rango_la_combinacion.append(precio_efectivo >= precio_min)
         en_rango_el_base.append(Product.precio >= precio_min)
     if precio_max is not None:
-        en_rango_la_combinacion.append(precio_efectivo <= precio_max)
         en_rango_el_base.append(Product.precio <= precio_max)
 
     return or_(
-        _hay_una_comprable(*en_rango_la_combinacion),
-        and_(~_hay_una_comprable(), *en_rango_el_base),
+        Product.id.in_(_productos_con_una_comprable(precio_min, precio_max)),
+        and_(
+            Product.id.notin_(_productos_con_una_comprable()),
+            *en_rango_el_base,
+        ),
     )
