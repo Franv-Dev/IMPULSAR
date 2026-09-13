@@ -255,10 +255,11 @@ afuera, y a propósito:
 
 #### El rango de precios: "hay alguna en el rango", no "cuánto sale la más barata"
 
-**La regla es que el filtro coincida con lo que la tarjeta dice.** La tarjeta de
-un producto con combinaciones muestra el precio de las comprables; la del que no
-tiene —o las tiene todas agotadas— muestra el precio base. El filtro pregunta
-exactamente eso, y son dos ramas:
+**La regla es que el filtro mire los mismos precios que la tarjeta** —los de las
+combinaciones que se pueden pedir, no el precio base—. La tarjeta de un producto
+con combinaciones muestra el precio de las comprables; la del que no tiene —o las
+tiene todas agotadas— muestra el precio base. El filtro pregunta sobre ese mismo
+conjunto, y son dos ramas:
 
 - con alguna combinación comprable, entra si **alguna** cae en el rango. Una
   campera de $50.000 con un talle a $7.000 con stock aparece en "hasta $8.000":
@@ -266,6 +267,17 @@ exactamente eso, y son dos ramas:
 - sin ninguna comprable, se compara el precio base. Así el agotado no
   desaparece de una búsqueda por precio para reaparecer en la misma búsqueda
   sin precio, con el mismo cartel puesto.
+
+**La equivalencia va en un solo sentido**, y conviene tenerlo claro antes de
+leerlo como un bug: que un producto entre no quiere decir que el número de su
+tarjeta esté adentro del rango. La tarjeta muestra el **mínimo** de las
+comprables y el filtro pregunta si hay **alguna**, que con precios distintos no
+es lo mismo. Un producto con combinaciones a $7.000 y a $50.000, las dos con
+stock, dice "desde $7.000" y aparece igual en una búsqueda de $40.000 a $60.000,
+donde esa tarjeta se lee como un $7.000 fuera de rango. Es la consecuencia
+esperada de preguntar *hay algo en este rango*: lo que se busca es la
+combinación, no el producto, y la alternativa es no encontrar nunca lo que sí
+está a la venta a ese precio.
 
 **La trampa es comparar el rango contra `variantes_precio_min`**, que ya está
 agregado y a mano. Da falsos negativos en cuanto el producto tiene precios
@@ -276,13 +288,28 @@ más barato*; la pregunta del filtro es *hay algo en este rango*.
 
 #### Y la forma de esa subconsulta importa más que el criterio
 
-La primera versión fue un `EXISTS` correlacionado por `product_id`, que se lee
-mejor y **tarda 789 ms con 800 productos en MySQL**. El precio de cada
-combinación es `COALESCE(precio_override, products.precio)`: mirando el
-`products` de **afuera**, la subconsulta pasa a ser `DEPENDENT SUBQUERY` y el
-motor la vuelve a correr por cada fila candidata, antes del LIMIT. Es el mismo
-desastre que la forma correlacionada que esta misma página había descartado para
-traer el precio.
+La primera versión fue un `EXISTS` correlacionado, que se lee mejor y **tarda
+789 ms con 800 productos en MySQL**.
+
+**Y no es que un `EXISTS` correlacionado sea malo**, que es la conclusión fácil
+y equivocada de este párrafo. Correlacionar por `product_id` contra su índice
+—`EXISTS (… WHERE v.product_id = products.id …)` a secas— lo resuelve MySQL con
+un `ref` sobre ese índice y da **32 ms** con los mismos 800: perfectamente
+razonable, y es la forma que hay que usar el día que haga falta un EXISTS acá.
+
+Lo que dispara el desastre es **correlacionar sobre una expresión que no puede
+usar ningún índice**. El precio de cada combinación es
+`COALESCE(precio_override, products.precio)`, y ese `products.precio` es el de
+**afuera**: la condición del rango pasa a depender de la fila externa, el motor
+no tiene por dónde entrar y la subconsulta se vuelve un `DEPENDENT SUBQUERY` con
+`type=ALL` que se recorre entera por cada fila candidata, antes del LIMIT. Es el
+mismo desastre que la forma correlacionada que esta misma página había
+descartado para traer el precio, y por el mismo motivo.
+
+O sea que el criterio no es "evitá los EXISTS correlacionados" sino **fijate
+sobre qué los correlacionás**: contra una columna indexada, bien; contra una
+expresión armada con columnas de la consulta de afuera, es una tabla completa
+por fila.
 
 Uniendo `products` **adentro** de la subconsulta, la lista se arma una sola vez
 y afuera queda un `IN` contra un conjunto ya resuelto: **24,8 ms con los mismos

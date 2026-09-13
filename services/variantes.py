@@ -515,14 +515,21 @@ def _productos_con_una_comprable(precio_min=None, precio_max=None):
     que tienen alguna, a cualquier precio. Son las dos mitades de
     filtro_de_precio y es la misma consulta, asi que va escrita una vez.
 
-    SIN CORRELACIONAR CON LA CONSULTA DE AFUERA, y eso es lo unico importante
-    de esta funcion. La primera version era un EXISTS correlacionado por
-    product_id, que se lee mejor y en MySQL tarda 789 ms con 800 productos
-    contra 24,8 ms de esta: el precio efectivo es
-    COALESCE(precio_override, products.precio), asi que mirando el products de
-    afuera la subconsulta pasa a ser DEPENDENT SUBQUERY y el motor la vuelve a
-    correr por cada fila candidata, antes del LIMIT. Es el mismo desastre que
-    la forma correlacionada que se descarto para traer el precio.
+    SIN CORRELACIONAR EL RANGO CON LA CONSULTA DE AFUERA, y eso es lo unico
+    importante de esta funcion. La primera version era un EXISTS correlacionado
+    y en MySQL tardaba 789 ms con 800 productos, contra 24,8 ms de esta.
+
+    OJO CON LA MORALEJA: no es que un EXISTS correlacionado sea malo. Uno que
+    correlaciona por product_id contra su indice lo resuelve MySQL con un ref
+    sobre ese indice y da 32 ms con esos mismos 800, o sea que es una forma
+    perfectamente razonable y es la que hay que usar el dia que haga falta un
+    EXISTS aca. Lo que lo arruina es correlacionar sobre una EXPRESION QUE NO
+    PUEDE USAR NINGUN INDICE: el precio efectivo es
+    COALESCE(precio_override, products.precio), y ese products.precio es el de
+    AFUERA, asi que la condicion del rango depende de la fila externa, queda
+    DEPENDENT SUBQUERY con type=ALL y se recorre entera por cada fila
+    candidata, antes del LIMIT. Es el mismo desastre que la forma
+    correlacionada que se descarto para traer el precio, y por el mismo motivo.
 
     EN SQLITE ESTA FORMA ES APENAS MAS LENTA que la correlacionada (8,8 ms
     contra 7,6 con esos mismos 800), asi que la suite no solo no muestra el
@@ -531,6 +538,16 @@ def _productos_con_una_comprable(precio_min=None, precio_max=None):
 
     Uniendo products ADENTRO se arma la lista una sola vez y el de afuera
     queda como un IN contra un conjunto ya resuelto. Ver docs/VARIANTES.md.
+
+    Y ESE INNER JOIN ES ADEMAS LO QUE HACE SEGURO EL NOT IN de
+    filtro_de_precio. Un NOT IN cuya lista tenga un solo NULL adentro no
+    devuelve ninguna fila, en ningun motor. Lo que impide que llegue un NULL
+    ahi NO es el NOT NULL de producto_variantes.product_id --esa es la garantia
+    fragil, la afloja cualquier migracion-- sino este join, que es estructural:
+    una fila huerfana no aparea con ningun products y queda afuera de la lista
+    antes de que el NOT IN la vea. Verificado aflojando el NOT NULL e
+    insertando una fila con product_id NULL: sin el join el filtro devuelve
+    vacio, con el join contesta lo mismo de siempre.
 
     Lo que no se puede es comparar el rango contra el minimo ya agregado: el
     minimo es UN precio, y la pregunta es si ALGUNA combinacion cae adentro.
@@ -561,10 +578,11 @@ def filtro_de_precio(precio_min, precio_max):
     Devuelve None si no se pidio ningun borde, para que la vista no agregue un
     filtro que no filtra nada.
 
-    LA REGLA ES QUE EL FILTRO COINCIDA CON LO QUE LA TARJETA DICE. La tarjeta
-    de un producto con variantes muestra el precio de sus combinaciones
-    comprables; la del que no tiene (o las tiene todas agotadas) muestra el
-    precio base. El filtro pregunta exactamente eso:
+    LA REGLA ES QUE EL FILTRO MIRE LOS MISMOS PRECIOS QUE LA TARJETA, o sea los
+    de las combinaciones que se pueden pedir y no el precio base. La tarjeta de
+    un producto con variantes muestra el precio de sus comprables; la del que
+    no tiene (o las tiene todas agotadas) muestra el precio base. El filtro
+    pregunta sobre ese mismo conjunto:
 
       - con alguna combinacion comprable: entra si ALGUNA cae en el rango, y no
         si su precio base cae. Un producto de $50.000 con un talle a $7.000 con
@@ -573,6 +591,17 @@ def filtro_de_precio(precio_min, precio_max):
       - sin ninguna comprable: se compara el precio base, que es lo unico que
         la tarjeta puede mostrar ahi. Asi el agotado no desaparece de una
         busqueda por precio para reaparecer en la misma busqueda sin precio.
+
+    LA EQUIVALENCIA VA EN UN SOLO SENTIDO, y conviene tenerlo claro antes de
+    leerlo como un bug: que el producto entre NO quiere decir que el numero de
+    su tarjeta este adentro del rango. La tarjeta muestra el MINIMO de las
+    comprables y el filtro pregunta si hay ALGUNA, que con precios distintos no
+    es lo mismo: uno con combinaciones a $7.000 y a $50.000, las dos con stock,
+    dice "desde $ 7.000,00" y aparece igual en una busqueda de $40.000 a
+    $60.000, donde esa tarjeta se lee como un $7.000 fuera de rango. Es la
+    consecuencia esperada de preguntar "hay algo en este rango" --lo que se
+    busca es la combinacion, no el producto-- y no un descuido: la alternativa
+    es no encontrar nunca lo que si esta a la venta a ese precio.
 
     OJO CON LA TENTACION DE COMPARAR CONTRA EL MINIMO YA AGREGADO
     (variantes_precio_min): da falsos negativos en cuanto el producto tiene
