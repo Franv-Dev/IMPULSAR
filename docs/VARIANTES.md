@@ -130,29 +130,145 @@ elegir combinaciones comprables (`activo = True` y `stock > 0`), y la consulta a
 vendedor viaja con la combinación elegida. El chequeo se rehace en el servidor
 con la fila traída de la base, porque el POST se escribe a mano.
 
-## Qué queda fuera a propósito: el catálogo
+## El catálogo: precio "desde" y disponibilidad reales
 
-La ficha del producto es consciente de las variantes. **Las tarjetas del catálogo
-no**: siguen mostrando `products.precio` y filtrando por `products.disponible`.
+La ficha fue consciente de las variantes desde el primer día; la tarjeta del
+catálogo no, y quedó anotado acá como pendiente propio. Esta tanda lo cierra:
+la tarjeta muestra el precio más barato de las combinaciones encendidas —con
+«desde» sólo si no valen todas lo mismo— y el cartel de "sin stock" mira si
+queda alguna combinación pedible, no sólo el interruptor del producto.
 
-No es un olvido. El catálogo lista decenas de productos en una consulta, y
-preguntarle a cada uno por sus variantes para pintar la tarjeta es el N+1 de la
-pantalla más visitada del proyecto —el precio "desde" y la disponibilidad real
-salen de filas de otra tabla, así que serían dos consultas por tarjeta—. Hacerlo
-bien es una agregación con `GROUP BY` y `LEFT JOIN`, con su test contra MySQL
-real: es una tanda propia, no una línea al final de ésta.
+El motivo por el que fue una tanda aparte y no una línea al final de la
+anterior sigue siendo el mismo: el catálogo es la pantalla más visitada del
+proyecto, y preguntarle a cada producto por sus variantes para pintar la
+tarjeta son **dos consultas por tarjeta** (las variantes y las opciones son
+dos relaciones lazy), o sea veinticuatro extra en una grilla de doce.
 
-Mientras tanto la tarjeta dice el precio base, que es el que el vendedor cargó, y
-la ficha —que es donde se decide— dice la verdad completa.
+### La consulta, y por qué tiene esta forma
 
-Vale ser explícito sobre qué se desalinea, porque son tres cosas y no una:
+`services.variantes.con_resumen_de_variantes()` le suma a la consulta que ya
+arma el catálogo dos subconsultas **agrupadas** traídas con `outerjoin`, y
+cinco columnas: cuántos ejes tiene cargados el producto, cuántas combinaciones
+activas, cuántas **comprables**, y el mínimo y el máximo del precio efectivo
+entre esas comprables. Es el mismo idiom que
+`services.ratings.query_posts_con_rating`.
 
-- **el precio de la tarjeta** es `products.precio`, aunque todas las
-  combinaciones tengan override y ninguna se venda a ese precio;
-- **`?disponibles=1`** (encendido por defecto) filtra por `products.disponible`,
-  así que devuelve productos que no tienen ninguna combinación pedible;
-- **`?precio_min` / `?precio_max`** filtran por el precio base, mientras la ficha
-  cobra el del override.
+**Comprable es activa Y con stock**, que es `ProductoVariante.comprable`
+escrito en SQL, y de esa única condición salen las dos mitades de la tarjeta:
+el precio y el cartel de "sin stock". El mínimo no se calcula entre todas las
+activas: la combinación más barata que se quedó sin stock no se puede pedir,
+así que su precio no es una oferta, y anunciarlo dejaría a la tarjeta
+prometiendo un número que la ficha —a un click, y con el mismo criterio en
+`Product.precio_desde`— no puede cumplir. Escrita una sola vez, además, no hay
+forma de que la tarjeta diga "desde $9.000" y "sin stock" al mismo tiempo, cada
+mitad mirando otra cosa.
 
-Las tres se arreglan con la misma agregación, y por eso son una tanda y no tres
-parches sueltos.
+Las **activas** se cuentan igual, y por separado: son lo que distingue el
+producto que tiene la matriz cargada y hoy no vende nada (agotado) del que no
+usa variantes (precio base), que es la misma pregunta que contesta
+`Product.tiene_variantes`.
+
+**El GROUP BY vive adentro de cada subconsulta y la consulta de afuera no se
+agrupa.** Agrupar afuera era más corto y está mal por dos motivos, los dos
+medidos y no teóricos:
+
+- el `joinedload` del emprendimiento mete las columnas de `posts` en el
+  SELECT, y agrupando por `products.id` eso es el error 1055 de MySQL en
+  `ONLY_FULL_GROUP_BY`: las columnas de `posts` no dependen funcionalmente de
+  la PK de `products`;
+- el paginado cuenta con un `COUNT` sobre la consulta, y con `GROUP BY` ese
+  COUNT cuenta grupos y no filas, o sea que el "18 productos" del encabezado
+  y la cantidad de páginas dejarían de decir la verdad.
+
+**Son dos subconsultas y no una** porque la de variantes sola no alcanza para
+saber si el producto usa variantes: el que tiene la matriz entera apagada y el
+que nunca las usó dan los dos "ninguna activa", y son casos distintos —agotado
+el primero, precio base el segundo—. Los distingue si hay **ejes** cargados,
+que es exactamente la pregunta que contesta `Product.tiene_variantes`.
+
+El precio de cada combinación es `COALESCE(precio_override, products.precio)`,
+que es `ProductoVariante.precio_efectivo` escrito en SQL: NULL en el override
+significa "hereda", nunca cero.
+
+### Lo que costó, medido
+
+Una página de 12 tarjetas, con productos con variantes (tres combinaciones cada
+uno) mezclados en partes iguales con productos sin variantes. **Todos los
+números de la tabla son contra SQLite en memoria**, mediana de 25 corridas, con
+el identity map vaciado antes de cada una —sin eso los objetos ya cargados no
+vuelven a la base y el número es falso—. Las tres formas posibles de la misma
+pantalla:
+
+| productos | vieja (precio base) | **agrupada (la elegida)** | correlacionada | lazy (N+1) |
+|---|---|---|---|---|
+| 10  | 1 consulta · 0,83 ms | **1 · 2,30 ms** | 1 · 1,75 ms | 21 · 5,43 ms |
+| 40  | 1 consulta · 0,85 ms | **1 · 2,45 ms** | 1 · 2,57 ms | 25 · 5,75 ms |
+| 80  | 1 consulta · 0,95 ms | **1 · 2,53 ms** | 1 · 5,65 ms | 25 · 5,75 ms |
+| 200 | 1 consulta · 1,14 ms | **1 · 2,94 ms** | 1 · 24,70 ms | 25 · 5,96 ms |
+| 400 | 1 consulta · 1,33 ms | **1 · 3,55 ms** | 1 · 93,07 ms | 25 · 6,17 ms |
+| 800 | 1 consulta · 1,83 ms | **1 · 4,84 ms** | 1 · 361,18 ms | 25 · 6,65 ms |
+
+(La columna de la correlacionada es de la misma medición hecha antes de que el
+criterio pasara de "activas" a "comprables": es la forma de la consulta lo que
+se estaba comparando, y esa no cambió. Las otras tres columnas son de la
+consulta tal como quedó.)
+
+**Contra MySQL real la agregada cuesta bastante más que ese número chico**: el
+sobrecosto contra la consulta vieja es de **+6 ms con 10 productos** y **+43 ms
+con 800**, o sea alrededor de diez veces lo que dice la tabla de SQLite. La
+forma de la consulta es la misma y el ranking entre las cuatro también; lo que
+cambia es la escala, y es la de MySQL la que corre en producción. La tabla
+queda porque es la que compara las cuatro formas entre sí, pero el umbral de
+"cuándo duele" hay que leerlo con estos dos números y no con los de arriba.
+
+Las tres cosas que dicen estos números:
+
+- **UNA consulta, siempre.** No hay N+1: el número no se mueve con cuántos
+  productos trae la página ni con cuántos hay en el catálogo. Eso es lo que
+  congela el test `test_el_catalogo_no_consulta_de_mas_por_cada_producto_con_variantes`,
+  que compara el conteo con 5 y con 20 productos con variantes.
+- **Cuesta entre 1,4 y 3 ms más que la consulta vieja en SQLite**, y ese costo crece con
+  el tamaño del catálogo y no con el de la página, porque las subconsultas
+  agregan la tabla entera antes de unirse —en MySQL, +6 ms a 10 productos y
+  +43 ms a 800—. A 800 productos sigue siendo menos que el N+1 que reemplaza.
+  El día que el catálogo sea diez veces más grande, esto es lo primero que hay
+  que volver a medir, y **con los números de MySQL**: la salida conocida es
+  acotar las subconsultas a los productos de la página.
+- **La correlacionada, que parecía la solución obvia** (mirar sólo los doce
+  productos de la página en vez de agregar la tabla entera), es la peor de
+  todas apenas hay datos: el motor la evalúa por cada fila candidata antes del
+  LIMIT, así que a 800 productos tarda 361 ms contra 4,9 ms de la agrupada. Se
+  midió antes de elegir, no después.
+
+### Lo que sigue desalineado, y es a propósito
+
+Esta tanda arregla lo que la tarjeta **dice**. No toca lo que el catálogo
+**filtra**, que son las otras dos cosas que este documento anotaba juntas:
+
+- **`?disponibles=1`** (encendido por defecto) sigue filtrando por
+  `products.disponible`, así que un producto con todas sus combinaciones en
+  cero entra igual en la grilla —eso sí, ahora entra con el cartel de "sin
+  stock" puesto, que antes tampoco tenía—;
+- **`?precio_min` / `?precio_max`** siguen filtrando por el precio base,
+  mientras la tarjeta ya muestra el "desde" de las combinaciones;
+- **`?orden=precio_menor` / `precio_mayor`** ordenan por el precio base por lo
+  mismo, así que una grilla ordenada por precio puede mostrar dos "desde" fuera
+  de orden entre sí.
+
+Las tres se arreglan con esta misma agregación movida al WHERE y al ORDER BY, y
+son cambios de comportamiento del buscador (qué resultados devuelve una búsqueda
+y en qué orden), no de lo que una tarjeta muestra. Por eso no van de arrastre
+acá.
+
+**La tarjeta y la ficha dicen el mismo precio**, y eso es deliberado: las dos
+calculan el mínimo entre las combinaciones comprables —la tarjeta en SQL, la
+ficha con `Product.precio_desde` en Python—. Un producto cuya combinación más
+barata se quedó sin stock muestra el mismo número en las dos pantallas. Si
+alguna vez hay que tocar uno de los dos criterios, hay que tocar los dos: el
+que entra por el precio de una tarjeta lo hace para llegar a esa ficha.
+
+Las otras dos pantallas que muestran tarjetas de producto —"Mis guardados" y el
+catálogo dentro de la ficha del emprendimiento— siguen mostrando el precio
+base: usan sus propias consultas y no pasaron por esta tanda, que es la del
+catálogo. `con_resumen_de_variantes()` se les puede aplicar tal cual el día que
+se toquen.

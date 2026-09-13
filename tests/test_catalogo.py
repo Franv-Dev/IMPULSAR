@@ -6,14 +6,19 @@ comparten es la fabrica de productos, que se repite aca a proposito -- moverla
 a conftest para dos archivos seria dejarla lejos de los dos.
 """
 
+import re
 from datetime import time
 from decimal import Decimal
 
 import pytest
+from sqlalchemy import event
 
 from app.perfil.modelo_horario import Horario
 from models.product import Product
 from models.product_favorite import ProductFavorite
+from models.producto_variante import (
+    ProductoVariante, ProductoVarianteOpcion, TiposDeOpcion,
+)
 from services.horarios import ahora_en_argentina
 
 
@@ -638,3 +643,323 @@ def test_las_dos_solapas_de_favoritos_estan_en_las_dos_pantallas(
         html = _html(client.get(url))
         assert 'href="/blog/favoritos"' in html, url
         assert 'href="/productos/guardados"' in html, url
+
+
+# ----------------------------------------- las variantes en la tarjeta
+
+"""Lo que prueba esta seccion, y por que cada caso.
+
+La tarjeta tiene que decir el precio y la disponibilidad REALES del producto
+que se vende por combinacion, sin preguntarle a la base una vez por tarjeta.
+Son tres cosas distintas y se prueban por separado:
+
+  - la REGRESION primero: el producto sin variantes no cambia en nada.
+  - el precio: el minimo entre las COMPRABLES (encendidas y con stock), con
+    "desde" solo si no valen todas lo mismo, y sin mirar ni las apagadas ni las
+    que se quedaron sin stock aunque sean mas baratas.
+  - el stock: alcanza con que una combinacion activa tenga, y la matriz entera
+    apagada es "agotado" y no un error.
+
+Y el ultimo, que es la razon de ser de la tanda: que el costo de la pantalla no
+crezca con la cantidad de productos listados.
+"""
+
+
+@pytest.fixture
+def con_variantes(db):
+    """Le carga al producto sus ejes y las combinaciones que pide el test.
+
+    Cada combinacion es una tupla (talle, stock, precio_override, activo), con
+    el precio como texto o None para "hereda el del producto". Se cargan
+    tambien las OPCIONES y no solo las filas, porque es lo que hace un producto
+    de verdad: la pantalla guarda las listas y de ahi sale la matriz.
+    Product.tiene_variantes mira las dos cosas, asi que un test que escribiera
+    solo las filas estaria probando un estado que la aplicacion no produce.
+    """
+    def _con(producto, *combinaciones, con_ejes=True):
+        if con_ejes:
+            talles = dict.fromkeys(talle for talle, _, _, _ in combinaciones)
+            for orden, talle in enumerate(talles):
+                db.session.add(ProductoVarianteOpcion(
+                    product_id=producto.id, tipo=TiposDeOpcion.TALLE,
+                    valor=talle, orden=orden,
+                ))
+        for talle, stock, precio_override, activo in combinaciones:
+            db.session.add(ProductoVariante(
+                product_id=producto.id, talle=talle, color="", stock=stock,
+                precio_override=(
+                    Decimal(precio_override) if precio_override is not None else None
+                ),
+                activo=activo,
+            ))
+        db.session.commit()
+        return producto
+
+    return _con
+
+
+def _precio_de_la_tarjeta(html):
+    """El texto del precio de la unica tarjeta de la grilla, sin los espacios.
+
+    Se lee el span de la tarjeta y no el HTML entero a proposito: la barra de
+    filtros tiene un campo "Precio desde" y un chip "Desde $...", asi que
+    buscar "desde" suelto en la pagina da positivo siempre y el test no
+    probaria nada.
+    """
+    encontrado = re.search(
+        r'class="producto-tarjeta__precio">(.*?)</span>', html, re.S
+    )
+    assert encontrado, "la grilla no tiene ninguna tarjeta"
+    return " ".join(encontrado.group(1).split())
+
+
+def _dice_sin_stock(html):
+    return "producto-tarjeta__agotado" in html
+
+
+def test_sin_variantes_la_tarjeta_sigue_diciendo_el_precio_base(
+    client, crear_usuario, crear_post, crear_producto
+):
+    """La regresion de la tanda: el camino viejo no se entera de nada."""
+    dueno = crear_usuario(username="dueno")
+    crear_producto(crear_post(dueno.id).id, precio="1500.00")
+
+    html = _html(client.get("/productos/"))
+
+    assert _precio_de_la_tarjeta(html) == "$ 1.500,00"
+    assert not _dice_sin_stock(html)
+
+
+def test_con_todas_las_combinaciones_al_mismo_precio_no_dice_desde(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """"desde" con un precio unico suena a letra chica, y no hay letra chica.
+
+    Las tres combinaciones valen lo mismo por caminos distintos -- una hereda
+    el precio del producto y las otras dos lo pisan con ese mismo numero --,
+    que es justo el caso en el que mirar `precio_override` en vez del precio
+    efectivo se equivocaria.
+    """
+    dueno = crear_usuario(username="dueno")
+    producto = crear_producto(crear_post(dueno.id).id, precio="1500.00")
+    con_variantes(
+        producto,
+        ("S", 3, None, True),
+        ("M", 2, "1500.00", True),
+        ("L", 1, "1500.00", True),
+    )
+
+    assert _precio_de_la_tarjeta(_html(client.get("/productos/"))) == "$ 1.500,00"
+
+
+def test_con_precios_distintos_dice_desde_el_mas_barato_de_los_comprables(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El minimo es entre las COMPRABLES: encendidas Y con stock.
+
+    Las dos combinaciones que quedan afuera son las dos formas de no ser
+    pedible, y las dos son mas baratas que la respuesta correcta a proposito:
+
+      - la de $700 esta apagada -- el vendedor dijo que esa no existe --;
+      - la de $900 esta encendida pero sin stock.
+
+    Es el mismo criterio que Product.precio_desde, que es lo que muestra la
+    ficha. Con el criterio de "solo activas" esta tarjeta diria "desde $900" y
+    la ficha, a un click, diria $1.200: la tarjeta estaria prometiendo un
+    precio que la pantalla que decide no puede cumplir.
+    """
+    dueno = crear_usuario(username="dueno")
+    producto = crear_producto(crear_post(dueno.id).id, precio="1500.00")
+    con_variantes(
+        producto,
+        ("XS", 4, "700.00", False),
+        ("S", 0, "900.00", True),
+        ("M", 2, "1200.00", True),
+        ("L", 1, "1800.00", True),
+    )
+
+    html = _html(client.get("/productos/"))
+
+    assert _precio_de_la_tarjeta(html) == "desde $ 1.200,00"
+    assert not _dice_sin_stock(html)
+
+
+def test_el_rango_tampoco_mira_las_que_no_se_pueden_pedir(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """Con una sola combinacion pedible no hay rango, y no lleva "desde".
+
+    Las otras dos estan a otro precio, pero una esta apagada y la otra sin
+    stock: si el maximo las contara, la tarjeta escribiria "desde" sobre un
+    precio que es el unico que hay.
+    """
+    dueno = crear_usuario(username="dueno")
+    producto = crear_producto(crear_post(dueno.id).id, precio="1500.00")
+    con_variantes(
+        producto,
+        ("S", 0, "900.00", True),
+        ("M", 3, "1200.00", True),
+        ("L", 5, "1800.00", False),
+    )
+
+    assert _precio_de_la_tarjeta(_html(client.get("/productos/"))) == "$ 1.200,00"
+
+
+def test_el_precio_heredado_entra_en_la_cuenta_del_minimo(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """precio_override en NULL es "vale lo que el producto", no "no tiene precio".
+
+    Si el minimo se calculara sobre la columna sola, la combinacion que hereda
+    quedaria afuera y la tarjeta anunciaria $2.000 cuando hay una a $1.500.
+    """
+    dueno = crear_usuario(username="dueno")
+    producto = crear_producto(crear_post(dueno.id).id, precio="1500.00")
+    con_variantes(
+        producto,
+        ("S", 1, None, True),
+        ("M", 1, "2000.00", True),
+    )
+
+    assert _precio_de_la_tarjeta(_html(client.get("/productos/"))) == "desde $ 1.500,00"
+
+
+def test_con_una_combinacion_con_stock_la_tarjeta_no_dice_agotado(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """Alcanza con UNA. La tarjeta no dice cuanto hay: eso es de la ficha."""
+    dueno = crear_usuario(username="dueno")
+    producto = crear_producto(crear_post(dueno.id).id)
+    con_variantes(
+        producto,
+        ("S", 0, None, True),
+        ("M", 4, None, True),
+    )
+
+    assert not _dice_sin_stock(_html(client.get("/productos/")))
+
+
+def test_sin_ninguna_combinacion_con_stock_la_tarjeta_dice_agotado(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El interruptor del producto dice que si y no queda nada que mandar.
+
+    Es el caso que la tarjeta no sabia leer antes de esta tanda: el producto
+    esta `disponible`, asi que se mostraba como si hubiera stock.
+    """
+    dueno = crear_usuario(username="dueno")
+    producto = crear_producto(crear_post(dueno.id).id, disponible=True)
+    con_variantes(
+        producto,
+        ("S", 0, None, True),
+        ("M", 0, None, True),
+    )
+
+    assert _dice_sin_stock(_html(client.get("/productos/")))
+
+
+def test_con_la_matriz_entera_apagada_la_tarjeta_dice_agotado_y_no_revienta(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """Ninguna activa PERO con los ejes cargados: agotado, no precio base.
+
+    Sin la subconsulta de opciones este producto seria indistinguible de uno
+    que nunca uso variantes, y la tarjeta lo anunciaria disponible. El precio
+    se sigue escribiendo -- un hueco donde va el precio se lee como una pagina
+    rota --, pero al lado dice que no hay.
+    """
+    dueno = crear_usuario(username="dueno")
+    producto = crear_producto(crear_post(dueno.id).id, precio="1500.00")
+    con_variantes(
+        producto,
+        ("S", 5, "900.00", False),
+        ("M", 5, "1200.00", False),
+    )
+
+    respuesta = client.get("/productos/")
+    assert respuesta.status_code == 200
+    html = _html(respuesta)
+    assert _dice_sin_stock(html)
+    assert _precio_de_la_tarjeta(html) == "$ 1.500,00"
+
+
+def test_sin_ejes_y_todo_apagado_el_producto_vuelve_a_su_precio_base(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El camino de "apagar las variantes", igual que Product.tiene_variantes.
+
+    Vaciar las dos listas apaga las filas pero no las borra. Ese producto no
+    usa variantes: tiene que volver al precio base y al booleano de siempre, y
+    no quedar agotado para siempre sin forma de revivirlo desde la pantalla.
+    """
+    dueno = crear_usuario(username="dueno")
+    producto = crear_producto(crear_post(dueno.id).id, precio="1500.00")
+    con_variantes(
+        producto,
+        ("S", 0, "900.00", False),
+        ("M", 0, "1200.00", False),
+        con_ejes=False,
+    )
+
+    html = _html(client.get("/productos/"))
+    assert _precio_de_la_tarjeta(html) == "$ 1.500,00"
+    assert not _dice_sin_stock(html)
+
+
+def test_el_catalogo_no_consulta_de_mas_por_cada_producto_con_variantes(
+    app, client, db, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """La razon de ser de la tanda: el costo no puede depender de la grilla.
+
+    Se compara el numero de consultas de una pagina con 5 productos con
+    variantes contra la misma pagina con 20. Con las properties del modelo
+    (precio_desde, disponible_efectivo) cada tarjeta sumaria dos SELECT -- las
+    variantes y las opciones son relaciones lazy --, asi que el numero creceria
+    con la pagina; con las dos subconsultas agregadas tiene que ser EL MISMO.
+
+    Se mide con el identity map vaciado antes de cada corrida: con los objetos
+    ya cargados en la sesion del test un lazy load no llega a la base y el
+    contador daria un falso negativo.
+
+    La pagina se pide entera (por_pagina al tope) para que las 20 filas caigan
+    en la misma, que es lo que hace comparable el numero.
+    """
+    app.config["PRODUCTOS_POR_PAGINA"] = 50
+    dueno = crear_usuario(username="dueno")
+    # El id aparte y no `post.id`: despues del expunge_all de la primera
+    # medicion el objeto queda desprendido de la sesion, y leerle un atributo
+    # es un DetachedInstanceError.
+    post_id = crear_post(dueno.id).id
+
+    def sumar_productos(desde, hasta):
+        for numero in range(desde, hasta):
+            producto = crear_producto(post_id, nombre=f"Remera {numero}")
+            con_variantes(
+                producto,
+                ("S", 2, None, True),
+                ("M", 0, "1800.00", True),
+                ("L", 1, "2500.00", False),
+            )
+
+    def contar_consultas():
+        db.session.expunge_all()
+        vistas = []
+
+        def escuchar(conn, cursor, statement, params, context, many):
+            vistas.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", escuchar)
+        try:
+            respuesta = client.get("/productos/")
+        finally:
+            event.remove(db.engine, "before_cursor_execute", escuchar)
+        assert respuesta.status_code == 200
+        return len(vistas)
+
+    sumar_productos(0, 5)
+    con_cinco = contar_consultas()
+
+    sumar_productos(5, 20)
+    con_veinte = contar_consultas()
+
+    assert con_veinte == con_cinco

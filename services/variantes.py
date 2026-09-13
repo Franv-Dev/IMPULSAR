@@ -12,6 +12,12 @@ cosa en dos lugares. Lo que si se respeta es la separacion de siempre -- las
 decisiones aca, el HTTP en la vista.
 """
 
+from collections import namedtuple
+
+from sqlalchemy import and_, case, func
+
+from db import db
+from models.product import Product
 from models.producto_variante import (
     MAX_OPCIONES_POR_EJE,
     MAX_VALOR_OPCION,
@@ -284,3 +290,167 @@ def grilla(producto):
         filas.append({"talle": None, "variantes": sobrantes})
 
     return filas
+
+
+# --------------------------------------------------- las variantes en la grilla
+
+#: Lo que una tarjeta necesita saber de las variantes de su producto.
+#:
+#: Los tres ultimos campos son los mismos que la ficha saca de las properties
+#: de Product (precio_desde, precio_es_rango, disponible_efectivo), pero
+#: calculados en la base para TODA la pagina de una vez. Es un namedtuple y no
+#: un dict porque los cuatro campos son fijos y se leen igual en Python y en el
+#: template (`fila.variantes.precio_desde`), sin quedar escritos como cadenas
+#: sueltas.
+#:
+#: `tiene_variantes` queda aunque hoy no lo lea ningun template: es lo unico
+#: que distingue el agotado (matriz cargada, nada pedible) del producto sin
+#: variantes que el dueno apago, que salen los dos con disponible=False, y es
+#: por donde se corta resumen_de_fila.
+ResumenDeVariantes = namedtuple(
+    "ResumenDeVariantes",
+    "tiene_variantes precio_desde precio_es_rango disponible",
+)
+
+
+def con_resumen_de_variantes(consulta):
+    """Le suma a una Query de Product las cinco columnas agregadas de sus variantes.
+
+    ESTA ES LA RAZON DE SER DE LA TANDA. La tarjeta del catalogo tiene que
+    decir el precio y la disponibilidad reales, y los dos salen de otra tabla.
+    Preguntandoselo a cada producto con las properties del modelo
+    (`precio_desde`, `disponible_efectivo`) la pantalla mas visitada del
+    proyecto haria dos consultas por tarjeta -- las variantes y las opciones
+    son dos relaciones lazy --, o sea veinticuatro consultas extra en una
+    grilla de doce. El N+1 que docs/VARIANTES.md dejo anotado como pendiente.
+
+    Dos subconsultas AGRUPADAS con outerjoin, que es el mismo idiom que
+    services.ratings.query_posts_con_rating: el GROUP BY vive adentro de cada
+    subconsulta y la consulta de afuera no se agrupa. Agrupar afuera seria mas
+    corto y esta mal por dos motivos: el joinedload del emprendimiento mete las
+    columnas de posts en el SELECT, y con MySQL en ONLY_FULL_GROUP_BY eso es el
+    error 1055 (las columnas de posts no dependen funcionalmente de
+    products.id); y el paginado cuenta con un COUNT sobre la consulta, que con
+    GROUP BY cuenta grupos y no filas.
+
+    POR QUE SON DOS Y NO UNA. La de variantes sola no alcanza para saber si el
+    producto usa variantes: un producto con toda la matriz apagada y otro que
+    nunca las uso dan los dos "ninguna activa", y el primero esta agotado
+    mientras el segundo vale su precio base. Los distingue si hay EJES
+    cargados, que es la misma pregunta que contesta Product.tiene_variantes.
+
+    EL PRECIO Y LA DISPONIBILIDAD SALEN DE LA MISMA CONDICION, escrita una sola
+    vez (`comprable`): activa Y con stock, que es ProductoVariante.comprable en
+    SQL. El minimo se calcula sobre esas mismas filas y no sobre todas las
+    activas, para que la tarjeta no prometa un precio que la ficha no puede
+    cumplir -- la mas barata sin stock no se puede pedir, asi que su precio no
+    es una oferta--. Con dos condiciones separadas (una para el precio y otra
+    para el cartel) la tarjeta podria decir "desde $9.000" y "sin stock" al
+    mismo tiempo, cada mitad mirando otra cosa.
+
+    El precio de cada combinacion es COALESCE(precio_override, products.precio),
+    o sea la traduccion a SQL de ProductoVariante.precio_efectivo: NULL en el
+    override significa "hereda", nunca cero.
+    """
+    precio_efectivo = func.coalesce(ProductoVariante.precio_override, Product.precio)
+    activa = ProductoVariante.activo.is_(True)
+    comprable = and_(activa, ProductoVariante.stock > 0)
+
+    combinaciones = (
+        db.session.query(
+            ProductoVariante.product_id.label("product_id"),
+            # Las activas se cuentan igual, aunque no sean comprables: es lo
+            # que distingue "tiene la matriz cargada y hoy no hay nada" de "no
+            # usa variantes", que son dos tarjetas distintas.
+            func.sum(case((activa, 1), else_=0)).label("activas"),
+            func.sum(case((comprable, 1), else_=0)).label("comprables"),
+            func.min(case((comprable, precio_efectivo))).label("precio_min"),
+            func.max(case((comprable, precio_efectivo))).label("precio_max"),
+        )
+        .join(Product, Product.id == ProductoVariante.product_id)
+        .group_by(ProductoVariante.product_id)
+        .subquery()
+    )
+
+    ejes = (
+        db.session.query(
+            ProductoVarianteOpcion.product_id.label("product_id"),
+            func.count(ProductoVarianteOpcion.id).label("opciones"),
+        )
+        .group_by(ProductoVarianteOpcion.product_id)
+        .subquery()
+    )
+
+    return (
+        consulta
+        .outerjoin(combinaciones, combinaciones.c.product_id == Product.id)
+        .outerjoin(ejes, ejes.c.product_id == Product.id)
+        # Con el prefijo `variantes_` y no con el nombre pelado de la
+        # subconsulta: estas columnas viajan al lado de las del producto y de
+        # la distancia del catalogo, y un `precio_min` suelto ahi adentro se
+        # confunde con el filtro de precio de la barra de busqueda.
+        .add_columns(
+            ejes.c.opciones.label("variantes_opciones"),
+            combinaciones.c.activas.label("variantes_activas"),
+            combinaciones.c.comprables.label("variantes_comprables"),
+            combinaciones.c.precio_min.label("variantes_precio_min"),
+            combinaciones.c.precio_max.label("variantes_precio_max"),
+        )
+    )
+
+
+def resumen_de_fila(producto, fila):
+    """Traduce una fila de con_resumen_de_variantes() a lo que pinta la tarjeta.
+
+    `fila` es el Row que devolvio la consulta; sus columnas se leen por nombre
+    (`variantes_...`) y no por posicion, porque la consulta del catalogo agrega
+    ademas la distancia y el orden de las columnas no es asunto de esta
+    funcion.
+
+    Las tres reglas, que son las mismas que ya aplica la ficha:
+
+      - SIN VARIANTES no cambia nada: el precio base y el booleano `disponible`
+        de siempre. Es la regresion que esta tanda no puede romper.
+      - CON VARIANTES el precio es el minimo entre las COMPRABLES -- las
+        encendidas y con stock, igual que Product.precio_desde --, y lleva
+        "desde" solo si no valen todas lo mismo.
+      - SIN NINGUNA COMPRABLE es agotado, no un error ni una vuelta al precio
+        base: el vendedor tiene la matriz cargada y hoy no hay nada que pedir.
+
+    "Hay algo comprable" se pregunta UNA vez y de ahi salen las dos mitades de
+    la tarjeta: el cartel de "sin stock" y si hay un "desde" que calcular. Son
+    la misma pregunta, asi que no pueden contestarse distinto.
+    """
+    opciones = fila.variantes_opciones or 0
+    activas = fila.variantes_activas or 0
+
+    tiene_variantes = bool(opciones) or bool(activas)
+    if not tiene_variantes:
+        return ResumenDeVariantes(
+            tiene_variantes=False,
+            precio_desde=producto.precio,
+            precio_es_rango=False,
+            disponible=bool(producto.disponible),
+        )
+
+    hay_comprables = bool(fila.variantes_comprables)
+    if not hay_comprables:
+        # No hay minimo que mostrar y el precio base es lo unico que queda: no
+        # es lo que se cobra, pero la tarjeta ya dice agotado y un hueco donde
+        # va el precio se lee como un error de la pagina.
+        return ResumenDeVariantes(
+            tiene_variantes=True,
+            precio_desde=producto.precio,
+            precio_es_rango=False,
+            disponible=False,
+        )
+
+    precio_min = fila.variantes_precio_min
+    precio_max = fila.variantes_precio_max
+    return ResumenDeVariantes(
+        tiene_variantes=True,
+        precio_desde=precio_min,
+        # > y no != para no depender de como vuelve el Decimal de cada motor.
+        precio_es_rango=precio_max is not None and precio_max > precio_min,
+        disponible=bool(producto.disponible),
+    )

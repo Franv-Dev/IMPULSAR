@@ -40,6 +40,7 @@ from main import create_app
 from models.product import Product
 from models.producto_variante import ProductoVariante, ProductoVarianteOpcion
 from models.user import Roles, User
+from tests.test_catalogo import _precio_de_la_tarjeta
 
 
 def _servidor_mysql():
@@ -343,3 +344,65 @@ def test_en_mysql_la_migracion_deja_el_mismo_esquema_que_los_modelos():
             f"{tabla}: la migracion y los modelos dejan tablas distintas. "
             "Alguien toco el modelo sin escribir la migracion (o al reves)."
         )
+
+
+def test_en_mysql_el_catalogo_pinta_el_resumen_de_variantes(variantes_en_mysql):
+    """La consulta del catalogo con su agregacion, contra el motor de produccion.
+
+    ES EL TEST QUE JUSTIFICA LA FORMA DE LA CONSULTA, y por eso pide la pagina
+    entera y no la Query suelta: lo que hay que ver es el SELECT completo, con
+    el joinedload del emprendimiento, el ORDER BY y el COUNT del paginado.
+
+    Dos cosas que SQLite no puede decir:
+
+      - ONLY_FULL_GROUP_BY. Agrupando la consulta de afuera por products.id,
+        las columnas de `posts` que mete el joinedload no dependen
+        funcionalmente de esa PK y MySQL corta con el error 1055; SQLite las
+        acepta callado. Que esta pagina venga en 200 es lo que prueba que el
+        GROUP BY quedo adentro de las subconsultas.
+      - el encabezado cuenta FILAS y no grupos: con un GROUP BY afuera, el
+        COUNT del paginado contaria grupos y el "1 producto" seria otra cosa.
+
+    El producto vale 12000 y tiene cuatro combinaciones, armadas para que cada
+    pieza de la agregacion salga de una fila distinta y ninguna se pueda
+    acertar por casualidad:
+
+      XS a 8000, apagada          -> no cuenta (la mas barata de todas)
+      S  a 9000, encendida sin stock -> no cuenta (la mas barata de las activas)
+      M  hereda el precio, con stock -> el minimo, 12000, via COALESCE
+      L  a 20000, con stock          -> el maximo, o sea que hay "desde"
+    """
+    producto = variantes_en_mysql.producto
+    db = variantes_en_mysql.db
+
+    for orden, talle in enumerate(("XS", "S", "M", "L")):
+        db.session.add(ProductoVarianteOpcion(
+            product_id=producto.id, tipo="talle", valor=talle, orden=orden,
+        ))
+    db.session.add_all([
+        ProductoVariante(
+            product_id=producto.id, talle="XS", stock=5,
+            precio_override="8000", activo=False,
+        ),
+        ProductoVariante(
+            product_id=producto.id, talle="S", stock=0,
+            precio_override="9000", activo=True,
+        ),
+        ProductoVariante(
+            product_id=producto.id, talle="M", stock=4,
+            precio_override=None, activo=True,
+        ),
+        ProductoVariante(
+            product_id=producto.id, talle="L", stock=2,
+            precio_override="20000", activo=True,
+        ),
+    ])
+    db.session.commit()
+
+    respuesta = variantes_en_mysql.app.test_client().get("/productos/")
+    html = respuesta.get_data(as_text=True)
+
+    assert respuesta.status_code == 200
+    assert _precio_de_la_tarjeta(html) == "desde $ 12.000,00"
+    assert "1 producto" in html
+    assert "producto-tarjeta__agotado" not in html
