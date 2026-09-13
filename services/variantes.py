@@ -296,11 +296,17 @@ def grilla(producto):
 
 #: Lo que una tarjeta necesita saber de las variantes de su producto.
 #:
-#: Es el mismo trio que la ficha saca de las properties de Product
-#: (precio_desde, precio_es_rango, disponible_efectivo), pero calculado en la
-#: base para TODA la pagina de una vez. Es un namedtuple y no un dict porque
-#: los tres campos son fijos y se leen igual en Python y en el template
-#: (`fila.variantes.precio_desde`), sin quedar escritos como cadenas sueltas.
+#: Los tres ultimos campos son los mismos que la ficha saca de las properties
+#: de Product (precio_desde, precio_es_rango, disponible_efectivo), pero
+#: calculados en la base para TODA la pagina de una vez. Es un namedtuple y no
+#: un dict porque los cuatro campos son fijos y se leen igual en Python y en el
+#: template (`fila.variantes.precio_desde`), sin quedar escritos como cadenas
+#: sueltas.
+#:
+#: `tiene_variantes` queda aunque hoy no lo lea ningun template: es lo unico
+#: que distingue el agotado (matriz cargada, nada pedible) del producto sin
+#: variantes que el dueno apago, que salen los dos con disponible=False, y es
+#: por donde se corta resumen_de_fila.
 ResumenDeVariantes = namedtuple(
     "ResumenDeVariantes",
     "tiene_variantes precio_desde precio_es_rango disponible",

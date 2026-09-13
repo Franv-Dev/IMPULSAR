@@ -40,6 +40,7 @@ from main import create_app
 from models.product import Product
 from models.producto_variante import ProductoVariante, ProductoVarianteOpcion
 from models.user import Roles, User
+from tests.test_catalogo import _precio_de_la_tarjeta
 
 
 def _servidor_mysql():
@@ -402,6 +403,6 @@ def test_en_mysql_el_catalogo_pinta_el_resumen_de_variantes(variantes_en_mysql):
     html = respuesta.get_data(as_text=True)
 
     assert respuesta.status_code == 200
-    assert "desde $ 12.000,00" in html
+    assert _precio_de_la_tarjeta(html) == "desde $ 12.000,00"
     assert "1 producto" in html
     assert "producto-tarjeta__agotado" not in html

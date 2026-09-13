@@ -477,13 +477,13 @@ def catalogo():
     # desempaquetado posicional agregar una columna mas rompe este bucle.
     filas = [
         {
-            "producto": fila[0],
+            "producto": fila.Product,
             "distance_km": (
                 round(fila.distance_km, 1)
                 if ordenado_por_distancia and fila.distance_km is not None
                 else None
             ),
-            "variantes": reglas_variantes.resumen_de_fila(fila[0], fila),
+            "variantes": reglas_variantes.resumen_de_fila(fila.Product, fila),
         }
         for fila in paginacion.items
     ]

@@ -193,10 +193,11 @@ significa "hereda", nunca cero.
 ### Lo que costó, medido
 
 Una página de 12 tarjetas, con productos con variantes (tres combinaciones cada
-uno) mezclados en partes iguales con productos sin variantes. SQLite en
-memoria, mediana de 25 corridas, con el identity map vaciado antes de cada una
-—sin eso los objetos ya cargados no vuelven a la base y el número es falso—.
-Las tres formas posibles de la misma pantalla:
+uno) mezclados en partes iguales con productos sin variantes. **Todos los
+números de la tabla son contra SQLite en memoria**, mediana de 25 corridas, con
+el identity map vaciado antes de cada una —sin eso los objetos ya cargados no
+vuelven a la base y el número es falso—. Las tres formas posibles de la misma
+pantalla:
 
 | productos | vieja (precio base) | **agrupada (la elegida)** | correlacionada | lazy (N+1) |
 |---|---|---|---|---|
@@ -212,18 +213,27 @@ criterio pasara de "activas" a "comprables": es la forma de la consulta lo que
 se estaba comparando, y esa no cambió. Las otras tres columnas son de la
 consulta tal como quedó.)
 
+**Contra MySQL real la agregada cuesta bastante más que ese número chico**: el
+sobrecosto contra la consulta vieja es de **+6 ms con 10 productos** y **+43 ms
+con 800**, o sea alrededor de diez veces lo que dice la tabla de SQLite. La
+forma de la consulta es la misma y el ranking entre las cuatro también; lo que
+cambia es la escala, y es la de MySQL la que corre en producción. La tabla
+queda porque es la que compara las cuatro formas entre sí, pero el umbral de
+"cuándo duele" hay que leerlo con estos dos números y no con los de arriba.
+
 Las tres cosas que dicen estos números:
 
 - **UNA consulta, siempre.** No hay N+1: el número no se mueve con cuántos
   productos trae la página ni con cuántos hay en el catálogo. Eso es lo que
   congela el test `test_el_catalogo_no_consulta_de_mas_por_cada_producto_con_variantes`,
   que compara el conteo con 5 y con 20 productos con variantes.
-- **Cuesta entre 1,4 y 3 ms más que la consulta vieja**, y ese costo crece con
+- **Cuesta entre 1,4 y 3 ms más que la consulta vieja en SQLite**, y ese costo crece con
   el tamaño del catálogo y no con el de la página, porque las subconsultas
-  agregan la tabla entera antes de unirse. A 800 productos sigue siendo menos
-  que el N+1 que reemplaza. El día que el catálogo sea diez veces más grande,
-  esto es lo primero que hay que volver a medir: la salida conocida es acotar
-  las subconsultas a los productos de la página.
+  agregan la tabla entera antes de unirse —en MySQL, +6 ms a 10 productos y
+  +43 ms a 800—. A 800 productos sigue siendo menos que el N+1 que reemplaza.
+  El día que el catálogo sea diez veces más grande, esto es lo primero que hay
+  que volver a medir, y **con los números de MySQL**: la salida conocida es
+  acotar las subconsultas a los productos de la página.
 - **La correlacionada, que parecía la solución obvia** (mirar sólo los doce
   productos de la página en vez de agregar la tabla entera), es la peor de
   todas apenas hay datos: el motor la evalúa por cada fila candidata antes del
@@ -245,9 +255,10 @@ Esta tanda arregla lo que la tarjeta **dice**. No toca lo que el catálogo
   mismo, así que una grilla ordenada por precio puede mostrar dos "desde" fuera
   de orden entre sí.
 
-Las dos se arreglan con esta misma agregación movida al WHERE, y son cambios de
-comportamiento del buscador (cuántos resultados devuelve una búsqueda), no de
-lo que una tarjeta muestra. Por eso no van de arrastre acá.
+Las tres se arreglan con esta misma agregación movida al WHERE y al ORDER BY, y
+son cambios de comportamiento del buscador (qué resultados devuelve una búsqueda
+y en qué orden), no de lo que una tarjeta muestra. Por eso no van de arrastre
+acá.
 
 **La tarjeta y la ficha dicen el mismo precio**, y eso es deliberado: las dos
 calculan el mínimo entre las combinaciones comprables —la tarjeta en SQL, la
