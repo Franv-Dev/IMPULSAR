@@ -323,6 +323,31 @@ ResumenDeVariantes = namedtuple(
 ConsultaConVariantes = namedtuple("ConsultaConVariantes", "consulta precio_desde")
 
 
+#: Un producto y su resumen, que es lo que cualquier pantalla que lo liste
+#: necesita mostrar. La consulta devuelve Rows con las columnas al lado del
+#: producto, y esto las convierte en algo que el template lee por nombre.
+ProductoConVariantes = namedtuple("ProductoConVariantes", "producto variantes")
+
+
+def productos_con_su_resumen(consulta):
+    """Ejecuta una consulta de Product ya armada y devuelve ProductoConVariantes.
+
+    El atajo de las pantallas que listan productos sin paginar ni ordenar por
+    precio --hoy el catalogo de la ficha del emprendimiento--: le suma el
+    resumen a la consulta, la corre y arma las filas. Las que si paginan
+    (el catalogo publico y "Mis guardados") usan con_resumen_de_variantes
+    directamente, porque necesitan la consulta sin ejecutar.
+    """
+    consulta, _ = con_resumen_de_variantes(consulta)
+    return [
+        ProductoConVariantes(
+            producto=fila.Product,
+            variantes=resumen_de_fila(fila.Product, fila),
+        )
+        for fila in consulta.all()
+    ]
+
+
 def con_resumen_de_variantes(consulta):
     """Le suma a una Query de Product las cinco columnas agregadas de sus variantes.
 

@@ -25,6 +25,7 @@ from models.event import Event
 from models.product import Product
 from services.eventos import proximos
 from services.horarios import ventana_actual
+from services.variantes import productos_con_su_resumen
 from services.ratings import query_posts_con_rating
 
 
@@ -439,11 +440,22 @@ def productos_de(post_id, solo_disponibles):
     apagados los ve solo el dueño. El filtro va en la consulta y no en el
     template porque filtrando al mostrar los datos igual viajarian al HTML y
     cualquiera los leeria en el codigo fuente.
+
+    Devuelve ProductoConVariantes y no Products pelados: la ficha muestra el
+    precio y la disponibilidad reales por combinacion, igual que el catalogo
+    publico y que "Mis guardados". El resumen viaja adentro de esta misma
+    consulta -- preguntarselo a cada producto serian dos consultas por tarjeta,
+    que es el N+1 que la tanda del catalogo dejo resuelto en un solo lugar.
+
+    OJO CON solo_disponibles: sigue mirando products.disponible y no las
+    combinaciones. Es el interruptor del dueño ("esto no se muestra"), no el
+    stock; un producto encendido y agotado se ve, con su cartel puesto, que es
+    lo mismo que hace el catalogo publico.
     """
     consulta = Product.query.filter_by(post_id=post_id)
     if solo_disponibles:
         consulta = consulta.filter_by(disponible=True)
-    return consulta.order_by(Product.nombre).all()
+    return productos_con_su_resumen(consulta.order_by(Product.nombre))
 
 
 def servicios_de(post_id, solo_disponibles):

@@ -1308,3 +1308,140 @@ def test_los_guardados_no_consultan_de_mas_por_cada_producto(
     con_doce = contar_consultas()
 
     assert con_doce == con_tres
+
+
+def _precio_en_la_ficha(html):
+    """El precio del unico producto listado en la ficha del emprendimiento.
+
+    Acotado al span de la tarjeta por lo mismo que _precio_de_la_tarjeta: la
+    ficha tiene mas numeros, y buscar "desde" suelto en la pagina no probaria
+    nada.
+    """
+    encontrado = re.search(
+        r'class="producto-ficha__precio">(.*?)</span>', html, re.S
+    )
+    assert encontrado, "la ficha no lista ningun producto"
+    return " ".join(encontrado.group(1).split())
+
+
+def test_la_ficha_del_emprendimiento_dice_el_desde_de_las_combinaciones(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """La cuarta pantalla que lista productos, con el mismo criterio que las otras."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 2, "1200.00", True),
+        ("M", 2, "50000.00", True),
+    )
+
+    html = _html(client.get(f"/blog/{post.id}"))
+
+    assert _precio_en_la_ficha(html) == "desde $ 1.200,00"
+
+
+def test_la_ficha_no_dice_desde_si_todas_valen_lo_mismo(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Pan", precio="1500.00"),
+        ("S", 2, None, True),
+        ("M", 2, "1500.00", True),
+    )
+
+    assert _precio_en_la_ficha(_html(client.get(f"/blog/{post.id}"))) == "$ 1.500,00"
+
+
+def test_la_ficha_dice_agotado_con_la_matriz_en_cero(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El producto sigue encendido: el cartel sale de las combinaciones."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 0, "1200.00", True),
+        ("M", 0, None, True),
+    )
+
+    html = _html(client.get(f"/blog/{post.id}"))
+
+    assert "producto-ficha__agotado" in html
+    assert _precio_en_la_ficha(html) == "$ 50.000,00"
+
+
+def test_un_producto_sin_variantes_en_la_ficha_no_cambia(
+    client, crear_usuario, crear_post, crear_producto
+):
+    """La regresion de la pantalla."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    crear_producto(post.id, nombre="Pan de campo", precio="1500.00")
+
+    html = _html(client.get(f"/blog/{post.id}"))
+
+    assert _precio_en_la_ficha(html) == "$ 1.500,00"
+    assert "producto-ficha__agotado" not in html
+
+
+def test_la_ficha_sigue_ocultando_los_apagados_a_quien_no_es_el_dueno(
+    client, crear_usuario, crear_post, crear_producto, con_variantes, db
+):
+    """solo_disponibles no se mezcla con el stock: es el interruptor del dueño."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    apagado = crear_producto(post.id, nombre="Apagado", precio="1000.00")
+    apagado.disponible = False
+    db.session.commit()
+    con_variantes(
+        crear_producto(post.id, nombre="Encendido y agotado", precio="2000.00"),
+        ("S", 0, None, True),
+    )
+
+    html = _html(client.get(f"/blog/{post.id}"))
+
+    assert "Apagado" not in html
+    assert "Encendido y agotado" in html
+    assert "producto-ficha__agotado" in html
+
+
+def test_la_ficha_no_consulta_de_mas_por_cada_producto(
+    client, crear_usuario, crear_post, crear_producto, con_variantes, db
+):
+    """El resumen viaja adentro de la consulta del catalogo de la ficha."""
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+
+    def sumar_productos(desde, hasta):
+        for i in range(desde, hasta):
+            con_variantes(
+                crear_producto(post_id, nombre=f"Producto {i}", precio="2000.00"),
+                ("S", 2, "1500.00", True),
+                ("M", 0, "1800.00", True),
+            )
+
+    def contar_consultas():
+        db.session.expunge_all()
+        vistas = []
+
+        def escuchar(conn, cursor, statement, params, context, many):
+            vistas.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", escuchar)
+        try:
+            respuesta = client.get(f"/blog/{post_id}")
+        finally:
+            event.remove(db.engine, "before_cursor_execute", escuchar)
+        assert respuesta.status_code == 200
+        return len(vistas)
+
+    sumar_productos(0, 3)
+    con_tres = contar_consultas()
+
+    sumar_productos(3, 12)
+    con_doce = contar_consultas()
+
+    assert con_doce == con_tres

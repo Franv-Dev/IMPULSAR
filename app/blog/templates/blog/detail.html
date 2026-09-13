@@ -259,7 +259,8 @@
                                    su propia pantalla, así que la tarjeta deja de
                                    ser un cartel y pasa a ser un enlace: es donde
                                    está el botón de consultar por ese producto. #}
-                                {% for producto in productos %}
+                                {% for fila in productos %}
+                                    {% set producto = fila.producto %}
                                     <article class="producto-ficha">
                                         {# Mismo criterio que el catalogo: el enlace de la foto
                                            duplica al del nombre, y el cartel de stock sale del
@@ -274,7 +275,11 @@
                                             {% endif %}
                                         </a>
 
-                                        {% if not producto.disponible %}
+                                        {#  El cartel mira las combinaciones y no sólo el
+                                            interruptor, igual que en el catálogo: un producto
+                                            encendido con sus diez talles en cero está agotado,
+                                            y decir que sí es mandar a preguntar por nada. #}
+                                        {% if not fila.variantes.disponible %}
                                             <span class="producto-ficha__agotado">Sin stock</span>
                                         {% endif %}
                                         <div class="producto-ficha__cuerpo">
@@ -284,7 +289,17 @@
                                             {% if producto.descripcion %}
                                                 <p class="producto-ficha__detalle">{{ producto.descripcion }}</p>
                                             {% endif %}
-                                            <span class="producto-ficha__precio">{{ producto.precio | precio }}</span>
+                                            {#  El más barato de las combinaciones que se pueden
+                                                pedir, con «desde» sólo si no valen todas lo mismo:
+                                                mismas palabras que la tarjeta del catálogo y que la
+                                                ficha del producto, que es a donde lleva esto. #}
+                                            <span class="producto-ficha__precio">
+                                                {% if fila.variantes.precio_es_rango %}
+                                                    desde {{ fila.variantes.precio_desde | precio }}
+                                                {% else %}
+                                                    {{ fila.variantes.precio_desde | precio }}
+                                                {% endif %}
+                                            </span>
                                         </div>
                                     </article>
                                 {% endfor %}
