@@ -1,0 +1,100 @@
+{#  La tarjeta de producto de la grilla, compartida.
+
+    La usan el catálogo y "Mis guardados", que muestran el mismo componente y
+    tienen que decir el mismo precio: mientras estaba escrita dos veces, la de
+    guardados se quedó mostrando el precio base cuando la del catálogo aprendió
+    a mirar las combinaciones.
+
+    Espera una `fila` con la forma que arma products.py:
+
+      fila.producto      el Product
+      fila.variantes     el ResumenDeVariantes (precio_desde, precio_es_rango,
+                         disponible): SIEMPRE, aunque el producto no tenga
+                         variantes -- resumen_de_fila devuelve el precio base
+                         en ese caso, así que acá no hay dos ramas
+      fila.es_favorito   si pintar el corazón lleno
+      fila.distance_km   los km, o None cuando la pantalla no los calcula
+#}
+{# Las dos se sacan acá y no en cada bucle: el include hereda el contexto, y
+   dejándolas afuera cada pantalla tendría que acordarse de armarlas igual. #}
+{% set producto = fila.producto %}
+{% set negocio = producto.post %}
+<article class="producto-tarjeta">
+    {# tabindex/aria-hidden como .tarjeta__foto de Explorar: lleva al
+       mismo lado que el enlace del nombre, asi que como tab-stop es un
+       duplicado, y sin foto queda un enlace vacio y sin nombre accesible. #}
+    <a href="{{ url_for('products.detalle', id=producto.id) }}"
+       class="producto-tarjeta__foto" tabindex="-1" aria-hidden="true">
+        {% if producto.foto %}
+            <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
+                 alt="Foto de {{ producto.nombre }}" loading="lazy">
+        {% endif %}
+    </a>
+
+    {# EL CARTEL VA AFUERA DEL ENLACE, no adentro como estaba: es el unico
+       lugar de la tarjeta que dice que no hay stock, y adentro de un
+       aria-hidden un lector de pantalla no lo nombra nunca. Se sigue viendo
+       en el mismo lugar porque .producto-tarjeta ya es position:relative y
+       la foto arranca en su esquina. #}
+    {#  Desde la tanda de variantes en el catálogo el cartel no
+        mira sólo el interruptor del producto: con variantes hace
+        falta además que quede alguna combinación encendida y con
+        stock. Un producto marcado disponible cuyas diez
+        combinaciones están en cero está agotado, y decir que sí
+        es mandar a preguntar por nada. Sin variantes es el
+        booleano de siempre. #}
+    {% if not fila.variantes.disponible %}
+        <span class="producto-tarjeta__agotado">Sin stock por ahora</span>
+    {% endif %}
+
+    {% if g.user %}
+        {# Sólo con sesión: sin ella el corazón no tendría
+           dónde guardar nada, y un botón que rebota a
+           entrar es peor que no dibujarlo. #}
+        <form method="post" class="producto-tarjeta__guardar"
+              action="{{ url_for('products.toggle_favorito', id=producto.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit"
+                    class="favorite-btn {% if fila.es_favorito %}favorite-btn--active{% endif %}"
+                    aria-pressed="{{ 'true' if fila.es_favorito else 'false' }}"
+                    aria-label="{% if fila.es_favorito %}Quitar de tus productos guardados{% else %}Guardar este producto{% endif %}"
+                    title="{% if fila.es_favorito %}Quitar de guardados{% else %}Guardar{% endif %}">
+                {% if fila.es_favorito %}♥{% else %}♡{% endif %}
+            </button>
+        </form>
+    {% endif %}
+
+    <div class="producto-tarjeta__cuerpo">
+        {#  El precio va ARRIBA del nombre: en una grilla de
+            tarjetas chicas es el dato que hace comparar.
+
+            Con variantes es el más barato de las combinaciones
+            que se pueden pedir --encendidas y con stock--, y lleva
+            «desde» sólo si no valen todas lo mismo: misma regla,
+            mismo criterio y mismas palabras que la ficha, que es
+            la pantalla a la que lleva esta tarjeta. El producto
+            sin variantes muestra su precio base, igual que
+            siempre. #}
+        <span class="producto-tarjeta__precio">
+            {% if fila.variantes.precio_es_rango %}
+                desde {{ fila.variantes.precio_desde | precio }}
+            {% else %}
+                {{ fila.variantes.precio_desde | precio }}
+            {% endif %}
+        </span>
+        <h2 class="producto-tarjeta__nombre">
+            <a href="{{ url_for('products.detalle', id=producto.id) }}">{{ producto.nombre }}</a>
+        </h2>
+
+        <span class="producto-tarjeta__negocio">
+            <span class="punto-rubro punto-rubro--{{ negocio.category }}" aria-hidden="true"></span>
+            <a href="{{ url_for('blog.detail', id=negocio.id) }}">{{ negocio.title }}</a>
+        </span>
+
+        {% if fila.distance_km is not none %}
+            <span class="producto-tarjeta__donde">a {{ fila.distance_km }} km</span>
+        {% elif negocio.address_street %}
+            <span class="producto-tarjeta__donde">{{ negocio.address_street }}</span>
+        {% endif %}
+    </div>
+</article>

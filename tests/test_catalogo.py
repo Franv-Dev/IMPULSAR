@@ -963,3 +963,485 @@ def test_el_catalogo_no_consulta_de_mas_por_cada_producto_con_variantes(
     con_veinte = contar_consultas()
 
     assert con_veinte == con_cinco
+
+
+# ------------------------------- el filtro de precio, consciente de variantes
+
+def _nombres_en(html):
+    """Los nombres de producto que quedaron en la grilla."""
+    return set(re.findall(r'producto-tarjeta__nombre">\s*<a [^>]*>([^<]+)</a>', html))
+
+
+def test_el_rango_mira_las_combinaciones_y_no_el_precio_base(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El caso que rompia: el precio base afuera del rango, una combinacion adentro.
+
+    Un producto de $50.000 con un talle a $7.000 con stock tiene que aparecer
+    en "hasta $8.000". Es lo que se puede pedir y es el numero que la tarjeta
+    muestra; filtrando por el precio base el que busca barato no lo ve nunca.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 2, "7000.00", True),
+        ("M", 2, "50000.00", True),
+    )
+
+    assert _nombres_en(_html(client.get("/productos/?precio_max=8000"))) == {"Campera"}
+
+
+def test_el_rango_no_se_conforma_con_el_minimo_ya_agregado(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """La trampa de comparar el rango contra variantes_precio_min.
+
+    El minimo ($5.000) queda por DEBAJO del borde de abajo y el maximo
+    ($50.000) por encima del de arriba, asi que mirando las columnas agregadas
+    el producto no entra por ningun lado. Pero tiene una combinacion a $7.000,
+    justo adentro de "entre $6.000 y $8.000": la pregunta es si alguna cae en
+    el rango, no cuanto sale la mas barata.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Zapatillas", precio="20000.00"),
+        ("S", 2, "5000.00", True),
+        ("M", 2, "7000.00", True),
+        ("L", 2, "50000.00", True),
+    )
+
+    html = _html(client.get("/productos/?precio_min=6000&precio_max=8000"))
+
+    assert _nombres_en(html) == {"Zapatillas"}
+
+
+def test_una_combinacion_en_el_rango_pero_sin_stock_no_alcanza(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """Mismo criterio que la tarjeta: lo que no se puede pedir no es una oferta.
+
+    La barata esta agotada y la apagada no existe; la unica comprable vale
+    $50.000. El producto no tiene que entrar en "hasta $8.000", porque si
+    entrara la tarjeta diria $50.000 en una busqueda de hasta $8.000.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 0, "7000.00", True),
+        ("M", 3, "6000.00", False),
+        ("L", 2, "50000.00", True),
+    )
+
+    assert _nombres_en(_html(client.get("/productos/?precio_max=8000"))) == set()
+
+
+def test_sin_ninguna_comprable_el_rango_cae_al_precio_base(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El agotado se filtra por lo que su tarjeta muestra, que es el precio base.
+
+    Si no, desapareceria de una busqueda con precio para reaparecer en la misma
+    busqueda sin precio, con el mismo cartel de "sin stock" puesto.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Agotada", precio="7000.00"),
+        ("S", 0, None, True),
+        ("M", 0, "50000.00", True),
+    )
+
+    adentro = _html(client.get("/productos/?precio_max=8000"))
+    afuera = _html(client.get("/productos/?precio_min=8000"))
+
+    assert _nombres_en(adentro) == {"Agotada"}
+    assert "producto-tarjeta__agotado" in adentro
+    assert _nombres_en(afuera) == set()
+
+
+def test_el_producto_sin_variantes_sigue_filtrando_por_su_precio(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """La regresion que esta tanda no puede romper, mezclada con los otros casos."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    crear_producto(post.id, nombre="Pelado barato", precio="3000.00")
+    crear_producto(post.id, nombre="Pelado caro", precio="90000.00")
+    con_variantes(
+        crear_producto(post.id, nombre="Con variantes", precio="90000.00"),
+        ("S", 2, "4000.00", True),
+    )
+
+    html = _html(client.get("/productos/?precio_min=2000&precio_max=8000"))
+
+    assert _nombres_en(html) == {"Pelado barato", "Con variantes"}
+
+
+def test_el_precio_heredado_tambien_entra_en_el_rango(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """precio_override en NULL es "hereda", no cero: la comparacion va sobre el efectivo."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Hereda", precio="7000.00"),
+        ("S", 2, None, True),
+        ("M", 2, "90000.00", True),
+    )
+
+    assert _nombres_en(_html(client.get("/productos/?precio_max=8000"))) == {"Hereda"}
+    assert _nombres_en(_html(client.get("/productos/?precio_min=8000"))) == {"Hereda"}
+
+
+def test_el_conteo_del_encabezado_cuenta_lo_mismo_que_el_rango_filtra(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El "de N emprendimientos" no puede hablar de otra busqueda que la grilla."""
+    dueno = crear_usuario(username="dueno")
+    otro = crear_usuario(username="otro")
+    con_variantes(
+        crear_producto(crear_post(dueno.id).id, nombre="Entra", precio="90000.00"),
+        ("S", 2, "4000.00", True),
+    )
+    con_variantes(
+        crear_producto(crear_post(otro.id).id, nombre="No entra", precio="4000.00"),
+        ("S", 2, "90000.00", True),
+    )
+
+    html = _html(client.get("/productos/?precio_max=8000"))
+
+    assert _nombres_en(html) == {"Entra"}
+    assert "1 producto" in html
+    assert "1 emprendimiento" in html
+
+
+# ---------------------------------- el orden por precio, consciente de variantes
+
+def test_el_orden_por_precio_usa_el_desde_y_no_el_precio_base(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El que ordena por precio compara los numeros que lee en las tarjetas.
+
+    La campera tiene precio base $50.000 y muestra "desde $ 1.000,00": va
+    primera. Ordenando por el precio base saldria ultima, con el numero mas
+    chico de la grilla abajo de todo.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    crear_producto(post.id, nombre="Pelado", precio="5000.00")
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 2, "1000.00", True),
+        ("M", 2, "50000.00", True),
+    )
+
+    html = _html(client.get("/productos/?orden=precio"))
+
+    assert html.index("Campera") < html.index("Pelado")
+
+
+def test_de_mayor_a_menor_es_el_mismo_desde_al_reves(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """Y no el maximo de las combinaciones.
+
+    La campera muestra "desde $ 1.000,00" aunque tenga un talle a $50.000:
+    ordenando de mayor a menor por el maximo encabezaria la grilla, o sea que
+    el numero mas chico quedaria arriba de todo en un orden descendente.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    crear_producto(post.id, nombre="Pelado", precio="5000.00")
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 2, "1000.00", True),
+        ("M", 2, "50000.00", True),
+    )
+
+    html = _html(client.get("/productos/?orden=precio_desc"))
+
+    assert html.index("Pelado") < html.index("Campera")
+
+
+def test_el_orden_por_precio_no_deja_afuera_a_los_que_no_tienen_variantes(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El COALESCE del orden: sin variantes la columna agregada viene NULL.
+
+    Ordenando por la columna pelada estos productos se irian todos juntos a una
+    punta de la grilla --y a cual depende del motor, porque MySQL y SQLite no
+    ponen los NULL del mismo lado--. Con el precio base en su lugar, los cinco
+    se intercalan por lo que cada tarjeta dice.
+    """
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    crear_producto(post.id, nombre="Pelado barato", precio="1000.00")
+    crear_producto(post.id, nombre="Pelado caro", precio="9000.00")
+    con_variantes(
+        crear_producto(post.id, nombre="Variantes al medio", precio="80000.00"),
+        ("S", 2, "5000.00", True),
+    )
+    con_variantes(
+        crear_producto(post.id, nombre="Agotado", precio="3000.00"),
+        ("S", 0, "70000.00", True),
+    )
+
+    html = _html(client.get("/productos/?orden=precio"))
+
+    assert (
+        html.index("Pelado barato")
+        < html.index("Agotado")
+        < html.index("Variantes al medio")
+        < html.index("Pelado caro")
+    )
+
+
+# ----------------------------- las variantes en "Mis guardados" y en la ficha
+
+def test_los_guardados_dicen_el_mismo_desde_que_el_catalogo(
+    client, crear_usuario, crear_post, crear_producto, con_variantes, login, db
+):
+    """Es la misma tarjeta: el que guarda un producto de la grilla ve ahi el numero que leyo."""
+    dueno = crear_usuario(username="dueno")
+    cliente = crear_usuario(username="cliente")
+    producto = con_variantes(
+        crear_producto(crear_post(dueno.id).id, nombre="Campera", precio="50000.00"),
+        ("S", 2, "1200.00", True),
+        ("M", 2, "50000.00", True),
+    )
+    db.session.add(ProductFavorite(user_id=cliente.id, product_id=producto.id))
+    db.session.commit()
+    login(cliente.id)
+
+    en_el_catalogo = _precio_de_la_tarjeta(_html(client.get("/productos/")))
+    en_guardados = _precio_de_la_tarjeta(_html(client.get("/productos/guardados")))
+
+    assert en_guardados == en_el_catalogo == "desde $ 1.200,00"
+
+
+def test_los_guardados_dicen_agotado_con_la_matriz_en_cero(
+    client, crear_usuario, crear_post, crear_producto, con_variantes, login, db
+):
+    """El producto sigue marcado disponible: el cartel sale de las combinaciones."""
+    dueno = crear_usuario(username="dueno")
+    cliente = crear_usuario(username="cliente")
+    producto = con_variantes(
+        crear_producto(crear_post(dueno.id).id, nombre="Campera", precio="50000.00"),
+        ("S", 0, None, True),
+        ("M", 0, "1200.00", True),
+    )
+    db.session.add(ProductFavorite(user_id=cliente.id, product_id=producto.id))
+    db.session.commit()
+    login(cliente.id)
+
+    html = _html(client.get("/productos/guardados"))
+
+    assert _dice_sin_stock(html)
+    assert _precio_de_la_tarjeta(html) == "$ 50.000,00"
+
+
+def test_un_guardado_sin_variantes_sigue_mostrando_su_precio_base(
+    client, crear_usuario, crear_post, crear_producto, login, db
+):
+    """La regresion de la pantalla: sin variantes no cambia nada."""
+    dueno = crear_usuario(username="dueno")
+    cliente = crear_usuario(username="cliente")
+    producto = crear_producto(
+        crear_post(dueno.id).id, nombre="Pan de campo", precio="1500.00"
+    )
+    db.session.add(ProductFavorite(user_id=cliente.id, product_id=producto.id))
+    db.session.commit()
+    login(cliente.id)
+
+    html = _html(client.get("/productos/guardados"))
+
+    assert _precio_de_la_tarjeta(html) == "$ 1.500,00"
+    assert not _dice_sin_stock(html)
+
+
+def test_los_guardados_no_consultan_de_mas_por_cada_producto(
+    client, crear_usuario, crear_post, crear_producto, con_variantes, login, db
+):
+    """Misma consulta unica que el catalogo: el resumen viaja adentro, no por tarjeta."""
+    dueno = crear_usuario(username="dueno")
+    cliente = crear_usuario(username="cliente")
+    # Los ids sueltos y no los objetos: entre una medicion y la otra hay un
+    # expunge_all(), que deja detachado todo lo que se haya traido antes.
+    post_id = crear_post(dueno.id).id
+    cliente_id = cliente.id
+
+    def guardar(desde, hasta):
+        for i in range(desde, hasta):
+            producto = con_variantes(
+                crear_producto(post_id, nombre=f"Producto {i}", precio="2000.00"),
+                ("S", 2, "1500.00", True),
+                ("M", 0, "1800.00", True),
+            )
+            db.session.add(
+                ProductFavorite(user_id=cliente_id, product_id=producto.id)
+            )
+        db.session.commit()
+
+    def contar_consultas():
+        db.session.expunge_all()
+        vistas = []
+
+        def escuchar(conn, cursor, statement, params, context, many):
+            vistas.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", escuchar)
+        try:
+            respuesta = client.get("/productos/guardados")
+        finally:
+            event.remove(db.engine, "before_cursor_execute", escuchar)
+        assert respuesta.status_code == 200
+        return len(vistas)
+
+    login(cliente_id)
+    guardar(0, 3)
+    con_tres = contar_consultas()
+
+    guardar(3, 12)
+    con_doce = contar_consultas()
+
+    assert con_doce == con_tres
+
+
+def _precio_en_la_ficha(html):
+    """El precio del unico producto listado en la ficha del emprendimiento.
+
+    Acotado al span de la tarjeta por lo mismo que _precio_de_la_tarjeta: la
+    ficha tiene mas numeros, y buscar "desde" suelto en la pagina no probaria
+    nada.
+    """
+    encontrado = re.search(
+        r'class="producto-ficha__precio">(.*?)</span>', html, re.S
+    )
+    assert encontrado, "la ficha no lista ningun producto"
+    return " ".join(encontrado.group(1).split())
+
+
+def test_la_ficha_del_emprendimiento_dice_el_desde_de_las_combinaciones(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """La cuarta pantalla que lista productos, con el mismo criterio que las otras."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 2, "1200.00", True),
+        ("M", 2, "50000.00", True),
+    )
+
+    html = _html(client.get(f"/blog/{post.id}"))
+
+    assert _precio_en_la_ficha(html) == "desde $ 1.200,00"
+
+
+def test_la_ficha_no_dice_desde_si_todas_valen_lo_mismo(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Pan", precio="1500.00"),
+        ("S", 2, None, True),
+        ("M", 2, "1500.00", True),
+    )
+
+    assert _precio_en_la_ficha(_html(client.get(f"/blog/{post.id}"))) == "$ 1.500,00"
+
+
+def test_la_ficha_dice_agotado_con_la_matriz_en_cero(
+    client, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El producto sigue encendido: el cartel sale de las combinaciones."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    con_variantes(
+        crear_producto(post.id, nombre="Campera", precio="50000.00"),
+        ("S", 0, "1200.00", True),
+        ("M", 0, None, True),
+    )
+
+    html = _html(client.get(f"/blog/{post.id}"))
+
+    assert "producto-ficha__agotado" in html
+    assert _precio_en_la_ficha(html) == "$ 50.000,00"
+
+
+def test_un_producto_sin_variantes_en_la_ficha_no_cambia(
+    client, crear_usuario, crear_post, crear_producto
+):
+    """La regresion de la pantalla."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    crear_producto(post.id, nombre="Pan de campo", precio="1500.00")
+
+    html = _html(client.get(f"/blog/{post.id}"))
+
+    assert _precio_en_la_ficha(html) == "$ 1.500,00"
+    assert "producto-ficha__agotado" not in html
+
+
+def test_la_ficha_sigue_ocultando_los_apagados_a_quien_no_es_el_dueno(
+    client, crear_usuario, crear_post, crear_producto, con_variantes, db
+):
+    """solo_disponibles no se mezcla con el stock: es el interruptor del dueño."""
+    dueno = crear_usuario(username="dueno")
+    post = crear_post(dueno.id)
+    apagado = crear_producto(post.id, nombre="Apagado", precio="1000.00")
+    apagado.disponible = False
+    db.session.commit()
+    con_variantes(
+        crear_producto(post.id, nombre="Encendido y agotado", precio="2000.00"),
+        ("S", 0, None, True),
+    )
+
+    html = _html(client.get(f"/blog/{post.id}"))
+
+    assert "Apagado" not in html
+    assert "Encendido y agotado" in html
+    assert "producto-ficha__agotado" in html
+
+
+def test_la_ficha_no_consulta_de_mas_por_cada_producto(
+    client, crear_usuario, crear_post, crear_producto, con_variantes, db
+):
+    """El resumen viaja adentro de la consulta del catalogo de la ficha."""
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+
+    def sumar_productos(desde, hasta):
+        for i in range(desde, hasta):
+            con_variantes(
+                crear_producto(post_id, nombre=f"Producto {i}", precio="2000.00"),
+                ("S", 2, "1500.00", True),
+                ("M", 0, "1800.00", True),
+            )
+
+    def contar_consultas():
+        db.session.expunge_all()
+        vistas = []
+
+        def escuchar(conn, cursor, statement, params, context, many):
+            vistas.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", escuchar)
+        try:
+            respuesta = client.get(f"/blog/{post_id}")
+        finally:
+            event.remove(db.engine, "before_cursor_execute", escuchar)
+        assert respuesta.status_code == 200
+        return len(vistas)
+
+    sumar_productos(0, 3)
+    con_tres = contar_consultas()
+
+    sumar_productos(3, 12)
+    con_doce = contar_consultas()
+
+    assert con_doce == con_tres

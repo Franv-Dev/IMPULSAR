@@ -406,3 +406,85 @@ def test_en_mysql_el_catalogo_pinta_el_resumen_de_variantes(variantes_en_mysql):
     assert _precio_de_la_tarjeta(html) == "desde $ 12.000,00"
     assert "1 producto" in html
     assert "producto-tarjeta__agotado" not in html
+
+
+def test_en_mysql_el_rango_de_precio_mira_las_combinaciones(variantes_en_mysql):
+    """El filtro nuevo contra el motor de produccion, que es donde se rompio.
+
+    Dos cosas que SQLite no muestra:
+
+      - que el IN contra la subconsulta con su propio join a products no sea
+        una DEPENDENT SUBQUERY. La primera version era un EXISTS correlacionado
+        y tardaba 789 ms con 800 productos aca, contra 8 ms en SQLite: el
+        motor de la suite no mostraba el problema;
+      - que el filtro conviva con las dos subconsultas agrupadas del resumen
+        sin caer en ONLY_FULL_GROUP_BY (error 1055), que es lo que pasaria si
+        algun GROUP BY se escapara a la consulta de afuera.
+
+    El producto vale 12000 y ninguna de esas dos cosas se ve en el HTML, asi
+    que se prueban por el resultado: entra en "hasta 8000" por el talle M --que
+    cuesta 7000 y tiene stock-- y no entra en "hasta 6000", donde su unica
+    combinacion barata es la apagada.
+    """
+    producto = variantes_en_mysql.producto
+    db = variantes_en_mysql.db
+
+    for orden, talle in enumerate(("XS", "S", "M")):
+        db.session.add(ProductoVarianteOpcion(
+            product_id=producto.id, tipo="talle", valor=talle, orden=orden,
+        ))
+    db.session.add_all([
+        # La mas barata esta apagada: no cuenta para ningun rango.
+        ProductoVariante(
+            product_id=producto.id, talle="XS", stock=5,
+            precio_override="5000", activo=False,
+        ),
+        ProductoVariante(
+            product_id=producto.id, talle="S", stock=0,
+            precio_override="5500", activo=True,
+        ),
+        ProductoVariante(
+            product_id=producto.id, talle="M", stock=4,
+            precio_override="7000", activo=True,
+        ),
+    ])
+    db.session.commit()
+
+    cliente = variantes_en_mysql.app.test_client()
+    adentro = cliente.get("/productos/?precio_max=8000")
+    afuera = cliente.get("/productos/?precio_max=6000")
+
+    assert adentro.status_code == 200
+    assert afuera.status_code == 200
+    assert "Remera" in adentro.get_data(as_text=True)
+    assert "Remera" not in afuera.get_data(as_text=True)
+
+
+def test_en_mysql_el_orden_por_precio_usa_el_desde(variantes_en_mysql):
+    """El COALESCE del orden contra el motor real.
+
+    El de las variantes vale 12000 de base y muestra "desde $ 3.000,00"; el
+    pelado vale 5000. Ordenando por el precio base saldrian al reves, y por la
+    columna agregada pelada el pelado se iria a una punta --MySQL pone los NULL
+    primero al ascender, SQLite tambien, pero el que decide aca es este--.
+    """
+    producto = variantes_en_mysql.producto
+    db = variantes_en_mysql.db
+
+    db.session.add(ProductoVarianteOpcion(
+        product_id=producto.id, tipo="talle", valor="S", orden=0,
+    ))
+    db.session.add(ProductoVariante(
+        product_id=producto.id, talle="S", stock=2,
+        precio_override="3000", activo=True,
+    ))
+    db.session.add(Product(
+        post_id=variantes_en_mysql.post.id, nombre="Pantalon", precio="5000",
+    ))
+    db.session.commit()
+
+    respuesta = variantes_en_mysql.app.test_client().get("/productos/?orden=precio")
+    html = respuesta.get_data(as_text=True)
+
+    assert respuesta.status_code == 200
+    assert html.index("Remera") < html.index("Pantalon")

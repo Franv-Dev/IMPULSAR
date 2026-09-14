@@ -50,49 +50,13 @@
                     {% endif %}
                 {% endwith %}
 
-                {% if productos %}
+                {% if filas %}
                     <div class="catalogo__grilla">
-                        {% for producto in productos %}
-                            {% set negocio = producto.post %}
-                            <article class="producto-tarjeta">
-                                {# Mismo criterio que el catalogo: el enlace de la foto sale del
-                                   recorrido (duplica al del nombre) y el cartel de stock sale del
-                                   enlace, para que se siga anunciando. #}
-                                <a href="{{ url_for('products.detalle', id=producto.id) }}"
-                                   class="producto-tarjeta__foto" tabindex="-1" aria-hidden="true">
-                                    {% if producto.foto %}
-                                        <img src="{{ url_for('static', filename='uploads/' ~ producto.foto) }}"
-                                             alt="Foto de {{ producto.nombre }}" loading="lazy">
-                                    {% endif %}
-                                </a>
-
-                                {% if not producto.disponible %}
-                                    <span class="producto-tarjeta__agotado">Sin stock por ahora</span>
-                                {% endif %}
-
-                                {# El corazón siempre lleno acá: esta pantalla son
-                                   justamente los que están marcados, y tocarlo lo
-                                   saca de la lista. #}
-                                <form method="post" class="producto-tarjeta__guardar"
-                                      action="{{ url_for('products.toggle_favorito', id=producto.id) }}">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="favorite-btn favorite-btn--active"
-                                            aria-pressed="true"
-                                            aria-label="Quitar de tus productos guardados"
-                                            title="Quitar de guardados">♥</button>
-                                </form>
-
-                                <div class="producto-tarjeta__cuerpo">
-                                    <span class="producto-tarjeta__precio">{{ producto.precio | precio }}</span>
-                                    <h2 class="producto-tarjeta__nombre">
-                                        <a href="{{ url_for('products.detalle', id=producto.id) }}">{{ producto.nombre }}</a>
-                                    </h2>
-                                    <span class="producto-tarjeta__negocio">
-                                        <span class="punto-rubro punto-rubro--{{ negocio.category }}" aria-hidden="true"></span>
-                                        <a href="{{ url_for('blog.detail', id=negocio.id) }}">{{ negocio.title }}</a>
-                                    </span>
-                                </div>
-                            </article>
+                        {% for fila in filas %}
+                            {# La misma tarjeta que el catalogo, con el mismo precio
+                               "desde" y el mismo cartel de stock: estaba escrita
+                               aparte y se habia quedado en el precio base. #}
+                            {% include "partials/_producto_tarjeta.html" %}
                         {% endfor %}
                     </div>
 

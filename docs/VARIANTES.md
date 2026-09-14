@@ -240,25 +240,153 @@ Las tres cosas que dicen estos números:
   LIMIT, así que a 800 productos tarda 361 ms contra 4,9 ms de la agrupada. Se
   midió antes de elegir, no después.
 
-### Lo que sigue desalineado, y es a propósito
+### Lo que filtra y lo que ordena, también por combinación
 
-Esta tanda arregla lo que la tarjeta **dice**. No toca lo que el catálogo
-**filtra**, que son las otras dos cosas que este documento anotaba juntas:
+La tanda anterior arregló lo que la tarjeta **dice** y dejó anotado que el
+buscador seguía mirando el precio base. Ésta cierra eso. Queda una sola cosa
+afuera, y a propósito:
 
 - **`?disponibles=1`** (encendido por defecto) sigue filtrando por
   `products.disponible`, así que un producto con todas sus combinaciones en
-  cero entra igual en la grilla —eso sí, ahora entra con el cartel de "sin
-  stock" puesto, que antes tampoco tenía—;
-- **`?precio_min` / `?precio_max`** siguen filtrando por el precio base,
-  mientras la tarjeta ya muestra el "desde" de las combinaciones;
-- **`?orden=precio_menor` / `precio_mayor`** ordenan por el precio base por lo
-  mismo, así que una grilla ordenada por precio puede mostrar dos "desde" fuera
-  de orden entre sí.
+  cero entra igual en la grilla, con el cartel de "sin stock" puesto. Es el
+  interruptor del dueño ("esto no se muestra"), no el stock, y son dos
+  preguntas distintas: apagarlo es una decisión, quedarse sin stock es un
+  estado. Mismo criterio en el catálogo de la ficha.
 
-Las tres se arreglan con esta misma agregación movida al WHERE y al ORDER BY, y
-son cambios de comportamiento del buscador (qué resultados devuelve una búsqueda
-y en qué orden), no de lo que una tarjeta muestra. Por eso no van de arrastre
-acá.
+#### El rango de precios: "hay alguna en el rango", no "cuánto sale la más barata"
+
+**La regla es que el filtro mire los mismos precios que la tarjeta** —los de las
+combinaciones que se pueden pedir, no el precio base—. La tarjeta de un producto
+con combinaciones muestra el precio de las comprables; la del que no tiene —o las
+tiene todas agotadas— muestra el precio base. El filtro pregunta sobre ese mismo
+conjunto, y son dos ramas:
+
+- con alguna combinación comprable, entra si **alguna** cae en el rango. Una
+  campera de $50.000 con un talle a $7.000 con stock aparece en "hasta $8.000":
+  es lo que se puede pedir y es el número que la tarjeta muestra;
+- sin ninguna comprable, se compara el precio base. Así el agotado no
+  desaparece de una búsqueda por precio para reaparecer en la misma búsqueda
+  sin precio, con el mismo cartel puesto.
+
+**La equivalencia va en un solo sentido**, y conviene tenerlo claro antes de
+leerlo como un bug: que un producto entre no quiere decir que el número de su
+tarjeta esté adentro del rango. La tarjeta muestra el **mínimo** de las
+comprables y el filtro pregunta si hay **alguna**, que con precios distintos no
+es lo mismo. Un producto con combinaciones a $7.000 y a $50.000, las dos con
+stock, dice "desde $7.000" y aparece igual en una búsqueda de $40.000 a $60.000,
+donde esa tarjeta se lee como un $7.000 fuera de rango. Es la consecuencia
+esperada de preguntar *hay algo en este rango*: lo que se busca es la
+combinación, no el producto, y la alternativa es no encontrar nunca lo que sí
+está a la venta a ese precio.
+
+**La trampa es comparar el rango contra `variantes_precio_min`**, que ya está
+agregado y a mano. Da falsos negativos en cuanto el producto tiene precios
+distintos: uno con el mínimo en $5.000 y el máximo en $50.000 no entra en "entre
+$6.000 y $8.000" mirando el mínimo —queda por debajo del borde de abajo— aunque
+tenga una combinación a $7.000 justo adentro. El mínimo contesta *cuánto sale lo
+más barato*; la pregunta del filtro es *hay algo en este rango*.
+
+#### Y la forma de esa subconsulta importa más que el criterio
+
+La primera versión fue un `EXISTS` correlacionado, que se lee mejor y **tarda
+789 ms con 800 productos en MySQL**.
+
+**Y no es que un `EXISTS` correlacionado sea malo**, que es la conclusión fácil
+y equivocada de este párrafo. Correlacionar por `product_id` contra su índice
+—`EXISTS (… WHERE v.product_id = products.id …)` a secas— lo resuelve MySQL con
+un `ref` sobre ese índice y da **32 ms** con los mismos 800: perfectamente
+razonable, y es la forma que hay que usar el día que haga falta un EXISTS acá.
+
+Lo que dispara el desastre es **correlacionar sobre una expresión que no puede
+usar ningún índice**. El precio de cada combinación es
+`COALESCE(precio_override, products.precio)`, y ese `products.precio` es el de
+**afuera**: la condición del rango pasa a depender de la fila externa, el motor
+no tiene por dónde entrar y la subconsulta se vuelve un `DEPENDENT SUBQUERY` con
+`type=ALL` que se recorre entera por cada fila candidata, antes del LIMIT. Es el
+mismo desastre que la forma correlacionada que esta misma página había
+descartado para traer el precio, y por el mismo motivo.
+
+O sea que el criterio no es "evitá los EXISTS correlacionados" sino **fijate
+sobre qué los correlacionás**: contra una columna indexada, bien; contra una
+expresión armada con columnas de la consulta de afuera, es una tabla completa
+por fila.
+
+Uniendo `products` **adentro** de la subconsulta, la lista se arma una sola vez
+y afuera queda un `IN` contra un conjunto ya resuelto: **24,8 ms con los mismos
+800 productos**, o sea treinta veces menos.
+
+En SQLite el correlacionado daba 7,6 ms y la forma nueva da 8,8 ms: no sólo no
+mostraba el problema, sino que **muestra el arreglo como si fuera un
+retroceso**. Es la misma lección que la tabla de más arriba, un poco más
+incómoda: lo que decide es MySQL, y una medición contra SQLite puede hacer
+descartar el cambio correcto.
+
+#### El orden por precio usa el "desde" de la tarjeta
+
+`?orden=precio` y `?orden=precio_desc` ordenan por
+`COALESCE(variantes_precio_min, products.precio)`, que es exactamente el número
+que la tarjeta muestra: el que ordena por precio compara lo que lee en la
+grilla.
+
+Dos detalles que no son decorativos:
+
+- **el descendente es ese mismo número al revés, y no el máximo** de las
+  combinaciones. Ordenando de mayor a menor por el máximo, el producto con una
+  combinación cara suelta encabezaría la grilla mostrando su "desde" barato: el
+  número más chico arriba de todo en un orden descendente;
+- **el `COALESCE` no es para que se vea lindo.** Sin variantes la columna
+  agregada viene NULL, y ordenando por ella pelada esos productos se van todos
+  juntos a una punta —y a cuál depende del motor, porque MySQL y SQLite no
+  ponen los NULL del mismo lado—.
+
+La expresión sale de `con_resumen_de_variantes()`, que devuelve la consulta y
+esa expresión juntas: tiene que apuntar a **la misma** subconsulta que se acaba
+de unir, porque armada aparte sería un segundo `outerjoin` a la misma tabla, o
+sea la agregación pagada dos veces en la misma pantalla.
+
+#### Lo que cuesta, medido
+
+Misma metodología que la tabla de arriba (mediana de 25 corridas, identity map
+vaciado antes de cada una, mitad de los productos con variantes), y esta vez
+**con los dos motores al lado**, que es lo que la tanda anterior dejó anotado
+que había que hacer:
+
+| | SQLite 10 | SQLite 800 | MySQL 10 | MySQL 800 |
+|---|---|---|---|---|
+| la página sin filtro de precio | 2,66 ms | 6,04 ms | 5,14 ms | 17,33 ms |
+| con el filtro nuevo | 4,38 ms | 8,81 ms | 7,90 ms | 24,77 ms |
+| el orden viejo (precio base) | 2,57 ms | 5,95 ms | 4,21 ms | 15,28 ms |
+
+O sea: **el filtro de rango agrega ~2 ms en SQLite y ~8 ms en MySQL** a 800
+productos, y **el orden nuevo cuesta ~2 ms más que el viejo en MySQL** (0,1 ms
+en SQLite). El filtro viejo no está en la tabla porque no es comparable: devolvía
+otro conjunto de resultados —cero productos en este escenario—, así que medirlo
+contra el nuevo sería medir cuánto cuesta traer menos filas.
+
+### Las otras pantallas que listan productos
+
+Ya no hay ninguna con el precio base. Las cuatro dicen lo mismo:
+
+| pantalla | consulta | cómo pide el resumen |
+|---|---|---|
+| catálogo público | `_buscar_en_catalogo` | `con_resumen_de_variantes()`, que además le da la expresión para ordenar |
+| "Mis guardados" | `guardados()` | el mismo helper, con el join por favorito encima |
+| ficha del emprendimiento | `consultas.productos_de()` | `productos_con_su_resumen()`, el atajo para las que no paginan |
+| ficha del producto | properties de `Product` | es una sola fila: ahí el N+1 no existe |
+
+**El helper no hubo que tocarlo** para las dos que se sumaron: le agrega las
+columnas a cualquier consulta de `Product`, así que el join por favorito y el
+filtro por emprendimiento conviven con él. Las que paginan lo usan directo
+—necesitan la consulta sin ejecutar—; la ficha, que lista todo junto, usa
+`productos_con_su_resumen()`, que la corre y arma las filas.
+
+**La tarjeta de la grilla es un parcial compartido**
+(`partials/_producto_tarjeta.html`). Estaba escrita dos veces, y por eso se
+despegaron: cuando el catálogo aprendió a mirar las combinaciones, "Mis
+guardados" se quedó mostrando el precio base del mismo producto. La ficha usa su
+propio componente (`producto-ficha`, con descripción y sin emprendimiento) pero
+el mismo `ResumenDeVariantes`, así que el criterio se escribe una sola vez
+aunque el markup sea otro.
 
 **La tarjeta y la ficha dicen el mismo precio**, y eso es deliberado: las dos
 calculan el mínimo entre las combinaciones comprables —la tarjeta en SQL, la
@@ -266,9 +394,3 @@ ficha con `Product.precio_desde` en Python—. Un producto cuya combinación má
 barata se quedó sin stock muestra el mismo número en las dos pantallas. Si
 alguna vez hay que tocar uno de los dos criterios, hay que tocar los dos: el
 que entra por el precio de una tarjeta lo hace para llegar a esa ficha.
-
-Las otras dos pantallas que muestran tarjetas de producto —"Mis guardados" y el
-catálogo dentro de la ficha del emprendimiento— siguen mostrando el precio
-base: usan sus propias consultas y no pasaron por esta tanda, que es la del
-catálogo. `con_resumen_de_variantes()` se les puede aplicar tal cual el día que
-se toquen.

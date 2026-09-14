@@ -281,10 +281,13 @@ def _filtrar_catalogo(consulta, busqueda, categoria, precio_min, precio_max,
 
     # Rango exacto y no aproximado: Product.precio es Numeric(10,2), asi que la
     # comparacion es sobre decimales de verdad y no sobre floats que redondean.
-    if precio_min is not None:
-        consulta = consulta.filter(Product.precio >= precio_min)
-    if precio_max is not None:
-        consulta = consulta.filter(Product.precio <= precio_max)
+    #
+    # Y consciente de las variantes: un producto con combinaciones entra si
+    # ALGUNA comprable cae en el rango, no si cae su precio base. La regla
+    # entera, con sus bordes, vive en services.variantes.filtro_de_precio.
+    rango = reglas_variantes.filtro_de_precio(precio_min, precio_max)
+    if rango is not None:
+        consulta = consulta.filter(rango)
 
     if abierto_ahora:
         consulta = consulta.filter(abierto_ahora_sql())
@@ -335,15 +338,17 @@ def _buscar_en_catalogo(busqueda, categoria, precio_min, precio_max,
     hay_coordenadas = lat is not None and lon is not None
     distancia = distancia_km_sql(lat, lon) if hay_coordenadas else None
 
-    consulta = reglas_variantes.con_resumen_de_variantes(_filtrar_catalogo(
-        Product.query
-        .join(Post, Post.id == Product.post_id)
-        .options(joinedload(Product.post)),
-        busqueda=busqueda, categoria=categoria,
-        precio_min=precio_min, precio_max=precio_max,
-        solo_disponibles=solo_disponibles, abierto_ahora=abierto_ahora,
-        distancia=distancia, radio_km=radio_km,
-    ))
+    consulta, precio_desde = reglas_variantes.con_resumen_de_variantes(
+        _filtrar_catalogo(
+            Product.query
+            .join(Post, Post.id == Product.post_id)
+            .options(joinedload(Product.post)),
+            busqueda=busqueda, categoria=categoria,
+            precio_min=precio_min, precio_max=precio_max,
+            solo_disponibles=solo_disponibles, abierto_ahora=abierto_ahora,
+            distancia=distancia, radio_km=radio_km,
+        )
+    )
 
     if hay_coordenadas:
         consulta = consulta.add_columns(distancia.label("distance_km"))
@@ -351,9 +356,14 @@ def _buscar_en_catalogo(busqueda, categoria, precio_min, precio_max,
     if orden == Ordenes.CERCANIA and hay_coordenadas:
         orden_sql = (distancia.asc(), Product.id.asc())
     elif orden == Ordenes.PRECIO_MENOR:
-        orden_sql = (Product.precio.asc(), Product.id.asc())
+        orden_sql = (precio_desde.asc(), Product.id.asc())
     elif orden == Ordenes.PRECIO_MAYOR:
-        orden_sql = (Product.precio.desc(), Product.id.desc())
+        # El mismo numero al reves y no el maximo de las combinaciones: el que
+        # ordena por precio compara lo que lee en las tarjetas, y lo que la
+        # tarjeta dice es el "desde". Ordenar de mayor a menor por el maximo
+        # pondria primero al producto con una combinacion cara suelta, que en
+        # la grilla se ve como el mas barato de la fila.
+        orden_sql = (precio_desde.desc(), Product.id.desc())
     else:
         orden_sql = (Product.created_at.desc(), Product.id.desc())
 
@@ -387,6 +397,25 @@ def _cuantos_emprendimientos(busqueda, categoria, precio_min, precio_max,
         solo_disponibles=solo_disponibles, abierto_ahora=abierto_ahora,
         distancia=distancia, radio_km=radio_km,
     ).scalar() or 0
+
+
+def _fila_de_la_grilla(fila, distance_km=None, es_favorito=False):
+    """Lo que la tarjeta compartida espera, armado desde una fila de la consulta.
+
+    Existe para que el catalogo y "Mis guardados" no armen el diccionario cada
+    uno por su lado: son la misma tarjeta, y mientras el precio se calculaba en
+    dos lugares uno de los dos se quedo mostrando el precio base.
+
+    Se lee por nombre y no por posicion: cada fila trae el producto, las cinco
+    columnas del resumen de variantes y, solo en el catalogo con coordenadas,
+    los km. Con desempaquetado posicional una columna mas rompe el bucle.
+    """
+    return {
+        "producto": fila.Product,
+        "variantes": reglas_variantes.resumen_de_fila(fila.Product, fila),
+        "distance_km": distance_km,
+        "es_favorito": es_favorito,
+    }
 
 
 def _ids_favoritos(user_id, productos):
@@ -472,19 +501,15 @@ def catalogo():
         **lo_pedido,
     )
 
-    # Por nombre y no por posicion: cada fila trae el producto, las cinco
-    # columnas del resumen de variantes y, solo si hay coordenadas, los km. Con
-    # desempaquetado posicional agregar una columna mas rompe este bucle.
     filas = [
-        {
-            "producto": fila.Product,
-            "distance_km": (
+        _fila_de_la_grilla(
+            fila,
+            distance_km=(
                 round(fila.distance_km, 1)
                 if ordenado_por_distancia and fila.distance_km is not None
                 else None
             ),
-            "variantes": reglas_variantes.resumen_de_fila(fila.Product, fila),
-        }
+        )
         for fila in paginacion.items
     ]
 
@@ -649,15 +674,25 @@ def guardados():
     El joinedload trae el emprendimiento de cada producto en la misma consulta:
     la tarjeta lo nombra, y sin eso es un SELECT por fila (problema N+1).
 
+    Y el mismo con_resumen_de_variantes que el catalogo, sin tocarlo: el helper
+    le suma las columnas agregadas a cualquier consulta de Product, asi que el
+    join extra por favorito convive con el. Es lo que hace que esta pantalla
+    diga el mismo precio que la grilla de la que se guardo el producto --antes
+    mostraba el precio base y la del catalogo el "desde", con el mismo producto
+    en las dos--.
+
     El desempate por id, igual que en "Mis favoritos": en MySQL la columna es
     DATETIME(0), asi que todo lo que se marca dentro del mismo segundo empata,
     y empatado el orden es arbitrario e inestable entre consultas.
     """
-    paginacion = (
+    consulta, _ = reglas_variantes.con_resumen_de_variantes(
         Product.query
         .join(ProductFavorite, ProductFavorite.product_id == Product.id)
         .options(joinedload(Product.post))
         .filter(ProductFavorite.user_id == g.user.id)
+    )
+    paginacion = (
+        consulta
         .order_by(ProductFavorite.created.desc(), ProductFavorite.id.desc())
         .paginate(
             page=request.args.get("page", 1, type=int),
@@ -667,7 +702,8 @@ def guardados():
     )
     return render_template(
         "products/guardados.html",
-        productos=paginacion.items,
+        # El corazon siempre lleno: esta pantalla son justamente los marcados.
+        filas=[_fila_de_la_grilla(fila, es_favorito=True) for fila in paginacion.items],
         paginacion=paginacion,
     )
 
