@@ -13,6 +13,7 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import event
 
+from app.blog import consultas as consultas_blog
 from app.perfil.modelo_horario import Horario
 from models.product import Product
 from models.product_favorite import ProductFavorite
@@ -1556,3 +1557,122 @@ def test_el_total_del_paginado_es_la_cantidad_real_de_resultados(
     # las dos mitades coincidirian igual y el test no probaria el caso que
     # importa, que es el conteo con una condicion extra adentro.
     assert 0 < total_con_rango < total_sin_rango
+
+
+def _nombres_de_la_ficha(html):
+    """Los nombres de los productos que la ficha esta mostrando, en orden."""
+    return re.findall(
+        r'class="producto-ficha__nombre">\s*<a [^>]*>(.*?)</a>', html, re.S
+    )
+
+
+def test_el_catalogo_de_la_ficha_pagina_y_la_pagina_2_existe(
+    app, client, db, crear_usuario, crear_post, crear_producto
+):
+    """La ficha ya no trae el catalogo entero: pagina, y la 2 tiene el resto.
+
+    Antes salia con .all(), o sea la tabla entera agregada y materializada en
+    memoria para pintar las tarjetas que entran en la pantalla. Pagina con el
+    MISMO tamaño que el catalogo publico (PRODUCTOS_POR_PAGINA), que es lo que
+    hace que las dos grillas de producto se vean igual.
+
+    Los productos se nombran con numero para poder afirmar el reparto: el orden
+    de la ficha es alfabetico por nombre, asi que con el relleno a dos digitos
+    el orden alfabetico y el numerico coinciden y el test puede decir cuales
+    van en cada pagina en vez de solo contarlas.
+    """
+    app.config["PRODUCTOS_POR_PAGINA"] = 3
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+    for numero in range(7):
+        crear_producto(post_id, nombre=f"Producto {numero:02d}")
+
+    primera = _nombres_de_la_ficha(
+        client.get(f"/blog/{post_id}").get_data(as_text=True)
+    )
+    assert primera == ["Producto 00", "Producto 01", "Producto 02"]
+
+    segunda = _nombres_de_la_ficha(
+        client.get(f"/blog/{post_id}?page=2").get_data(as_text=True)
+    )
+    assert segunda == ["Producto 03", "Producto 04", "Producto 05"]
+
+    tercera = _nombres_de_la_ficha(
+        client.get(f"/blog/{post_id}?page=3").get_data(as_text=True)
+    )
+    assert tercera == ["Producto 06"]
+
+
+def test_el_total_del_catalogo_de_la_ficha_cuenta_lo_que_se_puede_paginar(
+    app, db, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El total de la ficha tambien sale de un conteo aparte, y tiene que cerrar.
+
+    Mismo filo que en el catalogo publico: el COUNT ya no es la consulta de las
+    filas, asi que hay que afirmar que cuenta lo mismo que se puede recorrer.
+    Aca el filtro que decide que entra es el interruptor del dueño
+    (products.disponible), y tiene que estar en las dos consultas.
+
+    Los apagados entran en la cuenta del dueño y no en la del visitante, que es
+    justamente la diferencia que un conteo desalineado borraria.
+    """
+    app.config["PRODUCTOS_POR_PAGINA"] = 2
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+    for numero in range(5):
+        crear_producto(post_id, nombre=f"Encendido {numero}")
+    for numero in range(2):
+        crear_producto(post_id, nombre=f"Apagado {numero}", disponible=False)
+    # Uno con variantes, para que el conteo no sea sobre productos pelados.
+    con_variantes(
+        crear_producto(post_id, nombre="Con variantes", precio="9000.00"),
+        ("S", 2, "3000.00", True),
+        ("M", 0, "4000.00", True),
+    )
+
+    def recorrer(solo_disponibles):
+        nombres = []
+        total = 0
+        pagina = 1
+        while True:
+            paginacion = consultas_blog.productos_de(
+                post_id, solo_disponibles=solo_disponibles,
+                pagina=pagina, por_pagina=app.config["PRODUCTOS_POR_PAGINA"],
+            )
+            total = paginacion.total
+            nombres.extend(fila.producto.nombre for fila in paginacion.items)
+            if pagina >= paginacion.pages:
+                return total, nombres
+            pagina += 1
+
+    total_visitante, nombres_visitante = recorrer(solo_disponibles=True)
+    total_dueno, nombres_dueno = recorrer(solo_disponibles=False)
+
+    assert total_visitante == len(nombres_visitante) == 6
+    assert total_dueno == len(nombres_dueno) == 8
+    assert len(nombres_dueno) == len(set(nombres_dueno))
+
+
+def test_cambiar_de_pagina_en_la_ficha_no_se_lleva_lo_que_venia_en_la_url(
+    app, client, db, crear_usuario, crear_post, crear_producto
+):
+    """Los enlaces de paginacion conservan el resto de la querystring.
+
+    La ficha hoy no tiene filtros propios en la URL, pero el parcial de
+    paginacion es el mismo que usan el catalogo y "Mis guardados", que si los
+    tienen, y lo que garantiza es que cambiar de pagina no vacie la querystring.
+    Congelarlo aca es lo que evita que la ficha se estrene con el bug que las
+    otras dos ya tuvieron.
+    """
+    app.config["PRODUCTOS_POR_PAGINA"] = 2
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+    for numero in range(5):
+        crear_producto(post_id, nombre=f"Producto {numero}")
+
+    html = client.get(f"/blog/{post_id}?utm=mail").get_data(as_text=True)
+
+    siguiente = re.search(r'href="([^"]*)"[^>]*rel="next"', html)
+    assert siguiente, "la ficha paginada no dibujo el enlace a la pagina 2"
+    assert "utm=mail" in siguiente.group(1)
+    assert "page=2" in siguiente.group(1)

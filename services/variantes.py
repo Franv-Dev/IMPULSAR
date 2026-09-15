@@ -27,6 +27,7 @@ from models.producto_variante import (
     ProductoVarianteOpcion,
     TiposDeOpcion,
 )
+from services.paginado import paginar_con_conteo
 
 
 def normalizar_lista(texto):
@@ -330,23 +331,43 @@ ConsultaConVariantes = namedtuple("ConsultaConVariantes", "consulta precio_desde
 ProductoConVariantes = namedtuple("ProductoConVariantes", "producto variantes")
 
 
-def productos_con_su_resumen(consulta):
-    """Ejecuta una consulta de Product ya armada y devuelve ProductoConVariantes.
+def paginar_productos_con_su_resumen(consulta, conteo, pagina, por_pagina):
+    """Corre una consulta de Product paginada y devuelve ProductoConVariantes.
 
-    El atajo de las pantallas que listan productos sin paginar ni ordenar por
-    precio --hoy el catalogo de la ficha del emprendimiento--: le suma el
-    resumen a la consulta, la corre y arma las filas. Las que si paginan
-    (el catalogo publico y "Mis guardados") usan con_resumen_de_variantes
-    directamente, porque necesitan la consulta sin ejecutar.
+    El atajo de las pantallas que listan productos sin armar la consulta a mano
+    --hoy el catalogo de la ficha del emprendimiento--: le suma el resumen, la
+    pagina y arma las filas. Las que ya la arman (el catalogo publico y "Mis
+    guardados") usan con_resumen_de_variantes directamente, porque necesitan la
+    consulta sin ejecutar para ordenarla por precio.
+
+    HASTA ESTA TANDA HABIA UNA VERSION SIN PAGINAR que traia todo con .all(),
+    y la ficha era su unica usuaria. Con el resumen de variantes encima eso es
+    la tabla entera agregada y materializada en memoria para pintar las
+    tarjetas que entran en la pantalla, asi que no quedo ninguna pantalla que
+    la quiera y se fue con la tanda.
+
+    `conteo` es la consulta escalar del total, con los mismos filtros y sin las
+    columnas agregadas: el que decide cuales de sus condiciones filtran es
+    quien llama (ver el docstring de services/paginado.py).
+
+    LAS FILAS SE REEMPLAZAN DESPUES DE PAGINAR, y no antes, porque el paginado
+    es el que sabe cuales son las doce: la consulta se arma, se corre con LIMIT
+    y OFFSET, y recien ahi los Rows se traducen a ProductoConVariantes. Al
+    template le llega un objeto de paginacion normal --el que el parcial
+    compartido ya sabe leer-- cuyos items son lo mismo que devuelve el atajo
+    sin paginar, asi que la plantilla de la ficha no cambia de forma.
     """
-    consulta, _ = con_resumen_de_variantes(consulta)
-    return [
+    paginacion = paginar_con_conteo(
+        con_resumen_de_variantes(consulta).consulta, conteo, pagina, por_pagina
+    )
+    paginacion.items = [
         ProductoConVariantes(
             producto=fila.Product,
             variantes=resumen_de_fila(fila.Product, fila),
         )
-        for fila in consulta.all()
+        for fila in paginacion.items
     ]
+    return paginacion
 
 
 def con_resumen_de_variantes(consulta):

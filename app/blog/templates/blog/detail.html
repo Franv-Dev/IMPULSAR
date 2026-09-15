@@ -223,7 +223,7 @@
                    ya están uno abajo del otro y una barra pegada arriba come
                    pantalla sin ahorrar scroll. #}
                 <nav class="ficha-anclas" aria-label="Secciones de esta ficha">
-                    {% if productos or es_dueño %}
+                    {% if hay_productos or es_dueño %}
                         <a href="#ficha-productos" class="ficha-anclas__ancla">Lo que vende</a>
                     {% endif %}
                     {% if servicios or es_dueño %}
@@ -241,11 +241,11 @@
                    aunque esté vacío; a un visitante sólo si tiene algo, así un
                    emprendimiento que es puro servicio no muestra un "Lo que
                    vende" en blanco. #}
-                {% if productos or es_dueño %}
+                {% if hay_productos or es_dueño %}
                     <section class="ficha-bloque" id="ficha-productos">
                         <div class="ficha-bloque__head">
                             <h2 class="ficha-bloque__titulo">Lo que vende</h2>
-                            {% if productos %}
+                            {% if hay_productos %}
                                 <span class="ficha-bloque__nota">Precios de referencia, se acuerdan por mensaje</span>
                             {% endif %}
                             {% if es_dueño %}
@@ -253,7 +253,7 @@
                             {% endif %}
                         </div>
 
-                        {% if productos %}
+                        {% if hay_productos %}
                             <div class="ficha-productos">
                                 {# Desde la tanda del catálogo cada producto tiene
                                    su propia pantalla, así que la tarjeta deja de
@@ -304,6 +304,13 @@
                                     </article>
                                 {% endfor %}
                             </div>
+                            {# El mismo parcial que el catálogo y «Mis guardados»,
+                               que ya arrastra request.args al armar los enlaces:
+                               así cambiar de página no se lleva puesto nada de lo
+                               que venga en la URL. #}
+                            {% with paginacion = paginacion_productos %}
+                                {% include "partials/_paginacion.html" %}
+                            {% endwith %}
                         {% else %}
                             <div class="ficha-vacio">
                                 <h3 class="ficha-vacio__titulo">Todavía no cargaste productos</h3>
@@ -561,7 +568,7 @@
                         ('Dirección en el mapa', post.latitude and post.longitude, url_for('blog.update', id=post.id)),
                         ('Subir las fotos', galeria, url_for('blog.update', id=post.id)),
                         ('Cargar los horarios', horarios, url_for('profile.horarios')),
-                        ('Cargar un producto o un servicio', productos or servicios, url_for('products.nuevo')),
+                        ('Cargar un producto o un servicio', hay_productos or servicios, url_for('products.nuevo')),
                     ] %}
                     {% set hechas = tareas | selectattr(1) | list | length %}
 
