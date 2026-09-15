@@ -176,9 +176,12 @@ medidos y no teóricos:
   SELECT, y agrupando por `products.id` eso es el error 1055 de MySQL en
   `ONLY_FULL_GROUP_BY`: las columnas de `posts` no dependen funcionalmente de
   la PK de `products`;
-- el paginado cuenta con un `COUNT` sobre la consulta, y con `GROUP BY` ese
-  COUNT cuenta grupos y no filas, o sea que el "18 productos" del encabezado
-  y la cantidad de páginas dejarían de decir la verdad.
+- el paginado contaba con un `COUNT` sobre esta misma consulta, y con
+  `GROUP BY` ese COUNT cuenta grupos y no filas, o sea que el "18 productos"
+  del encabezado y la cantidad de páginas dejarían de decir la verdad. Desde la
+  tanda de performance el conteo se arma aparte (ver más abajo), así que este
+  motivo dejó de aplicar al COUNT; sigue aplicando al primero, que es el que
+  decide la forma de la consulta.
 
 **Son dos subconsultas y no una** porque la de variantes sola no alcanza para
 saber si el producto usa variantes: el que tiene la matriz entera apagada y el
@@ -371,14 +374,16 @@ Ya no hay ninguna con el precio base. Las cuatro dicen lo mismo:
 |---|---|---|
 | catálogo público | `_buscar_en_catalogo` | `con_resumen_de_variantes()`, que además le da la expresión para ordenar |
 | "Mis guardados" | `guardados()` | el mismo helper, con el join por favorito encima |
-| ficha del emprendimiento | `consultas.productos_de()` | `productos_con_su_resumen()`, el atajo para las que no paginan |
+| ficha del emprendimiento | `consultas.productos_de()` | `paginar_productos_con_su_resumen()`, el atajo para las que no arman la consulta a mano |
 | ficha del producto | properties de `Product` | es una sola fila: ahí el N+1 no existe |
 
 **El helper no hubo que tocarlo** para las dos que se sumaron: le agrega las
 columnas a cualquier consulta de `Product`, así que el join por favorito y el
-filtro por emprendimiento conviven con él. Las que paginan lo usan directo
-—necesitan la consulta sin ejecutar—; la ficha, que lista todo junto, usa
-`productos_con_su_resumen()`, que la corre y arma las filas.
+filtro por emprendimiento conviven con él. El catálogo y "Mis guardados" lo
+usan directo —necesitan la consulta sin ejecutar para ordenarla por precio—; la
+ficha usa `paginar_productos_con_su_resumen()`, que la pagina y arma las filas.
+**Las cuatro paginan**: la ficha era la última que traía todo junto, y dejó de
+hacerlo en la tanda de performance.
 
 **La tarjeta de la grilla es un parcial compartido**
 (`partials/_producto_tarjeta.html`). Estaba escrita dos veces, y por eso se
@@ -394,3 +399,102 @@ ficha con `Product.precio_desde` en Python—. Un producto cuya combinación má
 barata se quedó sin stock muestra el mismo número en las dos pantallas. Si
 alguna vez hay que tocar uno de los dos criterios, hay que tocar los dos: el
 que entra por el precio de una tarjeta lo hace para llegar a esa ficha.
+El acuerdo entre las dos ya no depende de que alguien se acuerde: lo congela
+`test_la_tarjeta_y_la_ficha_nunca_dicen_cosas_distintas`, que recorre los nueve
+casos de la matriz que cambian lo que se muestra —sin variantes, todas al mismo
+precio, precios distintos, una apagada, una activa sin stock, todas agotadas,
+heredado, heredado con override, y la matriz entera apagada— y compara la
+tarjeta renderizada contra `precio_desde`, `precio_es_rango` y
+`disponible_efectivo`. La tabla de casos es **fija y no un generador con
+semilla**: el test tiene que fallar siempre por el mismo motivo, y junta todos
+los desacuerdos antes de fallar para que se vea en cuáles casos y no sólo en el
+primero.
+
+## Lo que costó de más, y cómo se pagó
+
+Las dos subconsultas agregadas resolvieron el N+1 y trajeron su propio
+sobrecosto, que la tanda anterior dejó medido y anotado. La de performance lo
+bajó en los dos lugares donde se pagaba sin necesidad. Todo medido **contra
+MySQL real**, 800 productos, la mitad con variantes, mediana de 25 corridas con
+el identity map vaciado antes de cada una: la misma metodología de las tablas
+de arriba, y con MySQL y no con SQLite porque ya hay dos lecciones en este
+documento sobre lo que pasa cuando se decide con los números del motor que no
+corre en producción.
+
+### El conteo del paginado no necesita la agregación
+
+El `COUNT` del paginado salía de **la misma consulta que las filas**
+(`QueryPagination._query_count()` hace `query.order_by(None).count()`), o sea
+que para contestar "cuántas filas hay" arrastraba las dos subconsultas
+agrupadas del resumen de variantes. Con el filtro de rango puesto arrastraba
+además sus dos subconsultas.
+
+**Las columnas agregadas se muestran, no filtran**, así que el conteo se arma
+aparte: una consulta escalar (`func.count`) con los mismos filtros y sin las
+columnas de adorno. El paginador que acepta un conteo propio vive en
+`services/paginado.py`.
+
+**Dónde está el filo, que es lo que hay que leer antes de tocar esto.** No todo
+lo que la consulta agrega es decorativo, y la distinción no la puede hacer el
+paginador:
+
+- lo que **filtra** tiene que estar en los dos lados. El rango de precio del
+  catálogo decide qué productos entran —mira las combinaciones comprables, no
+  el precio base—, así que queda en el conteo. Si se cayera, el total dejaría
+  de ser la cantidad de resultados y la grilla diría "40 productos" mostrando
+  12 de otros 18;
+- lo que sólo **se muestra** o sólo **ordena** no va: las columnas agregadas,
+  el `joinedload` del emprendimiento, la distancia en km, el `ORDER BY`.
+
+Un conteo desalineado no rompe ninguna otra assertion de la suite, porque el
+resto mira las tarjetas y no el número. Lo ataja
+`test_el_total_del_paginado_es_la_cantidad_real_de_resultados`, que recorre
+**todas** las páginas con y sin rango y compara el total contra lo que
+realmente se pudo paginar —de paso cubre que no haya un producto repetido en
+dos páginas ni uno que no aparezca en ninguna, que es la otra forma de que las
+dos mitades no cierren—.
+
+| la primera página del catálogo, con su total | antes | después |
+|---|---|---|
+| sin filtro | 22,0 ms | **14,8 ms** |
+| con rango de precio | 25,4 ms | **20,3 ms** |
+| con rango y orden por precio | 27,5 ms | **23,2 ms** |
+
+O sea **entre 4 y 7 ms menos por pantalla** (un 16 a 32 %), y lo que se fue es
+justamente la mitad que no aportaba nada: el mismo trabajo de agregación se
+hacía dos veces por página, una para las doce filas y otra para contarlas.
+
+### La ficha del emprendimiento pagina
+
+Era la última pantalla que traía su catálogo entero con `.all()`. Sin variantes
+eso era una consulta simple; con el resumen encima es la tabla agregada y
+**materializada en memoria** para pintar las tarjetas que entran en la
+pantalla.
+
+Pagina con el **mismo paginador y el mismo tamaño de página que el catálogo
+público** (`PRODUCTOS_POR_PAGINA`): es la misma grilla de productos, y dos
+números distintos serían dos pantallas que se ven distinto sin motivo. Los
+enlaces salen del parcial compartido (`partials/_paginacion.html`), que ya
+arrastra `request.args`, así que cambiar de página no se lleva puesto nada de
+lo que venga en la URL.
+
+| el catálogo de una ficha con 800 productos | antes | después |
+|---|---|---|
+| `consultas.productos_de()` | 32,3 ms | **9,3 ms** |
+
+**Un 71 % menos**, y a diferencia del anterior este número no es una mejora
+constante: es la diferencia entre un costo que crece con el catálogo del
+emprendimiento y uno que no. Los 9,3 ms son lo que cuesta la página, con 800
+productos o con 8.000.
+
+Dos cosas que cambiaron de forma al paginar, y conviene tenerlas anotadas:
+
+- **son dos consultas y no una**: las filas y el COUNT. El test que congela
+  esto pasó de afirmar "un solo SELECT" a comparar el número con 5 productos
+  contra el número con 20, que es la propiedad que importaba —que no crezca con
+  cuántos hay—. El día que sean tres, lo que hay que mirar es si volvió un lazy
+  load por tarjeta;
+- **el bloque "Lo que vende" mira el total y no la página.** Atado a la lista,
+  pedir una página vacía (`?page=99`) hacía desaparecer la sección entera de un
+  emprendimiento que sí vende.
+

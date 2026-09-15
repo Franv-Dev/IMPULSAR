@@ -387,8 +387,10 @@ def con_resumen_de_variantes(consulta):
     corto y esta mal por dos motivos: el joinedload del emprendimiento mete las
     columnas de posts en el SELECT, y con MySQL en ONLY_FULL_GROUP_BY eso es el
     error 1055 (las columnas de posts no dependen funcionalmente de
-    products.id); y el paginado cuenta con un COUNT sobre la consulta, que con
-    GROUP BY cuenta grupos y no filas.
+    products.id); y el paginado contaba con un COUNT sobre esta consulta, que
+    con GROUP BY cuenta grupos y no filas --desde la tanda de performance el
+    conteo se arma aparte (ver services/paginado.py), asi que ese segundo
+    motivo ya no aplica al COUNT, pero el primero sigue decidiendo la forma.
 
     POR QUE SON DOS Y NO UNA. La de variantes sola no alcanza para saber si el
     producto usa variantes: un producto con toda la matriz apagada y otro que
