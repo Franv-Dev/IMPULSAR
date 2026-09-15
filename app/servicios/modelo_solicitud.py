@@ -12,16 +12,38 @@ class EstadosSolicitud:
     No hay aceptacion ni rechazo a proposito. Como no hay pago ni compromiso
     de por medio, "cerrada" es archivar, no acordar: sirve para sacarla de la
     lista de lo que falta contestar.
+
+    BORRADOR ES UN ESTADO DEL LADO DEL PRESTADOR Y NO DEL FLUJO. Los otros tres
+    los ven las dos partes y significan lo mismo para las dos. Este no: es "la
+    estoy escribiendo", y para el cliente es indistinguible de PENDIENTE --su
+    pedido sigue sin respuesta--. De ahi salen las dos cosas que hay que
+    respetar en cualquier lado que mire este campo:
+
+      - SIN_RESPONDER agrupa PENDIENTE y BORRADOR, y es lo que hay que preguntar
+        cada vez que la pregunta real sea "todavia le debe una respuesta":
+        el contador del panel, el aviso de "esperando tu respuesta", el freno de
+        la segunda solicitud del mismo cliente, y --lo mas importante-- el
+        cupo_pendiente que sostiene el UNIQUE (ver el docstring de
+        ServiceRequest). Preguntar `== PENDIENTE` a secas es el bug que esta
+        clase intenta hacer dificil;
+      - al cliente no se le nombra: estado_visible_para() lo traduce a
+        PENDIENTE, y respuesta_visible tapa el texto a medio escribir.
     """
 
     PENDIENTE = "pendiente"
+    BORRADOR = "borrador"
     RESPONDIDA = "respondida"
     CERRADA = "cerrada"
 
-    TODOS = (PENDIENTE, RESPONDIDA, CERRADA)
+    TODOS = (PENDIENTE, BORRADOR, RESPONDIDA, CERRADA)
+
+    #: Los estados en los que el prestador todavia le debe una respuesta al
+    #: cliente. Para el cliente los dos son lo mismo.
+    SIN_RESPONDER = (PENDIENTE, BORRADOR)
 
     ETIQUETAS = {
         PENDIENTE: "Pendiente",
+        BORRADOR: "Borrador",
         RESPONDIDA: "Respondida",
         CERRADA: "Cerrada",
     }
@@ -64,11 +86,28 @@ class ServiceRequest(db.Model):
     chequea antes, pero para dar un mensaje lindo, no para garantizar nada.
 
     La constraint es UNIQUE(service_id, cliente_id, cupo_pendiente), donde
-    cupo_pendiente vale 1 mientras la solicitud esta pendiente y NULL cuando no
-    lo esta. En los dos motores (MySQL y SQLite) un UNIQUE ignora las filas con
-    NULL, asi que la regla termina aplicando solo a las pendientes: las
-    respondidas y las cerradas pueden repetirse todas las veces que haga falta.
-    Es la forma portable de escribir el "unique parcial" que MySQL no tiene.
+    cupo_pendiente vale 1 mientras la solicitud esta SIN RESPONDER y NULL cuando
+    no lo esta. En los dos motores (MySQL y SQLite) un UNIQUE ignora las filas
+    con NULL, asi que la regla termina aplicando solo a esas: las respondidas y
+    las cerradas pueden repetirse todas las veces que haga falta. Es la forma
+    portable de escribir el "unique parcial" que MySQL no tiene.
+
+    "SIN RESPONDER" SON DOS ESTADOS Y NO UNO, y esto es lo que hay que entender
+    antes de tocar el listener. Cuando se sumo BORRADOR la pregunta fue si una
+    solicitud en borrador tenia que seguir ocupando el cupo. La respuesta es que
+    SI, y el motivo no es tecnico: el cupo existe para que un cliente no tenga
+    dos pedidos abiertos sobre el mismo servicio, y desde el lado del cliente
+    una solicitud en borrador sigue sin contestar -- no sabe que el prestador
+    empezo a escribir, y no tiene por que saberlo --. Si el borrador liberara el
+    cupo, el cliente podria mandar un segundo pedido identico sobre el mismo
+    servicio mientras el primero espera, que es exactamente lo que el UNIQUE
+    vino a evitar; y el prestador se encontraria con dos filas, una con su
+    borrador y otra vacia.
+
+    El efecto practico de esa decision es que pasar de PENDIENTE a BORRADOR no
+    toca cupo_pendiente: sigue en 1. O sea que el camino nuevo no puede chocar
+    con el UNIQUE, porque no cambia ninguna de las tres columnas que lo forman.
+    Lo libera recien RESPONDIDA o CERRADA, igual que antes.
     """
 
     __tablename__ = "service_requests"
@@ -137,9 +176,11 @@ class ServiceRequest(db.Model):
         server_default=EstadosSolicitud.PENDIENTE,
         index=True,
     )
-    # Vale 1 si estado == pendiente, y NULL si no. No se toca a mano en ningun
-    # lado: lo mantiene el listener de abajo, para que no pueda quedar
-    # desincronizado de `estado` (que es de donde sale su valor).
+    # Vale 1 mientras la solicitud esta SIN RESPONDER (pendiente o borrador), y
+    # NULL si no. No se toca a mano en ningun lado: lo mantiene el listener de
+    # abajo, para que no pueda quedar desincronizado de `estado` (que es de donde
+    # sale su valor). Por que el borrador tambien ocupa el cupo, en el docstring
+    # de la clase.
     cupo_pendiente = db.Column(db.Integer, nullable=True)
     # La respuesta del prestador. Las dos columnas son nullable porque hasta
     # que conteste no existen; el precio ademas puede seguir siendo NULL
@@ -173,6 +214,49 @@ class ServiceRequest(db.Model):
     @property
     def estado_label(self):
         return EstadosSolicitud.ETIQUETAS.get(self.estado, self.estado)
+
+    @property
+    def sin_responder(self):
+        """Si el prestador todavia le debe una respuesta al cliente."""
+        return self.estado in EstadosSolicitud.SIN_RESPONDER
+
+    @property
+    def respuesta_visible(self):
+        """Si la respuesta ya se puede mostrar al cliente.
+
+        LAS DOS COLUMNAS DE RESPUESTA SE ESCRIBEN ANTES DE QUE LA RESPUESTA
+        EXISTA para el cliente: eso es exactamente lo que hace guardar un
+        borrador. Asi que "hay respuesta" dejo de ser "las columnas tienen algo"
+        --que es como lo preguntaban las dos plantillas-- y pasa a mirar tambien
+        el estado. Sin esto, el borrador se le mostraba al cliente en la lista de
+        presupuestos y en el detalle, que es justo lo que no tiene que pasar.
+
+        Una respuesta enviada sigue visible si despues se cierra la solicitud:
+        lo que la tapa es el borrador, no el cierre.
+        """
+        if self.estado == EstadosSolicitud.BORRADOR:
+            return False
+        return bool(self.respuesta_mensaje or self.respuesta_precio)
+
+    def estado_visible_para(self, es_prestador):
+        """El estado tal como lo tiene que leer quien esta mirando.
+
+        Para el cliente, un borrador es indistinguible de una pendiente: su
+        pedido sigue sin respuesta y no tiene por que enterarse de que el
+        prestador empezo a escribir y la dejo a medias.
+
+        Devuelve un estado y no una etiqueta para que quien llama pueda usarlo
+        tambien para el tono del cartel y para agrupar, que es lo que hacen las
+        dos plantillas: con una etiqueta sola habria que traducir dos veces.
+        """
+        if self.estado == EstadosSolicitud.BORRADOR and not es_prestador:
+            return EstadosSolicitud.PENDIENTE
+        return self.estado
+
+    def etiqueta_para(self, es_prestador):
+        """La etiqueta del estado visible. Ver estado_visible_para()."""
+        estado = self.estado_visible_para(es_prestador)
+        return EstadosSolicitud.ETIQUETAS.get(estado, estado)
 
     def serialize(self):
         return {
@@ -216,10 +300,18 @@ def _sincronizar_cupo_pendiente(mapper, connection, target):
     El `or PENDIENTE` es porque los defaults de columna se aplican despues de
     este evento: una solicitud creada sin pasar `estado` todavia lo tiene en
     None aca, y su default es justamente "pendiente".
+
+    OJO CON LA CONDICION: es SIN_RESPONDER y no `== PENDIENTE`. Un borrador
+    sigue ocupando el cupo, porque para el cliente su pedido sigue sin
+    contestar; el porque completo esta en el docstring de la clase, y es la
+    unica decision de diseño de todo este archivo que no se puede deducir
+    leyendo el codigo.
     """
     estado = target.estado or EstadosSolicitud.PENDIENTE
     target.estado = estado
-    target.cupo_pendiente = 1 if estado == EstadosSolicitud.PENDIENTE else None
+    target.cupo_pendiente = (
+        1 if estado in EstadosSolicitud.SIN_RESPONDER else None
+    )
 
 
 # El archivo de la foto se va con la fila, por cualquier camino del ORM:

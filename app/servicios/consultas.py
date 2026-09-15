@@ -183,11 +183,19 @@ def cuantos_servicios_tiene(post_id):
 
 
 def solicitud_pendiente_de(service_id, cliente_id):
-    """La solicitud pendiente de ese cliente sobre ese servicio, si la hay."""
-    return ServiceRequest.query.filter_by(
-        service_id=service_id,
-        cliente_id=cliente_id,
-        estado=EstadosSolicitud.PENDIENTE,
+    """La solicitud sin responder de ese cliente sobre ese servicio, si la hay.
+
+    Es el chequeo lindo del "una sola pendiente" (la garantia la da el UNIQUE de
+    la base, ver el modelo). Cuenta tambien las que estan en BORRADOR: el
+    borrador es del prestador, y desde el lado del cliente su pedido sigue sin
+    contestar, asi que sigue siendo el pedido que le bloquea mandar otro. Si
+    mirara solo PENDIENTE, el cliente recibiria el formulario vacio y despues un
+    IntegrityError del UNIQUE, que es el mismo error con peor mensaje.
+    """
+    return ServiceRequest.query.filter(
+        ServiceRequest.service_id == service_id,
+        ServiceRequest.cliente_id == cliente_id,
+        ServiceRequest.estado.in_(EstadosSolicitud.SIN_RESPONDER),
     ).first()
 
 
@@ -296,7 +304,9 @@ def cuantas_solicitudes_pendientes_para(user_id):
         .join(Post, Post.id == Service.post_id)
         .filter(
             Post.author == user_id,
-            ServiceRequest.estado == EstadosSolicitud.PENDIENTE,
+            # Los borradores tambien: el aviso dice cuantas le faltan contestar,
+            # y una empezada a escribir sigue sin contestar.
+            ServiceRequest.estado.in_(EstadosSolicitud.SIN_RESPONDER),
         )
         .scalar()
     )
