@@ -20,6 +20,7 @@ from models.producto_variante import (
     ProductoVariante, ProductoVarianteOpcion, TiposDeOpcion,
 )
 from services.horarios import ahora_en_argentina
+from views.products import Ordenes, _buscar_en_catalogo
 
 
 @pytest.fixture
@@ -1445,3 +1446,113 @@ def test_la_ficha_no_consulta_de_mas_por_cada_producto(
     con_doce = contar_consultas()
 
     assert con_doce == con_tres
+
+
+def _recorrer_el_catalogo(precio_min, precio_max, por_pagina=4):
+    """Recorre el catalogo pagina por pagina. Devuelve (total, ids vistos).
+
+    El total sale del paginado --que es el numero que el encabezado muestra y
+    el que esta tanda saco de la consulta agregada-- y los ids de las filas que
+    realmente se pudieron paginar. Son las dos mitades que tienen que coincidir.
+    """
+    ids = []
+    total = 0
+    pagina = 1
+    while True:
+        paginacion, _ = _buscar_en_catalogo(
+            busqueda="", categoria="",
+            precio_min=precio_min, precio_max=precio_max,
+            solo_disponibles=True, abierto_ahora=False,
+            lat=None, lon=None, radio_km=None,
+            orden=Ordenes.NUEVOS, pagina=pagina, por_pagina=por_pagina,
+        )
+        total = paginacion.total
+        ids.extend(fila.Product.id for fila in paginacion.items)
+        if pagina >= paginacion.pages:
+            return total, ids
+        pagina += 1
+
+
+def test_el_total_del_paginado_es_la_cantidad_real_de_resultados(
+    app, db, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El total del encabezado tiene que ser la cantidad de resultados paginables.
+
+    ES EL TEST QUE ATAJA UN CONTEO DESALINEADO. El total ya no sale de la misma
+    consulta que las filas: el COUNT del paginado se arma aparte, sin las cinco
+    columnas agregadas de las variantes (ver services/paginado.py). Esa es la
+    optimizacion, y tambien el riesgo: si al conteo se le cae una condicion que
+    SI filtra --el rango de precio, hoy-- el numero deja de ser la cantidad de
+    resultados y ninguna otra assertion de la suite lo nota, porque el resto
+    mira las tarjetas y no el numero.
+
+    Se recorren TODAS las paginas y no solo la primera, con una pagina chica a
+    proposito: asi el mismo test cubre que no haya un producto repetido en dos
+    paginas ni uno que no aparezca en ninguna, que es la otra forma de que el
+    total y las filas no cierren.
+
+    El catalogo mezcla los siete casos de la matriz --sin variantes, todas al
+    mismo precio, precios distintos, una apagada, una activa sin stock, todas
+    agotadas, con y sin precio_override-- porque el filtro de rango no mira el
+    precio base sino las combinaciones comprables, y un catalogo de productos
+    pelados no probaria justamente la parte que puede desalinearse.
+    """
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+
+    # Sin variantes: el precio base es lo unico que el filtro puede mirar.
+    for numero, precio in enumerate(("500.00", "1500.00", "5000.00",
+                                     "9000.00", "12000.00", "7999.00")):
+        crear_producto(post_id, nombre=f"Pelado {numero}", precio=precio)
+
+    # Todas al mismo precio, con stock: entra por las combinaciones.
+    con_variantes(
+        crear_producto(post_id, nombre="Iguales", precio="40000.00"),
+        ("S", 3, "2000.00", True),
+        ("M", 2, "2000.00", True),
+    )
+    # Precios distintos: entra si ALGUNA cae en el rango, aunque el "desde" no.
+    con_variantes(
+        crear_producto(post_id, nombre="Distintos", precio="40000.00"),
+        ("S", 3, "7000.00", True),
+        ("M", 2, "50000.00", True),
+    )
+    # Una apagada: no cuenta ni para el precio ni para el filtro.
+    con_variantes(
+        crear_producto(post_id, nombre="Con una apagada", precio="40000.00"),
+        ("S", 3, "6000.00", True),
+        ("M", 5, "1200.00", False),
+    )
+    # Activa pero sin stock: tampoco es una oferta.
+    con_variantes(
+        crear_producto(post_id, nombre="Activa sin stock", precio="40000.00"),
+        ("S", 0, "3000.00", True),
+        ("M", 4, "6500.00", True),
+    )
+    # Todas agotadas: la tarjeta vuelve al precio base, y el filtro tambien.
+    con_variantes(
+        crear_producto(post_id, nombre="Agotado", precio="3300.00"),
+        ("S", 0, "70000.00", True),
+        ("M", 0, "80000.00", True),
+    )
+    # Heredando el precio del producto (precio_override en NULL).
+    con_variantes(
+        crear_producto(post_id, nombre="Heredado", precio="4400.00"),
+        ("S", 2, None, True),
+        ("M", 1, None, True),
+    )
+
+    total_sin_rango, ids_sin_rango = _recorrer_el_catalogo(None, None)
+    total_con_rango, ids_con_rango = _recorrer_el_catalogo(1000, 8000)
+
+    assert total_sin_rango == len(ids_sin_rango)
+    assert total_con_rango == len(ids_con_rango)
+
+    # Ninguno repetido en dos paginas ni perdido entre dos.
+    assert len(ids_sin_rango) == len(set(ids_sin_rango))
+    assert len(ids_con_rango) == len(set(ids_con_rango))
+
+    # Y que el rango este filtrando de verdad: con un rango que no acota nada
+    # las dos mitades coincidirian igual y el test no probaria el caso que
+    # importa, que es el conteo con una condicion extra adentro.
+    assert 0 < total_con_rango < total_sin_rango
