@@ -483,9 +483,32 @@ lo que venga en la URL.
 | `consultas.productos_de()` | 32,3 ms | **9,3 ms** |
 
 **Un 71 % menos**, y a diferencia del anterior este número no es una mejora
-constante: es la diferencia entre un costo que crece con el catálogo del
-emprendimiento y uno que no. Los 9,3 ms son lo que cuesta la página, con 800
-productos o con 8.000.
+constante: lo que cambió es de qué depende el costo. Antes crecía con **el
+tamaño del catálogo del emprendimiento**, porque traía y agregaba la tabla
+entera para pintar doce tarjetas; ahora no, y ésa es la propiedad que importa
+—el emprendimiento que cargue 8.000 productos paga lo mismo por su primera
+página que el que cargó 800—.
+
+Lo que sí crece es **la profundidad de la página**, por el `OFFSET`: el motor
+descarta las filas salteadas antes de devolver las doce. Con esos mismos 800
+productos (67 páginas):
+
+| | página 1 | página 33 | página 67 |
+|---|---|---|---|
+| `consultas.productos_de()` | 9,7 ms | 12,8 ms | 13,2 ms |
+
+O sea **+3,5 ms entre la primera y la última**, contra los 23 ms que se
+ahorraron al dejar de traer todo. Es un costo que depende de hasta dónde se
+paginó y no de cuánto hay cargado, y en una grilla que se recorre de a poco
+casi nadie llega a la página 67. El día que duela, la salida conocida es
+paginar por cursor (`WHERE nombre > el último`) en vez de por OFFSET, que no
+necesita descartar nada.
+
+Conviene no leer el número absoluto como una constante de la aplicación: una
+medición independiente del mismo efecto, en otra máquina, dio 6,6 ms en la
+primera página y 11,9 ms en la 67. Los dos pares dicen lo mismo —unos pocos ms
+de más al fondo de la paginación— y ninguno de los dos dice cuánto tarda en
+producción.
 
 Dos cosas que cambiaron de forma al paginar, y conviene tenerlas anotadas:
 

@@ -420,3 +420,97 @@ def test_las_resenias_no_disparan_una_consulta_por_autor(
     assert len(consultas_hechas) == 1, (
         f"{len(consultas_hechas)} consultas para 4 reseñas: volvió el N+1"
     )
+
+
+def _tareas_de_la_ficha(html):
+    """Cada tarea del checklist de la dueña, con si esta marcada como hecha.
+
+    Se leen las cinco filas y no solo el contador "3 de 5": el contador podria
+    seguir dando el mismo numero con otra tarea marcada, y lo que hay que
+    congelar es el estado de cada una.
+    """
+    tareas = []
+    for clases, cuerpo in re.findall(
+        r'<li class="ficha-tareas__item ([^"]*)">(.*?)</li>', html, re.S
+    ):
+        etiqueta = re.search(
+            r'class="ficha-tareas__etiqueta">(.*?)</span>', cuerpo, re.S
+        )
+        assert etiqueta, "una tarea del checklist salio sin etiqueta"
+        tareas.append((
+            " ".join(etiqueta.group(1).split()),
+            "ficha-tareas__item--hecha" in clases,
+        ))
+    return tareas
+
+
+def test_una_pagina_fuera_de_rango_no_vacia_el_resto_de_la_ficha(
+    client, db, crear_usuario, crear_post, login
+):
+    """Pedir una pagina que no existe no puede apagar lo que no es la lista.
+
+    DE DONDE SALE ESTE TEST. Desde que el catalogo de la ficha pagina, la
+    variable de los productos es la PAGINA y ya no el catalogo entero, asi que
+    con `?page=99` viene vacia aunque el emprendimiento venda. Todo lo que
+    preguntaba "hay productos?" mirando esa lista pasa a contestar que no:
+
+      - a la dueña se le apagaba la tarea "Cargar un producto o un servicio"
+        del checklist, o sea que la ficha le pedia cargar algo que ya tenia
+        cargado (y con el contador, le movia el progreso para atras);
+      - al visitante le desaparecia la seccion "Lo que vende" ENTERA, con su
+        ancla incluida, de un emprendimiento que si vende.
+
+    Por eso las preguntas de "hay productos" miran el TOTAL del paginado
+    (`hay_productos`) y no la lista de la pagina. El guard es load-bearing y la
+    suite no lo notaba: revertirlo a mano dejaba todo en verde.
+
+    Se piden las dos formas de salirse del rango: `?page=99` --por arriba, que
+    es la que devuelve una pagina vacia-- y `?page=0` --por abajo, que el
+    paginado colapsa a la 1--. La segunda no ejercita el guard, pero congela
+    que no conteste un 404 ni se coma la seccion por otro camino.
+
+    El estado del checklist es real y no completo a proposito: quedan dos
+    tareas sin hacer (la direccion en el mapa y las fotos), asi que el bloque
+    se dibuja y se puede comparar. Con las cinco hechas no se dibuja y el test
+    no probaria nada.
+    """
+    from models.product import Product
+
+    autor = crear_usuario(username="autor")
+    post = crear_post(autor.id)          # nombre y descripcion, nada mas
+    _horarios_de_toda_la_semana(db, autor.id)
+    db.session.add(Product(post_id=post.id, nombre="Alfajores", precio=1500))
+    db.session.commit()
+    post_id = post.id
+
+    fuera_de_rango = ("?page=99", "?page=0")
+
+    # --- el visitante: las secciones que no son la lista siguen ahi
+    en_la_primera = _ficha(client, post_id)
+    assert 'id="ficha-productos"' in en_la_primera
+
+    for cola in fuera_de_rango:
+        respuesta = client.get(f"/blog/{post_id}{cola}")
+        assert respuesta.status_code == 200, f"la ficha se rompio con {cola}"
+        html = _html(respuesta)
+        # La seccion de productos y su ancla, que es lo que desaparecia.
+        assert 'id="ficha-productos"' in html, cola
+        assert ">Lo que vende</a>" in html, cola
+        # Y el resto de los bloques de la ficha, que nunca dependieron de la
+        # pagina y tampoco tienen que empezar a depender.
+        for ancla in ('id="ficha-arriba"', 'id="ficha-resenias"',
+                      'id="ficha-informacion"'):
+            assert ancla in html, f"{ancla} con {cola}"
+
+    # --- la dueña: el checklist sigue con su estado real
+    login(autor.id)
+    tareas_en_la_primera = _tareas_de_la_ficha(_ficha(client, post_id))
+
+    assert len(tareas_en_la_primera) == 5
+    assert sum(1 for _, hecha in tareas_en_la_primera if hecha) == 3
+    assert ("Cargar un producto o un servicio", True) in tareas_en_la_primera
+
+    for cola in fuera_de_rango:
+        html = _html(client.get(f"/blog/{post_id}{cola}"))
+        assert "3 de 5" in html, f"el contador se movio con {cola}"
+        assert _tareas_de_la_ficha(html) == tareas_en_la_primera, cola
