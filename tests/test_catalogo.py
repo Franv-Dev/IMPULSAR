@@ -21,6 +21,7 @@ from models.producto_variante import (
     ProductoVariante, ProductoVarianteOpcion, TiposDeOpcion,
 )
 from services.horarios import ahora_en_argentina
+from services.precios import formatear as formatear_precio
 from views.products import Ordenes, _buscar_en_catalogo
 
 
@@ -1676,3 +1677,120 @@ def test_cambiar_de_pagina_en_la_ficha_no_se_lleva_lo_que_venia_en_la_url(
     assert siguiente, "la ficha paginada no dibujo el enlace a la pagina 2"
     assert "utm=mail" in siguiente.group(1)
     assert "page=2" in siguiente.group(1)
+
+
+#: Los casos de la matriz de variantes que cambian lo que se muestra, cada uno
+#: con su nombre, su precio base y sus combinaciones (talle, stock,
+#: precio_override, activo). Es una tabla fija y no un generador al azar: el
+#: test tiene que fallar siempre por el mismo motivo, y con semilla igual haria
+#: falta leer el numero para saber que caso rompio.
+CASOS_DE_LA_MATRIZ = (
+    # Sin variantes: la regresion que ninguna tanda puede romper.
+    ("Sin variantes", "1500.00", ()),
+    # Todas al mismo precio: numero pelado, sin "desde".
+    ("Todas al mismo precio", "9000.00",
+     (("S", 3, "2000.00", True), ("M", 1, "2000.00", True))),
+    # Precios distintos: "desde" el mas barato de las comprables.
+    ("Precios distintos", "9000.00",
+     (("S", 3, "2000.00", True), ("M", 1, "5000.00", True))),
+    # Una apagada: no cuenta ni para el precio ni para el cartel, aunque sea
+    # la mas barata de todas.
+    ("Con una apagada", "9000.00",
+     (("S", 3, "6000.00", True), ("M", 5, "1200.00", False))),
+    # Activa pero sin stock: tampoco es una oferta, asi que no baja el precio.
+    ("Con una activa sin stock", "9000.00",
+     (("S", 0, "3000.00", True), ("M", 4, "6500.00", True))),
+    # Todas agotadas: precio base y cartel puesto, no un error.
+    ("Todas agotadas", "3300.00",
+     (("S", 0, "7000.00", True), ("M", 0, "8000.00", True))),
+    # precio_override en NULL: hereda el del producto, nunca cero.
+    ("Heredando el precio", "4400.00",
+     (("S", 2, None, True), ("M", 1, None, True))),
+    # Una heredada y una con override, que es el caso mezclado.
+    ("Override y heredado", "4400.00",
+     (("S", 2, None, True), ("M", 1, "2600.00", True))),
+    # La matriz entera apagada, que no es lo mismo que no tener variantes.
+    ("Matriz entera apagada", "5100.00",
+     (("S", 3, "1000.00", False), ("M", 2, "1100.00", False))),
+)
+
+
+def _tarjetas_del_catalogo(html):
+    """Lo que dice cada tarjeta de la grilla: nombre -> (precio, agotado).
+
+    Se parte por el <article> de la tarjeta y se lee adentro de cada pedazo, no
+    con un regex sobre la pagina entera: el precio, el nombre y el cartel son
+    tres nodos distintos, y buscandolos suelto las tres listas podrian quedar
+    desfasadas entre si y el test compararia la tarjeta de uno con el cartel de
+    otro, que es justo el bug que viene a buscar.
+    """
+    tarjetas = {}
+    for pedazo in html.split('<article class="producto-tarjeta">')[1:]:
+        nombre = re.search(
+            r'class="producto-tarjeta__nombre">\s*<a [^>]*>(.*?)</a>', pedazo, re.S
+        )
+        precio = re.search(
+            r'class="producto-tarjeta__precio">(.*?)</span>', pedazo, re.S
+        )
+        assert nombre and precio, "la tarjeta no tiene nombre o precio"
+        tarjetas[nombre.group(1).strip()] = (
+            " ".join(precio.group(1).split()),
+            "producto-tarjeta__agotado" in pedazo,
+        )
+    return tarjetas
+
+
+def test_la_tarjeta_y_la_ficha_nunca_dicen_cosas_distintas(
+    app, client, db, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """Cero desacuerdos entre lo que muestra la grilla y lo que calcula la ficha.
+
+    POR QUE ES UN TEST PERMANENTE Y NO UNO DE LA TANDA. El precio y la
+    disponibilidad se calculan DOS VECES por dos caminos que no se parecen: la
+    tarjeta los saca de las dos subconsultas agregadas de
+    con_resumen_de_variantes (en SQL, para toda la pagina de una vez) y la
+    ficha de las properties de Product (en Python, una fila por vez). Son la
+    misma regla escrita en dos lenguajes, y ya se despegaron una vez: cuando el
+    catalogo aprendio a mirar las combinaciones, "Mis guardados" se quedo
+    mostrando el precio base del mismo producto.
+
+    El que entra por el precio de una tarjeta lo hace para llegar a esa ficha,
+    asi que un desacuerdo no es cosmetico: es una promesa que la pantalla
+    siguiente no cumple.
+
+    Se recorren los nueve casos de la matriz en una sola pagina y se juntan
+    TODOS los desacuerdos antes de fallar, en vez de cortar en el primero: si
+    un cambio despega los dos caminos, lo util es ver en que casos y no solo en
+    el primero alfabetico.
+    """
+    app.config["PRODUCTOS_POR_PAGINA"] = 50
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+
+    for nombre, precio, combinaciones in CASOS_DE_LA_MATRIZ:
+        producto = crear_producto(post_id, nombre=nombre, precio=precio)
+        if combinaciones:
+            con_variantes(producto, *combinaciones)
+
+    tarjetas = _tarjetas_del_catalogo(
+        client.get("/productos/").get_data(as_text=True)
+    )
+    # Que la grilla los haya mostrado a todos: con un caso que no entra, el
+    # bucle de abajo no lo compara y el test pasaria sin mirarlo.
+    assert set(tarjetas) == {nombre for nombre, _, _ in CASOS_DE_LA_MATRIZ}
+
+    desacuerdos = []
+    for producto in Product.query.order_by(Product.nombre):
+        dice_la_ficha = (
+            ("desde " if producto.precio_es_rango else "")
+            + formatear_precio(producto.precio_desde),
+            not producto.disponible_efectivo,
+        )
+        if tarjetas[producto.nombre] != dice_la_ficha:
+            desacuerdos.append({
+                "producto": producto.nombre,
+                "la tarjeta dice": tarjetas[producto.nombre],
+                "la ficha calcula": dice_la_ficha,
+            })
+
+    assert desacuerdos == []
