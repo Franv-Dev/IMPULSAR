@@ -225,6 +225,50 @@ Es el **único** caso que queda: se cruzaron los 22 usos de
 `var(--color-on-primary)` del archivo y los otros 21 están sobre
 `--color-primary`, que sí sigue al tema — uso correcto del token.
 
+> **CORRECCIÓN (11/9/2026). Ese «es el único caso que queda» era falso, y el
+> error está en cómo se buscó.** El barrido cruzó los usos de
+> `--color-on-primary` **por nombre**, pero el bug no es de ese token: es del
+> **patrón**, o sea *cualquier token que valga distinto entre temas, puesto
+> sobre el índigo fijo*. Acotar la búsqueda al token que había fallado dejó
+> afuera a los demás. Al arreglar H3 aparecieron dos más, verificados desde los
+> tokens de `main`:
+>
+> | selector | token | claro | oscuro |
+> |---|---|---|---|
+> | `.cartelera__cta-boton` (fondo) | `--color-on-primary` | 13,95:1 | **1,30:1** |
+> | `.perfil-vender .btn--primary:hover` (fondo) | `--color-primary-soft` | 11,75:1 | **1,03:1** |
+> | `.cartelera__cta-nota .ico` (tinta) | `--color-success-bg` | 12,30:1 | **1,00:1** |
+>
+> Los dos nuevos son peores que el original. Y el primero es doblemente
+> instructivo: `.perfil-vender` es el bloque que **este mismo informe cita como
+> ejemplo de los que lo hacen bien** — y lo hace bien en su estado normal
+> (`#ffffff` literal), pero su `:hover` cae en el mismo pozo. Un bloque de marca
+> puede estar bien en reposo y mal al pasarle el mouse.
+>
+> El tercero muestra por qué buscar por nombre de token no alcanza:
+> `--color-success-bg` es un color de **fondo** de estado usado como **tinta**
+> de un ícono, así que no aparece en ninguna búsqueda de «tintas sobre marca».
+> En oscuro el tilde queda a 1,00:1 — invisible.
+>
+> El cierre correcto no fue cambiar colores sino
+> `tests/test_contraste_marca.py`: deduce qué tokens valen distinto entre temas,
+> encuentra los bloques pintados con `--color-primary-deep` y exige que ni ellos
+> ni sus descendientes usen uno de ésos. Contra el CSS anterior falla listando
+> las seis declaraciones.
+>
+> **Lección de método:** cuando un hallazgo se cierra, la búsqueda de «¿hay
+> más?» tiene que hacerse sobre el INVARIANTE que se violó, no sobre el símbolo
+> concreto que lo violó. Un grep por nombre de token responde una pregunta más
+> chica que la que uno cree estar haciendo, y da una falsa sensación de
+> exhaustividad — con un número al lado («los 22 usos») que la refuerza.
+>
+> **Verificado en el navegador (11/9/2026).** Con el toggle real y el tema en
+> oscuro, los tres selectores dan lo declarado y lo mismo que en claro:
+> `.cartelera__cta-boton` 13,95:1 de superficie y 13,95:1 de tinta, su `:hover`
+> 11,75:1 y 11,75:1, `.perfil-vender .btn--primary` 13,95:1 y su `:hover`
+> 11,75:1, y `.cartelera__cta-nota .ico` 12,30:1. A ojo también: el botón blanco
+> y el tilde se ven. Los tres hallazgos quedan cerrados sin nada pendiente.
+
 **Arreglo:** `background-color: #fff` y `color: var(--color-primary-deep)` (o el
 índigo fijo), igual que hacen los demás bloques de marca.
 

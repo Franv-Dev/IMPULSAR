@@ -1041,12 +1041,28 @@ Reproducido el escenario completo: sacando el `order_by(None)`, SQLite sigue dan
 
 **Regla que queda de H2, y vale más allá de estos tests:** todo lo que genere SQL agregado (GROUP BY, HAVING, funciones de ventana) necesita al menos un test contra MySQL descartable. Es el tercer caso de la misma familia que el proyecto ya tenía anotada (CHECK que sale como `OperationalError`, `DateTime` sin microsegundos): diferencias MySQL/SQLite que la suite en SQLite tapa enteras. Que el *arreglo* de B2 fuera otro 500 de producción es el mejor argumento para la regla.
 
-### H3 y H4 — no se tocaron en esta pasada
+### H3 y H4 — CERRADOS, y H3 destapó dos más
 
-Tomy pidió arrancar por H1 y H2. Los otros dos quedan pendientes, con lo que reportó Sesión 2:
+**H4 — `largo_de()` sobre una columna `Text`. CERRADO.** Devolvía `None` y `validar_largo` con ese tope tiraba `TypeError` recién en el primer POST que validara ese campo, o sea un 500. Ahora un `assert` lo convierte en error al importar el módulo — al arrancar la app, donde se ve enseguida y dice qué columna es. Hoy no muerde porque los 8 campos validados son `String`; existe porque `ServiceRequest.descripcion` es `Text` a propósito y el docstring invita a usar la función con cualquier columna de texto.
 
-- **H3 — Un quinto `--color-on-primary`, en `.cartelera__cta-boton`** (`styles.css:16426-16429`, más el `:hover` en `:16432`). Está como `background-color` y no como `color`, por eso no apareció buscando la tinta. En oscuro el botón queda `rgb(22,19,42)` sobre el panel `rgb(42,32,104)`: **1,30:1 de superficie contra el panel**, el mismo ratio que se le sacó al título, con borde transparente. El texto del botón no falla (8,84:1 contra su propio fondo), así que un medidor de contraste de TEXTO no lo ve: lo que falla es el borde del control, **WCAG 1.4.11**. Y el comentario de arriba dice «acá el botón primario índigo desaparecería» — en oscuro deja de ser blanco y desaparece igual. Sesión 2 cruzó los 22 usos del token en el archivo: los otros 21 están sobre `--color-primary`, que es el uso correcto. Es el único que queda.
-- **H4 — `largo_de()` sobre una columna `Text` devuelve `None`** (`services/validation.py`), y `validar_largo` con ese tope tira `TypeError`. Hoy no muerde porque los 8 campos validados son `String`, pero el docstring invita a usarlo en cualquier columna de texto y `ServiceRequest.descripcion` es `Text` a propósito. Un `assert` lo convierte en error de arranque en vez de 500 en el primer POST.
+**H3 — el quinto `--color-on-primary`. CERRADO.** `.cartelera__cta-boton` lo usaba como `background-color` y no como `color`, por eso no apareció buscando la tinta: en oscuro el botón quedaba `#16132A` sobre el panel `#2A2068`, **1,30:1 de superficie**. Su `:hover` estaba peor, **1,03:1**. Los dos colores pasaron a fijos (blanco con tinta `--color-primary-deep`, y `#ECEAF7` en el hover), que es lo que ya hacía `.perfil-vender .btn--primary` — el mismo botón sobre el mismo panel.
+
+**Y ahí aparecieron dos más, de la misma familia y ninguno en el informe:**
+
+- **`.perfil-vender .btn--primary:hover`** usaba `--color-primary-soft`, que vale `#2E2950` en oscuro: el botón blanco se volvía invisible **justo al pasarle el mouse** (1,03:1 contra el panel, y su tinta 1,03:1 contra su propio fondo). Es el mismo bug que H3 pero por otro token, en el bloque que servía de precedente.
+- **`.cartelera__cta-nota .ico`** usaba `--color-success-bg`, que es un color de FONDO de estado y vale `#14321F` en oscuro: el tilde de la nota daba **1,0:1** contra el panel. Invisible del todo, peor que H3.
+
+El motivo de que se escaparan es siempre el mismo y vale anotarlo: **el barrido de H3 buscaba `--color-on-primary`**, y el bug no es de ese token sino del patrón — cualquier token que cambie con el tema, puesto sobre el índigo fijo. Buscar por nombre de token encuentra las instancias de ese token, no las del patrón.
+
+**Por eso el arreglo no fue sólo cambiar colores: hay un test que cierra el patrón.** `tests/test_contraste_marca.py` parsea `styles.css`, deduce qué tokens valen distinto en claro y en oscuro, encuentra los bloques que se pintan de fondo con `--color-primary-deep`, y exige que ni ellos ni sus descendientes usen uno de esos tokens para `color`, `background-color` o `background-image`. No mide contraste — eso necesita un navegador — pero cierra el punto ciego donde cayeron B3, H3 y estos dos. Contraprueba: contra el `styles.css` anterior a H3 el test falla y lista las **seis** declaraciones.
+
+Tres detalles del test que valen más que el test:
+
+- **Sólo mira la ÚLTIMA regla de cada selector**, que es la que gana. `styles.css` tiene el `.cartelera__cta` de agosto y el del rediseño, y el viejo queda pisado entero; sin esa regla el test acusaba código que el navegador nunca aplica.
+- **`--color-star` es una excepción documentada, con su medición.** Cambia entre temas (`#E8A33D` / `#FBBF24`) pero los dos valores son ámbar claro: 6,47:1 y 8,36:1 sobre el índigo. Lo que rompe no es que un token cambie, es que cambie **hacia un color oscuro**.
+- **Un tercer test comprueba que el parser encuentra algo.** No es paranoia: al escribirlo, el regex de selectores no matcheaba `:root` ni `[data-theme="dark"]`, con lo cual «los tokens que cambian» venía vacío y el test principal **pasaba sin probar nada**. Lo agarró ese tercer test. Es la misma trampa que las fixtures de MySQL que se saltean solas si el `sql_mode` no es estricto: un test que no puede fallar da confianza falsa.
+
+Medido con aritmética exacta sobre los valores declarados (el ratio de contraste es una cuenta, no una estimación) y verificado que ninguno de los tres selectores se redefine más abajo ni dentro de un `@media`, así que lo declarado es lo que computa el navegador. **El repaso visual con el toggle real ya se hizo** (11/9/2026, servidor descartable en SQLite sobre el puerto 5050, Chrome). Se apretó el `.theme-toggle` de verdad y se leyeron los estilos computados: en oscuro `.cartelera__cta-boton` da 13,95:1 de superficie contra el panel y 13,95:1 de tinta, su `:hover` 11,75:1 y 11,75:1, `.perfil-vender .btn--primary` 13,95:1 y su `:hover` 11,75:1, y el tilde de `.cartelera__cta-nota .ico` 12,30:1. **Idénticos a lo declarado, y idénticos en claro** — que es exactamente el punto: los tres bloques quedaron con colores fijos sobre un panel que tampoco sigue al tema. Confirmado además a ojo: en oscuro el botón blanco y el tilde se ven. No queda nada pendiente de H3.
 
 ### Precisiones de Sesión 2 sobre los números de B3
 
