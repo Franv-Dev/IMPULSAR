@@ -17,6 +17,7 @@ from app.panel.consultas import contadores_de as contadores_del_panel
 from db import db
 from models.event import Event, TiposEvento
 from app.blog.modelo_post import Post
+from app.blog.reglas import de_post_publicado
 from services.eventos import (
     agrupar_por_mes, del_dia, filtrar, hoy_en_argentina, parsear_fecha,
     pasados, proximos, tipo_valido, total_por_mes,
@@ -61,7 +62,14 @@ def index():
     # El joinedload se agrega recien al paginar y no aca: `query` tambien
     # alimenta el COUNT agrupado de abajo, y ahi traer el emprendimiento de
     # cada evento no sirve para nada.
-    query = filtrar(Event.query, tipo, solo_libres)
+    # Sin los eventos de emprendimientos en borrador: la feria de un
+    # emprendimiento que todavia no se publico no va en la cartelera publica.
+    # Va sobre `query` y no solo sobre la paginacion porque de aca sale tambien
+    # el COUNT agrupado por mes, y el numero del encabezado tiene que contar lo
+    # mismo que la lista muestra.
+    query = filtrar(
+        Event.query.filter(de_post_publicado(Event.post_id)), tipo, solo_libres
+    )
     query = del_dia(query, dia) if dia else proximos(query)
 
     paginacion = query.options(joinedload(Event.post)).paginate(
@@ -92,7 +100,9 @@ def index():
     # La consulta extra solo se hace con la pagina vacia y sin filtros, que es
     # el unico momento en que su respuesta cambia algo.
     hay_eventos = (
-        db.session.query(Event.query.exists()).scalar()
+        db.session.query(
+            Event.query.filter(de_post_publicado(Event.post_id)).exists()
+        ).scalar()
         if not paginacion.items and not filtrando
         else True
     )

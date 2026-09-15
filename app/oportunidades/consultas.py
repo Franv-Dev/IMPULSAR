@@ -8,6 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from app.blog.modelo_post import Post
+from app.blog import reglas as reglas_blog
 from app.oportunidades.modelo_oportunidad import EstadosOportunidad, Oportunidad
 from app.oportunidades.modelo_propuesta import Propuesta
 from db import db
@@ -213,14 +214,20 @@ def conteo_de_propuestas(oportunidad_ids):
 
 
 def posts_de(user_id):
-    """Los emprendimientos de esa persona, para elegir desde cual proponer.
+    """Los emprendimientos PUBLICADOS de esa persona, para elegir desde cual proponer.
 
     Vacio significa que no es emprendedor y no puede proponer: es la mitad
     asimetrica del dominio (ver el docstring de reglas.py).
+
+    Los borradores no estan en la lista, y la regla lo rechequea del lado del
+    servidor (reglas.puede_proponer): la propuesta le muestra al publicador el
+    nombre del emprendimiento del que sale, asi que proponer desde uno sin
+    publicar seria mostrarlo por la puerta de atras. Quien solo tiene borradores
+    ve la lista vacia, que es el mismo mensaje que ya recibe el que no tiene
+    ninguno.
     """
     return (
-        Post.query
-        .filter(Post.author == user_id)
+        reglas_blog.solo_publicados(Post.query.filter(Post.author == user_id))
         .order_by(Post.created.desc(), Post.id.desc())
         .all()
     )

@@ -19,6 +19,7 @@ from app.servicios.modelo_verificacion import EstadosVerificacion, VerificationR
 from app.servicios.reglas import Ordenes, Precios
 from db import db
 from app.blog.modelo_post import Post
+from app.blog import reglas as reglas_blog
 
 
 def servicio_por_id_o_404(id):
@@ -64,6 +65,18 @@ def _filtrar_busqueda(consulta, rubro, zona, solo_verificados, precio):
     devolver si lo tocan. Con los filtros escritos dos veces, cualquier cambio
     en uno deja al contador mintiendo, que es peor que no tenerlo.
     """
+    # Los servicios de un emprendimiento en borrador no estan en la busqueda,
+    # por lo mismo que sus productos no estan en el catalogo.
+    #
+    # CON de_post_publicado Y NO CON UN FILTER SOBRE Post: de las dos consultas
+    # que pasan por aca, buscar_servicios() joinea posts pero conteos_por_rubro()
+    # NO (es un GROUP BY sobre services solo). Un filter sobre una tabla que no
+    # esta en el FROM se lo agrega solo, sin condicion de join, o sea un
+    # producto cartesiano: el contador de cada rubro pasaria a multiplicar por
+    # la cantidad de emprendimientos publicados. El EXISTS correlacionado da lo
+    # mismo en los dos casos y no depende de la forma de quien llama.
+    consulta = consulta.filter(reglas_blog.de_post_publicado(Service.post_id))
+
     if rubro:
         consulta = consulta.filter(Service.rubro == rubro)
 

@@ -1957,6 +1957,16 @@ main {
     color: var(--color-text-soft);
 }
 
+/* El borrador se distingue por color y no solo por la palabra: en una lista de
+   varias filas, "Publicado" y "Borrador" en el mismo gris se leen igual de
+   rapido, o sea que no se leen. Usa el par suave de aviso, que ya esta definido
+   en los dos temas (ver --color-warning-* arriba), asi que no hace falta un
+   token nuevo ni un color-mix sobre el primario. */
+.badge--borrador {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
 /* Reseñas recibidas: lista + resumen al costado. */
 
 .resenias {

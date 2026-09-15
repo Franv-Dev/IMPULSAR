@@ -23,6 +23,7 @@ from models.event import Event
 from app.blog.modelo_favorito import Favorite
 from app.blog.modelo_post import Post
 from app.blog.modelo_resenia import Review
+from app.blog import reglas as reglas_blog
 from models.user import User
 from services.eventos import eventos_de_usuario, pasados, proximos
 from services.ratings import query_posts_con_rating
@@ -36,10 +37,24 @@ def usuario_por_id_o_404(user_id):
     return User.query.get_or_404(user_id)
 
 
-def emprendimientos_con_rating_de(user_id):
-    """Los emprendimientos del usuario, cada uno con su promedio de reseñas."""
+def emprendimientos_con_rating_de(user_id, incluir_borradores=False):
+    """Los emprendimientos del usuario, cada uno con su promedio de reseñas.
+
+    incluir_borradores lo decide la vista segun quien mira, igual que el resto
+    de lo que el perfil muestra de mas al dueño: el perfil es publico, asi que
+    por default los borradores no salen. Y el default es el caso publico a
+    proposito -- si alguien agrega mañana otra pantalla que llame a esto y se
+    olvida del parametro, se equivoca mostrando de menos y no filtrando un
+    borrador a un visitante.
+
+    Con "ver como visitante" puesto llega en False, que es lo que hace que esa
+    vista previa sea la consulta de verdad y no un dibujo.
+    """
+    consulta = Post.query.filter_by(author=user_id)
+    if not incluir_borradores:
+        consulta = reglas_blog.solo_publicados(consulta)
     return (
-        query_posts_con_rating(Post.query.filter_by(author=user_id))
+        query_posts_con_rating(consulta)
         .order_by(Post.created.desc())
         .all()
     )
@@ -71,13 +86,23 @@ def a_quienes_sigue(user_id):
     )
 
 
-def eventos_del_perfil(user_id, maximo_pasados):
+def eventos_del_perfil(user_id, maximo_pasados, incluir_borradores=False):
     """Los eventos publicados por ese usuario: (proximos, pasados).
 
     Los pasados van acotados: un historial completo no aporta y alarga el
     perfil.
+
+    incluir_borradores lo decide la vista, igual que en
+    emprendimientos_con_rating_de: la agenda del perfil es publica, y la feria
+    de un emprendimiento que todavia no se publico no tiene por que anunciarse.
+    Es la puerta menos evidente de todas --la consulta es sobre Event y el
+    nombre del emprendimiento viaja adentro de cada fila por el joinedload--, y
+    el default es el caso publico por el mismo motivo: equivocarse mostrando de
+    menos al dueño se nota, filtrar un borrador a un visitante no.
     """
     consulta = eventos_de_usuario(user_id).options(joinedload(Event.post))
+    if not incluir_borradores:
+        consulta = reglas_blog.solo_publicados(consulta)
     return proximos(consulta).all(), pasados(consulta).limit(maximo_pasados).all()
 
 
@@ -87,9 +112,14 @@ def resenias_recibidas_por(user_id, page, per_page):
     A diferencia del detalle de un post (que solo muestra las de ESE
     emprendimiento), esto las junta en un solo listado.
     """
+    # Sin las de los borradores: /perfil/<slug>/resenias es publica, y una
+    # reseña trae adentro el nombre del emprendimiento reseñado (el joinedload
+    # del post es justamente para mostrarlo). Puede haberlas: un emprendimiento
+    # publicado que recibio reseñas y despues volvio a borrador.
     return (
-        Review.query
-        .join(Post, Post.id == Review.post_id)
+        reglas_blog.solo_publicados(
+            Review.query.join(Post, Post.id == Review.post_id)
+        )
         .options(joinedload(Review.post), joinedload(Review.user))
         .filter(Post.author == user_id)
         .order_by(Review.created.desc())

@@ -211,7 +211,12 @@ def buscar_posts(
     misma consulta y no se dispara un SELECT por cada post (problema N+1). El
     promedio de reseñas se trae con el mismo criterio (ver services/ratings.py).
     """
-    query = query_posts_con_rating(solo_con_resenias=con_resenias)
+    # Los borradores no entran en ninguna pantalla publica, y el listado es la
+    # mas publica de todas. Va antes que cualquier otro filtro para que no se
+    # pueda colar por una rama del OR de la busqueda.
+    query = reglas.solo_publicados(
+        query_posts_con_rating(solo_con_resenias=con_resenias)
+    )
 
     if busqueda:
         patron = f"%{busqueda}%"
@@ -260,9 +265,13 @@ def conteo_por_categoria():
     un `.get`), en vez de dejar el rubro afuera: la lista de rubros es fija y
     tiene que verse entera aunque alguno este vacio.
     """
-    filas = db.session.query(Post.category, func.count(Post.id)).group_by(
-        Post.category
-    ).all()
+    # Con el mismo filtro que el listado: este numero dice cuantos vas a
+    # encontrar si hacés click en el rubro, asi que contar los borradores seria
+    # prometer resultados que la grilla no tiene. Es el mismo criterio que
+    # _cuantos_emprendimientos en el catalogo de productos.
+    filas = reglas.solo_publicados(
+        db.session.query(Post.category, func.count(Post.id))
+    ).group_by(Post.category).all()
     return {categoria: total for categoria, total in filas}
 
 
@@ -405,7 +414,11 @@ def favoritos_de(user_id, pagina, por_pagina, categoria=None, orden=None):
     orden elige entre los de reglas.OrdenesFavoritos; ver
     _orden_de_favoritos_sql para el criterio de cada uno y para el default.
     """
-    consulta = (
+    # Sin borradores, aunque la marca sea del propio usuario: un emprendimiento
+    # que se guardo cuando estaba publicado y su dueño volvio a borrador no se
+    # puede seguir mirando desde los favoritos de un tercero. La marca no se
+    # borra --si vuelve a publicarse, reaparece--, solo deja de listarse.
+    consulta = reglas.solo_publicados(
         query_posts_con_rating(Post.query.join(Favorite, Favorite.post_id == Post.id))
         .filter(Favorite.user_id == user_id)
     )

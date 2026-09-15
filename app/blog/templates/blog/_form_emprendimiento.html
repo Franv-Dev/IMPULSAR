@@ -23,9 +23,12 @@
         no tres. Los tres tramos SI existen como secciones, asi que el paso a
         paso se convirtio en un indice con anclas -- lleva a la seccion de
         verdad -- en vez de un progreso inventado.
-      - "Borrador guardado hace 1 min": no hay borradores. El indicador se
-        omite, porque afirmaria algo falso; el boton "Guardar borrador" si va,
-        maquetado y apagado, porque eso es cableado pendiente.
+      - "Borrador guardado hace 1 min": el indicador de autoguardado se omite,
+        porque no hay autoguardado -- se guarda cuando apretas un boton, no
+        mientras escribis, y afirmar lo contrario seria mentir sobre lo que
+        pasa con lo que escribiste. El boton "Guardar borrador" SI funciona
+        desde la tanda de borradores: guarda el emprendimiento con estado
+        borrador, que no sale en ninguna pantalla publica.
       - "No mostrar la dirección exacta": no hay columna en Post. Va apagado.
       - Mapa con el pin arrastrable: la direccion se geocodifica al guardar, no
         mientras se escribe. El panel queda con el aviso en vez del mapa.
@@ -298,18 +301,33 @@
                 </div>
             </section>
 
+            {#  Los dos botones mandan el MISMO formulario y se distinguen por
+                el valor de "accion", que es lo que la vista lee para decidir el
+                estado. Con dos <form> separados habría que duplicar todos los
+                campos. #}
             <div class="form-empren__acciones">
-                <button type="submit" class="btn btn--primary">{{ accion }}</button>
-                <button type="button" class="btn btn--secondary btn--proximamente" disabled>
-                    Guardar borrador
-                </button>
+                <button type="submit" name="accion" value="publicar"
+                        class="btn btn--primary">{{ accion }}</button>
+                {#  El de borrador se dibuja en el alta y cuando lo que se edita
+                    YA es un borrador. En un emprendimiento publicado no va: ahí
+                    "guardar borrador" significaría sacarlo de circulación, que
+                    es otra decisión y no la que este botón nombra. #}
+                {% if es_alta or post.es_borrador %}
+                    <button type="submit" name="accion" value="borrador"
+                            class="btn btn--secondary">
+                        Guardar borrador
+                    </button>
+                {% endif %}
                 <span class="form-empren__legal">
                     Al publicar aceptás las reglas de la comunidad.
                 </span>
             </div>
             <p class="cuenta__pendiente">
-                Todavía no hay borradores: lo que cargues se guarda recién cuando
-                apretás “{{ accion }}”.
+                No hay autoguardado: lo que cargues se guarda recién cuando apretás
+                uno de los dos botones.
+                {% if es_alta or post.es_borrador %}
+                    Como borrador queda guardado y no lo ve nadie más que vos.
+                {% endif %}
             </p>
         </form>
 
