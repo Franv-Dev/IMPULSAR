@@ -13,6 +13,7 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import event
 
+from app.blog import consultas as consultas_blog
 from app.perfil.modelo_horario import Horario
 from models.product import Product
 from models.product_favorite import ProductFavorite
@@ -20,6 +21,8 @@ from models.producto_variante import (
     ProductoVariante, ProductoVarianteOpcion, TiposDeOpcion,
 )
 from services.horarios import ahora_en_argentina
+from services.precios import formatear as formatear_precio
+from views.products import Ordenes, _buscar_en_catalogo
 
 
 @pytest.fixture
@@ -1445,3 +1448,349 @@ def test_la_ficha_no_consulta_de_mas_por_cada_producto(
     con_doce = contar_consultas()
 
     assert con_doce == con_tres
+
+
+def _recorrer_el_catalogo(precio_min, precio_max, por_pagina=4):
+    """Recorre el catalogo pagina por pagina. Devuelve (total, ids vistos).
+
+    El total sale del paginado --que es el numero que el encabezado muestra y
+    el que esta tanda saco de la consulta agregada-- y los ids de las filas que
+    realmente se pudieron paginar. Son las dos mitades que tienen que coincidir.
+    """
+    ids = []
+    total = 0
+    pagina = 1
+    while True:
+        paginacion, _ = _buscar_en_catalogo(
+            busqueda="", categoria="",
+            precio_min=precio_min, precio_max=precio_max,
+            solo_disponibles=True, abierto_ahora=False,
+            lat=None, lon=None, radio_km=None,
+            orden=Ordenes.NUEVOS, pagina=pagina, por_pagina=por_pagina,
+        )
+        total = paginacion.total
+        ids.extend(fila.Product.id for fila in paginacion.items)
+        if pagina >= paginacion.pages:
+            return total, ids
+        pagina += 1
+
+
+def test_el_total_del_paginado_es_la_cantidad_real_de_resultados(
+    app, db, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El total del encabezado tiene que ser la cantidad de resultados paginables.
+
+    ES EL TEST QUE ATAJA UN CONTEO DESALINEADO. El total ya no sale de la misma
+    consulta que las filas: el COUNT del paginado se arma aparte, sin las cinco
+    columnas agregadas de las variantes (ver services/paginado.py). Esa es la
+    optimizacion, y tambien el riesgo: si al conteo se le cae una condicion que
+    SI filtra --el rango de precio, hoy-- el numero deja de ser la cantidad de
+    resultados y ninguna otra assertion de la suite lo nota, porque el resto
+    mira las tarjetas y no el numero.
+
+    Se recorren TODAS las paginas y no solo la primera, con una pagina chica a
+    proposito: asi el mismo test cubre que no haya un producto repetido en dos
+    paginas ni uno que no aparezca en ninguna, que es la otra forma de que el
+    total y las filas no cierren.
+
+    El catalogo mezcla los siete casos de la matriz --sin variantes, todas al
+    mismo precio, precios distintos, una apagada, una activa sin stock, todas
+    agotadas, con y sin precio_override-- porque el filtro de rango no mira el
+    precio base sino las combinaciones comprables, y un catalogo de productos
+    pelados no probaria justamente la parte que puede desalinearse.
+    """
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+
+    # Sin variantes: el precio base es lo unico que el filtro puede mirar.
+    for numero, precio in enumerate(("500.00", "1500.00", "5000.00",
+                                     "9000.00", "12000.00", "7999.00")):
+        crear_producto(post_id, nombre=f"Pelado {numero}", precio=precio)
+
+    # Todas al mismo precio, con stock: entra por las combinaciones.
+    con_variantes(
+        crear_producto(post_id, nombre="Iguales", precio="40000.00"),
+        ("S", 3, "2000.00", True),
+        ("M", 2, "2000.00", True),
+    )
+    # Precios distintos: entra si ALGUNA cae en el rango, aunque el "desde" no.
+    con_variantes(
+        crear_producto(post_id, nombre="Distintos", precio="40000.00"),
+        ("S", 3, "7000.00", True),
+        ("M", 2, "50000.00", True),
+    )
+    # Una apagada: no cuenta ni para el precio ni para el filtro.
+    con_variantes(
+        crear_producto(post_id, nombre="Con una apagada", precio="40000.00"),
+        ("S", 3, "6000.00", True),
+        ("M", 5, "1200.00", False),
+    )
+    # Activa pero sin stock: tampoco es una oferta.
+    con_variantes(
+        crear_producto(post_id, nombre="Activa sin stock", precio="40000.00"),
+        ("S", 0, "3000.00", True),
+        ("M", 4, "6500.00", True),
+    )
+    # Todas agotadas: la tarjeta vuelve al precio base, y el filtro tambien.
+    con_variantes(
+        crear_producto(post_id, nombre="Agotado", precio="3300.00"),
+        ("S", 0, "70000.00", True),
+        ("M", 0, "80000.00", True),
+    )
+    # Heredando el precio del producto (precio_override en NULL).
+    con_variantes(
+        crear_producto(post_id, nombre="Heredado", precio="4400.00"),
+        ("S", 2, None, True),
+        ("M", 1, None, True),
+    )
+
+    total_sin_rango, ids_sin_rango = _recorrer_el_catalogo(None, None)
+    total_con_rango, ids_con_rango = _recorrer_el_catalogo(1000, 8000)
+
+    assert total_sin_rango == len(ids_sin_rango)
+    assert total_con_rango == len(ids_con_rango)
+
+    # Ninguno repetido en dos paginas ni perdido entre dos.
+    assert len(ids_sin_rango) == len(set(ids_sin_rango))
+    assert len(ids_con_rango) == len(set(ids_con_rango))
+
+    # Y que el rango este filtrando de verdad: con un rango que no acota nada
+    # las dos mitades coincidirian igual y el test no probaria el caso que
+    # importa, que es el conteo con una condicion extra adentro.
+    assert 0 < total_con_rango < total_sin_rango
+
+
+def _nombres_de_la_ficha(html):
+    """Los nombres de los productos que la ficha esta mostrando, en orden."""
+    return re.findall(
+        r'class="producto-ficha__nombre">\s*<a [^>]*>(.*?)</a>', html, re.S
+    )
+
+
+def test_el_catalogo_de_la_ficha_pagina_y_la_pagina_2_existe(
+    app, client, db, crear_usuario, crear_post, crear_producto
+):
+    """La ficha ya no trae el catalogo entero: pagina, y la 2 tiene el resto.
+
+    Antes salia con .all(), o sea la tabla entera agregada y materializada en
+    memoria para pintar las tarjetas que entran en la pantalla. Pagina con el
+    MISMO tamaño que el catalogo publico (PRODUCTOS_POR_PAGINA), que es lo que
+    hace que las dos grillas de producto se vean igual.
+
+    Los productos se nombran con numero para poder afirmar el reparto: el orden
+    de la ficha es alfabetico por nombre, asi que con el relleno a dos digitos
+    el orden alfabetico y el numerico coinciden y el test puede decir cuales
+    van en cada pagina en vez de solo contarlas.
+    """
+    app.config["PRODUCTOS_POR_PAGINA"] = 3
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+    for numero in range(7):
+        crear_producto(post_id, nombre=f"Producto {numero:02d}")
+
+    primera = _nombres_de_la_ficha(
+        client.get(f"/blog/{post_id}").get_data(as_text=True)
+    )
+    assert primera == ["Producto 00", "Producto 01", "Producto 02"]
+
+    segunda = _nombres_de_la_ficha(
+        client.get(f"/blog/{post_id}?page=2").get_data(as_text=True)
+    )
+    assert segunda == ["Producto 03", "Producto 04", "Producto 05"]
+
+    tercera = _nombres_de_la_ficha(
+        client.get(f"/blog/{post_id}?page=3").get_data(as_text=True)
+    )
+    assert tercera == ["Producto 06"]
+
+
+def test_el_total_del_catalogo_de_la_ficha_cuenta_lo_que_se_puede_paginar(
+    app, db, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """El total de la ficha tambien sale de un conteo aparte, y tiene que cerrar.
+
+    Mismo filo que en el catalogo publico: el COUNT ya no es la consulta de las
+    filas, asi que hay que afirmar que cuenta lo mismo que se puede recorrer.
+    Aca el filtro que decide que entra es el interruptor del dueño
+    (products.disponible), y tiene que estar en las dos consultas.
+
+    Los apagados entran en la cuenta del dueño y no en la del visitante, que es
+    justamente la diferencia que un conteo desalineado borraria.
+    """
+    app.config["PRODUCTOS_POR_PAGINA"] = 2
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+    for numero in range(5):
+        crear_producto(post_id, nombre=f"Encendido {numero}")
+    for numero in range(2):
+        crear_producto(post_id, nombre=f"Apagado {numero}", disponible=False)
+    # Uno con variantes, para que el conteo no sea sobre productos pelados.
+    con_variantes(
+        crear_producto(post_id, nombre="Con variantes", precio="9000.00"),
+        ("S", 2, "3000.00", True),
+        ("M", 0, "4000.00", True),
+    )
+
+    def recorrer(solo_disponibles):
+        nombres = []
+        total = 0
+        pagina = 1
+        while True:
+            paginacion = consultas_blog.productos_de(
+                post_id, solo_disponibles=solo_disponibles,
+                pagina=pagina, por_pagina=app.config["PRODUCTOS_POR_PAGINA"],
+            )
+            total = paginacion.total
+            nombres.extend(fila.producto.nombre for fila in paginacion.items)
+            if pagina >= paginacion.pages:
+                return total, nombres
+            pagina += 1
+
+    total_visitante, nombres_visitante = recorrer(solo_disponibles=True)
+    total_dueno, nombres_dueno = recorrer(solo_disponibles=False)
+
+    assert total_visitante == len(nombres_visitante) == 6
+    assert total_dueno == len(nombres_dueno) == 8
+    assert len(nombres_dueno) == len(set(nombres_dueno))
+
+
+def test_cambiar_de_pagina_en_la_ficha_no_se_lleva_lo_que_venia_en_la_url(
+    app, client, db, crear_usuario, crear_post, crear_producto
+):
+    """Los enlaces de paginacion conservan el resto de la querystring.
+
+    La ficha hoy no tiene filtros propios en la URL, pero el parcial de
+    paginacion es el mismo que usan el catalogo y "Mis guardados", que si los
+    tienen, y lo que garantiza es que cambiar de pagina no vacie la querystring.
+    Congelarlo aca es lo que evita que la ficha se estrene con el bug que las
+    otras dos ya tuvieron.
+    """
+    app.config["PRODUCTOS_POR_PAGINA"] = 2
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+    for numero in range(5):
+        crear_producto(post_id, nombre=f"Producto {numero}")
+
+    html = client.get(f"/blog/{post_id}?utm=mail").get_data(as_text=True)
+
+    siguiente = re.search(r'href="([^"]*)"[^>]*rel="next"', html)
+    assert siguiente, "la ficha paginada no dibujo el enlace a la pagina 2"
+    assert "utm=mail" in siguiente.group(1)
+    assert "page=2" in siguiente.group(1)
+
+
+#: Los casos de la matriz de variantes que cambian lo que se muestra, cada uno
+#: con su nombre, su precio base y sus combinaciones (talle, stock,
+#: precio_override, activo). Es una tabla fija y no un generador al azar: el
+#: test tiene que fallar siempre por el mismo motivo, y con semilla igual haria
+#: falta leer el numero para saber que caso rompio.
+CASOS_DE_LA_MATRIZ = (
+    # Sin variantes: la regresion que ninguna tanda puede romper.
+    ("Sin variantes", "1500.00", ()),
+    # Todas al mismo precio: numero pelado, sin "desde".
+    ("Todas al mismo precio", "9000.00",
+     (("S", 3, "2000.00", True), ("M", 1, "2000.00", True))),
+    # Precios distintos: "desde" el mas barato de las comprables.
+    ("Precios distintos", "9000.00",
+     (("S", 3, "2000.00", True), ("M", 1, "5000.00", True))),
+    # Una apagada: no cuenta ni para el precio ni para el cartel, aunque sea
+    # la mas barata de todas.
+    ("Con una apagada", "9000.00",
+     (("S", 3, "6000.00", True), ("M", 5, "1200.00", False))),
+    # Activa pero sin stock: tampoco es una oferta, asi que no baja el precio.
+    ("Con una activa sin stock", "9000.00",
+     (("S", 0, "3000.00", True), ("M", 4, "6500.00", True))),
+    # Todas agotadas: precio base y cartel puesto, no un error.
+    ("Todas agotadas", "3300.00",
+     (("S", 0, "7000.00", True), ("M", 0, "8000.00", True))),
+    # precio_override en NULL: hereda el del producto, nunca cero.
+    ("Heredando el precio", "4400.00",
+     (("S", 2, None, True), ("M", 1, None, True))),
+    # Una heredada y una con override, que es el caso mezclado.
+    ("Override y heredado", "4400.00",
+     (("S", 2, None, True), ("M", 1, "2600.00", True))),
+    # La matriz entera apagada, que no es lo mismo que no tener variantes.
+    ("Matriz entera apagada", "5100.00",
+     (("S", 3, "1000.00", False), ("M", 2, "1100.00", False))),
+)
+
+
+def _tarjetas_del_catalogo(html):
+    """Lo que dice cada tarjeta de la grilla: nombre -> (precio, agotado).
+
+    Se parte por el <article> de la tarjeta y se lee adentro de cada pedazo, no
+    con un regex sobre la pagina entera: el precio, el nombre y el cartel son
+    tres nodos distintos, y buscandolos suelto las tres listas podrian quedar
+    desfasadas entre si y el test compararia la tarjeta de uno con el cartel de
+    otro, que es justo el bug que viene a buscar.
+    """
+    tarjetas = {}
+    for pedazo in html.split('<article class="producto-tarjeta">')[1:]:
+        nombre = re.search(
+            r'class="producto-tarjeta__nombre">\s*<a [^>]*>(.*?)</a>', pedazo, re.S
+        )
+        precio = re.search(
+            r'class="producto-tarjeta__precio">(.*?)</span>', pedazo, re.S
+        )
+        assert nombre and precio, "la tarjeta no tiene nombre o precio"
+        tarjetas[nombre.group(1).strip()] = (
+            " ".join(precio.group(1).split()),
+            "producto-tarjeta__agotado" in pedazo,
+        )
+    return tarjetas
+
+
+def test_la_tarjeta_y_la_ficha_nunca_dicen_cosas_distintas(
+    app, client, db, crear_usuario, crear_post, crear_producto, con_variantes
+):
+    """Cero desacuerdos entre lo que muestra la grilla y lo que calcula la ficha.
+
+    POR QUE ES UN TEST PERMANENTE Y NO UNO DE LA TANDA. El precio y la
+    disponibilidad se calculan DOS VECES por dos caminos que no se parecen: la
+    tarjeta los saca de las dos subconsultas agregadas de
+    con_resumen_de_variantes (en SQL, para toda la pagina de una vez) y la
+    ficha de las properties de Product (en Python, una fila por vez). Son la
+    misma regla escrita en dos lenguajes, y ya se despegaron una vez: cuando el
+    catalogo aprendio a mirar las combinaciones, "Mis guardados" se quedo
+    mostrando el precio base del mismo producto.
+
+    El que entra por el precio de una tarjeta lo hace para llegar a esa ficha,
+    asi que un desacuerdo no es cosmetico: es una promesa que la pantalla
+    siguiente no cumple.
+
+    Se recorren los nueve casos de la matriz en una sola pagina y se juntan
+    TODOS los desacuerdos antes de fallar, en vez de cortar en el primero: si
+    un cambio despega los dos caminos, lo util es ver en que casos y no solo en
+    el primero alfabetico.
+    """
+    app.config["PRODUCTOS_POR_PAGINA"] = 50
+    dueno = crear_usuario(username="dueno")
+    post_id = crear_post(dueno.id).id
+
+    for nombre, precio, combinaciones in CASOS_DE_LA_MATRIZ:
+        producto = crear_producto(post_id, nombre=nombre, precio=precio)
+        if combinaciones:
+            con_variantes(producto, *combinaciones)
+
+    tarjetas = _tarjetas_del_catalogo(
+        client.get("/productos/").get_data(as_text=True)
+    )
+    # Que la grilla los haya mostrado a todos: con un caso que no entra, el
+    # bucle de abajo no lo compara y el test pasaria sin mirarlo.
+    assert set(tarjetas) == {nombre for nombre, _, _ in CASOS_DE_LA_MATRIZ}
+
+    desacuerdos = []
+    for producto in Product.query.order_by(Product.nombre):
+        dice_la_ficha = (
+            ("desde " if producto.precio_es_rango else "")
+            + formatear_precio(producto.precio_desde),
+            not producto.disponible_efectivo,
+        )
+        if tarjetas[producto.nombre] != dice_la_ficha:
+            desacuerdos.append({
+                "producto": producto.nombre,
+                "la tarjeta dice": tarjetas[producto.nombre],
+                "la ficha calcula": dice_la_ficha,
+            })
+
+    assert desacuerdos == []

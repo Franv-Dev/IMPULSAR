@@ -25,7 +25,7 @@ from models.event import Event
 from models.product import Product
 from services.eventos import proximos
 from services.horarios import ventana_actual
-from services.variantes import productos_con_su_resumen
+from services.variantes import paginar_productos_con_su_resumen
 from services.ratings import query_posts_con_rating
 
 
@@ -433,8 +433,8 @@ def ferias_de(post_id, hoy=None):
     return proximos(Event.query.filter(Event.post_id == post_id), hoy).all()
 
 
-def productos_de(post_id, solo_disponibles):
-    """El catalogo del emprendimiento.
+def productos_de(post_id, solo_disponibles, pagina, por_pagina):
+    """El catalogo del emprendimiento, YA PAGINADO.
 
     solo_disponibles lo decide la vista segun quien mira: los productos
     apagados los ve solo el dueño. El filtro va en la consulta y no en el
@@ -447,15 +447,37 @@ def productos_de(post_id, solo_disponibles):
     consulta -- preguntarselo a cada producto serian dos consultas por tarjeta,
     que es el N+1 que la tanda del catalogo dejo resuelto en un solo lugar.
 
+    PAGINA, y antes traia todo con .all(). Con el resumen de variantes encima
+    eso pasa a ser la tabla entera agregada y materializada en memoria para
+    pintar las tarjetas que entran en la pantalla. El tamaño de pagina es el
+    del catalogo publico (PRODUCTOS_POR_PAGINA) y lo pasa la vista: es la misma
+    grilla de productos, y dos numeros distintos serian dos pantallas que se
+    ven distinto sin motivo.
+
+    EL CONTEO VA APARTE Y CON LOS MISMOS FILTROS, por lo mismo que en el
+    catalogo publico: contar cuantos productos tiene el emprendimiento no
+    necesita el precio minimo de cada uno. Los dos filtros --el emprendimiento
+    y el interruptor-- se aplican a las dos consultas, porque los dos deciden
+    que entra.
+
     OJO CON solo_disponibles: sigue mirando products.disponible y no las
     combinaciones. Es el interruptor del dueño ("esto no se muestra"), no el
     stock; un producto encendido y agotado se ve, con su cartel puesto, que es
     lo mismo que hace el catalogo publico.
     """
-    consulta = Product.query.filter_by(post_id=post_id)
+    consulta = Product.query.filter(Product.post_id == post_id)
+    # Con filter() explicito y no filter_by(): la del conteo no tiene una
+    # entidad primaria de la que colgar los nombres pelados, es un func.count.
+    conteo = db.session.query(func.count(Product.id)).filter(
+        Product.post_id == post_id
+    )
     if solo_disponibles:
-        consulta = consulta.filter_by(disponible=True)
-    return productos_con_su_resumen(consulta.order_by(Product.nombre))
+        consulta = consulta.filter(Product.disponible.is_(True))
+        conteo = conteo.filter(Product.disponible.is_(True))
+
+    return paginar_productos_con_su_resumen(
+        consulta.order_by(Product.nombre), conteo, pagina, por_pagina
+    )
 
 
 def servicios_de(post_id, solo_disponibles):

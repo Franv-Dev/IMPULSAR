@@ -59,6 +59,28 @@ def emprendedor_con_post(crear_usuario, crear_post, login):
 
 # ------------------------------------------- los limites salen de la columna
 
+def test_largo_de_no_acepta_una_columna_sin_largo():
+    """Una columna Text no tiene tope, y sin el assert eso explota mas tarde y peor.
+
+    `.type.length` vale None en un Text, y validar_largo con ese tope tira
+    TypeError ("'>' not supported between int and NoneType") recien en el primer
+    POST que valide ese campo, o sea un 500. Con el assert falla al importar el
+    modulo -- al arrancar la app -- y dice que columna es.
+
+    Hoy los ocho campos validados son String; esto existe porque
+    ServiceRequest.descripcion es Text a proposito y el docstring de largo_de
+    invita a usarla con cualquier columna de texto.
+    """
+    from app.servicios.modelo_solicitud import ServiceRequest
+    from services.validation import largo_de
+
+    assert ServiceRequest.descripcion.type.length is None, (
+        "si esta columna paso a tener largo, este test perdio su caso de prueba"
+    )
+    with pytest.raises(AssertionError, match="sin largo declarado"):
+        largo_de(ServiceRequest.descripcion)
+
+
 def test_los_maximos_son_los_de_las_columnas():
     """Escritos a mano se despegan la primera vez que alguien agranda una columna."""
     assert MAX_TITULO_EVENTO == Event.titulo.type.length

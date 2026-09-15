@@ -61,6 +61,7 @@ from models.producto_variante import (
 from services.eventos import hoy_en_argentina
 from services.geocoding import get_coordinates_from_address
 from services.horarios import esta_abierto, hora_de_cierre
+from services.paginado import paginar_con_conteo
 from services.precios import parsear_precio, texto_para_formulario
 from services import variantes as reglas_variantes
 from services.uploads import borrar_de_disco, carpeta_uploads, save_post_image
@@ -338,16 +339,37 @@ def _buscar_en_catalogo(busqueda, categoria, precio_min, precio_max,
     hay_coordenadas = lat is not None and lon is not None
     distancia = distancia_km_sql(lat, lon) if hay_coordenadas else None
 
+    # Los filtros se arman UNA vez y se le aplican a las dos consultas --la de
+    # las filas y la del conteo del paginado--. Escritos dos veces, cualquier
+    # cambio en uno deja al otro contando otra cosa, que es el mismo motivo por
+    # el que existe _filtrar_catalogo.
+    filtros = dict(
+        busqueda=busqueda, categoria=categoria,
+        precio_min=precio_min, precio_max=precio_max,
+        solo_disponibles=solo_disponibles, abierto_ahora=abierto_ahora,
+        distancia=distancia, radio_km=radio_km,
+    )
+
     consulta, precio_desde = reglas_variantes.con_resumen_de_variantes(
         _filtrar_catalogo(
             Product.query
             .join(Post, Post.id == Product.post_id)
             .options(joinedload(Product.post)),
-            busqueda=busqueda, categoria=categoria,
-            precio_min=precio_min, precio_max=precio_max,
-            solo_disponibles=solo_disponibles, abierto_ahora=abierto_ahora,
-            distancia=distancia, radio_km=radio_km,
+            **filtros,
         )
+    )
+
+    # EL CONTEO DEL PAGINADO NO PASA POR con_resumen_de_variantes. Las cinco
+    # columnas agregadas son dos GROUP BY sobre las tablas enteras, y para
+    # saber CUANTAS filas hay no hacen falta: el precio minimo de cada producto
+    # se muestra, no filtra. El rango de precio, en cambio, queda --vive
+    # adentro de _filtrar_catalogo-- porque decide que productos entran, y sin
+    # el el total dejaria de ser la cantidad de resultados. La regla entera, y
+    # por donde se rompe, en services/paginado.py.
+    conteo = _filtrar_catalogo(
+        db.session.query(func.count(Product.id))
+        .join(Post, Post.id == Product.post_id),
+        **filtros,
     )
 
     if hay_coordenadas:
@@ -367,8 +389,8 @@ def _buscar_en_catalogo(busqueda, categoria, precio_min, precio_max,
     else:
         orden_sql = (Product.created_at.desc(), Product.id.desc())
 
-    paginacion = consulta.order_by(*orden_sql).paginate(
-        page=pagina, per_page=por_pagina, error_out=False
+    paginacion = paginar_con_conteo(
+        consulta.order_by(*orden_sql), conteo, pagina, por_pagina
     )
     return paginacion, hay_coordenadas
 

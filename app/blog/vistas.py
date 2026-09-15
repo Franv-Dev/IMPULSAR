@@ -215,6 +215,16 @@ def detail(id):
         and consultas_personal.postulacion_de(busqueda_personal.id, g.user.id)
     )
 
+    # El catalogo de la ficha pagina con el mismo tamaño que el catalogo
+    # publico: es la misma grilla de productos, y dos numeros distintos serian
+    # dos pantallas que se ven distinto sin motivo.
+    paginacion_productos = consultas.productos_de(
+        id,
+        solo_disponibles=not es_dueño,
+        pagina=formulario.leer_pagina(),
+        por_pagina=current_app.config["PRODUCTOS_POR_PAGINA"],
+    )
+
     return render_template(
         "blog/detail.html",
         post=post,
@@ -231,7 +241,13 @@ def detail(id):
             g.user is not None
             and consultas.favorito_de(g.user.id, id) is not None
         ),
-        productos=consultas.productos_de(id, solo_disponibles=not es_dueño),
+        # Los productos de ESTA pagina, y aparte la paginacion para el parcial
+        # compartido. `hay_productos` mira el TOTAL y no la pagina: con el
+        # bloque atado a la lista, pedir una pagina vacia --?page=99-- hacia
+        # desaparecer la seccion entera de un emprendimiento que si vende.
+        productos=paginacion_productos.items,
+        paginacion_productos=paginacion_productos,
+        hay_productos=paginacion_productos.total > 0,
         servicios=consultas.servicios_de(id, solo_disponibles=not es_dueño),
         es_dueño=es_dueño,
         # Los horarios son del emprendedor, no del emprendimiento (viven en

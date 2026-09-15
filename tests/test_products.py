@@ -662,28 +662,55 @@ def test_el_catalogo_sale_ordenado_alfabeticamente(
 def test_el_catalogo_no_dispara_una_consulta_por_producto(
     client, db, crear_usuario, crear_post, crear_producto
 ):
-    """El catalogo se trae con una sola consulta, no una por producto: sin eso,
-    un emprendimiento con 50 productos hace 50 SELECT para mostrar la pagina."""
+    """El catalogo de la ficha cuesta lo MISMO con 5 productos que con 20.
+
+    Sin esto, un emprendimiento con 50 productos hacia 50 SELECT para mostrar
+    la pagina. Lo que se congela es que el numero no dependa de cuantos
+    productos hay, que es la propiedad que importa; el valor exacto se afirma
+    tambien, pero como segunda linea.
+
+    SON DOS Y NO UNA desde que la ficha pagina: las filas de la pagina y el
+    COUNT del total. El conteo es UNA consulta fija --no una por producto-- y
+    es lo que paga tener un total; a cambio, la consulta de las filas trae doce
+    y no la tabla entera. Si alguna vez son tres, lo que hay que mirar es si
+    volvio un lazy load por tarjeta.
+    """
     from sqlalchemy import event
 
     autor = crear_usuario(username="autor")
     post = crear_post(autor.id)
+    # El id aparte: despues del expunge_all de la primera medicion el objeto
+    # queda desprendido de la sesion y leerle un atributo es un error.
+    post_id = post.id
+
+    def contar_consultas():
+        # Sin vaciar el identity map un lazy load no llega a la base y el
+        # contador daria un falso negativo.
+        db.session.expunge_all()
+        consultas = []
+
+        def contar(conn, cursor, statement, *args):
+            if "products" in statement.lower():
+                consultas.append(statement)
+
+        event.listen(db.engine, "before_cursor_execute", contar)
+        try:
+            respuesta = client.get(f"/blog/{post_id}")
+        finally:
+            event.remove(db.engine, "before_cursor_execute", contar)
+        assert respuesta.status_code == 200
+        return len(consultas)
+
     for numero in range(5):
-        crear_producto(post.id, nombre=f"Producto {numero}")
+        crear_producto(post_id, nombre=f"Producto {numero}")
+    con_cinco = contar_consultas()
 
-    consultas = []
+    for numero in range(5, 20):
+        crear_producto(post_id, nombre=f"Producto {numero}")
+    con_veinte = contar_consultas()
 
-    def contar(conn, cursor, statement, *args):
-        if "products" in statement.lower():
-            consultas.append(statement)
-
-    event.listen(db.engine, "before_cursor_execute", contar)
-    try:
-        client.get(f"/blog/{post.id}")
-    finally:
-        event.remove(db.engine, "before_cursor_execute", contar)
-
-    assert len(consultas) == 1
+    assert con_veinte == con_cinco
+    assert con_cinco == 2
 
 
 # --- el CHECK de la base
