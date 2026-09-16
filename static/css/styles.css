@@ -1736,8 +1736,18 @@ main {
 /* "Reseñas recibidas" es una URL publica y el menu de cuenta solo se incluye
    si la mira su dueño. Sin esta regla, para un visitante el contenido cae en
    la columna de 260px (la del menu que no esta) y la pantalla queda con una
-   palabra por renglon. */
-.cuenta:not(:has(.cuenta__menu)) {
+   palabra por renglon.
+
+   Se pregunta por LAS DOS columnas de menu, no solo por .cuenta__menu
+   (2026-09-15). Las ocho pantallas del panel del vendedor usan este mismo
+   layout pero con .panel-menu adentro (partials/_menu_panel.html, que
+   reemplazo a _menu_cuenta ahi): para esta regla no tenian menu, caian todas
+   en una sola columna y el menu quedaba de ancho completo arriba con el
+   contenido debajo, en vez de en dos columnas. Se veia peor en Presupuestos,
+   que es la que ademas tiene su propia columna de resumen a la derecha, pero
+   estaba en las ocho. Cualquier menu lateral nuevo tiene que sumarse a este
+   :has() o va a repetir el mismo bug de callado. */
+.cuenta:not(:has(.cuenta__menu)):not(:has(.panel-menu)) {
     grid-template-columns: minmax(0, 1fr);
 }
 
