@@ -401,18 +401,53 @@ def create():
 
 
 def _estado_pedido():
-    """PUBLICADO o BORRADOR, segun cual de los dos botones del formulario se apreto.
+    """El estado con el que NACE un emprendimiento, segun que boton se apreto.
 
     Los dos son submits del MISMO form y se distinguen por el valor de "accion"
     (ver _form_emprendimiento.html). Cualquier otro valor --o ninguno-- cae en
     PUBLICADO, que es lo que el formulario hacia antes de que existieran los
     borradores: un POST armado a mano sin ese campo se sigue comportando igual
+
+    SOLO PARA EL ALTA. Al editar, el default de "sin accion" no puede ser
+    publicar: ver _estado_al_editar.
     que siempre y no crea un emprendimiento invisible sin que nadie lo haya
     pedido.
     """
     if request.form.get("accion") == "borrador":
         return EstadosPost.BORRADOR
     return EstadosPost.PUBLICADO
+def _estado_al_editar(post):
+    """El estado que queda despues de guardar una edicion.
+
+    GUARDAR NO CAMBIA EL ESTADO POR ACCIDENTE. Solo lo mueve el boton que lo
+    nombra, y solo en la direccion que ese boton ofrece. Las dos reglas, que
+    antes no estaban y por eso van escritas:
+
+      - UN PUBLICADO NO SE DESPUBLICA DESDE ACA. El boton "Guardar borrador" ni
+        se dibuja cuando lo que se edita ya esta publicado, justamente porque
+        despublicar es otra decision y no la que ese boton nombra. Pero el
+        estado salia del formulario sin rechequear contra la base, asi que un
+        `accion=borrador` escrito a mano --o ese mismo boton apretado en una
+        pestaña que se abrio cuando todavia era borrador y quedo vieja-- lo
+        sacaba del listado sin que nadie lo pidiera.
+      - UN POST DE EDICION SIN `accion` NO TOCA EL ESTADO. En el alta el default
+        es publicar, porque es lo que el formulario hacia siempre y no hay nada
+        previo que respetar. Al editar si lo hay: lo que el dueño ya decidio. Un
+        formulario viejo, un POST a mano o un boton nuevo que se olvide del
+        campo dejaban publicado un borrador en silencio.
+
+    O sea que desde la edicion solo queda un movimiento posible, que es el que
+    la pantalla ofrece: borrador -> publicado, apretando "Publicar
+    emprendimiento". Despublicar tiene su propio camino (el boton de la fila en
+    "Mis emprendimientos"), o no existe todavia.
+    """
+    if not post.es_borrador:
+        return EstadosPost.PUBLICADO
+    if request.form.get("accion") == "publicar":
+        return EstadosPost.PUBLICADO
+    return EstadosPost.BORRADOR
+
+
 
 
 def _geocodificar(direccion):
@@ -496,11 +531,13 @@ def update(id):
 
             # El boton primario de la edicion de un borrador dice "Publicar
             # emprendimiento", asi que guardar con el lo publica; el de al lado
-            # lo deja borrador. Para un emprendimiento ya publicado los dos
-            # caminos lo dejan publicado, o sea que la edicion de siempre no
-            # cambia en nada.
+            # lo deja borrador. Para un emprendimiento ya publicado la edicion
+            # de siempre no cambia nada. Las dos reglas que sostienen eso --que
+            # un publicado no se despublique desde aca, y que un POST sin
+            # `accion` no toque el estado-- estan en _estado_al_editar, que se
+            # las pregunta a la fila y no solo al formulario.
             era_borrador = post.es_borrador
-            post.estado = _estado_pedido()
+            post.estado = _estado_al_editar(post)
 
             consultas.guardar()
             if post.es_borrador:

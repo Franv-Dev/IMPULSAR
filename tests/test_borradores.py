@@ -482,3 +482,81 @@ def test_excluir_borradores_no_agrega_una_consulta_por_fila(
         if con_doce[url] != con_dos[url]
     }
     assert crecieron == {}
+
+
+def test_guardar_la_edicion_no_despublica_ni_publica_sin_que_se_lo_pidan(
+    client, db, crear_usuario, crear_post, login
+):
+    """El estado solo lo mueve el boton que lo nombra, y solo hacia donde ofrece.
+
+    Los dos casos que faltaban, y los dos entran por el mismo lado: el estado
+    salia del formulario sin rechequear contra la fila.
+
+      - `accion=borrador` sobre un emprendimiento YA PUBLICADO lo despublicaba.
+        Ese boton ni se dibuja en ese caso --despublicar es otra decision-- pero
+        el POST se puede armar a mano, y sobre todo se puede apretar en una
+        pestaña que quedo abierta de cuando todavia era borrador;
+      - un POST de edicion SIN `accion` publicaba un borrador. En el alta ese
+        default esta bien (es lo que el formulario hacia siempre); al editar
+        pisa una decision que el dueño ya habia tomado.
+    """
+    dueno = crear_usuario(username="dueno", rol=Roles.EMPRENDEDOR)
+    login(dueno.id)
+
+    campos = {"title": "Mi negocio", "body": "Descripcion", "category": "alimentos",
+              "address_street": ""}
+
+    def estado_despues_de(estado_inicial, extra):
+        post = crear_post(
+            dueno.id, title="Mi negocio", body="Descripcion",
+            category="alimentos", estado=estado_inicial,
+        )
+        client.post(f"/blog/update/{post.id}", data={**campos, **extra})
+        db.session.refresh(post)
+        return post.estado
+
+    B, P = EstadosPost.BORRADOR, EstadosPost.PUBLICADO
+    resultados = {
+        "publicado + accion=borrador a mano": estado_despues_de(P, {"accion": "borrador"}),
+        "publicado + sin accion": estado_despues_de(P, {}),
+        "publicado + guardar cambios": estado_despues_de(P, {"accion": "publicar"}),
+        "borrador + sin accion": estado_despues_de(B, {}),
+        "borrador + accion desconocida": estado_despues_de(B, {"accion": "vaya-a-saber"}),
+        "borrador + guardar borrador": estado_despues_de(B, {"accion": "borrador"}),
+        "borrador + publicar emprendimiento": estado_despues_de(B, {"accion": "publicar"}),
+    }
+
+    assert resultados == {
+        # Un publicado no se cae del listado por guardar, por ningun camino.
+        "publicado + accion=borrador a mano": P,
+        "publicado + sin accion": P,
+        "publicado + guardar cambios": P,
+        # Un borrador solo se publica si se apreta el boton que lo dice.
+        "borrador + sin accion": B,
+        "borrador + accion desconocida": B,
+        "borrador + guardar borrador": B,
+        "borrador + publicar emprendimiento": P,
+    }
+
+
+def test_el_alta_sigue_publicando_por_defecto(client, db, crear_usuario, login):
+    """Lo de arriba cambia la EDICION, no el alta.
+
+    En el alta no hay nada previo que respetar, asi que un POST sin `accion`
+    --el formulario de siempre, antes de que existieran los borradores-- tiene
+    que seguir creando un emprendimiento publicado. Si esto se rompe, el alta
+    empieza a crear emprendimientos invisibles sin que nadie lo haya pedido.
+    """
+    from app.blog.modelo_post import Post
+
+    dueno = crear_usuario(username="dueno", rol=Roles.EMPRENDEDOR)
+    login(dueno.id)
+
+    client.post("/blog/create", data={
+        "title": "Recien creado", "body": "Descripcion",
+        "category": "alimentos", "address_street": "",
+    })
+
+    creado = Post.query.filter_by(title="Recien creado").first()
+    assert creado is not None
+    assert creado.estado == EstadosPost.PUBLICADO
