@@ -74,8 +74,14 @@
        720px de ancho maximo, 52px de alto, y esta en todas las pantallas menos
        el home, que ya tiene su propia banda de busqueda (.buscador).
 
-       "Inicio" se fue de las secciones: el logo ya es el inicio. Quedan las
-       tres de todos los dias, centradas, con la activa subrayada en indigo.
+       "Inicio" volvio a las secciones (2026-09-15). Habia salido porque el logo
+       ya lleva al inicio, pero sobre todo porque un cuarto item rompia el
+       centrado: la nav iba centrada al 50 % EXACTO del navbar y fuera del flujo,
+       asi que no reservaba lugar y se montaba encima del bloque de acciones.
+       Eso se arreglo de raiz en el CSS -- la nav volvio al flujo y se centra en
+       el espacio que le queda entre el logo y las acciones, que es un espacio
+       que nadie mas puede ocupar -- asi que el cuarto item ya no choca con
+       nada. Son cuatro, con la activa subrayada en indigo.
 
        "Publicar" tambien se fue de aca: era el unico boton lleno de la barra y
        se repetia en cada pantalla, aunque cada seccion ya tiene su propio
@@ -90,12 +96,18 @@
             {# En telefono estas tres no entran en la barra: se apagan aca y
                reaparecen como solapas arriba del contenido (mas abajo). #}
             <nav class="navbar__secciones" aria-label="Secciones">
-                {# El catálogo de productos NO tiene ítem propio en la barra: con
-                   cuatro secciones la nav, que va centrada al 50 % exacto, se
-                   montaba encima del bloque de acciones (ver DISENIO.md,
-                   «Productos NO entra en la barra global»). Se entra desde
-                   Emprendimientos y desde el buscador, y acá queda marcado
-                   «Emprendimientos», que es de donde se viene. #}
+                <a href="{{ url_for('index') }}"
+                   class="navbar__seccion {% if request.endpoint == 'index' %}navbar__seccion--activa{% endif %}"
+                   {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>
+                    Inicio
+                </a>
+                {# El catálogo de productos sigue SIN ítem propio en la barra,
+                   pero ya no por el centrado (ver el comentario de arriba: la
+                   nav volvió al flujo y aguanta cuatro). El motivo que queda en
+                   pie es el del teléfono: las solapas fijas que se pintan arriba
+                   del contenido son tres, y una cuarta pide scroll horizontal.
+                   Se entra desde Emprendimientos y desde el buscador, y acá
+                   queda marcado «Emprendimientos», que es de donde se viene. #}
                 {% set en_emprendimientos = request.endpoint and (
                     request.endpoint.startswith('blog.')
                     or request.endpoint in ('products.catalogo', 'products.detalle')

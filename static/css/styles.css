@@ -364,31 +364,54 @@ main {
     border-bottom-color: var(--color-primary);
 }
 
-/* El centrado es un caso particular y solo vale cuando las secciones entran en
-   el medio sin pisar los costados. Estan fuera del flujo: no reservan espacio,
-   asi que hay que garantizarles el lugar a mano.
+/* El centrado va POR FLUJO, no al 50 % exacto del navbar (2026-09-15).
 
-   La cuenta, con la banda del buscador ya afuera de esta fila: las tres
-   secciones miden 344px centradas, o sea (C - 344) / 2 libres a cada lado. A la
-   izquierda va el logo (auto, ~110px con el alto de 32); a la derecha el bloque
-   de acciones, y el caso mas ancho es el del visitante ("Acceder" + "Crear
-   cuenta" + el switch de tema, 262px). Despeja en C >= 868, es decir 916px de
-   viewport contando los 48px de padding del container. Se redondea a 960px por
-   lo mismo de siempre: que un cambio de copy o de fuente no vuelva a abrir el
-   agujero de callado. */
-@media (min-width: 960px) {
+   Antes la nav estaba fuera del flujo (`position: absolute; left: 50%`) y por
+   eso no reservaba espacio: habia que garantizarle el lugar a mano, con una
+   cuenta que solo cerraba con tres items. La cuenta vieja: tres secciones miden
+   344px centradas, el logo ~110px a la izquierda y el bloque de acciones del
+   visitante 262px a la derecha ("Acceder" + "Crear cuenta" + el switch de
+   tema); despejaba en 916px de viewport, redondeado a 960. Un cuarto item movia
+   los dos bordes de la nav 40px para afuera y el derecho se metia encima de las
+   acciones: por eso "Inicio", Productos y Oportunidades no entraban.
+
+   Ahora la nav es un item mas de la fila, con `flex: 1`: se queda con todo el
+   aire que sobra entre el logo y las acciones y centra las secciones ADENTRO de
+   ese aire. Es un espacio que por definicion nadie mas ocupa, asi que el
+   solapamiento deja de ser posible -- no importa cuantos items haya ni cuanto
+   mida cada uno. El centro optico queda unos px corrido a la izquierda del
+   centro geometrico (el bloque de acciones es mas ancho que el logo); es el
+   precio de que no se pise nunca mas, y a ojo no se nota.
+
+   Sin `min-width: 0` a proposito: asi la nav no puede encogerse por debajo de
+   su contenido y las secciones nunca se comen al logo ni a las acciones. Lo que
+   cede antes es el `gap`, que se achica en la franja angosta de abajo. */
+@media (min-width: 860px) {
     .navbar__secciones {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+/* Franja angosta: entre 860 y 1023 los cuatro items con el gap de 30px no
+   entran junto al logo y al bloque de acciones del visitante, que es el caso
+   mas ancho (el logueado lleva iconos y avatar, y ocupa menos). Se achican los
+   dos gaps, el de la fila y el de las secciones, porque los dos son aire y
+   ninguno es contenido.
+
+   El ancho critico es 860, el mas angosto en el que la nav existe (abajo son
+   solapas). Medido ahi, en las cuatro secciones y como visitante: 18px entre el
+   logo y el primer item, de los cuales 12 son el gap de la fila, o sea 6px de
+   colchon real antes de que algo se toque. Con los valores de escritorio ese
+   colchon daba 0: entraba justo. De 1024 para arriba sobran 82px o mas y los
+   gaps vuelven a los de siempre. */
+@media (min-width: 860px) and (max-width: 1023px) {
+    .navbar__fila {
+        gap: 0.75rem;
     }
 
-    /* Con las secciones fuera del flujo quedan en la fila el logo y las
-       acciones: el space-between del contenedor dejaria las acciones en el
-       medio, encima de las secciones centradas. El margen automatico junta
-       todo el aire despues del logo y las manda al extremo derecho. */
-    .navbar__acciones {
-        margin-left: auto;
+    .navbar__secciones {
+        gap: 1.125rem;
     }
 }
 
@@ -1688,9 +1711,11 @@ main {
 }
 
 
-/* El mapa de la ficha vive en la columna lateral, que es angosta: sin esto
-   toma el alto del mapa del perfil y se come la pantalla. */
-.detalle__lateral #map 
+/*  Aca habia un `.detalle__lateral #map` sin bloque, y como el selector seguia
+    abierto se tragaba entero el @media de abajo: de 879px para abajo .detalle
+    nunca pasaba a una columna. Se borra el huerfano en vez de restaurarlo: sus
+    declaraciones se perdieron hace tiempo y .detalle__lateral ya no lo escribe
+    ningun template -- el mapa de la ficha hoy es .ficha-bloque--mapa. */
 
 @media (max-width: 879px) {
     .detalle {
@@ -1713,8 +1738,18 @@ main {
 /* "Reseñas recibidas" es una URL publica y el menu de cuenta solo se incluye
    si la mira su dueño. Sin esta regla, para un visitante el contenido cae en
    la columna de 260px (la del menu que no esta) y la pantalla queda con una
-   palabra por renglon. */
-.cuenta:not(:has(.cuenta__menu)) {
+   palabra por renglon.
+
+   Se pregunta por LAS DOS columnas de menu, no solo por .cuenta__menu
+   (2026-09-15). Las ocho pantallas del panel del vendedor usan este mismo
+   layout pero con .panel-menu adentro (partials/_menu_panel.html, que
+   reemplazo a _menu_cuenta ahi): para esta regla no tenian menu, caian todas
+   en una sola columna y el menu quedaba de ancho completo arriba con el
+   contenido debajo, en vez de en dos columnas. Se veia peor en Presupuestos,
+   que es la que ademas tiene su propia columna de resumen a la derecha, pero
+   estaba en las ocho. Cualquier menu lateral nuevo tiene que sumarse a este
+   :has() o va a repetir el mismo bug de callado. */
+.cuenta:not(:has(.cuenta__menu)):not(:has(.panel-menu)) {
     grid-template-columns: minmax(0, 1fr);
 }
 
@@ -4693,8 +4728,10 @@ textarea.auth__input {
     PÁGINA DE DETALLE (BLOG/DETAIL) */
 
 
-.post-author-link:hover 
-
+/*  Mismo caso que el del mapa: `.post-author-link:hover` habia quedado sin
+    bloque y se comia la regla de abajo. Ninguna de las dos clases la escribe
+    ya un template, asi que se borra el huerfano y .post-rating vuelve a vivir
+    por su cuenta. */
 .post-rating {
     display: flex;
     align-items: center;
@@ -4840,8 +4877,6 @@ textarea.auth__input {
     color: var(--color-primary);
 }
 
-/* --- Link de Volver --- */
-.back-link:hover 
 /* ==========================================================================
    PERFIL
    --------------------------------------------------------------------------
@@ -4865,12 +4900,15 @@ textarea.auth__input {
 
 .perfil {
     width: 100%;
-    max-width: 1120px;
+    /* Las medidas son las de los artboards de disenio-perfil/ (1160 de tope y
+       24 de padding dan los 1112 de contenido sobre los que estan dibujadas
+       las dos columnas de abajo). */
+    max-width: 1160px;
     margin: 0 auto;
-    padding: 2rem 1.5rem 3rem;
+    padding: 1.25rem 1.5rem 3.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 
 /* --- 1. Hero: identidad --- */
@@ -4890,7 +4928,9 @@ textarea.auth__input {
 .perfil-hero__portada-img {
     display: block;
     width: 100%;
-    height: 200px;
+    /* 232 y no 200: es el alto del canvas, y con el ancho ya topado en 1112 da
+       la proporcion sobre la que esta dibujado el avatar montado. */
+    height: 232px;
     object-fit: cover;
 }
 
@@ -4910,18 +4950,20 @@ textarea.auth__input {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
-    gap: 1.5rem;
-    padding: 0 2rem 1.75rem;
+    gap: 1.375rem;
+    padding: 0 1.625rem 1.625rem;
 }
 
 .perfil-hero__avatar {
     flex: 0 0 auto;
-    width: 112px;
-    height: 112px;
-    margin-top: -56px;
-    border-radius: 24px;
+    /* Redondo y de 132, como en los seis artboards: la version cuadrada de
+       24px de radio y 112 de lado no salio de ninguna decision escrita. */
+    width: 132px;
+    height: 132px;
+    margin-top: -58px;
+    border-radius: 999px;
     overflow: hidden;
-    border: 4px solid var(--color-surface);
+    border: 5px solid var(--color-surface);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-light);
 }
@@ -5139,9 +5181,11 @@ textarea.auth__input {
 
 .perfil-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    /* 372 + 28 de gap sobre los 1112 de contenido dejan 712 para la columna
+       principal, que es como estan dibujadas las dos en el canvas. */
+    grid-template-columns: minmax(0, 1fr) 372px;
     align-items: start;
-    gap: 1.5rem;
+    gap: 1.75rem;
 }
 
 .perfil-layout__principal,
@@ -5300,7 +5344,7 @@ textarea.auth__input {
    negocio y el perfil no tiene que aparentarlo. El cuerpo recupera el padding
    de arriba que antes ponia la portada. */
 .perfil-hero--cliente .perfil-hero__cuerpo {
-    padding-top: 1.75rem;
+    padding-top: 1.625rem;
 }
 
 .perfil-hero--cliente .perfil-hero__avatar {
@@ -5631,9 +5675,10 @@ a.perfil-dato:hover {
 }
 
 /* El mapa en la lateral es una referencia, no el contenido: mas bajo que el
-   de la ficha del emprendimiento, que si ocupa el ancho de la pagina. */
+   de la ficha del emprendimiento, que si ocupa el ancho de la pagina. Los 172
+   son los del canvas. */
 .perfil-layout__lateral #map {
-    height: 200px;
+    height: 172px;
 }
 
 /* El catalogo hereda .card/.cards-grid del resto del sitio, pero en el perfil
@@ -5732,7 +5777,7 @@ a.perfil-dato:hover {
     }
 
     .perfil-hero__portada-img {
-        height: 150px;
+        height: 168px;
     }
 
     .perfil-hero__cuerpo {
@@ -5748,9 +5793,10 @@ a.perfil-dato:hover {
     }
 
     .perfil-hero__avatar {
-        width: 88px;
-        height: 88px;
-        margin-top: -44px;
+        width: 92px;
+        height: 92px;
+        margin-top: -42px;
+        border-width: 4px;
     }
 
     .perfil-hero__identidad,

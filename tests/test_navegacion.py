@@ -109,12 +109,35 @@ def _secciones(html):
 # --- las secciones de la barra
 
 
-def test_la_barra_tiene_las_tres_secciones_y_no_inicio(client):
-    """"Inicio" se fue de las secciones: el logo ya es el inicio."""
+def test_la_barra_tiene_las_cuatro_secciones_con_inicio_primero(client):
+    """"Inicio" volvio a las secciones (2026-09-15).
+
+    Habia salido porque un cuarto item montaba la nav, centrada al 50 % exacto
+    y fuera del flujo, encima del bloque de acciones. La nav volvio al flujo y
+    se centra en el hueco que le queda, asi que el cuarto item ya entra.
+    """
     secciones = _secciones(_html(client.get("/blog/")))
 
     etiquetas = [t.strip() for t in re.findall(r">([^<>]+)<", secciones) if t.strip()]
-    assert etiquetas == ["Emprendimientos", "Servicios", "Eventos y ferias"]
+    assert etiquetas == [
+        "Inicio",
+        "Emprendimientos",
+        "Servicios",
+        "Eventos y ferias",
+    ]
+
+
+def test_inicio_se_marca_activa_en_el_home(client):
+    """El mismo trato que las otras tres: subrayada y con aria-current."""
+    secciones = _secciones(_html(client.get("/")))
+
+    activa = re.search(
+        r'<a href="/"[^>]*class="navbar__seccion navbar__seccion--activa"[^>]*'
+        r'aria-current="page"',
+        secciones,
+        re.S,
+    )
+    assert activa, '"Inicio" tendria que estar marcada activa en el home'
 
 
 def test_la_seccion_de_la_pantalla_en_la_que_estoy_se_marca_activa(client):

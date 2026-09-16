@@ -81,3 +81,50 @@ def test_ninguna_de_las_dos_clases_queda_declarada_dos_veces():
             ".%s esta declarada %d veces en el nivel de arriba de styles.css"
             % (clase, _declaraciones(clase))
         )
+
+
+# --- selectores que se quedaron sin llaves
+
+
+def _selectores_sin_comentarios(texto):
+    """Los trozos de selector del archivo, con los comentarios ya sacados.
+
+    Un selector es lo que va entre el `}` de la regla anterior (o el principio
+    del archivo) y el `{` de la que arranca. Sacar los comentarios primero es
+    justo lo que hace el navegador al parsear, y es lo que hace visible el bug
+    que este test persigue.
+    """
+    limpio = re.sub(r"/\*.*?\*/", "", texto, flags=re.S)
+    return re.findall(r"(?:^|\})([^{}]*)\{", limpio, flags=re.S)
+
+
+def test_ningun_selector_se_quedo_sin_su_bloque():
+    """Un selector sin llaves se come la regla siguiente, entera y en silencio.
+
+    Paso de verdad: `.back-link:hover` habia quedado escrito sin bloque cuando
+    el rediseno borro `.back-link` del HTML. El navegador entonces lee
+    `.back-link:hover .perfil { ... }` -- el comentario del medio no lo corta --
+    y la regla base de `.perfil` no se aplica nunca. El perfil perdia su
+    `max-width: 1120px` y su padding: la portada, de 200px de alto fijo, se
+    estiraba a todo el ancho de la ventana (9,5:1 en 1920) en vez de quedarse en
+    los 1070px del resto de la app. Nada en el HTML cambia, asi que la suite no
+    se enteraba.
+
+    La firma del bug es que el selector resultante se traga una linea en blanco:
+    ningun selector de verdad tiene una adentro.
+    """
+    texto = open(CSS, encoding="utf-8").read()
+
+    #  Se recorta el chunk antes de mirarlo: entre dos reglas siempre hay un
+    #  renglon en blanco, y eso es formato, no un huerfano. Lo que no puede
+    #  haber es un renglon en blanco ADENTRO del selector ya recortado: ahi hay
+    #  dos selectores pegados donde tendria que haber uno solo.
+    huerfanos = [
+        " ".join(sel.split())[:80]
+        for sel in _selectores_sin_comentarios(texto)
+        if re.search(r"\n\s*\n", sel.strip())
+    ]
+
+    assert not huerfanos, (
+        "estos selectores se comieron la regla que venia despues: " f"{huerfanos}"
+    )
