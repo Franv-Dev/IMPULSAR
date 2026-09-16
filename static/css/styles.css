@@ -1711,9 +1711,11 @@ main {
 }
 
 
-/* El mapa de la ficha vive en la columna lateral, que es angosta: sin esto
-   toma el alto del mapa del perfil y se come la pantalla. */
-.detalle__lateral #map 
+/*  Aca habia un `.detalle__lateral #map` sin bloque, y como el selector seguia
+    abierto se tragaba entero el @media de abajo: de 879px para abajo .detalle
+    nunca pasaba a una columna. Se borra el huerfano en vez de restaurarlo: sus
+    declaraciones se perdieron hace tiempo y .detalle__lateral ya no lo escribe
+    ningun template -- el mapa de la ficha hoy es .ficha-bloque--mapa. */
 
 @media (max-width: 879px) {
     .detalle {
@@ -4726,8 +4728,10 @@ textarea.auth__input {
     PÁGINA DE DETALLE (BLOG/DETAIL) */
 
 
-.post-author-link:hover 
-
+/*  Mismo caso que el del mapa: `.post-author-link:hover` habia quedado sin
+    bloque y se comia la regla de abajo. Ninguna de las dos clases la escribe
+    ya un template, asi que se borra el huerfano y .post-rating vuelve a vivir
+    por su cuenta. */
 .post-rating {
     display: flex;
     align-items: center;
@@ -4873,8 +4877,6 @@ textarea.auth__input {
     color: var(--color-primary);
 }
 
-/* --- Link de Volver --- */
-.back-link:hover 
 /* ==========================================================================
    PERFIL
    --------------------------------------------------------------------------
