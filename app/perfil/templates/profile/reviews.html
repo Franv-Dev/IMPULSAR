@@ -75,9 +75,9 @@
                                                 {% endif %}
                                             </strong>
                                             <div class="review-card__stars">
-                                                {% for i in range(1, 6) %}
-                                                    {% if i <= r.rating %}★{% else %}☆{% endif %}
-                                                {% endfor %}
+                                                {% with puntaje = r.rating, etiqueta = r.rating ~ ' de 5 estrellas', tamanio = 16 %}
+                                                    {% include "partials/_estrellas.html" %}
+                                                {% endwith %}
                                             </div>
                                         </div>
 
