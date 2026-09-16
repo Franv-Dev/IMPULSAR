@@ -443,6 +443,28 @@ def test_el_dueno_si_ve_su_borrador_y_etiquetado(
     )
 
 
+def test_la_bandeja_esconde_el_borrador_al_cliente_pero_no_al_dueno(
+    client, login, dos_emprendimientos
+):
+    """Las dos mitades de la bandeja tras despublicar, en la misma prueba.
+
+    El barrido de arriba solo afirma la negativa (el visitante no lo ve). Sin
+    la otra mitad, un filtro que se llevara todo -- o que le escondiera al
+    dueño su propia conversacion -- pasaria igual en verde.
+    """
+    datos = dos_emprendimientos
+
+    login(datos["visitante"].id)
+    del_cliente = _texto(client.get("/mensajes/"))
+    assert PUBLICADO in del_cliente
+    assert BORRADOR not in del_cliente
+
+    login(datos["dueno"].id)
+    del_dueno = _texto(client.get("/mensajes/"))
+    assert PUBLICADO in del_dueno
+    assert BORRADOR in del_dueno
+
+
 def test_guardar_borrador_desde_el_formulario_no_publica_nada(
     client, db, login, crear_usuario
 ):

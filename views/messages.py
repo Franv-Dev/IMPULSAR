@@ -47,12 +47,19 @@ def inbox():
     clientes y despues su dueño lo saco de circulacion. Para el DUEÑO la
     conversacion sigue en su lista, que es lo mismo que hace el resto de la app
     con sus borradores.
+
+    El filtro es reglas_blog.existe_para() y no una condicion propia en la
+    consulta: es la misma decision que toman la conversacion, la ficha y las
+    demas pantallas que cuelgan de un emprendimiento, y tiene que cambiar en un
+    solo lugar. Filtrar despues de traer las filas da lo mismo que filtrar en
+    SQL porque la visibilidad es del post, no del mensaje: el ultimo mensaje de
+    cada conversacion es el mismo con o sin el corte. El post ya viene en el
+    joinedload, asi que no suma consultas.
     """
     ultimos_ids = (
         db.session.query(func.max(Message.id))
         .join(Post, Post.id == Message.post_id)
         .filter(or_(Message.client_id == g.user.id, Post.author == g.user.id))
-        .filter(or_(reglas_blog.es_publicado(), Post.author == g.user.id))
         .group_by(Message.post_id, Message.client_id)
     )
     conversaciones = (
@@ -65,6 +72,10 @@ def inbox():
         .order_by(Message.created.desc())
         .all()
     )
+    conversaciones = [
+        mensaje for mensaje in conversaciones
+        if reglas_blog.existe_para(mensaje.post, g.user.id)
+    ]
     return render_template("messages/inbox.html", conversaciones=conversaciones)
 
 

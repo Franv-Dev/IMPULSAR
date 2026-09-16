@@ -1043,7 +1043,7 @@ Reproducido el escenario completo: sacando el `order_by(None)`, SQLite sigue dan
 
 ### H3 y H4 — CERRADOS, y H3 destapó dos más
 
-**H4 — `largo_de()` sobre una columna `Text`. CERRADO.** Devolvía `None` y `validar_largo` con ese tope tiraba `TypeError` recién en el primer POST que validara ese campo, o sea un 500. Ahora un `assert` lo convierte en error al importar el módulo — al arrancar la app, donde se ve enseguida y dice qué columna es. Hoy no muerde porque los 8 campos validados son `String`; existe porque `ServiceRequest.descripcion` es `Text` a propósito y el docstring invita a usar la función con cualquier columna de texto.
+**H4 — `largo_de()` sobre una columna `Text`. CERRADO.** Devolvía `None` y `validar_largo` con ese tope tiraba `TypeError` recién en el primer POST que validara ese campo, o sea un 500. Ahora un `raise ValueError` lo convierte en error al importar el módulo (fue un `assert` hasta el 16/9: con `python -O` no corría y devolvía `None` callado) — al arrancar la app, donde se ve enseguida y dice qué columna es. Hoy no muerde porque los 8 campos validados son `String`; existe porque `ServiceRequest.descripcion` es `Text` a propósito y el docstring invita a usar la función con cualquier columna de texto.
 
 **H3 — el quinto `--color-on-primary`. CERRADO.** `.cartelera__cta-boton` lo usaba como `background-color` y no como `color`, por eso no apareció buscando la tinta: en oscuro el botón quedaba `#16132A` sobre el panel `#2A2068`, **1,30:1 de superficie**. Su `:hover` estaba peor, **1,03:1**. Los dos colores pasaron a fijos (blanco con tinta `--color-primary-deep`, y `#ECEAF7` en el hover), que es lo que ya hacía `.perfil-vender .btn--primary` — el mismo botón sobre el mismo panel.
 
