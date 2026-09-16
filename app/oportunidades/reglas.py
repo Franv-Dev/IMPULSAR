@@ -80,11 +80,12 @@ def recibe_propuestas(oportunidad):
 def puede_proponer(oportunidad, post, user_id):
     """Si esa persona puede proponer sobre esa oportunidad desde ese post.
 
-    Las tres condiciones juntas, y las tres del lado del servidor:
+    Las cuatro condiciones juntas, y las cuatro del lado del servidor:
 
       - la oportunidad recibe propuestas (esta abierta);
       - el post es de quien esta proponiendo (es un emprendedor, y es SU
         emprendimiento y no uno que escribio en la URL);
+      - el post esta PUBLICADO, no es un borrador;
       - la oportunidad no es suya.
 
     La tercera no es cosmetica. Ademas de que proponerse un trabajo a uno mismo
@@ -96,6 +97,13 @@ def puede_proponer(oportunidad, post, user_id):
     if not recibe_propuestas(oportunidad):
         return False
     if not es_dueño_de(post, user_id):
+        return False
+    # No se propone desde un borrador. Una propuesta le muestra al publicador
+    # el nombre del emprendimiento del que sale, asi que proponer desde uno sin
+    # publicar seria la puerta de atras para mostrarlo: el dueño todavia no
+    # decidio que exista para nadie. Se corta aca y no solo en el <select> del
+    # formulario, porque el post_id llega del POST y se puede escribir a mano.
+    if post.es_borrador:
         return False
     return oportunidad.autor_id != post.author
 

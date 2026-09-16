@@ -31,7 +31,9 @@ from sqlalchemy.exc import IntegrityError
 from app.blog import consultas, formulario, reglas
 from app.blog.modelo_favorito import Favorite
 from app.blog.modelo_imagen import PostImage
-from app.blog.modelo_post import MAX_IMAGENES_POR_POST, Categorias, Post
+from app.blog.modelo_post import (
+    MAX_IMAGENES_POR_POST, Categorias, EstadosPost, Post,
+)
 from app.blog.modelo_reporte import Report
 from app.blog.modelo_resenia import Review
 from app.panel.consultas import contadores_de as contadores_del_panel
@@ -199,6 +201,13 @@ def detail(id):
     post = consultas.post_por_id_o_404(id)
     es_dueño = bool(g.user and reglas.es_el_autor(post, g.user.id))
 
+    # UN BORRADOR SOLO EXISTE PARA SU DUEÑO. Sacarlo de los listados no alcanza:
+    # esta URL es /blog/<id> con el id incremental, asi que sin este corte
+    # cualquiera lo lee probando numeros, y encima le sumaria una vista.
+    # El 404 (y por que no es un 403) esta explicado en reglas.existe_para.
+    if not reglas.existe_para(post, g.user.id if g.user else None):
+        abort(404)
+
     # No cuenta las vistas del propio dueño revisando su publicacion.
     if not es_dueño:
         consultas.sumar_una_vista(post)
@@ -363,6 +372,7 @@ def create():
                 longitude=longitude,
                 address_street=valores["address_street"] or None,
                 category=valores["category"],
+                estado=_estado_pedido(),
             )
 
             galeria_error = _guardar_galeria(
@@ -378,10 +388,64 @@ def create():
                 return render_template("blog/create.html", **_contexto_del_formulario())
 
             consultas.guardar(post)
-            flash("Emprendimiento registrado correctamente.")
+            flash(
+                "Guardamos el borrador. No lo ve nadie más que vos hasta que lo publiques."
+                if post.es_borrador
+                else "Emprendimiento registrado correctamente."
+            )
             return redirect(url_for("blog.my_posts"))
 
     return render_template("blog/create.html", **_contexto_del_formulario())
+
+
+def _estado_pedido():
+    """El estado con el que NACE un emprendimiento, segun que boton se apreto.
+
+    Los dos son submits del MISMO form y se distinguen por el valor de "accion"
+    (ver _form_emprendimiento.html). Cualquier otro valor --o ninguno-- cae en
+    PUBLICADO, que es lo que el formulario hacia antes de que existieran los
+    borradores: un POST armado a mano sin ese campo se sigue comportando igual
+    que siempre y no crea un emprendimiento invisible sin que nadie lo haya
+    pedido.
+
+    SOLO PARA EL ALTA. Al editar, el default de "sin accion" no puede ser
+    publicar: ver _estado_al_editar.
+    """
+    if request.form.get("accion") == "borrador":
+        return EstadosPost.BORRADOR
+    return EstadosPost.PUBLICADO
+
+
+def _estado_al_editar(post):
+    """El estado que queda despues de guardar una edicion.
+
+    GUARDAR NO CAMBIA EL ESTADO POR ACCIDENTE. Solo lo mueve el boton que lo
+    nombra, y solo en la direccion que ese boton ofrece. Las dos reglas, que
+    antes no estaban y por eso van escritas:
+
+      - UN PUBLICADO NO SE DESPUBLICA DESDE ACA. El boton "Guardar borrador" ni
+        se dibuja cuando lo que se edita ya esta publicado, justamente porque
+        despublicar es otra decision y no la que ese boton nombra. Pero el
+        estado salia del formulario sin rechequear contra la base, asi que un
+        `accion=borrador` escrito a mano --o ese mismo boton apretado en una
+        pestaña que se abrio cuando todavia era borrador y quedo vieja-- lo
+        sacaba del listado sin que nadie lo pidiera.
+      - UN POST DE EDICION SIN `accion` NO TOCA EL ESTADO. En el alta el default
+        es publicar, porque es lo que el formulario hacia siempre y no hay nada
+        previo que respetar. Al editar si lo hay: lo que el dueño ya decidio. Un
+        formulario viejo, un POST a mano o un boton nuevo que se olvide del
+        campo dejaban publicado un borrador en silencio.
+
+    O sea que desde la edicion solo queda un movimiento posible, que es el que
+    la pantalla ofrece: borrador -> publicado, apretando "Publicar
+    emprendimiento". Despublicar tiene su propio camino (el boton de la fila en
+    "Mis emprendimientos"), o no existe todavia.
+    """
+    if not post.es_borrador:
+        return EstadosPost.PUBLICADO
+    if request.form.get("accion") == "publicar":
+        return EstadosPost.PUBLICADO
+    return EstadosPost.BORRADOR
 
 
 def _geocodificar(direccion):
@@ -463,11 +527,55 @@ def update(id):
             if reglas.categoria_valida(valores["category"]):
                 post.category = valores["category"]
 
+            # El boton primario de la edicion de un borrador dice "Publicar
+            # emprendimiento", asi que guardar con el lo publica; el de al lado
+            # lo deja borrador. Para un emprendimiento ya publicado la edicion
+            # de siempre no cambia nada. Las dos reglas que sostienen eso --que
+            # un publicado no se despublique desde aca, y que un POST sin
+            # `accion` no toque el estado-- estan en _estado_al_editar, que se
+            # las pregunta a la fila y no solo al formulario.
+            era_borrador = post.es_borrador
+            post.estado = _estado_al_editar(post)
+
             consultas.guardar()
-            flash("Emprendimiento actualizado correctamente.")
+            if post.es_borrador:
+                flash("Guardamos el borrador. Sigue sin verse en ningún lado.")
+            elif era_borrador:
+                flash("Publicamos tu emprendimiento. Ya se ve en el listado.")
+            else:
+                flash("Emprendimiento actualizado correctamente.")
             return redirect(url_for("blog.my_posts"))
 
     return render_template("blog/update.html", **_contexto_del_formulario(post))
+
+
+@blog.route("/<int:id>/publicar", methods=("POST",))
+@login_required
+def publicar(id):
+    """Saca un borrador a la calle, desde la fila de "Mis emprendimientos".
+
+    Existe aparte del formulario porque publicar no es guardar: desde el listado
+    el dueño ya sabe lo que cargo y lo unico que quiere es el interruptor, sin
+    volver a pasar por las tres secciones del formulario y sus fotos.
+
+    Solo POST y con el chequeo de dueño de siempre, igual que reordenar las
+    fotos y borrar: esto cambia quien puede ver el emprendimiento, y un GET que
+    lo publique se dispararia desde cualquier <img src> ajeno.
+
+    Publicar algo ya publicado no es un error, es un no-op: el boton solo se
+    dibuja en las filas de borrador, pero dos clicks seguidos --o el boton de
+    atras del navegador-- no tienen por que mostrar una pantalla de error.
+    """
+    post, denegado = _post_propio(id, "publicar")
+    if denegado:
+        return denegado
+
+    if post.es_borrador:
+        post.estado = EstadosPost.PUBLICADO
+        consultas.guardar()
+        flash("Publicamos tu emprendimiento. Ya se ve en el listado.")
+
+    return redirect(url_for("blog.my_posts"))
 
 
 @blog.route("/<int:id>/fotos/reordenar", methods=("POST",))
@@ -701,6 +809,13 @@ def report(tipo, target_id):
         objetivo = consultas.resenia_por_id_o_404(target_id)
         volver = url_for("blog.detail", id=objetivo.post_id)
         mensaje_propio = "No podés reportar tu propia reseña."
+
+    # No se reporta lo que no existe todavia: el formulario nombraba el
+    # emprendimiento, asi que era otra forma de leer un borrador probando ids.
+    # Vale para los dos tipos -- una reseña viaja con el post reseñado adentro.
+    post_del_objetivo = objetivo if tipo == "post" else objetivo.post
+    if not reglas.existe_para(post_del_objetivo, g.user.id):
+        abort(404)
 
     if not reglas.puede_reportar(objetivo, tipo, g.user.id):
         flash(mensaje_propio)

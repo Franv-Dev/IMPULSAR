@@ -23,6 +23,7 @@ que hay que tocar.
 from flask import Blueprint, jsonify, request, url_for
 from sqlalchemy.orm import joinedload
 
+from app.blog.reglas import de_post_publicado
 from models.event import Event
 from services.eventos import en_rango, hoy_en_argentina, parsear_mes, rango_del_mes
 
@@ -69,7 +70,14 @@ def list_eventos():
 
     # joinedload por lo mismo que en eventos.index: sin esto el .post de cada
     # evento dispara su propio SELECT al serializar (problema N+1).
-    query = en_rango(Event.query.options(joinedload(Event.post)), desde, hasta)
+    # Mismo criterio que la cartelera: los puntitos del calendario no marcan
+    # eventos de emprendimientos en borrador. Esta API es publica y sin sesion.
+    query = en_rango(
+        Event.query
+        .options(joinedload(Event.post))
+        .filter(de_post_publicado(Event.post_id)),
+        desde, hasta,
+    )
 
     # Se pide uno de mas que el tope para saber si habia mas sin tener que
     # contar aparte con un COUNT(*).

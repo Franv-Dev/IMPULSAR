@@ -74,18 +74,23 @@ def largo_de(columna):
     SOLO SIRVE PARA COLUMNAS CON LARGO, o sea String/Varchar. Una columna Text
     no tiene tope declarado y .type.length vale None, que despues hace explotar
     a validar_largo con un TypeError ('>' not supported between int and None).
-    El assert lo convierte en un error al importar el modulo -- o sea al
+    El ValueError lo convierte en un error al importar el modulo -- o sea al
     arrancar la app, donde se ve enseguida y dice exactamente que columna es --
     en vez de un 500 en el primer POST que valide ese campo. Hoy los ocho campos
     validados son String, pero ServiceRequest.descripcion es Text a proposito y
     este docstring invita a usar la funcion con cualquier columna de texto.
+
+    UN RAISE Y NO UN ASSERT: con python -O los assert no se ejecutan, y la
+    funcion devolveria None callada -- justo el TypeError en el primer POST que
+    esto vino a evitar.
     """
     largo = columna.type.length
-    assert largo is not None, (
-        f"{columna} es una columna sin largo declarado (Text): no tiene tope "
-        "contra el cual validar. Si ese campo necesita un limite, ponelo en la "
-        "columna como String(n), o validalo con un numero propio y su motivo."
-    )
+    if largo is None:
+        raise ValueError(
+            f"{columna} es una columna sin largo declarado (Text): no tiene tope "
+            "contra el cual validar. Si ese campo necesita un limite, ponelo en la "
+            "columna como String(n), o validalo con un numero propio y su motivo."
+        )
     return largo
 
 

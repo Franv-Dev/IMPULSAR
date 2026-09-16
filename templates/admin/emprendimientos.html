@@ -150,7 +150,9 @@
                    viene vacia, y adentro del if la paginacion desaparecia justo
                    cuando es lo unico que sirve para volver. El propio partial no
                    dibuja nada si hay una sola pagina. #}
-                {% include "partials/_paginacion.html" %}
+                {% with etiqueta_paginacion="Paginación de emprendimientos" %}
+                    {% include "partials/_paginacion.html" %}
+                {% endwith %}
             </div>
         </div>
     </div>

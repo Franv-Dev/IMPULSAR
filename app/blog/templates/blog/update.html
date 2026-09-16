@@ -13,14 +13,28 @@
         <div class="cuenta__head">
             <div>
                 <h1 class="cuenta__titulo">Editar {{ post.title }}</h1>
-                <p class="cuenta__bajada">
-                    Los cambios se ven en la ficha apenas guardás.
-                </p>
+                {#  La bajada dice la verdad de cada caso: en un borrador
+                    "los cambios se ven en la ficha" sería falso, porque no hay
+                    ficha pública que mirar todavía. #}
+                {% if post.es_borrador %}
+                    <p class="cuenta__bajada">
+                        Es un borrador: no lo ve nadie más que vos hasta que lo publiques.
+                    </p>
+                {% else %}
+                    <p class="cuenta__bajada">
+                        Los cambios se ven en la ficha apenas guardás.
+                    </p>
+                {% endif %}
             </div>
             <div class="cuenta__head-acciones">
-                <a href="{{ url_for('blog.detail', id=post.id) }}" class="section__link">
-                    Ver como visita
-                </a>
+                {#  "Ver como visita" solo si hay algo que una visita pueda
+                    ver: en un borrador esa URL es un 404 para todos menos para
+                    el dueño, así que el enlace prometería algo falso. #}
+                {% if not post.es_borrador %}
+                    <a href="{{ url_for('blog.detail', id=post.id) }}" class="section__link">
+                        Ver como visita
+                    </a>
+                {% endif %}
                 <a href="{{ url_for('blog.my_posts') }}" class="section__link">Cancelar</a>
             </div>
         </div>
@@ -35,7 +49,11 @@
             {% endif %}
         {% endwith %}
 
-        {% with accion = "Guardar cambios" %}
+        {#  El botón primario dice lo que hace: en un borrador, guardar es
+            publicarlo, así que no puede decir "Guardar cambios" y sacarlo a la
+            calle sin avisar. Para seguir editándolo sin publicar está el
+            "Guardar borrador" de al lado. #}
+        {% with accion = "Publicar emprendimiento" if post.es_borrador else "Guardar cambios" %}
             {% include "blog/_form_emprendimiento.html" with context %}
         {% endwith %}
     </div>

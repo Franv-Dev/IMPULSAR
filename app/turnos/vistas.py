@@ -24,10 +24,11 @@ DOS FRENOS DISTINTOS A LA DOBLE RESERVA, y conviene no confundirlos:
 from datetime import timedelta
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
+    Blueprint, abort, flash, g, redirect, render_template, request, url_for
 )
 from sqlalchemy.exc import IntegrityError
 
+from app.blog import reglas as reglas_blog
 from app.panel.consultas import contadores_de as contadores_del_panel
 from app.servicios import consultas as consultas_servicios
 from app.servicios import reglas as reglas_servicios
@@ -144,6 +145,14 @@ def _por_que_no_hay(dia, servicio):
 def reservar(id):
     """El cliente elige un slot libre y lo reserva."""
     servicio = consultas_servicios.servicio_por_id_o_404(id)
+
+    # El servicio de un emprendimiento en borrador no tiene pantalla publica, y
+    # esta la tenia: nombraba el emprendimiento y ofrecia la tira de slots, y
+    # ademas DEJABA RESERVAR -- quedaba un turno agendado contra algo que
+    # todavia no se publico. Mismo criterio y mismo 404 que la ficha; el por que
+    # no es un 403 esta en reglas_blog.existe_para.
+    if not reglas_blog.existe_para(servicio.post, g.user.id):
+        abort(404)
 
     # El dueño no se saca turno a si mismo. Mismo criterio que
     # servicios.solicitar con las solicitudes de presupuesto.

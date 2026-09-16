@@ -1,6 +1,6 @@
-from flask import Blueprint, current_app, g, jsonify, request
+from flask import Blueprint, abort, current_app, g, jsonify, request
 
-from app.blog import consultas
+from app.blog import consultas, reglas
 from app.blog.modelo_post import Categorias, Post
 from services.ratings import query_posts_con_rating
 
@@ -31,7 +31,9 @@ def list_posts():
     # (una subquery agrupada con outerjoin), no de un promedio por tarjeta:
     # pedirlo post por post seria una consulta por fila. Cada fila pasa a ser
     # la tupla (Post, avg_rating, review_count).
-    query = query_posts_con_rating()
+    # Sin borradores: esta API es publica y sin sesion, asi que es la forma mas
+    # facil de leer un emprendimiento que su dueño todavia no publico.
+    query = reglas.solo_publicados(query_posts_con_rating())
     busqueda = (request.args.get("q") or "").strip()
     if busqueda:
         # La busqueda pasa a resolverse en la base de datos. Antes se traian
@@ -104,5 +106,8 @@ def _serializar(fila, favoritos):
 @posts_api.get("/<int:post_id>")
 def get_post(post_id):
     post = Post.query.get_or_404(post_id)
-    include_views = bool(g.user and g.user.id == post.author)
-    return jsonify(post.to_dict(include_views=include_views)), 200
+    es_el_dueno = bool(g.user and reglas.es_el_autor(post, g.user.id))
+    # Un borrador solo existe para su dueño (ver reglas.existe_para).
+    if not reglas.existe_para(post, g.user.id if g.user else None):
+        abort(404)
+    return jsonify(post.to_dict(include_views=es_el_dueno)), 200

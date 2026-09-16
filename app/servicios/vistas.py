@@ -21,6 +21,7 @@ from flask import (
 )
 from sqlalchemy.exc import IntegrityError
 
+from app.blog import reglas as reglas_blog
 from app.panel.consultas import contadores_de as contadores_del_panel
 from app.servicios import consultas, formulario, reglas
 from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
@@ -373,6 +374,14 @@ def solicitar(id):
     """El cliente pide un presupuesto sobre un servicio."""
     servicio = consultas.servicio_por_id_o_404(id)
 
+    # El servicio de un emprendimiento en borrador no tiene pantalla publica, y
+    # esta la tenia: mostraba el titulo del servicio y el nombre del
+    # emprendimiento, y ademas DEJABA MANDAR LA SOLICITUD -- al dueño le llegaba
+    # un pedido de presupuesto de algo que todavia no publico. Va antes que los
+    # otros cortes para que el 404 sea lo primero (ver reglas_blog.existe_para).
+    if not reglas_blog.existe_para(servicio.post, g.user.id):
+        abort(404)
+
     # El dueño no se pide presupuesto a si mismo.
     if reglas.es_de(servicio, g.user.id):
         flash("Es tu propio servicio: las solicitudes te llegan de los clientes.")
@@ -515,7 +524,24 @@ def foto_de_solicitud(id):
 @servicios.route("/solicitudes/<int:id>/responder", methods=("POST",))
 @login_required
 def responder(id):
-    """El prestador contesta con un precio y un mensaje."""
+    """El prestador contesta con un precio y un mensaje, o guarda el borrador.
+
+    LOS DOS BOTONES SON EL MISMO FORMULARIO y se distinguen por el valor de
+    "accion", igual que el de emprendimiento: con dos <form> habria que duplicar
+    los campos. "Guardar sin enviar" deja la respuesta escrita en las mismas dos
+    columnas y el estado en BORRADOR; el submit normal la envia.
+
+    LO QUE EL BORRADOR NO TOCA es tan importante como lo que guarda:
+
+      - responded_at se queda en NULL. Es la fecha en que el cliente recibio la
+        respuesta, y de ahi salen "respondidas este mes" y las demoras promedio
+        del resumen del prestador: escribirla al guardar un borrador le mejoraria
+        las metricas por empezar a escribir;
+      - el mail no sale. El cliente no tiene nada que leer todavia;
+      - cupo_pendiente no se mueve, porque BORRADOR tambien esta en
+        SIN_RESPONDER (ver el modelo). O sea que este camino no puede chocar con
+        el UNIQUE de la pendiente unica: no cambia ninguna de sus tres columnas.
+    """
     solicitud = _solicitud_visible(id)
     if not reglas.es_el_prestador(solicitud, g.user.id):
         flash("La respuesta la escribe quien presta el servicio.")
@@ -537,10 +563,22 @@ def responder(id):
     # mail que le decia que le habian contestado, y mandarle uno por cada
     # retoque es spam. Un aviso por cambio de estado, ver
     # services/notificaciones_email.py.
-    era_la_primera_respuesta = solicitud.estado == EstadosSolicitud.PENDIENTE
+    # SIN_RESPONDER y no == PENDIENTE: enviar desde un borrador tambien es la
+    # primera respuesta que el cliente ve, asi que tambien lleva mail. Con el
+    # `== PENDIENTE` de antes, pasar por "Guardar sin enviar" antes de enviar
+    # dejaba al cliente sin el aviso para siempre.
+    era_la_primera_respuesta = solicitud.sin_responder
 
     solicitud.respuesta_precio = precio
     solicitud.respuesta_mensaje = mensaje
+
+    if request.form.get("accion") == "borrador":
+        # Ni estado RESPONDIDA ni responded_at ni mail: ver el docstring.
+        solicitud.estado = EstadosSolicitud.BORRADOR
+        consultas.guardar()
+        flash("Guardamos el borrador. Todavía no se lo mandamos a nadie.")
+        return redirect(url_for("servicios.solicitud", id=id))
+
     solicitud.estado = EstadosSolicitud.RESPONDIDA
     solicitud.responded_at = utcnow()
     consultas.guardar()

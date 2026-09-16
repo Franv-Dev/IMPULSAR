@@ -39,6 +39,35 @@ class Categorias:
     }
 
 
+class EstadosPost:
+    """Si el emprendimiento esta publicado o es todavia un borrador.
+
+    Clase de constantes y no un sa.Enum, por lo mismo que Categorias, Roles y
+    EstadosSolicitud: un Enum de verdad obliga a un ALTER TYPE para agregar un
+    estado.
+
+    SON DOS Y NO TRES. No hay "archivado" ni "pausado": para sacar un
+    emprendimiento de circulacion hoy esta el borrado, y un estado mas sin
+    pantalla que lo use seria una columna que nadie escribe. El dia que haga
+    falta, se agrega aca y en solo_publicados().
+
+    EL DEFAULT ES PUBLICADO, y eso importa mas de lo que parece: la columna
+    nace con server_default en "publicado", asi que todos los emprendimientos
+    que ya existian quedan exactamente como estaban. Un default en BORRADOR
+    habria hecho desaparecer el sitio entero al correr la migracion.
+    """
+
+    PUBLICADO = "publicado"
+    BORRADOR = "borrador"
+
+    TODOS = (PUBLICADO, BORRADOR)
+
+    ETIQUETAS = {
+        PUBLICADO: "Publicado",
+        BORRADOR: "Borrador",
+    }
+
+
 # Cuantas fotos puede tener un emprendimiento contando la principal
 # (Post.image). Las que sobran van en post_images (ver modelo_imagen.py).
 MAX_IMAGENES_POR_POST = 5
@@ -66,6 +95,15 @@ class Post(db.Model):
     category = db.Column(
         db.String(50), nullable=False,
         default=Categorias.OTROS, server_default=Categorias.OTROS, index=True,
+    )
+
+    # Publicado o borrador. Con index porque TODAS las consultas publicas la
+    # filtran (ver reglas.solo_publicados): es la columna que decide si la fila
+    # existe para el resto del mundo.
+    estado = db.Column(
+        db.String(20), nullable=False,
+        default=EstadosPost.PUBLICADO, server_default=EstadosPost.PUBLICADO,
+        index=True,
     )
 
     # Cuantas veces se vio el detalle. No cuenta las vistas del propio dueño
@@ -149,7 +187,8 @@ class Post(db.Model):
     address_street = db.Column(db.String(255), nullable=True)
 
     def __init__(self, author, title, body, image=None, latitude=None, longitude=None,
-                 address_street=None, category=Categorias.OTROS):
+                 address_street=None, category=Categorias.OTROS,
+                 estado=EstadosPost.PUBLICADO):
         self.author = author
         self.title = title
         self.body = body
@@ -158,6 +197,11 @@ class Post(db.Model):
         self.longitude = longitude
         self.address_street = address_street
         self.category = category if category in Categorias.TODAS else Categorias.OTROS
+        # Mismo criterio que la categoria: un estado que no existe cae al
+        # default en vez de guardarse. Lo que llega de un formulario no se
+        # escribe crudo en una columna de la que depende que la fila sea
+        # publica o no.
+        self.estado = estado if estado in EstadosPost.TODOS else EstadosPost.PUBLICADO
 
     def __repr__(self):
         return f"Post: {self.title}"
@@ -165,6 +209,14 @@ class Post(db.Model):
     @property
     def category_label(self):
         return Categorias.ETIQUETAS.get(self.category, self.category)
+
+    @property
+    def estado_label(self):
+        return EstadosPost.ETIQUETAS.get(self.estado, self.estado)
+
+    @property
+    def es_borrador(self):
+        return self.estado == EstadosPost.BORRADOR
 
     @property
     def galeria(self):
@@ -194,6 +246,7 @@ class Post(db.Model):
             "image": self.image,
             "category": self.category,
             "category_label": self.category_label,
+            "estado": self.estado,
             "created": self.created.isoformat() if self.created else None,
             "latitude": self.latitude,
             "longitude": self.longitude,

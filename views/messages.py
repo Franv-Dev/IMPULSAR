@@ -14,6 +14,7 @@ from models.message import Message
 from models.product import Product
 from models.producto_variante import ProductoVariante
 from app.blog.modelo_post import Post
+from app.blog import reglas as reglas_blog
 from app.panel import consultas as consultas_panel
 from models.user import User
 from services.notificaciones_email import notificar_mensaje_nuevo
@@ -34,7 +35,27 @@ def _puede_ver_conversacion(post, client_id):
 @messages.route("/")
 @login_required
 def inbox():
-    """Lista las conversaciones del usuario logueado, como cliente o como dueño."""
+    """Lista las conversaciones del usuario logueado, como cliente o como dueño.
+
+    SIN LAS DE LOS EMPRENDIMIENTOS EN BORRADOR, salvo para su dueño. La lista
+    muestra el nombre del emprendimiento de cada conversacion, asi que sin este
+    filtro el cliente de uno que volvio a borrador lo seguia leyendo aca --y al
+    clickearlo se comia el 404 de conversation(), que es lo peor de los dos
+    mundos: se entera igual del nombre y encima la pantalla no abre.
+
+    El caso existe: un emprendimiento que estuvo publicado, converso con
+    clientes y despues su dueño lo saco de circulacion. Para el DUEÑO la
+    conversacion sigue en su lista, que es lo mismo que hace el resto de la app
+    con sus borradores.
+
+    El filtro es reglas_blog.existe_para() y no una condicion propia en la
+    consulta: es la misma decision que toman la conversacion, la ficha y las
+    demas pantallas que cuelgan de un emprendimiento, y tiene que cambiar en un
+    solo lugar. Filtrar despues de traer las filas da lo mismo que filtrar en
+    SQL porque la visibilidad es del post, no del mensaje: el ultimo mensaje de
+    cada conversacion es el mismo con o sin el corte. El post ya viene en el
+    joinedload, asi que no suma consultas.
+    """
     ultimos_ids = (
         db.session.query(func.max(Message.id))
         .join(Post, Post.id == Message.post_id)
@@ -51,6 +72,10 @@ def inbox():
         .order_by(Message.created.desc())
         .all()
     )
+    conversaciones = [
+        mensaje for mensaje in conversaciones
+        if reglas_blog.existe_para(mensaje.post, g.user.id)
+    ]
     return render_template("messages/inbox.html", conversaciones=conversaciones)
 
 
@@ -58,6 +83,19 @@ def inbox():
 @login_required
 def conversation(post_id, client_id):
     post = _get_post_o_404(post_id)
+
+    # La conversacion nombra el emprendimiento, asi que un borrador se leia
+    # desde aca probando ids. 404 y no 403 por lo mismo que la ficha (ver
+    # reglas_blog.existe_para), y antes del 403 de mas abajo para que un
+    # borrador conteste lo mismo a un tercero que a alguien sin permiso.
+    #
+    # CONSECUENCIA BUSCADA, no un descuido: si un emprendimiento que ya tenia
+    # conversaciones vuelve a borrador, su cliente deja de poder abrir el hilo
+    # hasta que se publique de nuevo. Es lo que significa despublicar, y la
+    # alternativa --dejar entrar al que ya hablo-- convierte "no existe" en
+    # "existe para algunos", que es la regla que esta tanda vino a cerrar.
+    if not reglas_blog.existe_para(post, g.user.id):
+        abort(404)
 
     if client_id == post.author:
         abort(404)
@@ -184,8 +222,17 @@ def _combinacion_elegida(producto):
 @messages.route("/<int:post_id>/<int:client_id>/nuevos")
 @login_required
 def poll(post_id, client_id):
-    """Mensajes nuevos desde el id indicado, para el polling del front."""
+    """Mensajes nuevos desde el id indicado, para el polling del front.
+
+    LA MISMA GUARDA QUE conversation(), y no es de mas: esta ruta devuelve el
+    contenido de la conversacion en JSON, asi que cortar solo la pantalla dejaba
+    la puerta de atras abierta -- y encima abierta al front, que la pide sola
+    cada pocos segundos. La encontro el barrido del url_map; una lista fija de
+    superficies no la tenia porque nadie piensa en el endpoint de polling.
+    """
     post = _get_post_o_404(post_id)
+    if not reglas_blog.existe_para(post, g.user.id):
+        abort(404)
     if not _puede_ver_conversacion(post, client_id):
         abort(403)
 

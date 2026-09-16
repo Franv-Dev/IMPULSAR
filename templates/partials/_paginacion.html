@@ -4,7 +4,15 @@
 
    url_for solo toma request.view_args (los <int:id> de la ruta), no la
    querystring: sin sumar request.args ademas, cambiar de pagina tirab a
-   los filtros de busqueda/categoria/cercania que esten activos. #}
+   los filtros de busqueda/categoria/cercania que esten activos.
+
+   Dos parametros mas, que se pasan con {% with %} alrededor del include:
+     - etiqueta_paginacion: el aria-label del <nav>, que dice QUE se pagina
+       ("Paginación de productos"). Cada pantalla pone el suyo; el parcial se
+       usa en listados de cosas distintas y un texto fijo mentia en la mitad.
+     - ancla_paginacion (opcional): el id al que vuelven los enlaces, para las
+       pantallas donde el listado no esta arriba de todo (la ficha: sin el
+       ancla, cambiar de pagina de productos te devolvia al tope). #}
 
 {% set query_params = request.args.to_dict() %}
 {% set _ = query_params.pop("page", None) %}
@@ -17,23 +25,33 @@
    existe no da 404: devuelve una pagina vacia con .page tal cual lo pidieron.
    En ese caso "Anterior" tiene que llevar a la ultima pagina real y no a
    page - 1, que con ?page=999 seria la 998 y estaria igual de vacia. #}
-{% set pagina_previa = paginacion.pages if paginacion.page > paginacion.pages else paginacion.prev_num %}
-<nav class="pagination" aria-label="Paginación de emprendimientos">
+{% set pagina_fuera_de_rango = paginacion.page > paginacion.pages %}
+{% set pagina_previa = paginacion.pages if pagina_fuera_de_rango else paginacion.prev_num %}
+<nav class="pagination" aria-label="{{ etiqueta_paginacion | default('Paginación') }}">
     {% if paginacion.has_prev %}
         <a class="pagination__link"
-           href="{{ url_for(request.endpoint, page=pagina_previa, **link_params) }}"
+           href="{{ url_for(request.endpoint, page=pagina_previa, _anchor=ancla_paginacion | default(None), **link_params) }}"
            rel="prev">← Anterior</a>
     {% else %}
         <span class="pagination__link pagination__link--disabled">← Anterior</span>
     {% endif %}
 
-    <span class="pagination__status">
-        Página {{ paginacion.page }} de {{ paginacion.pages }}
-    </span>
+    {# Con ?page=99 en un listado de 5, "Página 99 de 5" es un numero roto
+       y la lista de arriba vacia no explica nada. Se dice que no hay mas, y
+       cual es la ultima, que es a donde lleva "Anterior". #}
+    {% if pagina_fuera_de_rango %}
+        <span class="pagination__status pagination__status--fuera">
+            No hay más resultados: la última página es la {{ paginacion.pages }}.
+        </span>
+    {% else %}
+        <span class="pagination__status">
+            Página {{ paginacion.page }} de {{ paginacion.pages }}
+        </span>
+    {% endif %}
 
     {% if paginacion.has_next %}
         <a class="pagination__link"
-           href="{{ url_for(request.endpoint, page=paginacion.next_num, **link_params) }}"
+           href="{{ url_for(request.endpoint, page=paginacion.next_num, _anchor=ancla_paginacion | default(None), **link_params) }}"
            rel="next">Siguiente →</a>
     {% else %}
         <span class="pagination__link pagination__link--disabled">Siguiente →</span>

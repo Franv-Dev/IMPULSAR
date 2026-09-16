@@ -57,7 +57,15 @@
 
                                 <div class="mi-post__cuerpo">
                                     <div class="mi-post__tags">
-                                        <span class="badge badge--estado">Publicado</span>
+                                        {#  Sale del estado del post y ya no es
+                                            la palabra "Publicado" fija: esta es
+                                            la unica pantalla donde un borrador
+                                            se ve, asi que es la unica donde hay
+                                            que poder distinguirlo. #}
+                                        <span class="badge badge--estado
+                                                     {% if post.es_borrador %}badge--borrador{% endif %}">
+                                            {{ post.estado_label }}
+                                        </span>
                                         <span class="badge badge--category">{{ post.category_label }}</span>
                                         {# Aca iba el sello "Verificado" del
                                            rediseño, sin ningun if: lo llevaban
@@ -104,10 +112,31 @@
                                     <a href="{{ url_for('products.mios') }}" class="btn btn--secondary btn--chico">
                                         Catálogo y eventos
                                     </a>
+                                    {#  Publicar vive aca y no solo en el
+                                        formulario: desde el listado el dueño ya
+                                        sabe lo que cargo y lo unico que quiere
+                                        es el interruptor. POST y con token, que
+                                        es lo mismo que pide eliminar: cambia
+                                        quien puede ver el emprendimiento. #}
+                                    {% if post.es_borrador %}
+                                        <form method="post"
+                                              action="{{ url_for('blog.publicar', id=post.id) }}"
+                                              class="form-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn--secondary btn--chico">
+                                                Publicar
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                     <div class="mi-post__secundarias">
-                                        <a href="{{ url_for('blog.detail', id=post.id) }}" class="mi-post__link">
-                                            Ver como visita
-                                        </a>
+                                        {#  "Ver como visita" solo si hay visita
+                                            posible: en un borrador esa URL es un
+                                            404 para todos menos para el dueño. #}
+                                        {% if not post.es_borrador %}
+                                            <a href="{{ url_for('blog.detail', id=post.id) }}" class="mi-post__link">
+                                                Ver como visita
+                                            </a>
+                                        {% endif %}
                                         <form method="post"
                                               action="{{ url_for('blog.delete', id=post.id) }}"
                                               class="form-inline"
@@ -128,7 +157,9 @@
                         por ahora todos los emprendimientos se muestran igual.
                     </p>
 
-                    {% include "partials/_paginacion.html" %}
+                    {% with etiqueta_paginacion="Paginación de tus emprendimientos" %}
+                        {% include "partials/_paginacion.html" %}
+                    {% endwith %}
                 {% else %}
                     <div class="emprendimientos__empty">
                         <p>

@@ -38,6 +38,7 @@ from services.uploads import MAX_IMAGE_BYTES
 # vistas en el medio de cada import de sus modelos (ver app/blog/__init__.py).
 # Los que todavia no se migraron siguen en views/.
 from app.blog import consultas as consultas_blog
+from app.blog import reglas as reglas_blog
 from app.blog.modelo_post import Categorias, Post
 from app.blog.vistas import blog
 from app.panel.vistas import panel
@@ -210,7 +211,10 @@ def _registrar_rutas(app):
         return render_template(
             "home.html",
             categorias=Categorias.ETIQUETAS,
-            total_posts=Post.query.count(),
+            # Sin borradores, igual que la grilla de abajo y que el
+            # numero de cada rubro: es el tamaño de la plataforma que se puede
+            # visitar, no el de la tabla.
+            total_posts=reglas_blog.solo_publicados(Post.query).count(),
             conteo_por_rubro=consultas_blog.conteo_por_categoria(),
         )
 

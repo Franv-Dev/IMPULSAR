@@ -68,7 +68,10 @@ def view_profile(slug):
     # Se pide el rol Y que no haya publicado nada: si un "usuario" tiene
     # emprendimientos, el que esta equivocado es el rol, y quedarse con la
     # forma de negocio es lo que no rompe la pantalla.
-    posts = serializar_con_rating(consultas.emprendimientos_con_rating_de(user.id))
+    # Los borradores solo para el dueño, y no en "ver como visitante".
+    posts = serializar_con_rating(consultas.emprendimientos_con_rating_de(
+        user.id, incluir_borradores=es_dueño,
+    ))
     perfil_de_cliente = user.rol == Roles.USUARIO and not posts
 
     # Quien sigue a quien es dato privado, con el mismo criterio que
@@ -86,7 +89,7 @@ def view_profile(slug):
     # evento es un anuncio, no una metrica del dueño. Se calculan siempre, mire
     # quien mire.
     eventos_proximos, eventos_pasados = consultas.eventos_del_perfil(
-        user.id, reglas.MAX_EVENTOS_PASADOS
+        user.id, reglas.MAX_EVENTOS_PASADOS, incluir_borradores=es_dueño,
     )
 
     # Turnos y presupuestos son PRIVADOS, con el mismo criterio que las

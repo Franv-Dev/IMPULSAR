@@ -186,7 +186,9 @@
                         </section>
                     {% endfor %}
 
-                    {% include "partials/_paginacion.html" %}
+                    {% with etiqueta_paginacion="Paginación de eventos" %}
+                        {% include "partials/_paginacion.html" %}
+                    {% endwith %}
                 {% else %}
                     {# LOS TRES VACÍOS, que son tres preguntas distintas. Con
                        filtros puestos hay fechas más adelante y lo que falta es

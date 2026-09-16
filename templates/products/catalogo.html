@@ -311,7 +311,9 @@
                 {% endfor %}
             </div>
 
-            {% include "partials/_paginacion.html" %}
+            {% with etiqueta_paginacion="Paginación de productos" %}
+                {% include "partials/_paginacion.html" %}
+            {% endwith %}
 
             <p class="catalogo__nota">
                 Los precios los pone cada emprendimiento. IMPULSAR no cobra comisión ni

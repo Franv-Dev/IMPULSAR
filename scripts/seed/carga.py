@@ -191,7 +191,11 @@ def _cargar(app, escritas):
     db.session.flush()
 
     for alias, nombre, descripcion, zona, estado, precio, mensaje in SOLICITUDES:
-        respondida = estado != EstadosSolicitud.PENDIENTE
+        # SIN_RESPONDER y no "distinto de PENDIENTE": desde que existe BORRADOR
+        # hay dos estados sin contestar, y un borrador sembrado con responded_at
+        # seria una respuesta que el cliente nunca recibio. Hoy el seed no carga
+        # borradores, pero la expresion no tiene por que romperse el dia que si.
+        respondida = estado not in EstadosSolicitud.SIN_RESPONDER
         db.session.add(ServiceRequest(
             service_id=servicios[nombre].id,
             cliente_id=usuarios[alias].id,

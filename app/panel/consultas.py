@@ -70,7 +70,9 @@ def solicitudes_pendientes(user_id):
         .join(Service, Service.id == ServiceRequest.service_id)
         .join(Post, Post.id == Service.post_id)
         .filter(
-            ServiceRequest.estado == EstadosSolicitud.PENDIENTE,
+            # Pendientes y borradores: las dos le faltan contestar. Ver
+            # EstadosSolicitud.SIN_RESPONDER.
+            ServiceRequest.estado.in_(EstadosSolicitud.SIN_RESPONDER),
             Post.author == user_id,
         )
         .scalar()

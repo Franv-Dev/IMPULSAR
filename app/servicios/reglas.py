@@ -273,7 +273,15 @@ def resumen_de_solicitudes(recibidas, ahora):
     demoras = []
 
     for solicitud in recibidas:
-        if solicitud.estado == EstadosSolicitud.PENDIENTE:
+        # El borrador cuenta como pendiente: el numero dice cuantas le faltan
+        # contestar, y haberla empezado a escribir no es haberla contestado.
+        #
+        # Se mira el estado contra SIN_RESPONDER y no la property
+        # solicitud.sin_responder, aunque sea mas corta: esta funcion se prueba
+        # con un doble minimo que solo tiene estado y las dos fechas (ver
+        # _SolicitudFalsa en los tests), y engancharla a una property del modelo
+        # obligaria al doble a crecer para no probar nada nuevo.
+        if solicitud.estado in EstadosSolicitud.SIN_RESPONDER:
             pendientes += 1
 
         if solicitud.responded_at:

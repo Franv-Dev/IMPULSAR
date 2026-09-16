@@ -49,7 +49,10 @@ from app.blog.consultas import (
     abierto_ahora_sql, distancia_km_sql, metricas_de_posts,
 )
 from app.blog.modelo_post import Categorias, Post
-from app.blog.reglas import RADIOS_KM, categoria_valida, radio_valido
+from app.blog.reglas import (
+    RADIOS_KM, categoria_valida, de_post_publicado, radio_valido,
+    solo_publicados,
+)
 from app.panel.consultas import contadores_de as contadores_del_panel
 from models.product import (
     MAX_PRODUCTOS_POR_POST, UMBRAL_AVISO_LIMITE, Product,
@@ -260,6 +263,16 @@ def _filtrar_catalogo(consulta, busqueda, categoria, precio_min, precio_max,
     ademas como columna y como orden, y armarla dos veces seria dos veces la
     misma trigonometria en el mismo SELECT.
     """
+    # Los productos de un emprendimiento en borrador no estan en el catalogo:
+    # el emprendimiento todavia no existe para el resto del mundo, asi que su
+    # catalogo tampoco. Va aca y no en cada llamador para que la grilla y el
+    # contador de emprendimientos del encabezado cuenten lo mismo -- que es la
+    # razon de ser de esta funcion.
+    #
+    # Es un filter y no un de_post_publicado(): las dos consultas que pasan por
+    # aca ya traen posts con un join, asi que la condicion es gratis.
+    consulta = solo_publicados(consulta)
+
     if solo_disponibles:
         # .is_(True) y no == True por lo mismo que en el resto del proyecto: la
         # columna es NOT NULL con default True, y el operador de identidad es
@@ -588,6 +601,10 @@ def detalle(id):
         Product.query
         .options(joinedload(Product.post))
         .filter(Product.id == id)
+        # El producto de un emprendimiento en borrador no tiene pantalla
+        # publica: esta URL tambien es /<id> incremental. Se cuela adentro de la
+        # misma consulta y no en un if aparte para que el 404 sea uno solo.
+        .filter(de_post_publicado(Product.post_id))
         .first()
     )
     if producto is None:
@@ -712,6 +729,11 @@ def guardados():
         .join(ProductFavorite, ProductFavorite.product_id == Product.id)
         .options(joinedload(Product.post))
         .filter(ProductFavorite.user_id == g.user.id)
+        # Mismo criterio que los favoritos de emprendimientos: si el dueño
+        # volvio el suyo a borrador, su producto deja de listarse aunque la
+        # marca siga guardada. Con de_post_publicado y no con un join porque el
+        # post ya viene por joinedload, que armaria su propio LEFT JOIN.
+        .filter(de_post_publicado(Product.post_id))
     )
     paginacion = (
         consulta

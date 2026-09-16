@@ -6,7 +6,14 @@ separacion es la que hace que las reglas se puedan leer (y probar) sin levantar
 un request.
 """
 
-from app.blog.modelo_post import MAX_IMAGENES_POR_POST, Categorias, Post
+from functools import lru_cache
+
+from sqlalchemy import exists
+from sqlalchemy.orm import aliased
+
+from app.blog.modelo_post import (
+    MAX_IMAGENES_POR_POST, Categorias, EstadosPost, Post,
+)
 
 # Largo maximo del nombre de un emprendimiento. Sale de la columna y no de un
 # numero escrito a mano: son el mismo limite, y dos copias se despegan la
@@ -66,12 +73,140 @@ class OrdenesFavoritos:
     }
 
 
+@lru_cache(maxsize=1)
+def _post_del_exists():
+    """El post visto desde adentro del EXISTS de de_post_publicado().
+
+    UNO SOLO PARA TODA LA APP, y por eso esta memoizado: un aliased() nuevo por
+    llamada le cambia la cache key a cada consulta que lo use, asi que SQLAlchemy
+    no puede reusar la sentencia compilada. Medido: 725 ms contra 266 ms por 300
+    consultas.
+
+    Y ES PEREZOSO en vez de una constante de modulo porque aliased() configura
+    los mappers, y a la hora del import de este archivo todavia no estan todos
+    los modelos cargados: puesto arriba, revienta con "expression 'User' failed
+    to locate a name". lru_cache da las dos cosas -- se arma en la primera
+    consulta, y desde ahi es siempre el mismo objeto --.
+    """
+    return aliased(Post)
+
+
+def es_publicado():
+    """La condicion de "este emprendimiento existe para el resto del mundo".
+
+    Una funcion y no la expresion suelta para que el string del estado no quede
+    escrito en quince consultas: el dia que haya un tercer estado que tambien
+    sea publico (un "destacado", por ejemplo), se agrega aca y no hay que
+    acordarse de las quince.
+    """
+    return Post.estado == EstadosPost.PUBLICADO
+
+
+def solo_publicados(consulta):
+    """Le saca los borradores a una consulta que YA tiene posts adentro.
+
+    Para las consultas cuya entidad es Post, o que ya lo trajeron con un join
+    (el catalogo de productos, la busqueda de servicios). Cuando el post no
+    esta en la consulta, la condicion se escribe con de_post_publicado() para
+    no sumar un join.
+
+    POR QUE NO VA ADENTRO DE query_posts_con_rating NI DE UN default_scope. Es
+    tentador: ese helper lo usan las tres pantallas publicas que listan posts y
+    quedaria cubierto de una. Pero el mismo helper tendria que servir para "Mis
+    emprendimientos", que es la unica pantalla que SI tiene que ver los
+    borradores, y un filtro implicito que hay que recordar apagar es peor que
+    uno explicito que hay que recordar poner: el primero falla mostrando de
+    menos --el dueño no encuentra su propio borrador y no sabe por que-- y el
+    segundo falla en un test.
+    """
+    return consulta.filter(es_publicado())
+
+
+@lru_cache(maxsize=None)
+def de_post_publicado(columna_post_id):
+    """La misma condicion, para las filas que CUELGAN de un emprendimiento.
+
+    `columna_post_id` es la FK al post (Service.post_id, Product.post_id,
+    Event.post_id). Devuelve un EXISTS correlacionado y no un join, por dos
+    motivos:
+
+      - no le cambia la forma a la consulta de quien llama. Hay consultas que
+        ya traen posts con un join y otras que no lo traen para nada (el GROUP
+        BY del contador por rubro de servicios), y un filtro sobre una tabla
+        que no esta en el FROM se la agrega SIN condicion de join, o sea un
+        producto cartesiano que multiplica los conteos en silencio;
+      - las que si traen el post lo hacen muchas veces con joinedload, que
+        arma su propio LEFT JOIN con alias: un join a mano dejaria posts dos
+        veces en el SELECT.
+
+    Va sobre la FK y no sobre la relationship (`Service.post.has(...)`, que
+    seria mas corto) porque el backref `post` lo crea el mapper de Post al
+    configurarse, y esto se evalua al armar la consulta: con los mappers
+    todavia sin configurar, `Service.post` es un AttributeError. La FK es una
+    columna del propio modelo y siempre esta.
+
+    EL ALIAS NO ES DECORATIVO, y es lo que hay que entender para no romperlo.
+    Adentro del EXISTS el post va aliaseado porque algunas de las consultas que
+    usan esto YA tienen posts en su FROM (la busqueda de servicios lo joinea
+    para pintar el nombre del emprendimiento). Sin alias, SQLAlchemy
+    autocorrelaciona las DOS tablas del subselect --posts y services-- y el
+    subselect se queda sin FROM: InvalidRequestError, "returned no FROM clauses
+    due to auto-correlation". Con el alias, la tabla de adentro es otra, asi que
+    lo unico que correlaciona es la FK de afuera, que es justo lo que se quiere.
+
+    Y EL ALIAS ES UNO SOLO, DE MODULO, no uno nuevo por llamada. Esto se midio:
+    un aliased(Post) por llamada hace que cada consulta tenga una cache key
+    distinta, asi que SQLAlchemy no puede reusar la sentencia compilada y la
+    recompila entera cada vez. Son 725 ms contra 266 ms por 300 consultas, o sea
+    casi tres veces mas caro, y se paga en cada request y no solo en los tests.
+    Reusarlo es seguro porque un alias es una construccion inmutable y cada
+    EXISTS es su propio scope: dos subconsultas con el mismo alias no se pisan.
+    Vive en _post_del_exists(), memoizado y perezoso -- ver ahi por que no puede
+    ser una constante de modulo.
+
+    Y ESTA FUNCION TAMBIEN ESTA MEMOIZADA, por lo mismo: la condicion armada es
+    inmutable y los argumentos son atributos de clase (Product.post_id y
+    compania), o sea un puñado de valores fijos. Devolver siempre el mismo objeto
+    ahorra rearmar el EXISTS en cada request y termina de cerrar la diferencia:
+    725 ms -> 337 ms con el alias memoizado -> 222 ms memoizando tambien esto.
+
+    El EXISTS correlaciona por la PK de posts, que esta indexada, asi que es la
+    forma barata de preguntarlo: lo que sale caro es correlacionar sobre una
+    expresion que ningun indice puede sostener, y esto es la PK.
+    """
+    post = _post_del_exists()
+    return exists().where(post.id == columna_post_id).where(
+        post.estado == EstadosPost.PUBLICADO
+    )
+
+
 def es_el_autor(post, user_id):
     """Si ese emprendimiento es de ese usuario.
 
     Es el permiso de editar, borrar y ver lo que esta apagado.
     """
     return post.author == user_id
+
+
+def existe_para(post, user_id):
+    """Si ese emprendimiento EXISTE para quien esta mirando.
+
+    Un borrador existe solo para su dueño. Quien llama contesta con 404, y no
+    con 403 ni con un flash: un 403 --o un "no podés ver esto"-- confirmaria
+    que ese id existe y esta sin publicar, que es justamente lo que el dueño
+    todavia no quiso contar. Las URLs son /<id> incremental y se prueban a mano.
+
+    VIVE ACA Y NO ESCRITA EN CADA VISTA porque ya estaba copiada en dos (la
+    ficha y la API de un post) y las pantallas que CUELGAN de un emprendimiento
+    --pedir presupuesto, sacar turno, reportar, la conversacion-- le sumaban
+    cuatro copias mas. Seis lugares que deciden lo mismo son seis lugares donde
+    olvidarse; el dia que haya un tercer estado no publico, o que "dueño" deje
+    de ser solo el autor, se cambia una vez.
+
+    `user_id` puede ser None (visitante sin sesion): ahi es_el_autor() da False,
+    que es lo correcto.
+    """
+    return not post.es_borrador or es_el_autor(post, user_id)
 
 
 def es_el_autor_de_la_resenia(resenia, user_id):

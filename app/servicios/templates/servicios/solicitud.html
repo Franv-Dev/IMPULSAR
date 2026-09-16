@@ -21,7 +21,10 @@
         fecha de alta. #}
 
 {% set es_cerrada = solicitud.estado == estados.CERRADA %}
-{% set hay_respuesta = solicitud.respuesta_mensaje or solicitud.respuesta_precio %}
+{#  Mira el ESTADO y no solo las columnas: un borrador las tiene escritas y no
+    tiene que verse. La regla vive en el modelo (respuesta_visible) porque la
+    misma pregunta la hace la lista de presupuestos. #}
+{% set hay_respuesta = solicitud.respuesta_visible %}
 {% set post = solicitud.servicio.post %}
 {% set otra_parte = solicitud.cliente if es_prestador else post.author_user %}
 
@@ -47,11 +50,19 @@
 
                 <article class="panel panel--cabecera">
                     <div class="solicitud__tags">
-                        <span class="badge badge--{{ solicitud.estado }}">
-                            {% if solicitud.estado == estados.PENDIENTE and es_prestador %}
+                        {#  El estado que se pinta es el VISIBLE para quien
+                            mira: al cliente un borrador se le muestra como
+                            pendiente, porque su pedido sigue sin respuesta y no
+                            tiene por qué enterarse de que el prestador empezó a
+                            escribir. #}
+                        {% set estado_visible = solicitud.estado_visible_para(es_prestador) %}
+                        <span class="badge badge--{{ estado_visible }}">
+                            {% if estado_visible == estados.PENDIENTE and es_prestador %}
                                 Esperando tu respuesta
+                            {% elif estado_visible == estados.BORRADOR %}
+                                Borrador sin enviar
                             {% else %}
-                                {{ solicitud.estado_label }}
+                                {{ solicitud.etiqueta_para(es_prestador) }}
                             {% endif %}
                         </span>
                         <span class="badge badge--category">{{ solicitud.servicio.rubro_label }}</span>
@@ -100,6 +111,10 @@
                             Si todavía no podés dar un precio, dejalo vacío y explicale
                             por qué. Podés corregir la respuesta mientras la solicitud
                             siga abierta.
+                            {% if solicitud.estado == estados.BORRADOR %}
+                                Esto es un borrador tuyo: quien lo pidió lo sigue
+                                viendo como pendiente hasta que lo envíes.
+                            {% endif %}
                         </p>
 
                         <form method="post"
@@ -143,15 +158,21 @@
                                 {% endfor %}
                             </div>
 
+                            {#  Los dos mandan el MISMO formulario y se distinguen
+                                por el valor de "accion", que es lo que la vista lee
+                                para decidir si envía o guarda el borrador. #}
                             <div class="respuesta-form__acciones">
-                                <button type="submit" class="btn btn--primary">Enviar respuesta</button>
-                                <button type="button" class="btn btn--secondary btn--proximamente" disabled>
+                                <button type="submit" name="accion" value="enviar"
+                                        class="btn btn--primary">Enviar respuesta</button>
+                                <button type="submit" name="accion" value="borrador"
+                                        class="btn btn--secondary">
                                     Guardar sin enviar
                                 </button>
                             </div>
                             <p class="cuenta__pendiente">
-                                Todavía no se puede guardar una respuesta sin enviarla:
-                                no hay borradores. Lo que escribas se manda al enviar.
+                                Guardar sin enviar deja la respuesta escrita acá y no le
+                                manda nada a quien la pidió: la sigue viendo como
+                                pendiente hasta que aprietes “Enviar respuesta”.
                             </p>
                         </form>
                     </article>
