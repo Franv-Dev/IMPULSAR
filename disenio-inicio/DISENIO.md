@@ -1242,7 +1242,30 @@ catálogo se entra desde Emprendimientos, y Oportunidades desde el buscador de
 Servicios, porque pedir un servicio es ofrecerlo dado vuelta.
 
 En la barra queda marcado **"Servicios"** cuando se está en `/oportunidades` o en
-la ficha de una, igual que Turnos. Y en el teléfono cuentan como "Explorar" en la
+la ficha de una, igual que Turnos.
+
+**"Inicio" vuelve a la barra, y el centrado se arregla de raíz (2026-09-15).**
+Las dos decisiones de arriba se apoyaban en el mismo dato: la nav iba centrada al
+50 % **exacto** y **fuera del flujo** (`position: absolute; left: 50%`), así que no
+reservaba espacio y había que garantizárselo a mano con una cuenta que sólo cerraba
+con tres ítems; el cuarto movía los dos bordes 40px para afuera y el derecho se
+metía encima del bloque de acciones.
+
+Eso ya no es así: la nav es un ítem más de la fila, con `flex: 1`, y centra las
+secciones **dentro del aire que le queda** entre el logo y las acciones. Es un
+espacio que por definición nadie más ocupa, así que el solapamiento deja de ser
+posible sin importar cuántos ítems haya. Medido de 860 a 1920 en las cuatro
+secciones, visitante y logueado: nunca menos de 18px de aire a cada lado y cero
+scroll horizontal. En la franja 860–1023 los dos gaps (el de la fila y el de las
+secciones) se achican a 12 y 18px, que es aire, no contenido.
+
+La barra son entonces **cuatro**: Inicio · Emprendimientos · Servicios · Eventos y
+ferias, con la activa subrayada en índigo. Lo que **no** cambia es Productos ni
+Oportunidades: el motivo que les queda en pie no es el centrado sino el teléfono
+—las solapas fijas arriba del contenido son tres, y una cuarta pide scroll
+lateral, que es justo lo que no se hace en móvil. "Inicio" no paga ese costo
+porque en teléfono no es una solapa: ya es la primera pestaña de la barra de
+abajo. Y en el teléfono cuentan como "Explorar" en la
 tabbar, para que las pantallas públicas no dejen las cinco pestañas apagadas. Las
 dos pantallas privadas (`/oportunidades/mias` y `/oportunidades/mis-propuestas`)
 no marcan nada acá: viven en sus menús, la primera en el de la cuenta (es

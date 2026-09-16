@@ -364,31 +364,54 @@ main {
     border-bottom-color: var(--color-primary);
 }
 
-/* El centrado es un caso particular y solo vale cuando las secciones entran en
-   el medio sin pisar los costados. Estan fuera del flujo: no reservan espacio,
-   asi que hay que garantizarles el lugar a mano.
+/* El centrado va POR FLUJO, no al 50 % exacto del navbar (2026-09-15).
 
-   La cuenta, con la banda del buscador ya afuera de esta fila: las tres
-   secciones miden 344px centradas, o sea (C - 344) / 2 libres a cada lado. A la
-   izquierda va el logo (auto, ~110px con el alto de 32); a la derecha el bloque
-   de acciones, y el caso mas ancho es el del visitante ("Acceder" + "Crear
-   cuenta" + el switch de tema, 262px). Despeja en C >= 868, es decir 916px de
-   viewport contando los 48px de padding del container. Se redondea a 960px por
-   lo mismo de siempre: que un cambio de copy o de fuente no vuelva a abrir el
-   agujero de callado. */
-@media (min-width: 960px) {
+   Antes la nav estaba fuera del flujo (`position: absolute; left: 50%`) y por
+   eso no reservaba espacio: habia que garantizarle el lugar a mano, con una
+   cuenta que solo cerraba con tres items. La cuenta vieja: tres secciones miden
+   344px centradas, el logo ~110px a la izquierda y el bloque de acciones del
+   visitante 262px a la derecha ("Acceder" + "Crear cuenta" + el switch de
+   tema); despejaba en 916px de viewport, redondeado a 960. Un cuarto item movia
+   los dos bordes de la nav 40px para afuera y el derecho se metia encima de las
+   acciones: por eso "Inicio", Productos y Oportunidades no entraban.
+
+   Ahora la nav es un item mas de la fila, con `flex: 1`: se queda con todo el
+   aire que sobra entre el logo y las acciones y centra las secciones ADENTRO de
+   ese aire. Es un espacio que por definicion nadie mas ocupa, asi que el
+   solapamiento deja de ser posible -- no importa cuantos items haya ni cuanto
+   mida cada uno. El centro optico queda unos px corrido a la izquierda del
+   centro geometrico (el bloque de acciones es mas ancho que el logo); es el
+   precio de que no se pise nunca mas, y a ojo no se nota.
+
+   Sin `min-width: 0` a proposito: asi la nav no puede encogerse por debajo de
+   su contenido y las secciones nunca se comen al logo ni a las acciones. Lo que
+   cede antes es el `gap`, que se achica en la franja angosta de abajo. */
+@media (min-width: 860px) {
     .navbar__secciones {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+/* Franja angosta: entre 860 y 1023 los cuatro items con el gap de 30px no
+   entran junto al logo y al bloque de acciones del visitante, que es el caso
+   mas ancho (el logueado lleva iconos y avatar, y ocupa menos). Se achican los
+   dos gaps, el de la fila y el de las secciones, porque los dos son aire y
+   ninguno es contenido.
+
+   El ancho critico es 860, el mas angosto en el que la nav existe (abajo son
+   solapas). Medido ahi, en las cuatro secciones y como visitante: 18px entre el
+   logo y el primer item, de los cuales 12 son el gap de la fila, o sea 6px de
+   colchon real antes de que algo se toque. Con los valores de escritorio ese
+   colchon daba 0: entraba justo. De 1024 para arriba sobran 82px o mas y los
+   gaps vuelven a los de siempre. */
+@media (min-width: 860px) and (max-width: 1023px) {
+    .navbar__fila {
+        gap: 0.75rem;
     }
 
-    /* Con las secciones fuera del flujo quedan en la fila el logo y las
-       acciones: el space-between del contenedor dejaria las acciones en el
-       medio, encima de las secciones centradas. El margen automatico junta
-       todo el aire despues del logo y las manda al extremo derecho. */
-    .navbar__acciones {
-        margin-left: auto;
+    .navbar__secciones {
+        gap: 1.125rem;
     }
 }
 
