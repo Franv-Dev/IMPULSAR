@@ -4797,9 +4797,10 @@ textarea.auth__input {
     color: var(--color-muted);
 }
 
+/* Las estrellas son partials/_estrellas.html: el color y el tamaño los trae
+   cada SVG. El flex quita el alto de renglón que dejaría el span inline. */
 .review-card__stars {
-    color: var(--color-star); /* Amarillo estrella */
-    font-size: 1.1rem;
+    display: flex;
     flex-shrink: 0; /* Evita que las estrellas se rompan */
 }
 

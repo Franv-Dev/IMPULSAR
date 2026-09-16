@@ -4,6 +4,7 @@ import io
 import re
 from datetime import time, timedelta
 
+import pytest
 from PIL import Image
 from werkzeug.datastructures import FileStorage
 
@@ -14,6 +15,7 @@ from app.servicios.modelo import Service
 from app.turnos.modelo_turno import EstadosTurno, Turno
 from models.user import User
 from services.eventos import hoy_en_argentina
+from tests.test_navegacion import _recortar
 
 
 def test_editar_perfil_guarda_datos_de_contacto(client, db, crear_usuario, login):
@@ -886,6 +888,31 @@ def test_las_resenias_recibidas_se_ven_en_el_perfil(
 
     assert "Excelente pan" in html
     assert "1 reseña" in html
+
+
+@pytest.mark.parametrize("sufijo", ["", "/resenias"])
+def test_las_estrellas_de_la_tarjeta_de_resenia_son_svg(
+    client, db, crear_usuario, crear_post, sufijo
+):
+    """La pestaña del perfil y Reseñas recibidas seguían escribiendo ★ y ☆
+    como texto, cuando la ficha ya usaba partials/_estrellas.html: el glifo
+    depende de la fuente y no se dibuja igual en todos lados."""
+    autor = crear_usuario(username="valentina")
+    post = crear_post(author_id=autor.id, title="Panadería del barrio")
+    cliente = crear_usuario(username="camila")
+    db.session.add(Review(post_id=post.id, user_id=cliente.id, rating=3, comment="Bien"))
+    db.session.commit()
+
+    html = client.get(f"/perfil/{autor.slug}{sufijo}").get_data(as_text=True)
+    estrellas = _recortar(html, "review-card__stars")
+
+    assert "★" not in estrellas
+    assert "☆" not in estrellas
+    # El modificador contiene el nombre de la clase base: se cuenta la apertura
+    # del atributo, igual que en test_ficha.
+    assert estrellas.count('class="estrellas__una') == 5
+    assert estrellas.count("estrellas__una--llena") == 3
+    assert 'aria-label="3 de 5 estrellas"' in estrellas
 
 
 def test_el_perfil_sin_resenias_no_dibuja_la_pestania(
