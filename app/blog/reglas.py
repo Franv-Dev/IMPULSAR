@@ -188,6 +188,27 @@ def es_el_autor(post, user_id):
     return post.author == user_id
 
 
+def existe_para(post, user_id):
+    """Si ese emprendimiento EXISTE para quien esta mirando.
+
+    Un borrador existe solo para su dueño. Quien llama contesta con 404, y no
+    con 403 ni con un flash: un 403 --o un "no podés ver esto"-- confirmaria
+    que ese id existe y esta sin publicar, que es justamente lo que el dueño
+    todavia no quiso contar. Las URLs son /<id> incremental y se prueban a mano.
+
+    VIVE ACA Y NO ESCRITA EN CADA VISTA porque ya estaba copiada en dos (la
+    ficha y la API de un post) y las pantallas que CUELGAN de un emprendimiento
+    --pedir presupuesto, sacar turno, reportar, la conversacion-- le sumaban
+    cuatro copias mas. Seis lugares que deciden lo mismo son seis lugares donde
+    olvidarse; el dia que haya un tercer estado no publico, o que "dueño" deje
+    de ser solo el autor, se cambia una vez.
+
+    `user_id` puede ser None (visitante sin sesion): ahi es_el_autor() da False,
+    que es lo correcto.
+    """
+    return not post.es_borrador or es_el_autor(post, user_id)
+
+
 def es_el_autor_de_la_resenia(resenia, user_id):
     return resenia.user_id == user_id
 

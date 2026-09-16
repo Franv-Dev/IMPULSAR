@@ -107,9 +107,7 @@ def _serializar(fila, favoritos):
 def get_post(post_id):
     post = Post.query.get_or_404(post_id)
     es_el_dueno = bool(g.user and reglas.es_el_autor(post, g.user.id))
-    # Un borrador solo existe para su dueño. 404 y no 403 por lo mismo que la
-    # ficha: un 403 confirmaria que ese id existe y esta sin publicar, que es
-    # justamente lo que el dueño todavia no quiso contar.
-    if post.es_borrador and not es_el_dueno:
+    # Un borrador solo existe para su dueño (ver reglas.existe_para).
+    if not reglas.existe_para(post, g.user.id if g.user else None):
         abort(404)
     return jsonify(post.to_dict(include_views=es_el_dueno)), 200

@@ -204,10 +204,8 @@ def detail(id):
     # UN BORRADOR SOLO EXISTE PARA SU DUEÑO. Sacarlo de los listados no alcanza:
     # esta URL es /blog/<id> con el id incremental, asi que sin este corte
     # cualquiera lo lee probando numeros, y encima le sumaria una vista.
-    #
-    # 404 y no 403: un 403 confirmaria que ese id existe y esta sin publicar,
-    # que es exactamente lo que el dueño todavia no quiso contar.
-    if post.es_borrador and not es_dueño:
+    # El 404 (y por que no es un 403) esta explicado en reglas.existe_para.
+    if not reglas.existe_para(post, g.user.id if g.user else None):
         abort(404)
 
     # No cuenta las vistas del propio dueño revisando su publicacion.
@@ -407,15 +405,17 @@ def _estado_pedido():
     (ver _form_emprendimiento.html). Cualquier otro valor --o ninguno-- cae en
     PUBLICADO, que es lo que el formulario hacia antes de que existieran los
     borradores: un POST armado a mano sin ese campo se sigue comportando igual
+    que siempre y no crea un emprendimiento invisible sin que nadie lo haya
+    pedido.
 
     SOLO PARA EL ALTA. Al editar, el default de "sin accion" no puede ser
     publicar: ver _estado_al_editar.
-    que siempre y no crea un emprendimiento invisible sin que nadie lo haya
-    pedido.
     """
     if request.form.get("accion") == "borrador":
         return EstadosPost.BORRADOR
     return EstadosPost.PUBLICADO
+
+
 def _estado_al_editar(post):
     """El estado que queda despues de guardar una edicion.
 
@@ -446,8 +446,6 @@ def _estado_al_editar(post):
     if request.form.get("accion") == "publicar":
         return EstadosPost.PUBLICADO
     return EstadosPost.BORRADOR
-
-
 
 
 def _geocodificar(direccion):
@@ -811,6 +809,13 @@ def report(tipo, target_id):
         objetivo = consultas.resenia_por_id_o_404(target_id)
         volver = url_for("blog.detail", id=objetivo.post_id)
         mensaje_propio = "No podés reportar tu propia reseña."
+
+    # No se reporta lo que no existe todavia: el formulario nombraba el
+    # emprendimiento, asi que era otra forma de leer un borrador probando ids.
+    # Vale para los dos tipos -- una reseña viaja con el post reseñado adentro.
+    post_del_objetivo = objetivo if tipo == "post" else objetivo.post
+    if not reglas.existe_para(post_del_objetivo, g.user.id):
+        abort(404)
 
     if not reglas.puede_reportar(objetivo, tipo, g.user.id):
         flash(mensaje_propio)

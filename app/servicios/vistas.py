@@ -21,6 +21,7 @@ from flask import (
 )
 from sqlalchemy.exc import IntegrityError
 
+from app.blog import reglas as reglas_blog
 from app.panel.consultas import contadores_de as contadores_del_panel
 from app.servicios import consultas, formulario, reglas
 from app.servicios.modelo import MAX_SERVICIOS_POR_POST, Rubros, Service
@@ -372,6 +373,14 @@ solicitud_pendiente_de = consultas.solicitud_pendiente_de
 def solicitar(id):
     """El cliente pide un presupuesto sobre un servicio."""
     servicio = consultas.servicio_por_id_o_404(id)
+
+    # El servicio de un emprendimiento en borrador no tiene pantalla publica, y
+    # esta la tenia: mostraba el titulo del servicio y el nombre del
+    # emprendimiento, y ademas DEJABA MANDAR LA SOLICITUD -- al dueño le llegaba
+    # un pedido de presupuesto de algo que todavia no publico. Va antes que los
+    # otros cortes para que el 404 sea lo primero (ver reglas_blog.existe_para).
+    if not reglas_blog.existe_para(servicio.post, g.user.id):
+        abort(404)
 
     # El dueño no se pide presupuesto a si mismo.
     if reglas.es_de(servicio, g.user.id):
