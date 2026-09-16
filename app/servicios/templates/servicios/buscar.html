@@ -361,7 +361,9 @@
                         {% endfor %}
                     </div>
 
-                    {% include "partials/_paginacion.html" %}
+                    {% with etiqueta_paginacion="Paginación de servicios" %}
+                        {% include "partials/_paginacion.html" %}
+                    {% endwith %}
                 {% else %}
                     <div class="vacio">
                         <span class="vacio__icono" aria-hidden="true">

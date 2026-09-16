@@ -115,7 +115,9 @@
                                 {% endfor %}
                             </div>
 
-                            {% include "partials/_paginacion.html" %}
+                            {% with etiqueta_paginacion="Paginación de reseñas" %}
+                                {% include "partials/_paginacion.html" %}
+                            {% endwith %}
                         {% else %}
                             <p class="reviews-empty">Todavía no recibió ninguna reseña.</p>
                         {% endif %}

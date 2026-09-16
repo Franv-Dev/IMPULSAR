@@ -5921,6 +5921,11 @@ a.perfil-dato:hover {
     color: var(--color-muted);
 }
 
+/* Pagina pedida mas alla de la ultima: es un aviso, no un contador. */
+.pagination__status--fuera {
+    color: var(--color-text);
+}
+
 /* === Chat === */
 .chat-inbox {
     display: flex;

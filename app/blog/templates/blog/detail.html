@@ -308,7 +308,9 @@
                                que ya arrastra request.args al armar los enlaces:
                                así cambiar de página no se lleva puesto nada de lo
                                que venga en la URL. #}
-                            {% with paginacion = paginacion_productos %}
+                            {% with paginacion = paginacion_productos,
+                                     etiqueta_paginacion = "Paginación de productos",
+                                     ancla_paginacion = "ficha-productos" %}
                                 {% include "partials/_paginacion.html" %}
                             {% endwith %}
                         {% else %}

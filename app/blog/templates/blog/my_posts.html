@@ -157,7 +157,9 @@
                         por ahora todos los emprendimientos se muestran igual.
                     </p>
 
-                    {% include "partials/_paginacion.html" %}
+                    {% with etiqueta_paginacion="Paginación de tus emprendimientos" %}
+                        {% include "partials/_paginacion.html" %}
+                    {% endwith %}
                 {% else %}
                     <div class="emprendimientos__empty">
                         <p>
